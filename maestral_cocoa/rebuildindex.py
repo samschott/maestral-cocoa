@@ -13,8 +13,8 @@ from toga.fonts import BOLD
 from maestral.daemon import MaestralProxy
 
 from .utils import async_call, run_maestral_async
-from .private_widgets import Label, DialogButtons, Window
-from .private_constants import WORD_WRAP
+from .private.widgets import Label, DialogButtons, Window
+from .private.constants import WORD_WRAP
 
 
 def _filter_status(text):

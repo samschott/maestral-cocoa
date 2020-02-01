@@ -1,7 +1,7 @@
 import os.path as osp
 
 from .utils import async_call, run_maestral_async, alert_sheet
-from .private_constants import ON, OFF
+from .private.constants import ON, OFF
 from .settings_gui import SettingsGui
 from .autostart import AutoStart
 from .excluded_folders import ExcludedFoldersDialog

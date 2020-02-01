@@ -21,7 +21,7 @@ from toga_cocoa.widgets.selection import Selection as TogaSelection
 from toga_cocoa.widgets.multilinetextinput import MultilineTextInput as TogaMultilineTextInput
 from toga_cocoa.factory import *
 
-from .private_constants import (
+from .constants import (
     WORD_WRAP, CHARACTER_WRAP, CLIP, TRUNCATE_HEAD, TRUNCATE_MIDDLE, TRUNCATE_TAIL,
     NSButtonTypeMomentaryPushIn,NSFocusRingTypeNone, NSControlState,
     NSSquareStatusItemLength,

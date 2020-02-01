@@ -9,7 +9,7 @@ from maestral.oauth import OAuth2Session
 from maestral.config.base import get_home_dir
 
 # maestral_cocoa modules
-from .private_constants import OFF
+from maestral_cocoa.private.constants import OFF
 from .utils import alert_sheet, run_async, async_call
 from .setup_gui import SetupDialogGui
 from .excluded_folders_gui import FileSystemSource

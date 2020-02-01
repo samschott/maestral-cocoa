@@ -19,14 +19,14 @@ from toga_cocoa.libs import *
 from toga.handlers import long_running_task
 from toga.platform import get_platform_factory
 
-from .private_constants import (
+from maestral.daemon import MaestralProxy
+
+from .private.constants import (
     NSCompositeSourceOver,
     NSStackViewGravityBottom,
     NSUserInterfaceLayoutOrientationVertical
 )
-from .private_factory import NSMutableAttributedString, NSUTF8StringEncoding
-
-from maestral.daemon import MaestralProxy
+from .private.factory import NSMutableAttributedString, NSUTF8StringEncoding
 
 
 NSVisualEffectView = ObjCClass('NSVisualEffectView')

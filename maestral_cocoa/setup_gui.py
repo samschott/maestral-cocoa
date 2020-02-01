@@ -6,8 +6,8 @@ from toga.constants import COLUMN, CENTER
 
 from maestral.config.base import get_home_dir
 
-from .private_widgets import Label, Spacer, DialogButtons, FollowLinkButton, Selection, Window, IconForPath
-from .private_constants import WORD_WRAP, NSFullSizeContentViewWindowMask
+from .private.widgets import Label, Spacer, DialogButtons, FollowLinkButton, Selection, Window, IconForPath
+from .private.constants import WORD_WRAP, NSFullSizeContentViewWindowMask
 from .utils import select_folder_sheet
 
 # set default font size to 13 pt, as in macOS

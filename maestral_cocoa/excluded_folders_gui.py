@@ -7,8 +7,8 @@ from toga.constants import RIGHT, COLUMN
 from toga.sources import Source
 
 from .utils import async_call, run_maestral_async
-from .private_widgets import Window, IconForPath, DialogButtons, Switch
-from .private_constants import ON, OFF, MIXED
+from .private.widgets import Window, IconForPath, DialogButtons, Switch
+from .private.constants import ON, OFF, MIXED
 
 from maestral.utils.path import is_child
 

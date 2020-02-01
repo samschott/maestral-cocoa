@@ -11,11 +11,11 @@ from toga.style import Pack
 from toga.constants import COLUMN, ROW, BOLD
 
 from . import __url__
-from .private_widgets import (
+from .private.widgets import (
     Window, DialogButtons, VibrantBox,
     Label, RichMultilineTextInput, FollowLinkButton
 )
-from .private_constants import VisualEffectMaterial, WORD_WRAP
+from .private.constants import VisualEffectMaterial, WORD_WRAP
 from .utils import clear_background, async_call, run_async, alert_sheet
 
 

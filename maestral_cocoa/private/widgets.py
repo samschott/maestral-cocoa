@@ -17,13 +17,13 @@ from toga.style.pack import Pack
 from toga.constants import ROW, RIGHT
 from toga_cocoa.libs import at
 
-from . import private_factory
-from .private_constants import (
+from maestral_cocoa.utils import clear_background
+from . import factory
+from .constants import (
     ON, MIXED,
     TRUNCATE_TAIL, VisualEffectMaterial,
     NSWindowAnimationBehaviorDefault, NSWindowAnimationBehaviorAlertPanel,
 )
-from .utils import clear_background
 
 
 # ==== layout widgets ====================================================================
@@ -40,7 +40,7 @@ class Spacer(toga.Box):
 class VibrantBox(Widget):
     """A macOS style vibrant box, to be used as translucent window background."""
 
-    def __init__(self, id=None, style=None, children=None, material=VisualEffectMaterial.UnderWindowBackground, factory=private_factory):
+    def __init__(self, id=None, style=None, children=None, material=VisualEffectMaterial.UnderWindowBackground, factory=factory):
         super().__init__(id=id, style=style, factory=factory)
         self._children = []
         if children:
@@ -124,7 +124,7 @@ class Switch(toga.Switch):
     """Reimplements toga.Switch to allow *programmatic* setting of
     an intermediate state."""
 
-    def __init__(self, label, id=None, style=None, on_toggle=None, is_on=False, enabled=True, factory=private_factory):
+    def __init__(self, label, id=None, style=None, on_toggle=None, is_on=False, enabled=True, factory=factory):
         super().__init__(label, id, style, on_toggle, is_on, enabled, factory)
 
     @property
@@ -157,7 +157,7 @@ class Switch(toga.Switch):
 class FollowLinkButton(Widget):
     """A macOS style 'follow link' button that takes you to a file or web URL."""
 
-    def __init__(self, label, url=None, locate=False, id=None, style=None, enabled=True, factory=private_factory):
+    def __init__(self, label, url=None, locate=False, id=None, style=None, enabled=True, factory=factory):
         super().__init__(id=id, enabled=enabled, style=style, factory=factory)
 
         # Create a platform specific implementation of a Button
@@ -187,7 +187,7 @@ class FollowLinkButton(Widget):
 
 class Selection(toga.Selection):
 
-    def __init__(self, id=None, style=None, items=None, on_select=None, enabled=True, factory=private_factory):
+    def __init__(self, id=None, style=None, items=None, on_select=None, enabled=True, factory=factory):
         super().__init__(id, style, items, on_select, enabled, factory)
 
 
@@ -196,7 +196,7 @@ class Selection(toga.Selection):
 class Label(toga.Label):
     """Reimplements toga.Label with text wrapping."""
 
-    def __init__(self, text, linebreak_mode=TRUNCATE_TAIL, id=None, style=None, factory=private_factory):
+    def __init__(self, text, linebreak_mode=TRUNCATE_TAIL, id=None, style=None, factory=factory):
         self._linebreak_mode = linebreak_mode
         super().__init__(text, id=id, style=style, factory=factory)
         self.linebreak_mode = linebreak_mode
@@ -217,7 +217,7 @@ class RichMultilineTextInput(toga.MultilineTextInput):
     MIN_HEIGHT = 100
     MIN_WIDTH = 100
 
-    def __init__(self, id=None, style=None, factory=private_factory,
+    def __init__(self, id=None, style=None, factory=factory,
                  html='', readonly=False, placeholder=None):
         super().__init__(id=id, style=style, readonly=readonly,
                          placeholder=placeholder, factory=factory)
@@ -242,7 +242,7 @@ class RichLabel(Widget):
     MIN_HEIGHT = 17
     MIN_WIDTH = 50
 
-    def __init__(self, html, id=None, style=None, factory=private_factory):
+    def __init__(self, html, id=None, style=None, factory=factory):
         super().__init__(id=id, style=style, factory=factory)
 
         # Create a platform specific implementation of a Label
@@ -274,7 +274,7 @@ class IconForPath(toga.Icon):
 
     def bind(self, factory):
         if self._impl is None:
-            self._impl = private_factory.IconForPath(interface=self, path=self.path)
+            self._impl = factory.IconForPath(interface=self, path=self.path)
 
         return self._impl
 
@@ -292,7 +292,7 @@ class MenuItem:
         submenu: A Menu to use as a submenu. It will become visible when this item is clicked.
         factory: A python module that is capable to return a implementation of this class with the same name. (optional & normally not needed).
     """
-    def __init__(self, label, icon=None, cheackable=False, action=None, submenu=None, factory=private_factory):
+    def __init__(self, label, icon=None, cheackable=False, action=None, submenu=None, factory=factory):
         self.factory = factory
         self._impl = self.factory.MenuItem(interface=self)
 
@@ -377,7 +377,7 @@ class MenuItem:
 
 class MenuItemSeparator:
     """A horizontal separator between menu items."""
-    def __init__(self, factory=private_factory):
+    def __init__(self, factory=factory):
         self.factory = factory
         self._impl = self.factory.MenuItemSeparator(self)
 
@@ -390,7 +390,7 @@ class Menu:
         items: A list of MenuItem.
     """
 
-    def __init__(self, items=None, factory=private_factory):
+    def __init__(self, items=None, factory=factory):
         self.factory = factory
         self._items = []
 
@@ -433,7 +433,7 @@ class Menu:
 class StatusBarItem:
     """A status bar item which can have an icon and a menu."""
 
-    def __init__(self, icon, menu=None, factory=private_factory):
+    def __init__(self, icon, menu=None, factory=factory):
         self.factory = factory
         self._impl = self.factory.StatusBarItem(self)
 
@@ -544,7 +544,7 @@ class SystemTrayApp(toga.App):
 
     def __init__(self, formal_name=None, app_id=None, app_name=None, id=None, icon=None,
                  author=None, version=None, home_page=None, description=None, startup=None,
-                 on_exit=None, factory=private_factory):
+                 on_exit=None, factory=factory):
         super().__init__(formal_name, app_id, app_name, id, icon, author, version,
                          home_page, description, startup, on_exit, factory)
 

@@ -11,7 +11,7 @@ from toga.constants import ROW, COLUMN, TOP, RIGHT, CENTER, GRAY
 from . import __url__, __author__
 from . import __version__ as __gui_version__
 from .utils import apply_round_clipping, select_folder_sheet
-from .private_widgets import Label, RichLabel, Switch, Selection, IconForPath, Window
+from .private.widgets import Label, RichLabel, Switch, Selection, IconForPath, Window
 from .resources import FACEHOLDER_PATH
 
 year = time.localtime().tm_year

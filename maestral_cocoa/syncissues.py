@@ -13,8 +13,8 @@ from toga.style.pack import Pack
 from toga.constants import ROW, COLUMN, BOLD
 
 from .utils import async_call, clear_background
-from .private_widgets import Label, FollowLinkButton, VibrantBox, IconForPath, Window
-from .private_constants import TRUNCATE_HEAD, WORD_WRAP, VisualEffectMaterial
+from .private.widgets import Label, FollowLinkButton, VibrantBox, IconForPath, Window
+from .private.constants import TRUNCATE_HEAD, WORD_WRAP, VisualEffectMaterial
 
 CONTENT_WIDTH = 330
 PADDING = 10

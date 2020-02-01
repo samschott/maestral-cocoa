@@ -1,6 +1,6 @@
 import logging
 
-from .private_constants import ON, OFF, MIXED
+from .private.constants import ON, OFF, MIXED
 from .excluded_folders_gui import ExcludedFoldersGui
 
 
