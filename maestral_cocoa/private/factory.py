@@ -380,6 +380,7 @@ class SystemTrayApp(TogaApp):
 
     def create(self):
         self.native = KeyBoardApp.sharedApplication
+        self.native.activateIgnoringOtherApps(True)
         super().create()
 
     def select_file(self):
