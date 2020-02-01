@@ -80,9 +80,10 @@ class MaestralGui(SystemTrayApp):
         ERROR: 'error',
     }
 
-    def startup(self, config_name='maestral'):
+    config_name = 'maestral'
 
-        self.config_name = config_name
+    def startup(self):
+
         self.mdbx = None
         self._started = False
         self._conf = MaestralConfig(config_name)  # use only for reading, before daemon is attached!
@@ -554,7 +555,9 @@ def _is_linked(conf):
         raise KeyringLocked(info)
 
 
-def run():
+def run(config_name='maestral'):
+
+    MaestralGui.config_name = config_name
 
     app = MaestralGui(
         formal_name='Maestral',
