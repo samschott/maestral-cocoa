@@ -51,7 +51,7 @@ setup(
     ],
     zip_safe=False,
     entry_points={
-      'console_scripts': ['maestral_cocoa=maestral_cocoa.app:main'],
+      'console_scripts': ['maestral_cocoa=maestral_cocoa.main:run'],
     },
     python_requires='>=3.6',
     classifiers=[

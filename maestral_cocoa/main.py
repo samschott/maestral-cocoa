@@ -554,7 +554,7 @@ def _is_linked(conf):
         raise KeyringLocked(info)
 
 
-def main():
+def run():
 
     app = MaestralGui(
         formal_name='Maestral',
@@ -570,4 +570,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    run()
