@@ -86,7 +86,7 @@ class MaestralGui(SystemTrayApp):
 
         self.mdbx = None
         self._started = False
-        self._conf = MaestralConfig(config_name)  # use only for reading, before daemon is attached!
+        self._conf = MaestralConfig(self.config_name)  # use only for reading, before daemon is attached!
 
         self._n_sync_errors = None
 

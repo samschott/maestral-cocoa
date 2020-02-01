@@ -384,3 +384,6 @@ class SystemTrayApp(TogaApp):
 
     def select_file(self):
         pass
+
+    def open_document(self, path):
+        pass
