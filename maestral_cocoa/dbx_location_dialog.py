@@ -4,7 +4,7 @@ import toga
 from toga.style.pack import Pack, FONT_SIZE_CHOICES
 
 from maestral.config.base import get_home_dir
-from maestral.sync.utils.path import delete_file_or_folder
+from maestral.utils.path import delete_file_or_folder
 
 from .private_widgets import IconForPath
 from .dialogs import Dialog

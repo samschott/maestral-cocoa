@@ -24,11 +24,11 @@ from toga.style.pack import Pack, FONT_SIZE_CHOICES
 
 # maestral modules
 from maestral.config.main import MaestralConfig
-from maestral.sync.utils import set_keyring_backend
-from maestral.sync.constants import (
+from maestral.utils import set_keyring_backend
+from maestral.constants import (
     IDLE, SYNCING, PAUSED, STOPPED, DISCONNECTED, SYNC_ERROR, ERROR,
 )
-from maestral.sync.daemon import (
+from maestral.daemon import (
     start_maestral_daemon_process,
     start_maestral_daemon_thread,
     stop_maestral_daemon_process,

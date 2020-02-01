@@ -10,9 +10,7 @@ from .utils import async_call, run_maestral_async
 from .private_widgets import Window, IconForPath, DialogButtons, Switch
 from .private_constants import ON, OFF, MIXED
 
-from maestral.sync.utils.path import is_child
-
-# TODO: insert logic to actually update folder list
+from maestral.utils.path import is_child
 
 
 class Node:

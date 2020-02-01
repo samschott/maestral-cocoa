@@ -3,9 +3,9 @@ import os.path as osp
 
 # maestral modules
 from maestral.config.main import MaestralConfig
-from maestral.sync.daemon import start_maestral_daemon_process, get_maestral_proxy
-from maestral.sync.utils.path import delete_file_or_folder
-from maestral.sync.oauth import OAuth2Session
+from maestral.daemon import start_maestral_daemon_process, get_maestral_proxy
+from maestral.utils.path import delete_file_or_folder
+from maestral.oauth import OAuth2Session
 from maestral.config.base import get_home_dir
 
 # maestral_cocoa modules

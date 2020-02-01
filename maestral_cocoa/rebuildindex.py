@@ -10,7 +10,7 @@ from toga.style.pack import Pack, HIDDEN, VISIBLE
 from toga.constants import COLUMN
 from toga.fonts import BOLD
 
-from maestral.sync.daemon import MaestralProxy
+from maestral.daemon import MaestralProxy
 
 from .utils import async_call, run_maestral_async
 from .private_widgets import Label, DialogButtons, Window

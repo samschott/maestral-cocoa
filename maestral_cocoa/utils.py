@@ -26,7 +26,7 @@ from .private_constants import (
 )
 from .private_factory import NSMutableAttributedString, NSUTF8StringEncoding
 
-from maestral.sync.daemon import MaestralProxy
+from maestral.daemon import MaestralProxy
 
 
 NSVisualEffectView = ObjCClass('NSVisualEffectView')

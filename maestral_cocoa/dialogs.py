@@ -264,7 +264,7 @@ class RelinkDialog(Window):
         self.mdbx = mdbx
         self.reason = reason
 
-        from maestral.sync.oauth import OAuth2Session
+        from maestral.oauth import OAuth2Session
         self.auth_session = OAuth2Session(self.mdbx.config_name)
         url = self.auth_session.get_auth_url()
 
@@ -344,7 +344,7 @@ class RelinkDialog(Window):
     @async_call
     async def do_relink(self):
 
-        from maestral.sync.oauth import OAuth2Session
+        from maestral.oauth import OAuth2Session
 
         self.dialog_buttons[self.LINK_BTN].enabled = False
         self.dialog_buttons[self.CANCEL_BTN].enabled = False
