@@ -48,7 +48,7 @@ from maestral_cocoa.settings import SettingsWindow
 from maestral_cocoa.syncissues import SyncIssuesWindow
 from maestral_cocoa.rebuildindex import RebuildIndexDialog
 from maestral_cocoa.dbx_location_dialog import DbxLocationDialog
-from maestral_cocoa.dialogs import Dialog, UpdateDialog, RelinkDialog
+from maestral_cocoa.dialogs import Dialog, UpdateDialog, ProgressDialog, RelinkDialog
 from maestral_cocoa.resources import APP_ICON_PATH, TRAY_ICON_PATH
 
 
@@ -62,7 +62,6 @@ IS_MACOS_BUNDLE = getattr(sys, 'frozen', False)
 # TODO:
 #  - fix alignment of combobox
 #  - test unexpected error notifications
-#  - improve formatting of release notes
 
 class MaestralGui(SystemTrayApp):
     """A Qt GUI for the Maestral daemon."""
@@ -329,15 +328,15 @@ class MaestralGui(SystemTrayApp):
 
     async def on_check_for_updates_clicked(self, widget):
 
-        # progress = ProgressDialog('Checking for Updates', app=self)
-        # progress.raise_()
+        progress = ProgressDialog('Checking for Updates', app=self)
+        progress.raise_()
 
         res = await run_maestral_async(self.config_name, 'check_for_updates')
 
-        # if not progress.visible:
-        #     return  # aborted by user
-        # else:
-        #     progress.close()
+        if not progress.visible:
+            return  # aborted by user
+        else:
+            progress.close()
 
         if res['error']:
             Dialog('Could not check for updates', res['error'], icon=self.icon).raise_()
