@@ -481,7 +481,7 @@ class Window(toga.Window):
         if not position:
             self.center()
 
-    # visiblity and positioning
+    # visibility and positioning
     @property
     def visible(self):
         return bool(self._impl.native.isVisible)
