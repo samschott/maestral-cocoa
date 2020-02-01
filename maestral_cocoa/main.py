@@ -518,7 +518,7 @@ class MaestralGui(SystemTrayApp):
         logger.info('Quitting...')
 
         # stop sync daemon if we started it
-        if self._started or stop_daemon and not IS_MACOS_BUNDLE:
+        if not IS_MACOS_BUNDLE and (self._started or stop_daemon):
             self.mdbx = None
             stop_maestral_daemon_process(self.config_name)
 
