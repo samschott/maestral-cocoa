@@ -1,7 +1,7 @@
 import sys
 from setuptools import setup, find_packages
 
-from maestral_cocoa import __version__
+from maestral_cocoa import __author__, __version__
 
 CURRENT_PYTHON = sys.version_info[:2]
 REQUIRED_PYTHON = (3, 6)
@@ -29,7 +29,7 @@ setup(
     version=__version__,
     description='Open-source Dropbox client for macOS and Linux.',
     url='https://github.com/SamSchott/maestral',
-    author='Sam Schott',
+    author=__author__,
     author_email='ss2151@cam.ac.uk',
     license='MIT',
     long_description=open('README.md').read(),
