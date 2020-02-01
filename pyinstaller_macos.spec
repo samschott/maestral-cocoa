@@ -7,7 +7,7 @@ from maestral_cocoa import __version__, __author__
 import time
 
 
-a = Analysis(['maestral_cocoa/app.py'],
+a = Analysis(['maestral_cocoa/main.py'],
              binaries=[],
              datas= [
                 ('maestral_cocoa/resources/*', '.'),
