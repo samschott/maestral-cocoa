@@ -45,7 +45,7 @@ setup(
         'bugsnag',
         'click',
         'keyring>=19.0.0',
-        'maestral>=0.5.0',
+        'maestral',
         'markdown2',
         'toga',
     ],
