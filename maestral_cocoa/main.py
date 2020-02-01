@@ -512,8 +512,8 @@ class MaestralGui(SystemTrayApp):
         """Quits Maestral.
 
         :param bool stop_daemon: If ``True``, the sync daemon will be stopped when
-            quitting the GUI, if ``False``, it will be kept alive. If ``None``, the daemon
-            will only be stopped if it was started by the GUI (default).
+            quitting the GUI, if ``False``, it will be kept alive. If ``None``, the
+            daemon will only be stopped if it was started by the GUI.
         """
         logger.info('Quitting...')
 
