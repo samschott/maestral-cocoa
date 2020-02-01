@@ -6,8 +6,10 @@
 Attribution-NonCommercial-NoDerivs 2.0 UK: England & Wales License.
 
 """
+import os.path as osp
 from travertino.size import at_least
 
+from toga import SECTION_BREAK
 from toga.platform import get_platform_factory
 from toga_cocoa.libs import *
 from toga_cocoa.keys import toga_key, Key
@@ -16,7 +18,6 @@ from toga_cocoa.widgets.base import Widget
 from toga_cocoa.widgets.switch import Switch as TogaSwitch
 from toga_cocoa.widgets.label import Label as TogaLabel
 from toga_cocoa.widgets.button import Button as TogaButton
-from toga_cocoa.widgets.selection import TogaPopupButton
 from toga_cocoa.widgets.selection import Selection as TogaSelection
 from toga_cocoa.widgets.multilinetextinput import MultilineTextInput as TogaMultilineTextInput
 from toga_cocoa.factory import *
@@ -204,17 +205,29 @@ class Switch(TogaSwitch):
 
 
 class Selection(TogaSelection):
-    def create(self):
-        self.native = TogaPopupButton.alloc().init()
-        self.native.interface = self.interface
 
-        self.native.translatesAutoresizingMaskIntoConstraints = False
+    def add_item(self, item):
+        if isinstance(item, tuple):
+            icon_iface, label = item
+        else:
+            icon_iface = None
+            label = item
 
-        self.native.target = self.native
-        self.native.action = SEL('onSelect:')
+        if label == SECTION_BREAK:
+            self.native.menu.addItem(NSMenuItem.separatorItem())
 
-        self.add_constraints()
+        else:
+            self.native.addItemWithTitle(label)
 
+            if icon_iface:
+                icon = icon_iface.bind(self.interface.factory)
+                icon = icon.native.resizeTo(16)
+                self.native.lastItem.image = icon
+
+    def select_item(self, item):
+        if isinstance(item, tuple):
+            item = item[1]
+        self.native.selectItemWithTitle(item)
 
 # ==== layout widgets ====================================================================
 
@@ -353,7 +366,7 @@ class StatusBarItem:
 # ==== Application =======================================================================
 
 
-class KeyBoardApp(NSApplication):
+class CocoaSystemTrayApp(NSApplication):
     @objc_method
     def sendEvent_(self, event) -> None:
         if event.type == NSKeyDown:
@@ -374,14 +387,41 @@ class KeyBoardApp(NSApplication):
         send_super(__class__, self, 'sendEvent:', event)
 
 
+class SystemTrayAppDelegate(NSObject):
+    @objc_method
+    def applicationWillTerminate_(self, sender):
+        if self.interface.app.on_exit:
+            self.interface.app.on_exit(self.interface.app)
+
+    @objc_method
+    def applicationDidFinishLaunching_(self, notification):
+        self.native.activateIgnoringOtherApps(True)
+
+
 class SystemTrayApp(TogaApp):
 
     _MAIN_WINDOW_CLASS = None
 
     def create(self):
-        self.native = KeyBoardApp.sharedApplication
-        self.native.activateIgnoringOtherApps(True)
-        super().create()
+        self.native = CocoaSystemTrayApp.sharedApplication
+        self.native.activationPolicy = NSApplicationActivationPolicyAccessory
+        self.native.applicationIconImage = self.interface.icon._impl.native
+
+        self.resource_path = osp.dirname(osp.dirname(NSBundle.mainBundle.bundlePath))
+
+        self.appDelegate = SystemTrayAppDelegate.alloc().init()
+        self.appDelegate.impl = self
+        self.appDelegate.interface = self.interface
+        self.appDelegate.native = self.native
+        self.native.delegate = self.appDelegate
+
+        # Call user code to populate the main window
+        self.interface.startup()
+
+        # Create the lookup table of menu items,
+        # then force the creation of the menus.
+        self._menu_items = {}
+        self.create_menus()
 
     def select_file(self):
         pass
