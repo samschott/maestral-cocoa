@@ -92,9 +92,8 @@ class SettingsGui(Window):
         self.combobox_update_interval = Selection(items=['Daily', 'Weekly', 'Monthly', 'Never'], on_select=self.on_update_interval_selected, style=Pack(padding_left=self.COLUMN_PADDING, width=self.BUTTON_WIDTH))
 
         self._label_system_settings = Label('System Settings:', style=Pack(text_align=RIGHT, width=self.COLUMN_WIDTH_LEFT))
-        self.checkbox_autostart = Switch(label='Start Maestral on login', on_toggle=self.on_autostart_clicked, style=Pack(padding_bottom=self.ELEMENT_PADDING, width=self.COLUMN_WIDTH_RIGHT))
-        self.checkbox_notifications = Switch(label='Enable notifications', on_toggle=self.on_notifications_clicked, style=Pack(padding_bottom=self.ELEMENT_PADDING, width=self.COLUMN_WIDTH_RIGHT))
-        self.checkbox_analytics = Switch(label='Share crash reports', on_toggle=self.on_analytics_clicked, style=Pack(width=self.COLUMN_WIDTH_RIGHT))
+        self.checkbox_autostart = Switch(label='Start Maestral on login', on_toggle=self.on_autostart_clicked, style=Pack(padding_bottom=self.SUBELEMENT_PADDING, width=self.COLUMN_WIDTH_RIGHT))
+        self.checkbox_notifications = Switch(label='Enable notifications', on_toggle=self.on_notifications_clicked, style=Pack(padding_bottom=self.SUBELEMENT_PADDING, width=self.COLUMN_WIDTH_RIGHT))
 
         maestral_settings_box = toga.Box(
             children=[

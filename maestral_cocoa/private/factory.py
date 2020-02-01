@@ -200,7 +200,7 @@ class Switch(TogaSwitch):
 
     def rehint(self):
         content_size = self.native.intrinsicContentSize()
-        self.interface.intrinsic.height = content_size.height
+        self.interface.intrinsic.height = 20
         self.interface.intrinsic.width = at_least(content_size.width)
 
 
