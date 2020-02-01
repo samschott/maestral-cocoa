@@ -6,7 +6,7 @@ from toga.constants import COLUMN, CENTER
 
 from maestral.config.base import get_home_dir
 
-from .private_widgets import Label, Spacer, DialogButtons, FollowLinkButton, Window, IconForPath
+from .private_widgets import Label, Spacer, DialogButtons, FollowLinkButton, Selection, Window, IconForPath
 from .private_constants import WORD_WRAP, NSFullSizeContentViewWindowMask
 from .utils import select_folder_sheet
 
@@ -105,7 +105,7 @@ class SetupDialogGui(Window):
             linebreak_mode=WORD_WRAP,
             style=Pack(width=self.CONTENT_WIDTH, height=80, padding_bottom=20, text_align=CENTER)
         )
-        self.combobox_dbx_location = toga.Selection(
+        self.combobox_dbx_location = Selection(
             items=[self.dbx_location_user_selected, toga.SECTION_BREAK, self.COMBOBOX_CHOOSE],
             style=Pack(width=self.CONTENT_WIDTH, padding_bottom=20),
             on_select=self._on_button_location_pressed

@@ -16,6 +16,8 @@ from toga_cocoa.widgets.base import Widget
 from toga_cocoa.widgets.switch import Switch as TogaSwitch
 from toga_cocoa.widgets.label import Label as TogaLabel
 from toga_cocoa.widgets.button import Button as TogaButton
+from toga_cocoa.widgets.selection import TogaPopupButton
+from toga_cocoa.widgets.selection import Selection as TogaSelection
 from toga_cocoa.widgets.multilinetextinput import MultilineTextInput as TogaMultilineTextInput
 from toga_cocoa.factory import *
 
@@ -174,7 +176,7 @@ class FollowLinkButton(TogaButton):
 
 
 class Switch(TogaSwitch):
-    """Reimlements toga_cocoa.Switch but allows *programmatic* setting of
+    """Reimplements toga_cocoa.Switch but allows *programmatic* setting of
     an intermediate state."""
 
     _to_cocoa = {OFF: 0, MIXED: -1, ON: 1}
@@ -183,6 +185,7 @@ class Switch(TogaSwitch):
     def __init__(self, interface):
         super().__init__(interface)
         self.native.allowsMixedState = True
+        self.native.autoresizingMask = NSViewMaxYMargin | NSViewMaxYMargin
 
     def set_state(self, value):
         self.native.state = self._to_cocoa[value]
@@ -198,6 +201,19 @@ class Switch(TogaSwitch):
         content_size = self.native.intrinsicContentSize()
         self.interface.intrinsic.height = content_size.height
         self.interface.intrinsic.width = at_least(content_size.width)
+
+
+class Selection(TogaSelection):
+    def create(self):
+        self.native = TogaPopupButton.alloc().init()
+        self.native.interface = self.interface
+
+        self.native.translatesAutoresizingMaskIntoConstraints = False
+
+        self.native.target = self.native
+        self.native.action = SEL('onSelect:')
+
+        self.add_constraints()
 
 
 # ==== layout widgets ====================================================================

@@ -185,6 +185,12 @@ class FollowLinkButton(Widget):
         click.launch(self.url, locate=self.locate)
 
 
+class Selection(toga.Selection):
+
+    def __init__(self, id=None, style=None, items=None, on_select=None, enabled=True, factory=private_factory):
+        super().__init__(id, style, items, on_select, enabled, factory)
+
+
 # ==== labels ============================================================================
 
 class Label(toga.Label):

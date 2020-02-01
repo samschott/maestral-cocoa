@@ -11,7 +11,7 @@ from toga.constants import ROW, COLUMN, TOP, RIGHT, CENTER, GRAY
 from . import __url__, __author__
 from . import __version__ as __gui_version__
 from .utils import apply_round_clipping, select_folder_sheet
-from .private_widgets import Label, RichLabel, Switch, IconForPath, Window
+from .private_widgets import Label, RichLabel, Switch, Selection, IconForPath, Window
 from .resources import FACEHOLDER_PATH
 
 year = time.localtime().tm_year
@@ -66,7 +66,7 @@ class SettingsGui(Window):
         self.btn_select_folders = toga.Button(label='Choose folders to sync...', on_press=self.on_folder_selection_pressed, style=Pack(padding_left=self.COLUMN_PADDING, width=self.BUTTON_WIDTH))
 
         self._label_dbx_location = Label('Dropbox Folder location:', style=Pack(text_align=RIGHT, width=self.COLUMN_WIDTH_LEFT))
-        self.combobox_dbx_location = toga.Selection(
+        self.combobox_dbx_location = Selection(
             items=['DBX Location', toga.SECTION_BREAK, self.COMBOBOX_CHOOSE],
             on_select=self._on_button_location_pressed,
             style=Pack(padding_left=self.COLUMN_PADDING, width=self.BUTTON_WIDTH)
@@ -89,7 +89,7 @@ class SettingsGui(Window):
         # ==== sync settings section =====================================================
 
         self._label_update_interval = Label('Check for updates:', style=Pack(text_align=RIGHT, width=self.COLUMN_WIDTH_LEFT))
-        self.combobox_update_interval = toga.Selection(items=['Daily', 'Weekly', 'Monthly', 'Never'], on_select=self.on_update_interval_selected, style=Pack(padding_left=self.COLUMN_PADDING, width=self.BUTTON_WIDTH))
+        self.combobox_update_interval = Selection(items=['Daily', 'Weekly', 'Monthly', 'Never'], on_select=self.on_update_interval_selected, style=Pack(padding_left=self.COLUMN_PADDING, width=self.BUTTON_WIDTH))
 
         self._label_system_settings = Label('System Settings:', style=Pack(text_align=RIGHT, width=self.COLUMN_WIDTH_LEFT))
         self.checkbox_autostart = Switch(label='Start Maestral on login', on_toggle=self.on_autostart_clicked, style=Pack(padding_bottom=self.ELEMENT_PADDING, width=self.COLUMN_WIDTH_RIGHT))
