@@ -155,8 +155,7 @@ class ProgressDialog(Dialog):
             callback=callback, accessory_view=self.progress_bar, app=app
         )
 
-        self.msg_content.style.height = 0
-        self.outer_box.refresh()
+        self.content_box._children.remove(self.msg_content)
 
 
 class DetailedDialog(Dialog):
