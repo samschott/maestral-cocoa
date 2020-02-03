@@ -59,7 +59,7 @@ class SettingsWindow(SettingsGui):
             self.unlink_dialog.close()
             alert_sheet(
                 window=self,
-                title='Succesfully unlinked',
+                title='Successfully unlinked',
                 message='Maestral will now quit.',
                 button_labels=('Ok',),
                 callback=lambda s: self.app.exit(stop_daemon=True),
