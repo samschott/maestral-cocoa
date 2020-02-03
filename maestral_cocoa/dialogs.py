@@ -155,6 +155,7 @@ class ProgressDialog(Dialog):
             callback=callback, accessory_view=self.progress_bar, app=app
         )
 
+        # this is hackish but works as long as the window has not yet been shown
         self.content_box._children.remove(self.msg_content)
 
 
