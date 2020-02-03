@@ -63,6 +63,7 @@ IS_MACOS_BUNDLE = getattr(sys, 'frozen', False)
 # TODO:
 #  - fix alignment of combobox
 #  - test unexpected error notifications
+#  - fix memory leak
 
 class MaestralGui(SystemTrayApp):
     """A Qt GUI for the Maestral daemon."""
@@ -400,7 +401,6 @@ class MaestralGui(SystemTrayApp):
             self.item_email.label = self.mdbx.get_conf('account', 'email')
 
             self.item_status.label = status
-
 
     def update_recent_files(self) -> None:
         """Update menu with list of recently changed files."""
