@@ -368,32 +368,6 @@ class MaestralGui(SystemTrayApp):
 
     # ==== periodic updates  =============================================================
 
-    def update_recent_files(self) -> None:
-        """Update menu with list of recently changed files."""
-
-        if self.menu.visible:
-            recent_files = self.mdbx.get_conf('internal', 'recent_changes')
-
-            if recent_files != self._cached_recent_files:
-                new = [f for f in recent_files if f not in self._cached_recent_files]
-                removed = [f for f in self._cached_recent_files if f not in recent_files]
-
-                for dbx_path in reversed(new):
-                    fname = osp.basename(dbx_path)
-                    local_path = self.mdbx.to_local_path(dbx_path)
-                    menu_item = MenuItem(
-                        fname,
-                        action=lambda w: click.launch(w.local_path, locate=True)
-                    )
-                    menu_item.local_path = local_path
-                    self.menu_recent_files.add(menu_item)
-
-                for item in self.menu_recent_files.items:
-                    if item.label in removed:
-                        self.menu_recent_files.remove(item)
-
-                self._cached_recent_files = recent_files
-
     def update_status(self) -> None:
         """Change icon according to status."""
 
@@ -426,6 +400,33 @@ class MaestralGui(SystemTrayApp):
             self.item_email.label = self.mdbx.get_conf('account', 'email')
 
             self.item_status.label = status
+
+
+    def update_recent_files(self) -> None:
+        """Update menu with list of recently changed files."""
+
+        if self.menu.visible:
+            recent_files = self.mdbx.get_conf('internal', 'recent_changes')
+
+            if recent_files != self._cached_recent_files:
+                new = [f for f in recent_files if f not in self._cached_recent_files]
+                removed = [f for f in self._cached_recent_files if f not in recent_files]
+
+                for dbx_path in reversed(new):
+                    fname = osp.basename(dbx_path)
+                    local_path = self.mdbx.to_local_path(dbx_path)
+                    menu_item = MenuItem(
+                        fname,
+                        action=lambda w: click.launch(w.local_path, locate=True)
+                    )
+                    menu_item.local_path = local_path
+                    self.menu_recent_files.add(menu_item)
+
+                for item in self.menu_recent_files.items:
+                    if item.label in removed:
+                        self.menu_recent_files.remove(item)
+
+                self._cached_recent_files = recent_files
 
     def update_error(self) -> None:
         errs = self.mdbx.maestral_errors
