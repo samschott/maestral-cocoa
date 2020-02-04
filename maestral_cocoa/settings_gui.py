@@ -32,7 +32,8 @@ class SettingsGui(Window):
     COMBOBOX_CHOOSE = 'Choose...'
 
     faceholder = toga.Image(FACEHOLDER_PATH)
-    _pic_stat = os.stat(FACEHOLDER_PATH)
+    _cached_pic_stat = os.stat(FACEHOLDER_PATH)
+    _cached_dbx_location = None
 
     mdbx = None
 
@@ -166,14 +167,18 @@ class SettingsGui(Window):
             self.on_dbx_location_selected(path)
 
     def _update_combobox_location(self, path):
-        icon = IconForPath(path)
-        short_path = osp.basename(path)
-        self.combobox_dbx_location.items = [(icon, short_path), toga.SECTION_BREAK, self.COMBOBOX_CHOOSE]
+        if path != self._cached_dbx_location:
+            self._cached_dbx_location = path
+            icon = IconForPath(path)
+            short_path = osp.basename(path)
+            self.combobox_dbx_location.items = [
+                (icon, short_path), toga.SECTION_BREAK, self.COMBOBOX_CHOOSE
+            ]
 
     def set_profile_pic(self, path):
         path = path if osp.isfile(path) else FACEHOLDER_PATH
         new_stat = os.stat(path)
-        if new_stat != self._pic_stat:
+        if new_stat != self._cached_pic_stat:
             try:
                 self.profile_pic_view.image = toga.Image(path)
             except OSError:
@@ -181,7 +186,7 @@ class SettingsGui(Window):
             self.profile_pic_view._impl.native.imageAlignment = 3
             apply_round_clipping(self.profile_pic_view)
 
-            self._pic_stat = new_stat
+            self._cached_pic_stat = new_stat
 
     # ==== callbacks to implement ========================================================
 
