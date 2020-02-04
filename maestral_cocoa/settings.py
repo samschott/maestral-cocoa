@@ -26,7 +26,7 @@ class SettingsWindow(SettingsGui):
         self.refresh = True
 
         self.refresh_gui()
-        self.periodic_refresh_gui(interval=2)
+        self.periodic_refresh_gui()
 
     # ==== callbacks to implement ========================================================
 
@@ -89,7 +89,7 @@ class SettingsWindow(SettingsGui):
     # ==== populate gui with data ========================================================
 
     @async_call
-    def periodic_refresh_gui(self, interval):
+    def periodic_refresh_gui(self, interval=2):
 
         while self.refresh:
             if self.visible:
