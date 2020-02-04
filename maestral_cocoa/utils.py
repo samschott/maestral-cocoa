@@ -29,6 +29,7 @@ from .private.constants import (
 from .private.factory import NSMutableAttributedString, NSUTF8StringEncoding
 
 
+NSAutoreleasePool = ObjCClass('NSAutoreleasePool')
 NSVisualEffectView = ObjCClass('NSVisualEffectView')
 NSAppearance = ObjCClass('NSAppearance')
 NSStackView = ObjCClass('NSStackView')
@@ -46,6 +47,8 @@ factory = get_platform_factory()
 
 def apply_round_clipping(imageView: toga.ImageView):
     """Clips an image in a given toga.ImageView to a circular mask."""
+
+    pool = NSAutoreleasePool.alloc().init()
 
     image = imageView._impl.native.image  # get native NSImage
 
@@ -68,6 +71,9 @@ def apply_round_clipping(imageView: toga.ImageView):
     ctx.restoreGraphicsState()
 
     imageView._impl.native.image = composedImage
+
+    pool.drain()
+    del pool
 
 
 def clear_background(widget):
