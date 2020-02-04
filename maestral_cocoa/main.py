@@ -400,10 +400,10 @@ class MaestralGui(SystemTrayApp):
             recent_files = self.mdbx.get_conf('internal', 'recent_changes')
 
             if recent_files != self._cached_recent_files:
-                new = [f for f in recent_files if f not in self._cached_recent_files]
-                removed = [f for f in self._cached_recent_files if f not in recent_files]
 
-                for dbx_path in reversed(new):
+                self.menu_recent_files.clear()
+
+                for dbx_path in reversed(recent_files):
                     fname = osp.basename(dbx_path)
                     local_path = self.mdbx.to_local_path(dbx_path)
                     menu_item = MenuItem(
@@ -412,10 +412,6 @@ class MaestralGui(SystemTrayApp):
                     )
                     menu_item.local_path = local_path
                     self.menu_recent_files.add(menu_item)
-
-                for item in self.menu_recent_files.items:
-                    if item.label in removed:
-                        self.menu_recent_files.remove(item)
 
                 self._cached_recent_files = recent_files
 
