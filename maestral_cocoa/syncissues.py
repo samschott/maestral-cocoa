@@ -87,6 +87,7 @@ class SyncIssuesWindow(Window):
 
         self.mdbx = mdbx
         self.refresh = True
+        self._cached_errors = []
 
         self.size = WINDOW_SIZE
         self._impl.native.titlebarAppearsTransparent = True
@@ -96,30 +97,34 @@ class SyncIssuesWindow(Window):
 
         clear_background(self.scroll_container)
 
-        self.refresh_gui()
+        self.periodic_refresh_gui()
         self.content = VibrantBox(children=[self.scroll_container], material=VisualEffectMaterial.Popover)
 
         self.center()
 
     @async_call
-    def refresh_gui(self, interval=1):
-        old_errors = []
+    def periodic_refresh_gui(self, interval=1):
 
         while self.refresh:
-            new_errors = self.mdbx.sync_errors
-
-            if new_errors != old_errors:
-                if len(new_errors) == 0:
-                    sync_errors_box = toga.Box(children=[self.placeholder_label], style=self.box_style)
-                else:
-                    sync_errors_box = toga.Box(children=list(SyncIssueBox(e) for e in new_errors), style=self.box_style)
-
-                clear_background(sync_errors_box)
-                self.scroll_container.content = sync_errors_box
-
-            old_errors = new_errors.copy()
+            if self.visible:
+                self.refresh_gui()
 
             yield interval
+
+    def refresh_gui(self):
+
+        new_errors = self.mdbx.sync_errors
+
+        if new_errors != self._cached_errors:
+            if len(new_errors) == 0:
+                sync_errors_box = toga.Box(children=[self.placeholder_label], style=self.box_style)
+            else:
+                sync_errors_box = toga.Box(children=list(SyncIssueBox(e) for e in new_errors), style=self.box_style)
+
+            clear_background(sync_errors_box)
+            self.scroll_container.content = sync_errors_box
+
+            self._cached_errors = new_errors
 
     def on_close(self):
         self.refresh = False
