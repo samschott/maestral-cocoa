@@ -350,23 +350,15 @@ class MaestralGui(SystemTrayApp):
 
     def show_update_dialog(self, latest_release: str, release_notes: str) -> None:
 
-        message = (
-            f'Maestral v{latest_release} is available. Please use your package manager '
-            f'to update or download the latest binary from GitHub.'
-        )
-
         html_notes = markdown2.markdown(release_notes)
         html_notes = html_notes.replace('<h4>', '<br/> <h4>')
-        update_dialog = UpdateDialog(
-            message=message,
+        UpdateDialog(
+            version=latest_release,
             release_notes=html_notes,
             icon=self.icon
-        )
-        update_dialog.msg_content.style.font_size = 12
-        update_dialog.msg_content.style.height = 40
-        update_dialog.raise_()
+        ).raise_()
 
-    # ==== periodic updates  =============================================================
+    # ==== periodic updates ==============================================================
 
     def update_status(self) -> None:
         """Change icon according to status."""

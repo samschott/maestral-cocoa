@@ -208,7 +208,7 @@ class UpdateDialog(Dialog):
     CONTENT_WIDTH = (WINDOW_WIDTH - Dialog.PADDING_LEFT - Dialog.PADDING_RIGHT
                      - Dialog.ICON_PADDING_RIGHT - Dialog.ICON_SIZE[0])
 
-    def __init__(self, message='', release_notes='', icon=None, app=None):
+    def __init__(self, version='', release_notes='', icon=None, app=None):
 
         link_button = FollowLinkButton(
             label='GitHub Releases',
@@ -233,11 +233,18 @@ class UpdateDialog(Dialog):
             style=Pack(direction=COLUMN)
         )
 
+        message = (
+            f'Maestral v{version} is available. Please use your package manager '
+            f'to update or download the latest binary from GitHub.'
+        )
+
         super().__init__(
             title='Update available', message=message, button_labels=('Ok',),
             icon=icon, accessory_view=accessory_view, app=app
         )
         self.msg_content.style.padding_bottom = 0
+        self.msg_content.style.font_size = 12
+        self.msg_content.style.height = 40
 
 
 class RelinkDialog(Window):
