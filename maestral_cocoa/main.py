@@ -214,7 +214,6 @@ class MaestralGui(SystemTrayApp):
             return
 
         self.settings_window = SettingsWindow(self.mdbx, app=self)
-        self.sync_issues_window = SyncIssuesWindow(self.mdbx, app=self)
 
         # ------------- populate context menu -------------------
 
@@ -306,11 +305,10 @@ class MaestralGui(SystemTrayApp):
         self.settings_window.raise_()
 
     def on_sync_issues_clicked(self, widget: toga.Widget) -> None:
-        self.sync_issues_window.raise_()
+        SyncIssuesWindow(self.mdbx, app=self).raise_()
 
     def on_rebuild_clicked(self, widget: toga.Widget) -> None:
-        self.rebuild_dialog = RebuildIndexDialog(self.mdbx, app=self)
-        self.rebuild_dialog.raise_()
+        RebuildIndexDialog(self.mdbx, app=self).raise_()
 
     # ==== other callbacks  ==============================================================
 
@@ -420,8 +418,8 @@ class MaestralGui(SystemTrayApp):
 
         if not errs:
             return
-        else:
-            self.mdbx.clear_maestral_errors()
+
+        self.mdbx.clear_maestral_errors()
 
         self.set_icon(ERROR)
         self.item_pause.label = self.RESUME_TEXT
