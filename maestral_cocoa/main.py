@@ -119,7 +119,7 @@ class MaestralGui(SystemTrayApp):
             self._cached_status = status
 
     @async_call
-    def refresh_gui(self, interval: float = 0.5) -> None:
+    def periodic_refresh_gui(self, interval: float = 1) -> None:
 
         while True:
             if self.mdbx:
@@ -151,14 +151,14 @@ class MaestralGui(SystemTrayApp):
             self.set_icon(ERROR)
             self.mdbx = self._get_or_start_maestral_daemon(run=False)
             self.setup_ui_linked()
-            self.refresh_gui()
+            self.periodic_refresh_gui()
             res = DbxLocationDialog(self.mdbx, app=self).runModal()
             if res != 0:
                 self.exit(stop_daemon=True)
         else:
             self.mdbx = self._get_or_start_maestral_daemon()
             self.setup_ui_linked()
-            self.refresh_gui()
+            self.periodic_refresh_gui()
 
     def _get_or_start_maestral_daemon(self, run: bool = True) -> None:
 
