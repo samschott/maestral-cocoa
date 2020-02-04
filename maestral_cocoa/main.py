@@ -73,13 +73,13 @@ class MaestralGui(SystemTrayApp):
     START_TEXT = 'Start Syncing'
 
     icon_mapping = {
-        IDLE: 'idle',
-        SYNCING: 'syncing',
-        PAUSED: 'paused',
-        STOPPED: 'error',
-        DISCONNECTED: 'disconnected',
-        SYNC_ERROR: 'info',
-        ERROR: 'error',
+        IDLE: toga.Icon(TRAY_ICON_PATH.format('idle')),
+        SYNCING: toga.Icon(TRAY_ICON_PATH.format('syncing')),
+        PAUSED: toga.Icon(TRAY_ICON_PATH.format('paused')),
+        STOPPED: toga.Icon(TRAY_ICON_PATH.format('error')),
+        DISCONNECTED: toga.Icon(TRAY_ICON_PATH.format('disconnected')),
+        SYNC_ERROR: toga.Icon(TRAY_ICON_PATH.format('info')),
+        ERROR: toga.Icon(TRAY_ICON_PATH.format('error')),
     }
 
     config_name = 'maestral'
@@ -106,18 +106,17 @@ class MaestralGui(SystemTrayApp):
         self.autostart = AutoStart()
 
         self.menu = Menu()
-        self._cached_icon_name = 'disconnected'
+        self._cached_status = DISCONNECTED
         self._cached_recent_files = []
-        self.tray = StatusBarItem(toga.Icon(TRAY_ICON_PATH.format('disconnected')), menu=self.menu)
+        self.tray = StatusBarItem(self.icon_mapping.get(DISCONNECTED), menu=self.menu)
 
         self.setup_ui_unlinked()
         self.load_maestral()
 
     def set_icon(self, status: str) -> None:
-        name = self.icon_mapping.get(status, self.icon_mapping[SYNCING])
-        if name != self._cached_icon_name:
-            self.tray.icon = toga.Icon(TRAY_ICON_PATH.format(name))
-            self._cached_icon_name = name
+        if status != self._cached_status:
+            self.tray.icon = self.icon_mapping.get(status, self.icon_mapping[SYNCING])
+            self._cached_status = status
 
     @async_call
     def refresh_gui(self, interval: float = 0.5) -> None:
