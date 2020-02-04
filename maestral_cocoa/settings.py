@@ -25,7 +25,8 @@ class SettingsWindow(SettingsGui):
         self.mdbx = mdbx
         self.refresh = True
 
-        self.refresh_gui(interval=2)
+        self.refresh_gui()
+        self.periodic_refresh_gui(interval=2)
 
     # ==== callbacks to implement ========================================================
 
@@ -88,29 +89,33 @@ class SettingsWindow(SettingsGui):
     # ==== populate gui with data ========================================================
 
     @async_call
-    def refresh_gui(self, interval):
+    def periodic_refresh_gui(self, interval):
 
         while self.refresh:
-            # populate account info
-            self.set_profile_pic(self.mdbx.account_profile_pic_path)
-            self.set_account_info_from_cache()
-
-            # populate sync section
-            parent_dir = osp.split(self.mdbx.dropbox_path)[0]
-            self._update_combobox_location(parent_dir)
-
-            # populate app section
-            self.checkbox_autostart.state = ON if self.autostart.enabled else OFF
-            self.checkbox_notifications.state = ON if self.mdbx.get_conf('app', 'notifications') else OFF
-            self.checkbox_analytics.state = ON if self.mdbx.get_conf('app', 'analytics') else OFF
-            update_interval = self.mdbx.get_conf('app', 'update_notification_interval')
-            closest_key = min(
-                self._update_interval_mapping,
-                key=lambda x: abs(self._update_interval_mapping[x] - update_interval)
-            )
-            self.combobox_update_interval.value = closest_key
-
+            if self.visible:
+                self.refresh_gui()
             yield interval
+
+    def refresh_gui(self):
+
+        # populate account info
+        self.set_profile_pic(self.mdbx.account_profile_pic_path)
+        self.set_account_info_from_cache()
+
+        # populate sync section
+        parent_dir = osp.split(self.mdbx.dropbox_path)[0]
+        self._update_combobox_location(parent_dir)
+
+        # populate app section
+        self.checkbox_autostart.state = ON if self.autostart.enabled else OFF
+        self.checkbox_notifications.state = ON if self.mdbx.get_conf('app', 'notifications') else OFF
+        self.checkbox_analytics.state = ON if self.mdbx.get_conf('app', 'analytics') else OFF
+        update_interval = self.mdbx.get_conf('app', 'update_notification_interval')
+        closest_key = min(
+            self._update_interval_mapping,
+            key=lambda x: abs(self._update_interval_mapping[x] - update_interval)
+        )
+        self.combobox_update_interval.value = closest_key
 
     def set_account_info_from_cache(self):
 
@@ -123,14 +128,14 @@ class SettingsWindow(SettingsGui):
         if acc_space_usage_type == 'team':
             acc_space_usage += ' (Team)'
 
-        self.label_name.text = acc_display_name
-
         if acc_type is not '':
             acc_type_text = ', Dropbox {0}'.format(acc_type.capitalize())
         else:
             acc_type_text = ''
+
+        self.label_name.text = acc_display_name
         self.label_email.text = acc_mail + acc_type_text
-        self.label_usage = acc_space_usage
+        self.label_usage.text = acc_space_usage
 
     def on_close(self):
         self.refresh = False
