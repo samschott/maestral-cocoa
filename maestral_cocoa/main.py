@@ -9,6 +9,7 @@ Created on Wed Oct 31 16:23:13 2018
 import sys
 import os
 import os.path as osp
+import asyncio
 import logging
 import platform
 import time
@@ -119,7 +120,7 @@ class MaestralGui(SystemTrayApp):
             self._cached_status = status
 
     @async_call
-    def periodic_refresh_gui(self, interval: float = 1) -> None:
+    async def periodic_refresh_gui(self, interval: float = 0.5) -> None:
 
         while True:
             if self.mdbx:
@@ -127,7 +128,7 @@ class MaestralGui(SystemTrayApp):
                 self.update_recent_files()
                 self.update_error()
 
-            yield interval
+            await asyncio.sleep(interval)
 
     def load_maestral(self) -> None:
 

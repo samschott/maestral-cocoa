@@ -1,4 +1,5 @@
 import os.path as osp
+import asyncio
 
 from .utils import async_call, run_maestral_async, alert_sheet
 from .private.constants import ON, OFF
@@ -89,12 +90,12 @@ class SettingsWindow(SettingsGui):
     # ==== populate gui with data ========================================================
 
     @async_call
-    def periodic_refresh_gui(self, interval=2):
+    async def periodic_refresh_gui(self, interval=2):
 
         while self.refresh:
             if self.visible:
                 self.refresh_gui()
-            yield interval
+            await asyncio.sleep(interval)
 
     def refresh_gui(self):
 

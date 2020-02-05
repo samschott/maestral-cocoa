@@ -6,6 +6,7 @@ Created on Wed Oct 31 16:23:13 2018
 @author: samschott
 """
 import os.path as osp
+import asyncio
 import urllib.parse
 
 import toga
@@ -103,13 +104,13 @@ class SyncIssuesWindow(Window):
         self.center()
 
     @async_call
-    def periodic_refresh_gui(self, interval=1):
+    async def periodic_refresh_gui(self, interval=1):
 
         while self.refresh:
             if self.visible:
                 self.refresh_gui()
 
-            yield interval
+            await asyncio.sleep(interval)
 
     def refresh_gui(self):
 
