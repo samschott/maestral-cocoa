@@ -296,7 +296,7 @@ def alert(title, message, details=None, details_title='Traceback', button_names=
 
 # ==== async calls =======================================================================
 
-default_executer = ThreadPoolExecutor(10)
+default_executor = ThreadPoolExecutor(10)
 
 
 async def func_with_cleanup(func, *args, **kwargs):
@@ -345,7 +345,7 @@ def async_call(func):
 
 def run_async(func, *args):
     loop = asyncio.get_event_loop()
-    return loop.run_in_executor(default_executer, func, *args)
+    return loop.run_in_executor(default_executor, func, *args)
 
 
 def run_maestral_async(config_name, func_name, *args):
@@ -356,4 +356,4 @@ def run_maestral_async(config_name, func_name, *args):
             return m_func(*inner_args)
 
     loop = asyncio.get_event_loop()
-    return loop.run_in_executor(default_executer, func, *args)
+    return loop.run_in_executor(default_executor, func, *args)

@@ -29,7 +29,7 @@ class ExcludedFoldersDialog(ExcludedFoldersGui):
 
         self.get_changed_folders(self.fs_source)
 
-        logger.debug(f'new excluded folers: {self.excluded_folders}')
+        logger.debug(f'new excluded folders: {self.excluded_folders}')
         self.mdbx.set_excluded_folders(self.excluded_folders)
 
     def get_changed_folders(self, parent):

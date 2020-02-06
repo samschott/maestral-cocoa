@@ -23,7 +23,7 @@ from .utils import clear_background, async_call, run_async, alert_sheet
 # in the following cases:
 #
 #  - NSAlert is to static / inflexible to achieve our goal (see RelinkDialog, Unlink).
-#  - We want to show a dilaog from a async widget callback: this currently causes trouble
+#  - We want to show a dialog from a async widget callback: this currently causes trouble
 #    with Toga's handling of the event loop.
 #  - We want to keep the event loop running while showing the dialog *and* we cannot
 #    use an NSAlert as sheet.
@@ -145,7 +145,7 @@ class ProgressDialog(Dialog):
     def __init__(self, msg_title='Progress', icon=None, callback=None, app=None):
 
         self.progress_bar = toga.ProgressBar(
-            running=False, max=0,
+            max=0,
             style=Pack(width=self.CONTENT_WIDTH, padding=(0, 0, 10, 0))
         )
         self.progress_bar.start()
@@ -160,7 +160,7 @@ class ProgressDialog(Dialog):
 
 
 class DetailedDialog(Dialog):
-    """A generic dialog following cocoa NSAlert style, inlcuding a scroll view to
+    """A generic dialog following cocoa NSAlert style, including a scroll view to
     display detailed text."""
 
     WINDOW_WIDTH = 650
@@ -217,7 +217,7 @@ class UpdateDialog(Dialog):
         )
 
         label = Label(
-            'Realese Notes',
+            'Release Notes',
             style=Pack(width=self.CONTENT_WIDTH, padding_bottom=10, font_size=12, font_weight=BOLD)
         )
         clear_background(label)
@@ -304,7 +304,7 @@ class RelinkDialog(Window):
             linebreak_mode=WORD_WRAP,
             style=Pack(width=self.CONTENT_WIDTH, padding_bottom=10, font_size=12, flex=1)
         )
-        self.wesbsite_button = FollowLinkButton(
+        self.website_button = FollowLinkButton(
             label='Retrieve Token', url=url, style=Pack(padding_bottom=10)
         )
         self.token_field = toga.TextInput(
@@ -325,7 +325,7 @@ class RelinkDialog(Window):
             children=[
                 self.msg_title,
                 self.info,
-                self.wesbsite_button,
+                self.website_button,
                 self.token_field,
                 self.dialog_buttons,
             ],
@@ -369,7 +369,7 @@ class RelinkDialog(Window):
             self.auth_session.save_creds()
             alert_sheet(
                 window=self,
-                title='Relink successfull!',
+                title='Relink successful!',
                 message='Click OK to restart.',
                 callback=self.app.restart,
                 icon=self.app.icon,

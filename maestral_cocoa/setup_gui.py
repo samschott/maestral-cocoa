@@ -127,7 +127,7 @@ class SetupDialogGui(Window):
         # ==== exclude folders page ======================================================
 
         label3 = Label(
-            text=('Please select which folders to sync below. The inital download may '
+            text=('Please select which folders to sync below. The initial download may '
                   'take a while, depending on the size of your Dropbox.'),
             linebreak_mode=WORD_WRAP,
             style=Pack(width=self.CONTENT_WIDTH, padding=(20, 0, 20, 0))

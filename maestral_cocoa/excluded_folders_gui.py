@@ -62,14 +62,14 @@ class Node:
 
     def _init_selected(self):
 
-        excluded_folers = getattr(self.mdbx, 'excluded_folders', [])  # provision for self.mdbx == None
+        excluded_folders = getattr(self.mdbx, 'excluded_folders', [])  # provision for self.mdbx == None
 
         # get included state from current list
-        if self.path.lower() in excluded_folers:
+        if self.path.lower() in excluded_folders:
             self._original_state = OFF   # item is excluded
-        elif any(is_child(self.path.lower(), f) for f in excluded_folers):
+        elif any(is_child(self.path.lower(), f) for f in excluded_folders):
             self._original_state = OFF  # item's parent is excluded
-        elif any(is_child(f, self.path.lower()) for f in excluded_folers):
+        elif any(is_child(f, self.path.lower()) for f in excluded_folders):
             self._original_state = MIXED  # some of item's children are excluded
         else:
             self._original_state = ON  # item is fully included
@@ -81,16 +81,16 @@ class Node:
             self.included.state = self._original_state
 
     def _on_selected_pressed(self, widget):
-        self._propage_selection_to_children(self.included.state)
-        self._propage_selection_to_parent(self.included.state)
+        self._propagate_selection_to_children(self.included.state)
+        self._propagate_selection_to_parent(self.included.state)
 
-    def _propage_selection_to_children(self, state):
+    def _propagate_selection_to_children(self, state):
         if state is not MIXED and len(self._children) > 0:
             for child in self._children:
                 child.included.state = state
-                child._propage_selection_to_children(state)
+                child._propagate_selection_to_children(state)
 
-    def _propage_selection_to_parent(self, state):
+    def _propagate_selection_to_parent(self, state):
         # propagate to parent if checked or unchecked
         if self.parent:
             # get minimum of all other children's check state
@@ -100,16 +100,16 @@ class Node:
             new_parent_state = max([checkstate_other_children, MIXED])
             self.parent.included.state = new_parent_state
             # tell the parent to propagate its own state upwards
-            self.parent._propage_selection_to_parent(state)
+            self.parent._propagate_selection_to_parent(state)
 
     @async_call
     async def _load_children_async(self):
 
         entries = await run_maestral_async(self.mdbx.config_name, 'list_folder', self.path)
 
-        placeholdres = [c for c in self._children if isinstance(c, PlaceholderNode)]
+        placeholders = [c for c in self._children if isinstance(c, PlaceholderNode)]
 
-        for ph in placeholdres:
+        for ph in placeholders:
             self.notify('remove', item=ph)
 
         if entries is False:
@@ -155,7 +155,7 @@ class PlaceholderNode:
     def sort(self, *args, **kwargs):
         pass
 
-    def _propage_selection_to_parent(self, state):
+    def _propagate_selection_to_parent(self, state):
         pass
 
 
@@ -169,7 +169,7 @@ class FileSystemSource(Node, Source):
         self.gui_parent = gui_parent
         self.included.label = 'Select all'
 
-    def _propage_selection_to_parent(self, state):
+    def _propagate_selection_to_parent(self, state):
         if hasattr(self.gui_parent, 'on_fs_selection_changed'):
             self.gui_parent.on_fs_selection_changed()
 
@@ -213,7 +213,7 @@ class ExcludedFoldersGui(Window):
         # Outermost box
         outer_box = toga.Box(
             children=[
-                toga.Label('Please select which fodlers to sync', style=Pack(padding=20)),
+                toga.Label('Please select which folders to sync', style=Pack(padding=20)),
                 self.tree,
                 self.fs_source.included,
                 self.dialog_button,
@@ -240,24 +240,3 @@ class ExcludedFoldersGui(Window):
 
     def update_folders(self):
         pass
-
-
-def main():
-
-    from maestral.sync.daemon import get_maestral_proxy
-
-    class App(toga.App):
-
-        def startup(self):
-
-            self.mdbx = get_maestral_proxy('private')
-            window = ExcludedFoldersGui(self.mdbx, parent=None)
-            window.show()
-
-            return window
-
-    return App('Maestral Folder Selection GUI', 'com.samschott.maestral')
-
-
-if __name__ == '__main__':
-    main().main_loop()

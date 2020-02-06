@@ -128,6 +128,6 @@ class RebuildIndexDialog(Window):
         self.rebuild_running = False
         self.progress_bar.stop()
 
-        self.status_label.text = 'Rebuiling complete'
+        self.status_label.text = 'Rebuilding complete'
         self.dialog_buttons[self.REBUILD_BTN].enabled = True
         self.dialog_buttons[self.REBUILD_BTN].label = self.CLOSE_BTN
