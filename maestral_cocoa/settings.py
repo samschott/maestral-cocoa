@@ -1,6 +1,8 @@
 import os.path as osp
 import asyncio
 
+from maestral.utils.notify import FILECHANGE, SYNCISSUE
+
 from .utils import async_call, run_maestral_async, alert_sheet
 from .private.constants import ON, OFF
 from .settings_gui import SettingsGui
@@ -81,7 +83,8 @@ class SettingsWindow(SettingsGui):
             self.autostart.enable()
 
     def on_notifications_clicked(self, widget):
-        self.mdbx.set_conf('app', 'notifications', widget.state == ON)
+        level_num = FILECHANGE if widget.state == ON else SYNCISSUE
+        self.mdbx.set_conf('app', 'notification_level', level_num)
 
     def on_analytics_clicked(self, widget):
         self.mdbx.set_conf('app', 'analytics', widget.state == ON)
@@ -109,7 +112,7 @@ class SettingsWindow(SettingsGui):
 
         # populate app section
         self.checkbox_autostart.state = ON if self.autostart.enabled else OFF
-        self.checkbox_notifications.state = ON if self.mdbx.get_conf('app', 'notifications') else OFF
+        self.checkbox_notifications.state = ON if self.mdbx.get_conf('app', 'notification_level') == FILECHANGE else OFF
         self.checkbox_analytics.state = ON if self.mdbx.get_conf('app', 'analytics') else OFF
         update_interval = self.mdbx.get_conf('app', 'update_notification_interval')
         closest_key = min(
