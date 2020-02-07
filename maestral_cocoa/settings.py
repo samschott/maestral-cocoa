@@ -36,7 +36,18 @@ class SettingsWindow(SettingsGui):
     @async_call
     async def on_dbx_location_selected(self, path):
         new_path = osp.join(path, self.mdbx.get_conf('main', 'default_dir_name'))
-        await run_maestral_async(self.mdbx.config_name, 'move_dropbox_directory', new_path)
+        try:
+            self.mdbx.move_dropbox_directory(new_path)
+        except OSError:
+            alert_sheet(
+                window=self,
+                title='Could not move folder',
+                message=('Please make sure that you have permissions '
+                         'to write to the selected location.'),
+                button_labels=('Ok',),
+                icon=self.app.icon,
+            )
+            self.mdbx.resume_sync()
 
     def on_folder_selection_pressed(self, widget):
         ExcludedFoldersDialog(self.mdbx, app=self.app).show_as_sheet(self)

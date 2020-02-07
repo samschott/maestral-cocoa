@@ -179,10 +179,20 @@ class SetupDialog(SetupDialogGui):
 
     def _continue(self):
 
-        self.mdbx.create_dropbox_directory(path=self._chosen_dropbox_folder, overwrite=False)
-
-        # switch to next page
-        self.go_forward()
+        try:
+            self.mdbx.create_dropbox_directory(path=self._chosen_dropbox_folder)
+        except OSError:
+            alert_sheet(
+                window=self,
+                title='Could not create folder',
+                message=('Please make sure that you have permissions '
+                         'to write to the selected location.'),
+                button_labels=('Ok',),
+                icon=self.app.icon,
+            )
+        else:
+            # switch to next page
+            self.go_forward()
 
     def on_folders_excluded(self, btn_name):
 
