@@ -25,7 +25,7 @@ you have pip >= 9.0 and setuptools >= 24.2, then try again:
 
 
 setup(
-    name='maestral_cocoa',
+    name='maestral-cocoa',
     version=__version__,
     description='Open-source Dropbox client for macOS and Linux.',
     url='https://github.com/SamSchott/maestral',
@@ -51,7 +51,7 @@ setup(
     ],
     zip_safe=False,
     entry_points={
-      'console_scripts': ['maestral_cocoa=maestral_cocoa.main:run'],
+      'console_scripts': ['maestral_cocoa=maestral_cocoa.main:run_from_console'],
     },
     python_requires='>=3.6',
     classifiers=[
