@@ -405,11 +405,21 @@ class Menu:
         for item in items:
             self._impl.add_item(item._impl)
 
+    def insert(self, index, item):
+        """Add in MenuItems to the menu."""
+        if item not in self._items:
+            self._items.insert(index, item)
+            self._impl.insert_item(index, item._impl)
+
     def remove(self, *items):
         """Remove MenuItems from the menu."""
         for item in items:
-            self._items.remove(item)
-            self._impl.remove_item(item._impl)
+            try:
+                self._items.remove(item)
+            except ValueError:
+                pass
+            else:
+                self._impl.remove_item(item._impl)
 
     def clear(self):
         """Clear the menu (removes all items)"""

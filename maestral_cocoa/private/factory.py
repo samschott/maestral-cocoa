@@ -335,6 +335,9 @@ class Menu:
     def add_item(self, item_impl):
         self.native.addItem(item_impl.native)
 
+    def insert_item(self, index, item_impl):
+        self.native.insertItem(item_impl.native, atIndex=index)
+
     def remove_item(self, item_impl):
         self.native.removeItem(item_impl.native)
 
