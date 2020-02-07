@@ -1,3 +1,1 @@
-### v0.0.1
-
-First version.re
+For release notes, please refer to [Maestral](https://www.github.com/samschott/maestral).
