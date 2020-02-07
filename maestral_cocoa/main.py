@@ -14,7 +14,7 @@ import logging
 import platform
 import time
 from subprocess import Popen
-from typing import Dict
+from datetime import datetime, timedelta
 
 # external packages
 import click
@@ -25,7 +25,7 @@ import toga
 from toga.style.pack import Pack, FONT_SIZE_CHOICES
 
 # maestral modules
-from maestral.config.main import MaestralConfig, UserConfig
+from maestral.config.main import MaestralConfig
 from maestral.utils import set_keyring_backend
 from maestral.constants import (
     IDLE, SYNCING, PAUSED, STOPPED, DISCONNECTED, SYNC_ERROR, ERROR,
@@ -114,13 +114,13 @@ class MaestralGui(SystemTrayApp):
         self.setup_ui_unlinked()
         self.load_maestral()
 
-    def set_icon(self, status: str) -> None:
+    def set_icon(self, status: str):
         if status != self._cached_status:
             self.tray.icon = self.icon_mapping.get(status, self.icon_mapping[SYNCING])
             self._cached_status = status
 
     @async_call
-    async def periodic_refresh_gui(self, interval: float = 0.5) -> None:
+    async def periodic_refresh_gui(self, interval=0.5):
 
         while True:
             if self.mdbx:
@@ -130,7 +130,7 @@ class MaestralGui(SystemTrayApp):
 
             await asyncio.sleep(interval)
 
-    def load_maestral(self) -> None:
+    def load_maestral(self):
 
         pending_link = not _is_linked(self._conf)
         pending_dbx_folder = not os.path.isdir(self._conf.get("main", "path"))
@@ -161,7 +161,7 @@ class MaestralGui(SystemTrayApp):
             self.setup_ui_linked()
             self.periodic_refresh_gui()
 
-    def _get_or_start_maestral_daemon(self, run: bool = True) -> None:
+    def _get_or_start_maestral_daemon(self, run=True):
 
         pid = get_maestral_pid(self.config_name)
         if pid:
@@ -185,7 +185,7 @@ class MaestralGui(SystemTrayApp):
 
         return get_maestral_proxy(self.config_name)
 
-    def setup_ui_unlinked(self) -> None:
+    def setup_ui_unlinked(self):
 
         self.menu.clear()
 
@@ -209,7 +209,7 @@ class MaestralGui(SystemTrayApp):
 
         self.menu.add(item_folder, item_website, s0, item_status, s1, item_login, item_help, s2, item_quit)
 
-    def setup_ui_linked(self) -> None:
+    def setup_ui_linked(self):
 
         if not self.mdbx:
             return
@@ -280,16 +280,16 @@ class MaestralGui(SystemTrayApp):
     # ==== callbacks menu items ==========================================================
 
     @staticmethod
-    def on_website_clicked(widget: toga.Widget) -> None:
+    def on_website_clicked(widget: toga.Widget):
         """Open the Dropbox website."""
         click.launch('https://www.dropbox.com/')
 
     @staticmethod
-    def on_help_clicked(widget: toga.Widget) -> None:
+    def on_help_clicked(widget: toga.Widget):
         """Open the Dropbox help website."""
         click.launch('https://dropbox.com/help')
 
-    def on_start_stop_clicked(self, widget: toga.Widget) -> None:
+    def on_start_stop_clicked(self, widget: toga.Widget):
         """Pause / resume syncing on menu item clicked."""
         if self.item_pause.label == self.PAUSE_TEXT:
             self.mdbx.pause_sync()
@@ -301,20 +301,20 @@ class MaestralGui(SystemTrayApp):
             self.mdbx.start_sync()
             self.item_pause.label = self.PAUSE_TEXT
 
-    def on_settings_clicked(self, widget: toga.Widget) -> None:
+    def on_settings_clicked(self, widget: toga.Widget):
         self.settings_window.refresh = True
         self.settings_window.raise_()
 
-    def on_sync_issues_clicked(self, widget: toga.Widget) -> None:
+    def on_sync_issues_clicked(self, widget: toga.Widget):
         SyncIssuesWindow(self.mdbx, app=self).raise_()
 
-    def on_rebuild_clicked(self, widget: toga.Widget) -> None:
+    def on_rebuild_clicked(self, widget: toga.Widget):
         RebuildIndexDialog(self.mdbx, app=self).raise_()
 
     # ==== other callbacks  ==============================================================
 
     @async_call
-    async def auto_check_for_updates(self) -> None:
+    async def auto_check_for_updates(self):
 
         last_update_check = self.mdbx.get_conf('app', 'update_notification_last')
         interval = self.mdbx.get_conf('app', 'update_notification_interval')
@@ -327,7 +327,7 @@ class MaestralGui(SystemTrayApp):
             self.mdbx.set_conf('app', 'update_notification_last', time.time())
             self.show_update_dialog(res['latest_release'], res['release_notes'])
 
-    async def on_check_for_updates_clicked(self, widget: toga.Widget) -> None:
+    async def on_check_for_updates_clicked(self, widget: toga.Widget):
 
         progress = ProgressDialog('Checking for Updates', app=self)
         progress.raise_()
@@ -347,7 +347,7 @@ class MaestralGui(SystemTrayApp):
             message = 'Maestral v{} is the newest version available.'.format(res['latest_release'])
             Dialog('You’re up-to-date!', message, icon=self.icon).raise_()
 
-    def show_update_dialog(self, latest_release: str, release_notes: str) -> None:
+    def show_update_dialog(self, latest_release: str, release_notes: str):
 
         html_notes = markdown2.markdown(release_notes)
         html_notes = html_notes.replace('<h4>', '<br/> <h4>')
@@ -359,7 +359,7 @@ class MaestralGui(SystemTrayApp):
 
     # ==== periodic updates ==============================================================
 
-    def update_status(self) -> None:
+    def update_status(self):
         """Change icon according to status."""
 
         n_sync_errors = len(self.mdbx.sync_errors)
@@ -392,7 +392,7 @@ class MaestralGui(SystemTrayApp):
 
             self.item_status.label = status
 
-    def update_recent_files(self) -> None:
+    def update_recent_files(self):
         """Update menu with list of recently changed files."""
 
         if self.menu.visible:
@@ -442,13 +442,13 @@ class MaestralGui(SystemTrayApp):
         else:
             self._exec_error_dialog(err)
 
-    def _exec_dbx_location_dialog(self) -> None:
+    def _exec_dbx_location_dialog(self):
         DbxLocationDialog(self.mdbx, app=self).raise_()
 
-    def _exec_relink_dialog(self, reason: int) -> None:
+    def _exec_relink_dialog(self, reason):
         RelinkDialog(self.mdbx, reason, app=self).raise_()
 
-    def _exec_error_dialog(self, err: Dict[str, str]) -> None:
+    def _exec_error_dialog(self, err):
 
         title = 'An unexpected error occurred'
 
@@ -496,7 +496,7 @@ class MaestralGui(SystemTrayApp):
             if auto_share_checkbox:
                 self.mdbx.set_conf('app', 'analytics', True)
 
-    def exit(self, *args, stop_daemon: bool = False) -> None:
+    def exit(self, *args, stop_daemon=False):
         """Quits Maestral.
 
         :param bool stop_daemon: If ``True``, the sync daemon will be stopped when
@@ -512,7 +512,7 @@ class MaestralGui(SystemTrayApp):
 
         super().exit()
 
-    def restart(self, *args) -> None:
+    def restart(self, *args):
         """Restarts the Maestral GUI and sync daemon."""
 
         logger.info('Restarting...')
@@ -525,7 +525,7 @@ class MaestralGui(SystemTrayApp):
         self.exit(stop_daemon=True)
 
 
-def _is_linked(conf: UserConfig) -> bool:
+def _is_linked(conf):
     """
     Checks if auth key has been saved.
 
@@ -543,7 +543,7 @@ def _is_linked(conf: UserConfig) -> bool:
         raise KeyringLocked(info)
 
 
-def run(config_name: str = 'maestral') -> MaestralGui:
+def run(config_name='maestral') -> MaestralGui:
 
     MaestralGui.config_name = config_name
 
