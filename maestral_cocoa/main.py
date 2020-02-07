@@ -126,6 +126,7 @@ class MaestralGui(SystemTrayApp):
             if self.mdbx:
                 self.update_status()
                 self.update_recent_files()
+                self.update_snoozed()
                 self.update_error()
 
             await asyncio.sleep(interval)
@@ -237,14 +238,29 @@ class MaestralGui(SystemTrayApp):
 
         s2 = MenuItemSeparator()
 
-        item_settings = MenuItem('Preferences...', action=self.on_settings_clicked)
-        self.item_updates = MenuItem('Check for Updates...', action=self.on_check_for_updates_clicked)
-        item_help = MenuItem('Help Center', action=self.on_help_clicked)
+        self.item_snooze = MenuItem('Snooze Notifications')
 
-        s3 = MenuItemSeparator()
+        def snooze_for(minutes):
+            self.mdbx.notification_snooze = minutes
+
+        self.item_snooze30 = MenuItem('For the next 30 minutes', action=lambda s: snooze_for(30))
+        self.item_snooze60 = MenuItem('For the next hour', action=lambda s: snooze_for(60))
+        self.item_snooze480 = MenuItem('For the next 8 hours', action=lambda s: snooze_for(480))
+
+        self.menu_snooze = Menu(items=[self.item_snooze30, self.item_snooze60, self.item_snooze480])
+        self.item_snooze.submenu = self.menu_snooze
+
+        self.item_resume_notifications = MenuItem('Turn on notifications', action=lambda s: snooze_for(0))
+        self.separator_snooze = MenuItemSeparator()
 
         self.item_sync_issues = MenuItem('Show Sync Issues...', action=self.on_sync_issues_clicked)
         item_rebuild = MenuItem('Rebuild index...', action=self.on_rebuild_clicked)
+
+        s3 = MenuItemSeparator()
+
+        item_settings = MenuItem('Preferences...', action=self.on_settings_clicked)
+        self.item_updates = MenuItem('Check for Updates...', action=self.on_check_for_updates_clicked)
+        item_help = MenuItem('Help Center', action=self.on_help_clicked)
 
         s4 = MenuItemSeparator()
 
@@ -264,12 +280,13 @@ class MaestralGui(SystemTrayApp):
             self.item_pause,
             self.item_recent_files,
             s2,
+            self.item_snooze,
+            self.item_sync_issues,
+            item_rebuild,
+            s3,
             item_settings,
             self.item_updates,
             item_help,
-            s3,
-            self.item_sync_issues,
-            item_rebuild,
             s4,
             item_quit,
         )
@@ -414,7 +431,21 @@ class MaestralGui(SystemTrayApp):
 
                 self._cached_recent_files = recent_files
 
-    def update_error(self) -> None:
+    def update_snoozed(self):
+        minutes = self.mdbx.notification_snooze
+
+        if minutes > 0:
+            eta = datetime.now() + timedelta(minutes=minutes)
+
+            self.item_snooze.label = 'Notifications snoozed until %s' % eta.strftime('%H:%M')
+            self.menu_snooze.insert(0, self.separator_snooze)
+            self.menu_snooze.insert(0, self.item_resume_notifications)
+        else:
+            self.item_snooze.label = 'Snooze Notifications'
+            self.menu_snooze.remove(self.item_resume_notifications)
+            self.menu_snooze.remove(self.separator_snooze)
+
+    def update_error(self):
         errs = self.mdbx.maestral_errors
 
         if not errs:
