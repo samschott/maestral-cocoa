@@ -36,10 +36,10 @@ setup(
     long_description_content_type='text/markdown',
     packages=find_packages(),
     package_data={
-            'maestral_cocoa': [
-                    'resources/*',
-                    ],
-            },
+        'maestral_cocoa': [
+            'resources/*',
+            ],
+        },
     setup_requires=['wheel'],
     install_requires=[
         'bugsnag',
