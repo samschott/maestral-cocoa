@@ -229,6 +229,12 @@ class Selection(TogaSelection):
             item = item[1]
         self.native.selectItemWithTitle(item)
 
+    def rehint(self):
+        content_size = self.native.intrinsicContentSize()
+        self.interface.intrinsic.height = content_size.height + 1  # increase height by 1 px for better image alignment
+        self.interface.intrinsic.width = at_least(max(self.interface.MIN_WIDTH, content_size.width))
+
+
 # ==== layout widgets ====================================================================
 
 class VibrantBox(Widget):
