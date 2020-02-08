@@ -11,7 +11,7 @@ import urllib.parse
 
 import toga
 from toga.style.pack import Pack
-from toga.constants import ROW, COLUMN, BOLD
+from toga.constants import ROW, COLUMN
 
 from .utils import async_call, clear_background
 from .private.widgets import Label, FollowLinkButton, VibrantBox, IconForPath, Window
@@ -41,14 +41,14 @@ class SyncIssueBox(toga.Box):
         icon = IconForPath(self.sync_err['local_path'])
         image_view = toga.ImageView(
             image=icon,
-            style=Pack(width=ICON_SIZE, height=ICON_SIZE, padding=(5, 10, 0, 0), flex=1),
+            style=Pack(width=ICON_SIZE, height=ICON_SIZE, padding=(0, 10, 0, 0), flex=1),
         )
         image_view._impl.native.imageAlignment = 3
 
         path_label = Label(
             osp.basename(self.sync_err['local_path']),
             linebreak_mode=TRUNCATE_HEAD,
-            style=Pack(padding_bottom=PADDING, width=text_width, font_weight=BOLD)
+            style=Pack(padding_bottom=PADDING/2, width=text_width)
         )
         error_label = Label(
             self.sync_err["title"] + ":\n" + self.sync_err["message"],
@@ -61,9 +61,13 @@ class SyncIssueBox(toga.Box):
             url=self.sync_err["local_path"],
             enabled=osp.exists(self.sync_err["local_path"]),
             locate=True,
-            style=Pack(padding_right=10),
+            style=Pack(padding_right=10, font_size=12),
         )
-        link_dbx = FollowLinkButton('Show Online', url=dbx_address)
+        link_dbx = FollowLinkButton(
+            'Show Online',
+            url=dbx_address,
+            style=Pack(font_size=12)
+        )
 
         link_box = toga.Box(children=[link_local, link_dbx], style=Pack(direction=ROW))
         info_box = toga.Box(children=[path_label, error_label, link_box], style=Pack(direction=COLUMN))
