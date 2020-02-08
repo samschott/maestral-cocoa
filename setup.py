@@ -44,7 +44,6 @@ setup(
     install_requires=[
         'bugsnag',
         'click',
-        'keyring>=19.0.0',
         'maestral',
         'markdown2',
         'toga',

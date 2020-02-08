@@ -19,14 +19,12 @@ from datetime import datetime, timedelta
 # external packages
 import click
 import markdown2
-import keyring
-from keyring.errors import KeyringLocked
 import toga
 from toga.style.pack import Pack, FONT_SIZE_CHOICES
 
 # maestral modules
 from maestral.config.main import MaestralConfig
-from maestral.utils import set_keyring_backend
+from maestral.utils import pending_link, pending_dropbox_folder
 from maestral.constants import (
     IDLE, SYNCING, PAUSED, STOPPED, DISCONNECTED, SYNC_ERROR, ERROR,
 )
@@ -55,15 +53,12 @@ from maestral_cocoa.resources import APP_ICON_PATH, TRAY_ICON_PATH
 
 
 Pack.validated_property('font_size', choices=FONT_SIZE_CHOICES, initial=13)
-set_keyring_backend()
 logger = logging.getLogger(__name__)
 
 IS_MACOS_BUNDLE = getattr(sys, 'frozen', False)
 
 
 # TODO:
-#  - fix alignment of combobox
-#  - test unexpected error notifications
 #  - fix memory leak
 
 class MaestralGui(SystemTrayApp):
@@ -133,10 +128,7 @@ class MaestralGui(SystemTrayApp):
 
     def load_maestral(self):
 
-        pending_link = not _is_linked(self._conf)
-        pending_dbx_folder = not os.path.isdir(self._conf.get("main", "path"))
-
-        if pending_link:
+        if pending_link(self.config_name):
             from .setup import SetupDialog
             logger.info('Setting up Maestral...')
             res = SetupDialog(self.config_name, app=self).runModal()
@@ -149,7 +141,7 @@ class MaestralGui(SystemTrayApp):
             else:
                 logger.info('Setup aborted by user.')
                 self.exit(stop_daemon=True)
-        elif pending_dbx_folder:
+        elif pending_dropbox_folder(self.config_name):
             self.set_icon(ERROR)
             self.mdbx = self._get_or_start_maestral_daemon(run=False)
             self.setup_ui_linked()
@@ -554,24 +546,6 @@ class MaestralGui(SystemTrayApp):
 
         # quit Maestral
         self.exit(stop_daemon=True)
-
-
-def _is_linked(conf):
-    """
-    Checks if auth key has been saved.
-
-    :raises: ``KeyringLocked`` if the system keyring cannot be accessed.
-    """
-    account_id = conf.get('account', 'account_id')
-    try:
-        if account_id == '':
-            access_token = None
-        else:
-            access_token = keyring.get_password('Maestral', account_id)
-        return access_token
-    except KeyringLocked:
-        info = 'Please make sure that your keyring is unlocked and restart Maestral.'
-        raise KeyringLocked(info)
 
 
 def run(config_name='maestral') -> MaestralGui:
