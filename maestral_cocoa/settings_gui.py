@@ -160,11 +160,14 @@ class SettingsGui(Window):
             )
 
     def _on_dbx_location_selected(self, paths):
+
         if len(paths) > 0:
             path = paths[0]
 
             self._update_combobox_location(path)
             self.on_dbx_location_selected(path)
+        else:
+            self.combobox_dbx_location.value = self.combobox_dbx_location.items[0]
 
     def _update_combobox_location(self, path):
         if path != self._cached_dbx_location:
