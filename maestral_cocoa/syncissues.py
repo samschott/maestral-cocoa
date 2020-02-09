@@ -33,7 +33,7 @@ class SyncIssueBox(toga.Box):
         style = Pack(width=CONTENT_WIDTH, direction=COLUMN)
         super().__init__(style=style)
 
-        text_width = CONTENT_WIDTH - PADDING - ICON_SIZE
+        text_width = CONTENT_WIDTH - 15 - ICON_SIZE
 
         self.sync_err = sync_err
         dbx_address = self.dbx_address + urllib.parse.quote(self.sync_err["dbx_path"])
@@ -41,7 +41,7 @@ class SyncIssueBox(toga.Box):
         icon = IconForPath(self.sync_err['local_path'])
         image_view = toga.ImageView(
             image=icon,
-            style=Pack(width=ICON_SIZE, height=ICON_SIZE, padding=(0, 10, 0, 0), flex=1),
+            style=Pack(width=ICON_SIZE, height=ICON_SIZE, padding=(0, 12, 0, 3), flex=1),
         )
         image_view._impl.native.imageAlignment = 3
 
@@ -53,7 +53,7 @@ class SyncIssueBox(toga.Box):
         error_label = Label(
             self.sync_err["title"] + ":\n" + self.sync_err["message"],
             linebreak_mode=WORD_WRAP,
-            style=Pack(font_size=11, width=text_width, padding_bottom=5)
+            style=Pack(font_size=11, width=text_width, padding_bottom=PADDING/2)
         )
 
         link_local = FollowLinkButton(
@@ -61,7 +61,7 @@ class SyncIssueBox(toga.Box):
             url=self.sync_err["local_path"],
             enabled=osp.exists(self.sync_err["local_path"]),
             locate=True,
-            style=Pack(padding_right=10, font_size=12),
+            style=Pack(padding_right=PADDING, font_size=12),
         )
         link_dbx = FollowLinkButton(
             'Show Online',
