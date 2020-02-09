@@ -109,7 +109,7 @@ class MaestralGui(SystemTrayApp):
         self.setup_ui_unlinked()
         self.load_maestral()
 
-    def set_icon(self, status: str):
+    def set_icon(self, status):
         if status != self._cached_status:
             self.tray.icon = self.icon_mapping.get(status, self.icon_mapping[SYNCING])
             self._cached_status = status
@@ -192,7 +192,7 @@ class MaestralGui(SystemTrayApp):
 
         s1 = MenuItemSeparator()
 
-        item_login = MenuItem('Start on login', cheackable=True, action=lambda s: self.autostart.toggle())
+        item_login = MenuItem('Start on login', checkable=True, action=lambda s: self.autostart.toggle())
         item_login.checked = self.autostart.enabled
         item_help = MenuItem('Help Center', action=self.on_help_clicked)
 
@@ -289,16 +289,16 @@ class MaestralGui(SystemTrayApp):
     # ==== callbacks menu items ==========================================================
 
     @staticmethod
-    def on_website_clicked(widget: toga.Widget):
+    def on_website_clicked(widget):
         """Open the Dropbox website."""
         click.launch('https://www.dropbox.com/')
 
     @staticmethod
-    def on_help_clicked(widget: toga.Widget):
+    def on_help_clicked(widget):
         """Open the Dropbox help website."""
         click.launch('https://dropbox.com/help')
 
-    def on_start_stop_clicked(self, widget: toga.Widget):
+    def on_start_stop_clicked(self, widget):
         """Pause / resume syncing on menu item clicked."""
         if self.item_pause.label == self.PAUSE_TEXT:
             self.mdbx.pause_sync()
@@ -310,14 +310,14 @@ class MaestralGui(SystemTrayApp):
             self.mdbx.start_sync()
             self.item_pause.label = self.PAUSE_TEXT
 
-    def on_settings_clicked(self, widget: toga.Widget):
+    def on_settings_clicked(self, widget):
         self.settings_window.refresh = True
         self.settings_window.raise_()
 
-    def on_sync_issues_clicked(self, widget: toga.Widget):
+    def on_sync_issues_clicked(self, widget):
         SyncIssuesWindow(self.mdbx, app=self).raise_()
 
-    def on_rebuild_clicked(self, widget: toga.Widget):
+    def on_rebuild_clicked(self, widget):
         RebuildIndexDialog(self.mdbx, app=self).raise_()
 
     # ==== other callbacks  ==============================================================
@@ -336,7 +336,7 @@ class MaestralGui(SystemTrayApp):
             self.mdbx.set_conf('app', 'update_notification_last', time.time())
             self.show_update_dialog(res['latest_release'], res['release_notes'])
 
-    async def on_check_for_updates_clicked(self, widget: toga.Widget):
+    async def on_check_for_updates_clicked(self, widget):
 
         progress = ProgressDialog('Checking for Updates', app=self)
         progress.raise_()
@@ -356,7 +356,7 @@ class MaestralGui(SystemTrayApp):
             message = 'Maestral v{} is the newest version available.'.format(res['latest_release'])
             Dialog('You’re up-to-date!', message, icon=self.icon).raise_()
 
-    def show_update_dialog(self, latest_release: str, release_notes: str):
+    def show_update_dialog(self, latest_release, release_notes):
 
         html_notes = markdown2.markdown(release_notes)
         html_notes = html_notes.replace('<h4>', '<br/> <h4>')

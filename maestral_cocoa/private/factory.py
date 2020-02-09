@@ -7,7 +7,6 @@ Attribution-NonCommercial-NoDerivs 2.0 UK: England & Wales License.
 
 """
 import os.path as osp
-from travertino.size import at_least
 
 from toga import SECTION_BREAK
 from toga.platform import get_platform_factory
@@ -15,7 +14,7 @@ from toga_cocoa.libs import *
 from toga_cocoa.keys import toga_key, Key
 from toga_cocoa.app import App as TogaApp
 from toga_cocoa.widgets.base import Widget
-from toga_cocoa.widgets.switch import Switch as TogaSwitch
+from toga_cocoa.widgets.switch import Switch as TogaSwitch, at_least
 from toga_cocoa.widgets.label import Label as TogaLabel
 from toga_cocoa.widgets.button import Button as TogaButton
 from toga_cocoa.widgets.selection import Selection as TogaSelection
@@ -24,7 +23,7 @@ from toga_cocoa.factory import *
 
 from .constants import (
     WORD_WRAP, CHARACTER_WRAP, CLIP, TRUNCATE_HEAD, TRUNCATE_MIDDLE, TRUNCATE_TAIL,
-    NSButtonTypeMomentaryPushIn,NSFocusRingTypeNone, NSControlState,
+    NSButtonTypeMomentaryPushIn, NSFocusRingTypeNone, NSControlState,
     NSSquareStatusItemLength,
     ON, OFF, MIXED,
 )
@@ -67,7 +66,7 @@ class IconForPath:
 
 # ==== labels ============================================================================
 
-def _attributed_str_from_html(raw_html, font=None):
+def attributed_str_from_html(raw_html, font=None):
     """Converts html to a NSAttributed string using the system font family and color."""
 
     html_value = '<span style="font-family: \'{0}\'; font-size: {1}; color: {2}">{3}</span>'
@@ -99,7 +98,7 @@ class Label(TogaLabel):
 
     def create(self):
         super().create()
-        self.native.brawsBackground = False
+        self.native.drawsBackground = False
 
     def set_linebreak_mode(self, value):
         self.native.cell.lineBreakMode = self._toga_to_cocoa_linebreakmode[value]
@@ -135,7 +134,7 @@ class RichLabel(Widget):
         self.add_constraints()
 
     def set_html(self, value):
-        attr_str = _attributed_str_from_html(value, self.native.font)
+        attr_str = attributed_str_from_html(value, self.native.font)
         self.native.textStorage.setAttributedString(attr_str)
         self.rehint()
 
@@ -152,7 +151,7 @@ class RichMultilineTextInput(TogaMultilineTextInput):
     """A scrollable text view with html support."""
 
     def set_html(self, value):
-        attr_str = _attributed_str_from_html(value, self.text.font)
+        attr_str = attributed_str_from_html(value, self.text.font)
         self.text.textStorage.setAttributedString(attr_str)
 
 
@@ -183,8 +182,8 @@ class Switch(TogaSwitch):
     _to_cocoa = {OFF: 0, MIXED: -1, ON: 1}
     _to_toga = {0: OFF, -1: MIXED, 1: ON}
 
-    def __init__(self, interface):
-        super().__init__(interface)
+    def create(self):
+        super().create()
         self.native.allowsMixedState = True
         self.native.autoresizingMask = NSViewMaxYMargin | NSViewMaxYMargin
 

@@ -26,7 +26,7 @@ from .private.constants import (
     NSStackViewGravityBottom,
     NSUserInterfaceLayoutOrientationVertical
 )
-from .private.factory import NSMutableAttributedString, NSUTF8StringEncoding, _attributed_str_from_html
+from .private.factory import attributed_str_from_html
 
 
 NSAutoreleasePool = ObjCClass('NSAutoreleasePool')
@@ -222,7 +222,7 @@ def _construct_alert(title, message, details=None, details_title='Traceback',
         trace.editable = False
         trace.verticallyResizable = True
         trace.horizontallyResizable = True
-        attr_str = _attributed_str_from_html(details)
+        attr_str = attributed_str_from_html(details)
         trace.textStorage.setAttributedString(attr_str)
 
         scroll.documentView = trace

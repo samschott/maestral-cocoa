@@ -55,16 +55,16 @@ class VibrantBox(Widget):
         return self._material
 
     @material.setter
-    def material(self, matertial):
-        self._matrial = matertial
-        self._impl.set_material(matertial)
+    def material(self, material):
+        self._material = material
+        self._impl.set_material(material)
 
 
 # ==== buttons ===========================================================================
 
 class DialogButtons(toga.Box):
     """
-    A dialog button box. Buttons will be created from the given list of labels (defualts
+    A dialog button box. Buttons will be created from the given list of labels (defaults
     to ['Ok', 'Cancel']). If a callback ``on_press`` is provided, will be executed if any
     button is pressed, with the label of the respective button as an argument.
 
@@ -292,11 +292,11 @@ class MenuItem:
         submenu: A Menu to use as a submenu. It will become visible when this item is clicked.
         factory: A python module that is capable to return a implementation of this class with the same name. (optional & normally not needed).
     """
-    def __init__(self, label, icon=None, cheackable=False, action=None, submenu=None, factory=private_factory):
+    def __init__(self, label, icon=None, checkable=False, action=None, submenu=None, factory=private_factory):
         self.factory = factory
         self._impl = self.factory.MenuItem(interface=self)
 
-        self._cheackable = cheackable
+        self._checkable = checkable
         self.action = action
         self.label = label
         self.icon = icon
@@ -354,7 +354,7 @@ class MenuItem:
     @action.setter
     def action(self, action):
 
-        if self._cheackable:
+        if self._checkable:
             def new_action(*args):
                 self.checked = not self.checked
                 action(args)
@@ -370,7 +370,7 @@ class MenuItem:
 
     @checked.setter
     def checked(self, yes):
-        if self._cheackable:
+        if self._checkable:
             self._checked = yes
             self._impl.set_checked(yes)
 
@@ -480,8 +480,8 @@ class Window(toga.Window):
 
     def __init__(self, id=None, title=None, position=None, size=(640, 480),
                  toolbar=None, resizeable=True, closeable=True, minimizable=True, release_on_close=True, app=None, factory=None):
-        intial_position = position or (100, 100)
-        super().__init__(id, title, intial_position, size, toolbar, resizeable, closeable, minimizable, factory)
+        initial_position = position or (100, 100)
+        super().__init__(id, title, initial_position, size, toolbar, resizeable, closeable, minimizable, factory)
         if app:
             self.app = app
 
