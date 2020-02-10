@@ -533,9 +533,14 @@ class MaestralGui(SystemTrayApp):
         """
         logger.info('Quitting...')
 
-        # stop sync daemon if we started it
-        if not IS_MACOS_BUNDLE and (self._started or stop_daemon):
-            self.mdbx = None
+        self.periodic_updates = False
+
+        threaded = os.getpid() == get_maestral_pid(self.config_name)
+
+        # stop sync daemon if we started it or ``stop_daemon`` is ``True``
+        # never stop the daemon process if it is the current process
+        if (stop_daemon or self._started) and not threaded:
+            self.mdbx._pyroRelease()
             stop_maestral_daemon_process(self.config_name)
 
         super().exit()
