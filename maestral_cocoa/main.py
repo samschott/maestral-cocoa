@@ -59,7 +59,8 @@ IS_MACOS_BUNDLE = getattr(sys, 'frozen', False)
 
 
 # TODO:
-#  - fix memory leak
+#  - fix memory leak: bug filed with rubicon
+#  - wait for toga v0.3.0.dev19, include toga as private package
 
 class MaestralGui(SystemTrayApp):
     """A Qt GUI for the Maestral daemon."""
