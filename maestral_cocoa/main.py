@@ -108,6 +108,7 @@ class MaestralGui(SystemTrayApp):
 
         self.setup_ui_unlinked()
         self.load_maestral()
+        self.periodic_check_for_updates()
 
     def set_icon(self, status):
         if status != self._cached_status:
@@ -124,7 +125,11 @@ class MaestralGui(SystemTrayApp):
                 self.update_snoozed()
                 self.update_error()
 
+    @async_call
+    async def periodic_check_for_updates(self, interval=30*60):
+        while self.periodic_updates:
             await asyncio.sleep(interval)
+            await self.auto_check_for_updates()
 
     def load_maestral(self):
 
