@@ -82,7 +82,6 @@ class MaestralGui(SystemTrayApp):
 
     def startup(self):
 
-        self.mdbx = None
         self._started = False
         self._conf = MaestralConfig(self.config_name)  # use only for reading, before daemon is attached!
 
@@ -107,7 +106,12 @@ class MaestralGui(SystemTrayApp):
         self.tray = StatusBarItem(self.icon_mapping.get(DISCONNECTED), menu=self.menu)
 
         self.setup_ui_unlinked()
+
         self.load_maestral()
+        self.setup_ui_linked()
+
+        self.periodic_updates = True
+        self.periodic_refresh_gui()
         self.periodic_check_for_updates()
 
     def set_icon(self, status):
@@ -118,12 +122,13 @@ class MaestralGui(SystemTrayApp):
     @async_call
     async def periodic_refresh_gui(self, interval=0.5):
 
-        while True:
-            if self.mdbx:
-                self.update_status()
-                self.update_recent_files()
-                self.update_snoozed()
-                self.update_error()
+        while self.periodic_updates:
+            self.update_status()
+            self.update_recent_files()
+            self.update_snoozed()
+            self.update_error()
+
+            await asyncio.sleep(interval)
 
     @async_call
     async def periodic_check_for_updates(self, interval=30*60):
@@ -137,10 +142,10 @@ class MaestralGui(SystemTrayApp):
             from .setup import SetupDialog
             logger.info('Setting up Maestral...')
             res = SetupDialog(self.config_name, app=self).runModal()
+            self._started = True
 
             if res == 0:
                 logger.info('Setup complete.')
-                self._started = True
                 self.mdbx = get_maestral_proxy(self.config_name)
                 self.mdbx.run()
             else:
@@ -149,15 +154,11 @@ class MaestralGui(SystemTrayApp):
         elif pending_dropbox_folder(self.config_name):
             self.set_icon(ERROR)
             self.mdbx = self._get_or_start_maestral_daemon(run=False)
-            self.setup_ui_linked()
-            self.periodic_refresh_gui()
             res = DbxLocationDialog(self.mdbx, app=self).runModal()
             if res != 0:
                 self.exit(stop_daemon=True)
         else:
             self.mdbx = self._get_or_start_maestral_daemon()
-            self.setup_ui_linked()
-            self.periodic_refresh_gui()
 
     def _get_or_start_maestral_daemon(self, run=True):
 
