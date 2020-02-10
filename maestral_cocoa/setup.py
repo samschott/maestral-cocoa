@@ -3,7 +3,7 @@ import os.path as osp
 
 # maestral modules
 from maestral.config.main import MaestralConfig
-from maestral.daemon import start_maestral_daemon_process, get_maestral_proxy
+from maestral.daemon import start_maestral_daemon_thread, get_maestral_proxy
 from maestral.utils.path import delete_file_or_folder
 from maestral.oauth import OAuth2Session
 from maestral.config.base import get_home_dir
@@ -99,7 +99,7 @@ class SetupDialog(SetupDialogGui):
                 self.auth_session.save_creds()
 
                 # start maestral
-                start_maestral_daemon_process(self.config_name, run=False)
+                start_maestral_daemon_thread(self.config_name, run=False)
                 self.mdbx = get_maestral_proxy(self.config_name)
                 self.mdbx.get_account_info()
 
