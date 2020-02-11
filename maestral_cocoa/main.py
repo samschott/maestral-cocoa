@@ -461,7 +461,7 @@ class MaestralGui(SystemTrayApp):
 
         err = errs[-1]
 
-        if err['type'] in ('RevFileError', 'BadInputError', 'CursorResetError', 'InotifyError'):
+        if err['type'] in ('RevFileError', 'BadInputError', 'CursorResetError', 'InotifyError', 'OutOfMemoryError'):
             alert(err['title'], err['message'], level='error', icon=self.icon)
         elif err['type'] == 'DropboxDeletedError':
             self._exec_dbx_location_dialog()
