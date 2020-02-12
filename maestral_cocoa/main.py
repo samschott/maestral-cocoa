@@ -27,6 +27,7 @@ from maestral.config.main import MaestralConfig
 from maestral.utils import pending_link, pending_dropbox_folder
 from maestral.constants import (
     IDLE, SYNCING, PAUSED, STOPPED, DISCONNECTED, SYNC_ERROR, ERROR,
+    APP_NAME, BUNDLE_ID, IS_MACOS_BUNDLE
 )
 from maestral.daemon import (
     start_maestral_daemon_process,
@@ -565,8 +566,8 @@ def run(config_name='maestral') -> MaestralGui:
     MaestralGui.config_name = config_name
 
     app = MaestralGui(
-        formal_name='Maestral',
-        app_id='com.samschott.maestral',
+        formal_name=APP_NAME,
+        app_id=BUNDLE_ID,
         app_name='maestral_cocoa',
         icon=APP_ICON_PATH,
         author=__author__,
