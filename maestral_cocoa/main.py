@@ -6,7 +6,6 @@ Created on Wed Oct 31 16:23:13 2018
 @author: samschott
 """
 # system imports
-import sys
 import os
 import os.path as osp
 import asyncio
@@ -23,7 +22,6 @@ import toga
 from toga.style.pack import Pack, FONT_SIZE_CHOICES
 
 # maestral modules
-from maestral.config.main import MaestralConfig
 from maestral.utils import pending_link, pending_dropbox_folder
 from maestral.constants import (
     IDLE, SYNCING, PAUSED, STOPPED, DISCONNECTED, SYNC_ERROR, ERROR,
@@ -56,8 +54,6 @@ from maestral_cocoa.resources import APP_ICON_PATH, TRAY_ICON_PATH
 Pack.validated_property('font_size', choices=FONT_SIZE_CHOICES, initial=13)
 logger = logging.getLogger(__name__)
 
-IS_MACOS_BUNDLE = getattr(sys, 'frozen', False)
-
 
 # TODO:
 #  - fix memory leak: bug filed with rubicon
@@ -85,9 +81,6 @@ class MaestralGui(SystemTrayApp):
     def startup(self):
 
         self._started = False
-        self._conf = MaestralConfig(self.config_name)  # use only for reading, before daemon is attached!
-
-        self._n_sync_errors = None
 
         self.settings_window = None
         self.sync_issues_window = None
@@ -99,6 +92,7 @@ class MaestralGui(SystemTrayApp):
         self.item_sync_issues = None
         self.item_pause = None
         self.menu_recent_files = None
+        self._n_sync_errors = None
 
         self.autostart = AutoStart()
 
@@ -226,8 +220,8 @@ class MaestralGui(SystemTrayApp):
 
         s0 = MenuItemSeparator()
 
-        self.item_email = MenuItem(self.mdbx.get_conf('account', 'email'))
-        self.item_usage = MenuItem(self.mdbx.get_conf('account', 'usage'))
+        self.item_email = MenuItem(self.mdbx.get_state('account', 'email'))
+        self.item_usage = MenuItem(self.mdbx.get_state('account', 'usage'))
 
         s1 = MenuItemSeparator()
 
@@ -333,7 +327,7 @@ class MaestralGui(SystemTrayApp):
     @async_call
     async def auto_check_for_updates(self):
 
-        last_update_check = self.mdbx.get_conf('app', 'update_notification_last')
+        last_update_check = self.mdbx.get_state('app', 'update_notification_last')
         interval = self.mdbx.get_conf('app', 'update_notification_interval')
 
         if interval == 0 or time.time() - last_update_check < interval:  # checks disabled
@@ -341,7 +335,7 @@ class MaestralGui(SystemTrayApp):
 
         res = await run_maestral_async(self.config_name, 'check_for_updates')
         if res['update_available']:
-            self.mdbx.set_conf('app', 'update_notification_last', time.time())
+            self.mdbx.set_state('app', 'update_notification_last', time.time())
             self.show_update_dialog(res['latest_release'], res['release_notes'])
 
     async def on_check_for_updates_clicked(self, widget):
@@ -404,8 +398,8 @@ class MaestralGui(SystemTrayApp):
                 self.item_sync_issues.label = 'Show Sync Issues...'
 
             self.item_pause.label = self.RESUME_TEXT if is_paused else self.PAUSE_TEXT
-            self.item_usage.label = self.mdbx.get_conf('account', 'usage')
-            self.item_email.label = self.mdbx.get_conf('account', 'email')
+            self.item_usage.label = self.mdbx.get_state('account', 'usage')
+            self.item_email.label = self.mdbx.get_state('account', 'email')
 
             self.item_status.label = status
 
@@ -413,7 +407,7 @@ class MaestralGui(SystemTrayApp):
         """Update menu with list of recently changed files."""
 
         if self.menu.visible:
-            recent_files = self.mdbx.get_conf('internal', 'recent_changes')
+            recent_files = self.mdbx.get_state('sync', 'recent_changes')
 
             if recent_files != self._cached_recent_files:
 

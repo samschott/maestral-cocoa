@@ -4,7 +4,7 @@ import toga
 from toga.style.pack import Pack, FONT_SIZE_CHOICES
 from toga.constants import COLUMN, CENTER
 
-from maestral.config.base import get_home_dir
+from maestral.utils.appdirs import get_home_dir
 
 from .private.widgets import Label, Spacer, DialogButtons, FollowLinkButton, Selection, Window, IconForPath
 from .private.constants import WORD_WRAP, NSFullSizeContentViewWindowMask

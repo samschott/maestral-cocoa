@@ -3,7 +3,7 @@ import os.path as osp
 import toga
 from toga.style.pack import Pack, FONT_SIZE_CHOICES
 
-from maestral.config.base import get_home_dir
+from maestral.utils.appdirs import get_home_dir
 from maestral.utils.path import delete_file_or_folder
 
 from .private.widgets import IconForPath
@@ -151,16 +151,3 @@ class DbxLocationDialog(Dialog):
 
     def on_close(self):
         self.stopModal(self.accepted)
-
-
-class TestApp(toga.App):
-
-    def startup(self):
-        from maestral.sync.daemon import get_maestral_proxy
-        mdbx = get_maestral_proxy('private')
-        dialog = DbxLocationDialog(mdbx, self)
-        dialog.show()
-
-
-if __name__ == '__main__':
-    TestApp(formal_name='Maestral', app_id='com.samschott.maestral').main_loop()

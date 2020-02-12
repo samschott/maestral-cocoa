@@ -2,11 +2,11 @@
 import os.path as osp
 
 # maestral modules
-from maestral.config.main import MaestralConfig
+from maestral.config import MaestralConfig, MaestralState
+from maestral.oauth import OAuth2Session
 from maestral.daemon import start_maestral_daemon_thread, get_maestral_proxy
 from maestral.utils.path import delete_file_or_folder
-from maestral.oauth import OAuth2Session
-from maestral.config.base import get_home_dir
+from maestral.utils.appdirs import get_home_dir
 
 # maestral_cocoa modules
 from maestral_cocoa.private.constants import OFF
@@ -25,6 +25,7 @@ class SetupDialog(SetupDialogGui):
 
         self.config_name = config_name
         self._conf = MaestralConfig(config_name)  # use only for reading, before daemon is attached!
+        self._state = MaestralState(config_name)  # use only for reading, before daemon is attached!
 
         self.auth_session = OAuth2Session(self.config_name)
         self._chosen_dropbox_folder = None
@@ -54,6 +55,7 @@ class SetupDialog(SetupDialogGui):
             accepted = 0
         else:
             self._conf.reset_to_defaults()
+            self._state.reset_to_defaults()
             accepted = 1
 
         if self.mdbx:
@@ -68,6 +70,7 @@ class SetupDialog(SetupDialogGui):
     def on_start(self, widget):
         # start with fresh config
         self._conf.reset_to_defaults()
+        self._state.reset_to_defaults()
         # start auth flow
         self.btn_auth_token.url = self.auth_session.get_auth_url()
         self.go_forward()

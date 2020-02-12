@@ -134,11 +134,11 @@ class SettingsWindow(SettingsGui):
 
     def set_account_info_from_cache(self):
 
-        acc_display_name = self.mdbx.get_conf('account', 'display_name')
-        acc_mail = self.mdbx.get_conf('account', 'email')
-        acc_type = self.mdbx.get_conf('account', 'type')
-        acc_space_usage = self.mdbx.get_conf('account', 'usage')
-        acc_space_usage_type = self.mdbx.get_conf('account', 'usage_type')
+        acc_display_name = self.mdbx.get_state('account', 'display_name')
+        acc_mail = self.mdbx.get_state('account', 'email')
+        acc_type = self.mdbx.get_state('account', 'type')
+        acc_space_usage = self.mdbx.get_state('account', 'usage')
+        acc_space_usage_type = self.mdbx.get_state('account', 'usage_type')
 
         if acc_space_usage_type == 'team':
             acc_space_usage += ' (Team)'
