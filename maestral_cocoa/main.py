@@ -324,7 +324,6 @@ class MaestralGui(SystemTrayApp):
 
     # ==== other callbacks  ==============================================================
 
-    @async_call
     async def auto_check_for_updates(self):
 
         last_update_check = self.mdbx.get_state('app', 'update_notification_last')
