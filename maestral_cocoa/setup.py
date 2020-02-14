@@ -54,11 +54,10 @@ class SetupDialog(SetupDialogGui):
         if self.current_index() == 4:
             accepted = 0
         else:
-            self._conf.reset_to_defaults()
-            self._state.reset_to_defaults()
             accepted = 1
 
         if self.mdbx:
+            self.mdbx.unlink()
             self.mdbx._pyroRelease()
 
         self.stopModal(accepted)
