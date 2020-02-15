@@ -94,12 +94,10 @@ class SettingsWindow(SettingsGui):
             self.autostart.enable()
 
     def on_notifications_clicked(self, widget):
-        level_num = FILECHANGE if widget.state == ON else SYNCISSUE
-        self.mdbx.set_conf('app', 'notification_level', level_num)
+        self.mdbx.notification_level = FILECHANGE if widget.state == ON else SYNCISSUE
 
     def on_analytics_clicked(self, widget):
-        self.mdbx.set_conf('app', 'analytics', widget.state == ON)
-        self.mdbx.set_share_error_reports(widget.state == ON)
+        self.mdbx.analytics = widget.state == ON
 
     # ==== populate gui with data ========================================================
 
@@ -123,8 +121,8 @@ class SettingsWindow(SettingsGui):
 
         # populate app section
         self.checkbox_autostart.state = ON if self.autostart.enabled else OFF
-        self.checkbox_notifications.state = ON if self.mdbx.get_conf('app', 'notification_level') == FILECHANGE else OFF
-        self.checkbox_analytics.state = ON if self.mdbx.get_conf('app', 'analytics') else OFF
+        self.checkbox_notifications.state = ON if self.mdbx.notification_level == FILECHANGE else OFF
+        self.checkbox_analytics.state = ON if self.mdbx.analytics else OFF
         update_interval = self.mdbx.get_conf('app', 'update_notification_interval')
         closest_key = min(
             self._update_interval_mapping,

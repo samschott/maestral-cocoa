@@ -476,9 +476,7 @@ class MaestralGui(SystemTrayApp):
 
         title = 'An unexpected error occurred'
 
-        analytics = self.mdbx.get_conf('app', 'analytics')
-
-        if analytics:
+        if self.mdbx.analytics:
             message = ('A report has been sent to the developers. '
                        'Please restart Maestral to continue syncing.')
 
@@ -517,8 +515,7 @@ class MaestralGui(SystemTrayApp):
                     }
                 )
 
-            if auto_share_checkbox:
-                self.mdbx.set_conf('app', 'analytics', True)
+            self.mdbx.analytics = auto_share_checkbox
 
     def exit(self, *args, stop_daemon=False):
         """Quits Maestral.
