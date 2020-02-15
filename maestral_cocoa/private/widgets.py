@@ -75,12 +75,12 @@ class DialogButtons(toga.Box):
     """
 
     MIN_BUTTON_WIDTH = 80
+    _buttons = []
 
     def __init__(self, labels=('Ok', 'Cancel'), default='Ok', on_press=None, id=None, style=None, factory=None):
         super().__init__(id=id, style=style, factory=factory)
 
         self.on_press = on_press
-        self._buttons = []
 
         # always display buttons in a row, to the right
         self.style.update(direction=ROW)
