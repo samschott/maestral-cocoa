@@ -5,7 +5,7 @@ import os.path as osp
 from maestral.config import MaestralConfig, MaestralState
 from maestral.oauth import OAuth2Session
 from maestral.daemon import start_maestral_daemon_thread, get_maestral_proxy
-from maestral.utils.path import delete_file_or_folder
+from maestral.utils.path import delete
 from maestral.utils.appdirs import get_home_dir
 
 # maestral_cocoa modules
@@ -24,8 +24,9 @@ class SetupDialog(SetupDialogGui):
         self.after_close = after_close
 
         self.config_name = config_name
-        self._conf = MaestralConfig(config_name)  # use only for reading, before daemon is attached!
-        self._state = MaestralState(config_name)  # use only for reading, before daemon is attached!
+        # use only for reading, before daemon is attached
+        self._conf = MaestralConfig(config_name)
+        self._state = MaestralState(config_name)
 
         self.auth_session = OAuth2Session(self.config_name)
         self._chosen_dropbox_folder = None
@@ -172,7 +173,7 @@ class SetupDialog(SetupDialogGui):
     def _on_exists(self, choice):
 
         if choice == 0:  # replace
-            delete_file_or_folder(self._chosen_dropbox_folder)
+            delete(self._chosen_dropbox_folder)
             self._continue()
         elif choice == 1:  # cancel
             return
@@ -206,7 +207,7 @@ class SetupDialog(SetupDialogGui):
             # if any excluded folders are currently on the drive, delete them
             for folder in self.excluded_folders:
                 local_folder = self.mdbx.to_local_path(folder)
-                delete_file_or_folder(local_folder)
+                delete(local_folder)
 
             # switch to next page
             self.go_forward()
