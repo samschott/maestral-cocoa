@@ -24,6 +24,7 @@ class SetupDialog(SetupDialogGui):
         self.after_close = after_close
 
         self.config_name = config_name
+        self.mdbx = None
         # use only for reading, before daemon is attached
         self._conf = MaestralConfig(config_name)
         self._state = MaestralState(config_name)
