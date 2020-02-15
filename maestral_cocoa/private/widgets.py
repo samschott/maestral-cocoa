@@ -479,14 +479,15 @@ class StatusBarItem:
 class Window(toga.Window):
 
     def __init__(self, id=None, title=None, position=None, size=(640, 480),
-                 toolbar=None, resizeable=True, closeable=True, minimizable=True, release_on_close=True, app=None, factory=None):
+                 toolbar=None, resizeable=True, closeable=True, minimizable=True,
+                 release_on_close=True, is_dialog=False, app=None, factory=None):
         initial_position = position or (100, 100)
         super().__init__(id, title, initial_position, size, toolbar, resizeable, closeable, minimizable, factory)
         if app:
             self.app = app
 
         self._impl.native.releasedWhenClosed = release_on_close
-        self.is_dialog = False
+        self.is_dialog = is_dialog
 
         if not position:
             self.center()
