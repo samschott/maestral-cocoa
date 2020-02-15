@@ -49,9 +49,9 @@ class Dialog(Window):
     def __init__(self, title='Alert', message='', button_labels=('Ok',), default='Ok',
                  accessory_view=None, icon=None, callback=None, app=None):
         super().__init__(
-            resizeable=False, closeable=False, minimizable=False, title=' ', app=app
+            resizeable=False, closeable=False, minimizable=False, title=' ',
+            is_dialog=True, app=app
         )
-        self.is_dialog = True
 
         if not callback:
             def callback(sender):
@@ -265,8 +265,7 @@ class RelinkDialog(Window):
 
     def __init__(self, mdbx, reason, app):
         super().__init__(title='Relink Maestral', closeable=False, minimizable=False,
-                         resizeable=False, app=app)
-        self.is_dialog = True
+                         resizeable=False, is_dialog=True, app=app)
 
         self.mdbx = mdbx
         self.reason = reason

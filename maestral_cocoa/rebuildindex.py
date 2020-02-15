@@ -41,8 +41,8 @@ class RebuildIndexDialog(Window):
     CLOSE_BTN = 'Done'
 
     def __init__(self, mdbx, app=None):
-        super().__init__(title='Maestral Rebuild Index', closeable=False, resizeable=False, minimizable=False, app=app)
-        self.is_dialog = True
+        super().__init__(title='Maestral Rebuild Index', closeable=False,
+                         resizeable=False, minimizable=False, is_dialog=True, app=app)
 
         self.mdbx = mdbx
         self.config_name = self.mdbx.config_name
