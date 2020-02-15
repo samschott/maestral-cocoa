@@ -4,7 +4,7 @@ import toga
 from toga.style.pack import Pack, FONT_SIZE_CHOICES
 
 from maestral.utils.appdirs import get_home_dir
-from maestral.utils.path import delete_file_or_folder
+from maestral.utils.path import delete
 
 from .private.widgets import IconForPath
 from .dialogs import Dialog
@@ -103,7 +103,7 @@ class DbxLocationDialog(Dialog):
     def _on_exists(self, choice):
 
         if choice == 0:  # replace
-            delete_file_or_folder(self._chosen_dropbox_folder)
+            delete(self._chosen_dropbox_folder)
             self._continue()
         elif choice == 1:  # cancel
             self.dialog_buttons.enabled = True
