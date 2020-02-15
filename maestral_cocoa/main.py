@@ -95,7 +95,7 @@ class MaestralGui(SystemTrayApp):
         self.menu_recent_files = None
         self._n_sync_errors = None
 
-        self.autostart = AutoStart()
+        self.autostart = AutoStart(self.config_name)
 
         self.menu = Menu()
         self._cached_status = DISCONNECTED

@@ -18,7 +18,6 @@ from maestral.constants import IS_MACOS_BUNDLE
 _root = os.path.abspath(os.path.dirname(__file__))
 
 # TODO:
-#  - detect app bundle from toga
 #  - Cocoa API for start on login? -> difficult
 
 
@@ -28,9 +27,7 @@ class AutoStart(object):
 
     system = platform.system()
 
-    def __init__(self):
-
-        config_name = os.getenv('MAESTRAL_CONFIG', 'maestral')
+    def __init__(self, config_name):
 
         if IS_MACOS_BUNDLE:
             launch_command = os.path.join(sys._MEIPASS, 'main')

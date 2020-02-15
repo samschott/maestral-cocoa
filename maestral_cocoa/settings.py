@@ -20,13 +20,12 @@ class SettingsWindow(SettingsGui):
         'Never': 0
     }
 
-    autostart = AutoStart()
-
     def __init__(self, mdbx, app):
         super().__init__(app=app)
 
         self.mdbx = mdbx
         self.refresh = True
+        self.autostart = AutoStart(self.mdbx.config_name)
 
         self.refresh_gui()
         self.periodic_refresh_gui()
