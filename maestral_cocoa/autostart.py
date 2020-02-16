@@ -13,7 +13,7 @@ import platform
 
 from maestral import __version__
 from maestral.utils.appdirs import get_autostart_path
-from maestral.constants import IS_MACOS_BUNDLE
+from maestral.constants import IS_MACOS_BUNDLE, BUNDLE_ID, APP_NAME
 
 _root = os.path.abspath(os.path.dirname(__file__))
 
@@ -21,7 +21,7 @@ _root = os.path.abspath(os.path.dirname(__file__))
 #  - Cocoa API for start on login? -> difficult
 
 
-class AutoStart(object):
+class AutoStart:
     """Creates auto-start entries in the appropriate system location to automatically
     start Maestral when the user logs in."""
 
@@ -35,11 +35,11 @@ class AutoStart(object):
             launch_command = 'maestral gui --config-name=\'{}\''.format(config_name)
 
         if self.system == 'Darwin':
-            app_name = 'com.samschott.maestral.{}'.format(config_name)
-            filename = app_name + '.plist'
-            self.contents = _plist_template.format(app_name, launch_command)
+            sub_bundle_id = '{}.{}'.format(BUNDLE_ID, config_name)
+            filename = sub_bundle_id + '.plist'
+            self.contents = _plist_template.format(sub_bundle_id, launch_command)
         elif self.system == 'Linux':
-            filename = 'maestral-{}.desktop'.format(config_name)
+            filename = '{}-{}.desktop'.format(APP_NAME.lower(), config_name)
             self.contents = _desktop_entry_template.format(__version__, launch_command)
         else:
             raise OSError('Your system is not currently supported.')
