@@ -2,11 +2,11 @@ import os.path as osp
 import asyncio
 
 from maestral.utils.notify import FILECHANGE, SYNCISSUE
+from maestral.utils.autostart import AutoStart
 
 from .utils import async_call, run_maestral_async, alert_sheet
 from .private.constants import ON, OFF
 from .settings_gui import SettingsGui
-from .autostart import AutoStart
 from .excluded_folders import ExcludedFoldersDialog
 from .dialogs import Dialog
 
@@ -25,7 +25,7 @@ class SettingsWindow(SettingsGui):
 
         self.mdbx = mdbx
         self.refresh = True
-        self.autostart = AutoStart(self.mdbx.config_name)
+        self.autostart = AutoStart(self.mdbx.config_name, gui=True)
 
         self.refresh_gui()
         self.periodic_refresh_gui()
@@ -87,10 +87,7 @@ class SettingsWindow(SettingsGui):
         self.mdbx.set_conf('app', 'update_notification_interval', self._update_interval_mapping[value])
 
     def on_autostart_clicked(self, widget):
-        if widget.state == OFF:
-            self.autostart.disable()
-        elif widget.state == ON:
-            self.autostart.enable()
+        self.autostart.enabled = widget.state == ON
 
     def on_notifications_clicked(self, widget):
         self.mdbx.notification_level = FILECHANGE if widget.state == ON else SYNCISSUE

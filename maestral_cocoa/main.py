@@ -23,6 +23,7 @@ from toga.style.pack import Pack, FONT_SIZE_CHOICES
 
 # maestral modules
 from maestral.utils import pending_link, pending_dropbox_folder
+from maestral.utils.autostart import AutoStart
 from maestral.constants import (
     IDLE, SYNCING, PAUSED, STOPPED, DISCONNECTED, SYNC_ERROR, ERROR,
     APP_NAME, BUNDLE_ID, IS_MACOS_BUNDLE
@@ -43,7 +44,6 @@ from maestral_cocoa import __version__ as __gui_version__
 from maestral_cocoa.utils import async_call, run_maestral_async, alert
 from maestral_cocoa.private.widgets import (MenuItem, MenuItemSeparator, Menu,
                                             StatusBarItem, SystemTrayApp)
-from maestral_cocoa.autostart import AutoStart
 from maestral_cocoa.settings import SettingsWindow
 from maestral_cocoa.syncissues import SyncIssuesWindow
 from maestral_cocoa.rebuildindex import RebuildIndexDialog
@@ -95,7 +95,7 @@ class MaestralGui(SystemTrayApp):
         self.menu_recent_files = None
         self._n_sync_errors = None
 
-        self.autostart = AutoStart(self.config_name)
+        self.autostart = AutoStart(self.config_name, gui=True)
 
         self.menu = Menu()
         self._cached_status = DISCONNECTED
