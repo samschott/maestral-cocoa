@@ -121,11 +121,13 @@ class MaestralGui(SystemTrayApp):
 
         while self.periodic_updates:
             self.update_status()
-            self.update_recent_files()
-            self.update_snoozed()
             self.update_error()
 
             await asyncio.sleep(interval)
+
+    def on_menu_open(self, sender):
+        self.update_recent_files()
+        self.update_snoozed()
 
     @async_call
     async def periodic_check_for_updates(self, interval=30*60):
@@ -285,6 +287,8 @@ class MaestralGui(SystemTrayApp):
             s4,
             item_quit,
         )
+
+        self.menu.on_open = self.on_menu_open
 
         # --------------- switch to idle icon -------------------
         self.set_icon(IDLE)

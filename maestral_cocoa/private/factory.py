@@ -318,10 +318,14 @@ class TogaMenu(NSMenu):
     @objc_method
     def menuWillOpen_(self, obj) -> None:
         self._impl._visible = True
+        if self.interface.on_open:
+            self.interface.on_open(self.interface)
 
     @objc_method
     def menuDidClose_(self, obj) -> None:
         self._impl._visible = False
+        if self.interface.on_close:
+            self.interface.on_close(self.interface)
 
 
 class Menu:

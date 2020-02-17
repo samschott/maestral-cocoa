@@ -390,9 +390,11 @@ class Menu:
         items: A list of MenuItem.
     """
 
-    def __init__(self, items=None, factory=private_factory):
+    def __init__(self, items=None, on_open=None, on_close=None, factory=private_factory):
         self.factory = factory
         self._items = []
+        self.on_open = on_open
+        self.on_close = on_close
 
         self._impl = self.factory.Menu(self)
 
@@ -436,6 +438,22 @@ class Menu:
     def visible(self):
         """True if the menu is currently visible."""
         return self._impl.visible
+
+    @property
+    def on_open(self):
+        return self._on_open
+
+    @on_open.setter
+    def on_open(self, callback):
+        self._on_open = wrapped_handler(self, callback)
+
+    @property
+    def on_close(self):
+        return self._on_close
+
+    @on_close.setter
+    def on_close(self, callback):
+        self._on_close = wrapped_handler(self, callback)
 
 
 # ==== StatusBarItem =====================================================================
