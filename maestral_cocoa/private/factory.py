@@ -72,9 +72,9 @@ def attributed_str_from_html(raw_html, font=None):
     html_value = '<span style="font-family: \'{0}\'; font-size: {1}; color: {2}">{3}</span>'
     font_family = font.fontName if font else '-apple-system'
     font_size = font.pointSize if font else 13
-    color = NSColor.labelColor.colorUsingColorSpace(NSColorSpace.deviceRGBColorSpace)
-    color_str = f'rgb({color.redComponent*255},{color.blueComponent*255},{color.greenComponent*255})'
-    html_value = html_value.format(font_family, font_size, color_str, raw_html)
+    c = NSColor.labelColor.colorUsingColorSpace(NSColorSpace.deviceRGBColorSpace)
+    c_str = f'rgb({c.redComponent * 255},{c.blueComponent * 255},{c.greenComponent * 255})'
+    html_value = html_value.format(font_family, font_size, c_str, raw_html)
     nsstring = NSString(at(html_value))
     data = nsstring.dataUsingEncoding(NSUTF8StringEncoding)
     attr_str = NSMutableAttributedString.alloc().initWithHTML(
@@ -230,7 +230,8 @@ class Selection(TogaSelection):
 
     def rehint(self):
         content_size = self.native.intrinsicContentSize()
-        self.interface.intrinsic.height = content_size.height + 1  # increase height by 1 px for better image alignment
+        # increase height by 1 px for better icon alignment
+        self.interface.intrinsic.height = content_size.height + 1
         self.interface.intrinsic.width = at_least(max(self.interface.MIN_WIDTH, content_size.width))
 
 
@@ -368,7 +369,7 @@ class StatusBarItem:
     def set_icon(self, icon):
         factory = get_platform_factory()
         icon = icon.bind(factory)
-        nsimage = icon.native.resizeTo(self.size - 2*self.MARGIN)
+        nsimage = icon.native.resizeTo(self.size - 2 * self.MARGIN)
         nsimage.template = True
         self.native.button.image = icon.native
 

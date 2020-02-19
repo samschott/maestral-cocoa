@@ -130,7 +130,7 @@ class MaestralGui(SystemTrayApp):
         self.update_snoozed()
 
     @async_call
-    async def periodic_check_for_updates(self, interval=30*60):
+    async def periodic_check_for_updates(self, interval=30 * 60):
         while self.periodic_updates:
             await asyncio.sleep(interval)
             await self.auto_check_for_updates()
@@ -197,7 +197,8 @@ class MaestralGui(SystemTrayApp):
 
         s1 = MenuItemSeparator()
 
-        item_login = MenuItem('Start on login', checkable=True, action=lambda s: self.autostart.toggle())
+        item_login = MenuItem('Start on login', checkable=True,
+                              action=lambda s: self.autostart.toggle())
         item_login.checked = self.autostart.enabled
         item_help = MenuItem('Help Center', action=self.on_help_clicked)
 
@@ -205,7 +206,12 @@ class MaestralGui(SystemTrayApp):
 
         item_quit = MenuItem('Quit Maestral', action=lambda s: self.exit())
 
-        self.menu.add(item_folder, item_website, s0, item_status, s1, item_login, item_help, s2, item_quit)
+        self.menu.add(
+            item_folder, item_website, s0,
+            item_status, s1,
+            item_login, item_help, s2,
+            item_quit
+        )
 
     def setup_ui_linked(self):
 
@@ -229,7 +235,8 @@ class MaestralGui(SystemTrayApp):
         s1 = MenuItemSeparator()
 
         self.item_status = MenuItem(IDLE)
-        self.item_pause = MenuItem(self.PAUSE_TEXT if self.mdbx.syncing else self.RESUME_TEXT, action=self.on_start_stop_clicked)
+        initial_text = self.PAUSE_TEXT if self.mdbx.syncing else self.RESUME_TEXT
+        self.item_pause = MenuItem(initial_text, action=self.on_start_stop_clicked)
         self.menu_recent_files = Menu()
         self.item_recent_files = MenuItem('Recently Changed Files', submenu=self.menu_recent_files)
 
@@ -267,24 +274,12 @@ class MaestralGui(SystemTrayApp):
             item_quit = MenuItem('Quit Maestral GUI', action=self.exit)
 
         self.menu.add(
-            item_folder,
-            item_website,
-            s0,
-            self.item_email,
-            self.item_usage,
-            s1,
-            self.item_status,
-            self.item_pause,
-            self.item_recent_files,
-            s2,
-            self.item_snooze,
-            self.item_sync_issues,
-            item_rebuild,
-            s3,
-            item_settings,
-            self.item_updates,
-            item_help,
-            s4,
+            item_folder, item_website, s0,
+            self.item_email, self.item_usage, s1,
+            self.item_status, self.item_pause, self.item_recent_files, s2,
+            self.item_snooze, self.item_sync_issues,
+            item_rebuild, s3,
+            item_settings, self.item_updates, item_help, s4,
             item_quit,
         )
 
@@ -435,7 +430,7 @@ class MaestralGui(SystemTrayApp):
         if minutes > 0:
             eta = datetime.now() + timedelta(minutes=minutes)
 
-            self.item_snooze.label = 'Notifications snoozed until %s' % eta.strftime('%H:%M')
+            self.item_snooze.label = 'Notifications snoozed until {}'.format(eta.strftime('%H:%M'))
             self.menu_snooze.insert(0, self.separator_snooze)
             self.menu_snooze.insert(0, self.item_resume_notifications)
         else:
@@ -460,7 +455,8 @@ class MaestralGui(SystemTrayApp):
 
         err = errs[-1]
 
-        if err['type'] in ('RevFileError', 'BadInputError', 'CursorResetError', 'InotifyError', 'OutOfMemoryError'):
+        if err['type'] in ('RevFileError', 'BadInputError', 'CursorResetError',
+                           'InotifyError', 'OutOfMemoryError'):
             alert(err['title'], err['message'], level='error', icon=self.icon)
         elif err['type'] == 'DropboxDeletedError':
             self._exec_dbx_location_dialog()
@@ -550,7 +546,9 @@ class MaestralGui(SystemTrayApp):
 
         # schedule restart after current process has quit
         pid = os.getpid()  # get ID of current process
-        Popen("lsof -p {0} +r 1 &>/dev/null; maestral gui --config-name='{1}'".format(pid, self.config_name), shell=True)
+        Popen(f"lsof -p {pid} +r 1 &>/dev/null; "
+              f"maestral gui --config-name='{self.config_name}'",
+              shell=True)
 
         # quit Maestral
         self.exit(stop_daemon=True)

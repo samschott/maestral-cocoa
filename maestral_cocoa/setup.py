@@ -46,7 +46,8 @@ class SetupDialog(SetupDialogGui):
         self.close_button.on_press = lambda s: self.close()
 
         default_folder_name = self._conf.get('main', 'default_dir_name')
-        self.dbx_location_label.text = self.dbx_location_label.text.format(default_folder_name)
+        location_label_text = self.dbx_location_label.text.format(default_folder_name)
+        self.dbx_location_label.text = location_label_text
 
     # ====================================================================================
     # Close callback
@@ -109,8 +110,9 @@ class SetupDialog(SetupDialogGui):
                 # initialize fs source
                 self.fs_source = FileSystemSource(gui_parent=self, mdbx=self.mdbx)
                 self.fs_source.included.style.padding_left = 10
-                self.folders_page.add(self.fs_source.included, self.dialog_buttons_folders_page)
-                self.dropbox_folders_tree.data = self.fs_source  # trigger loading of folder tree
+                self.folders_page.add(self.fs_source.included,
+                                      self.dialog_buttons_folders_page)
+                self.dropbox_folders_tree.data = self.fs_source  # triggers loading
 
                 # switch to next page
                 self.go_forward()
@@ -119,7 +121,8 @@ class SetupDialog(SetupDialogGui):
                 alert_sheet(
                     window=self,
                     title='Authentication failed.',
-                    message='Please make sure that you entered the correct authentication token.',
+                    message=('Please make sure that you entered the '
+                             'correct authentication token.'),
                     icon=self.app.icon,
                 )
 
@@ -127,7 +130,8 @@ class SetupDialog(SetupDialogGui):
                 alert_sheet(
                     window=self,
                     title='Connection failed.',
-                    message='Please make sure that you are connected to the internet and try again.',
+                    message=('Please make sure that you are connected '
+                             'to the internet and try again.'),
                     icon=self.app.icon,
                 )
 
@@ -141,24 +145,29 @@ class SetupDialog(SetupDialogGui):
 
         if btn_name == 'Select':
             # apply dropbox path
-            self._chosen_dropbox_folder = osp.join(self.dbx_location_user_selected, self.mdbx.get_conf('main', 'default_dir_name'))
+            self._chosen_dropbox_folder = osp.join(
+                self.dbx_location_user_selected,
+                self.mdbx.get_conf('main', 'default_dir_name')
+            )
             if osp.isdir(self._chosen_dropbox_folder):
+                msg = ('The folder "{}" already exists. Would you like '
+                       'to replace it or merge its contents with Dropbox?')
                 alert_sheet(
                     window=self,
                     title='Folder already exists',
-                    message=('The folder "{}" already exists. Would you like to replace '
-                             'it or merge its contents with Dropbox?').format(self._chosen_dropbox_folder),
+                    message=msg.format(self._chosen_dropbox_folder),
                     button_labels=('Replace', 'Cancel', 'Merge'),
                     icon=self.app.icon,
                     callback=self._on_exists,
                 )
 
             elif osp.isfile(self._chosen_dropbox_folder):
+                msg = ('There already is a file named "{}" at this location. '
+                       'Would you like to replace it?')
                 alert_sheet(
                     window=self,
                     title='File conflict',
-                    message=('There already is a file named "{}" at this location. Would '
-                             'you like to replace it?'.format(self.mdbx.get_conf('main', 'default_dir_name'))),
+                    message=msg.format(self.mdbx.get_conf('main', 'default_dir_name')),
                     button_labels=('Replace', 'Cancel'),
                     icon=self.app.icon,
                     callback=self._on_exists,

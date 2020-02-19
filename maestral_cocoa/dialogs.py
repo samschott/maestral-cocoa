@@ -43,8 +43,7 @@ class Dialog(Window):
     ICON_SIZE = (60, 60)
     ICON_PADDING_RIGHT = 20
 
-    CONTENT_WIDTH = (WINDOW_WIDTH - PADDING_LEFT - PADDING_RIGHT
-                     - ICON_PADDING_RIGHT - ICON_SIZE[0])
+    CONTENT_WIDTH = WINDOW_WIDTH - PADDING_LEFT - PADDING_RIGHT - ICON_PADDING_RIGHT - ICON_SIZE[0]
 
     def __init__(self, title='Alert', message='', button_labels=('Ok',), default='Ok',
                  accessory_view=None, icon=None, callback=None, app=None):
@@ -166,8 +165,7 @@ class DetailedDialog(Dialog):
     WINDOW_WIDTH = 650
     WINDOW_MIN_HEIGHT = 400
 
-    CONTENT_WIDTH = (WINDOW_WIDTH - Dialog.PADDING_LEFT - Dialog.PADDING_RIGHT
-                     - Dialog.ICON_PADDING_RIGHT - Dialog.ICON_SIZE[0])
+    CONTENT_WIDTH = WINDOW_WIDTH - Dialog.PADDING_LEFT - Dialog.PADDING_RIGHT - Dialog.ICON_PADDING_RIGHT - Dialog.ICON_SIZE[0]
 
     def __init__(self, title='Alert', message='', button_labels=('Ok',), default='Ok',
                  icon=None, callback=None, details_title='Traceback', details='', app=None):
@@ -205,8 +203,7 @@ class UpdateDialog(Dialog):
     WINDOW_WIDTH = 700
     WINDOW_MIN_HEIGHT = 400
 
-    CONTENT_WIDTH = (WINDOW_WIDTH - Dialog.PADDING_LEFT - Dialog.PADDING_RIGHT
-                     - Dialog.ICON_PADDING_RIGHT - Dialog.ICON_SIZE[0])
+    CONTENT_WIDTH = WINDOW_WIDTH - Dialog.PADDING_LEFT - Dialog.PADDING_RIGHT - Dialog.ICON_PADDING_RIGHT - Dialog.ICON_SIZE[0]
 
     def __init__(self, version='', release_notes='', icon=None, app=None):
 
@@ -218,7 +215,10 @@ class UpdateDialog(Dialog):
 
         label = Label(
             'Release Notes',
-            style=Pack(width=self.CONTENT_WIDTH, padding_bottom=10, font_size=12, font_weight=BOLD)
+            style=Pack(
+                width=self.CONTENT_WIDTH, padding_bottom=10,
+                font_size=12, font_weight=BOLD
+            )
         )
         clear_background(label)
 
@@ -226,7 +226,8 @@ class UpdateDialog(Dialog):
         text_view = RichMultilineTextInput(
             html=release_notes,
             readonly=True,
-            style=Pack(width=self.CONTENT_WIDTH, height=text_view_height, padding_bottom=15)
+            style=Pack(width=self.CONTENT_WIDTH, height=text_view_height,
+                       padding_bottom=15)
         )
         accessory_view = toga.Box(
             children=[link_button, label, text_view],

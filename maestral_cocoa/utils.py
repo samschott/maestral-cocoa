@@ -61,12 +61,19 @@ def apply_round_clipping(imageView: toga.ImageView):
 
     imageFrame = NSRect(NSPoint(0, 0), image.size)
     clipPath = NSBezierPath.bezierPathWithRoundedRect(
-        imageFrame, xRadius=image.size.width/2, yRadius=image.size.height/2
+        imageFrame,
+        xRadius=image.size.width / 2,
+        yRadius=image.size.height / 2
     )
     clipPath.addClip()
 
     NSZeroRect = NSRect(NSPoint(0, 0), NSMakeSize(0, 0))
-    image.drawInRect(imageFrame, fromRect=NSZeroRect, operation=NSCompositeSourceOver, fraction=1)
+    image.drawInRect(
+        imageFrame,
+        fromRect=NSZeroRect,
+        operation=NSCompositeSourceOver,
+        fraction=1
+    )
     composedImage.unlockFocus()
     ctx.restoreGraphicsState()
 
@@ -169,7 +176,7 @@ def open_file_sheet(window, message='', file_types=None, multiselect=False, call
     panel.beginSheetModalForWindow(window._impl.native, completionHandler=completionHandler)
 
 
-def select_folder_sheet(window,  message='', multiselect=False, callback=print):
+def select_folder_sheet(window, message='', multiselect=False, callback=print):
     """Cocoa select folder dialog implementation.
 
     Args:

@@ -45,7 +45,11 @@ class DbxLocationDialog(Dialog):
         ).format(old_path, self.mdbx.get_conf('main', 'default_dir_name'))
 
         self.combobox_dbx_location = toga.Selection(
-            items=[self.dbx_location_user_selected, toga.SECTION_BREAK, self.COMBOBOX_CHOOSE],
+            items=[
+                self.dbx_location_user_selected,
+                toga.SECTION_BREAK,
+                self.COMBOBOX_CHOOSE
+            ],
             style=Pack(width=self.CONTENT_WIDTH, padding=(10, 0, 30, 0)),
             on_select=self._on_button_location_pressed
         )
@@ -75,13 +79,17 @@ class DbxLocationDialog(Dialog):
             self.close()
         elif btn_name == 'Select':
             # apply dropbox path
-            self._chosen_dropbox_folder = osp.join(self.dbx_location_user_selected, self.mdbx.get_conf('main', 'default_dir_name'))
+            self._chosen_dropbox_folder = osp.join(
+                self.dbx_location_user_selected,
+                self.mdbx.get_conf('main', 'default_dir_name')
+            )
             if osp.isdir(self._chosen_dropbox_folder):
                 alert_sheet(
                     window=self,
                     title='Folder already exists',
-                    message=('The folder "{}" already exists. Would you like to replace '
-                             'it or merge its contents with Dropbox?').format(self._chosen_dropbox_folder),
+                    message=(f'The folder "{self._chosen_dropbox_folder}" already '
+                             'exists. Would you like to replace it or merge its '
+                             'contents with Dropbox?'),
                     button_labels=('Replace', 'Cancel', 'Merge'),
                     icon=self.app.icon,
                     callback=self._on_exists,
@@ -91,8 +99,12 @@ class DbxLocationDialog(Dialog):
                 alert_sheet(
                     window=self,
                     title='File conflict',
-                    message=('There already is a file named "{}" at this location. Would '
-                             'you like to replace it?'.format(self.mdbx.get_conf('main', 'default_dir_name'))),
+                    message=(
+                        'There already is a file named "{}" at this location. Would you '
+                        'like to replace it?'.format(
+                            self.mdbx.get_conf('main', 'default_dir_name')
+                        )
+                    ),
                     button_labels=('Replace', 'Cancel'),
                     icon=self.app.icon,
                     callback=self._on_exists,
@@ -112,7 +124,8 @@ class DbxLocationDialog(Dialog):
             self._continue()
 
     def _continue(self):
-        self.mdbx.create_dropbox_directory(path=self._chosen_dropbox_folder, overwrite=False)
+        self.mdbx.create_dropbox_directory(path=self._chosen_dropbox_folder,
+                                           overwrite=False)
         self.mdbx.set_conf('internal', 'cursor', '')
         self.mdbx.set_conf('internal', 'lastsync', 0.0)
 
@@ -139,7 +152,11 @@ class DbxLocationDialog(Dialog):
         self.dbx_location_user_selected = path
         icon = IconForPath(path)
         short_path = self._relpath(path)
-        self.combobox_dbx_location.items = [(icon, short_path), toga.SECTION_BREAK, self.COMBOBOX_CHOOSE]
+        self.combobox_dbx_location.items = [
+            (icon, short_path),
+            toga.SECTION_BREAK,
+            self.COMBOBOX_CHOOSE
+        ]
 
     @staticmethod
     def _relpath(path):

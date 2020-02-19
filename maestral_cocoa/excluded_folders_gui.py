@@ -62,7 +62,7 @@ class Node:
 
     def _init_selected(self):
 
-        excluded_folders = getattr(self.mdbx, 'excluded_folders', [])  # provision for self.mdbx == None
+        excluded_folders = getattr(self.mdbx, 'excluded_folders', [])
 
         # get included state from current list
         if self.path.lower() in excluded_folders:
@@ -115,7 +115,8 @@ class Node:
         if entries is False:
             self.loading_failed()
         else:
-            folders = [os.path.join(self.path, e["path_display"]) for e in entries if e["type"] == "FolderMetadata"]
+            folders = [os.path.join(self.path, e["path_display"]) for e in entries
+                       if e["type"] == "FolderMetadata"]
             self._children = [Node(p, self, self.mdbx) for p in folders]
 
             for i, child in enumerate(self._children):

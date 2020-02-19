@@ -36,10 +36,8 @@ setup(
     long_description_content_type='text/markdown',
     packages=find_packages(),
     package_data={
-        'maestral_cocoa': [
-            'resources/*',
-            ],
-        },
+        'maestral_cocoa': ['resources/*'],
+    },
     setup_requires=['wheel'],
     install_requires=[
         'bugsnag',
@@ -50,7 +48,7 @@ setup(
     ],
     zip_safe=False,
     entry_points={
-      'console_scripts': ['maestral_cocoa=maestral_cocoa.main:run_from_console'],
+        'console_scripts': ['maestral_cocoa=maestral_cocoa.main:run_from_console'],
     },
     python_requires='>=3.6',
     classifiers=[

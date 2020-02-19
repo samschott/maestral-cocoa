@@ -20,7 +20,7 @@ from .private.constants import TRUNCATE_HEAD, WORD_WRAP, VisualEffectMaterial
 CONTENT_WIDTH = 330
 PADDING = 10
 ICON_SIZE = 48
-WINDOW_SIZE = (CONTENT_WIDTH + 4*PADDING, 400)
+WINDOW_SIZE = (CONTENT_WIDTH + 4 * PADDING, 400)
 
 # TODO: use toga.DetailedList to display sync errors (once it is view-based)
 
@@ -48,12 +48,12 @@ class SyncIssueBox(toga.Box):
         path_label = Label(
             osp.basename(self.sync_err['local_path']),
             linebreak_mode=TRUNCATE_HEAD,
-            style=Pack(padding_bottom=PADDING/2, width=text_width)
+            style=Pack(padding_bottom=PADDING / 2, width=text_width)
         )
         error_label = Label(
             self.sync_err["title"] + ":\n" + self.sync_err["message"],
             linebreak_mode=WORD_WRAP,
-            style=Pack(font_size=11, width=text_width, padding_bottom=PADDING/2)
+            style=Pack(font_size=11, width=text_width, padding_bottom=PADDING / 2)
         )
 
         link_local = FollowLinkButton(
@@ -70,8 +70,14 @@ class SyncIssueBox(toga.Box):
         )
 
         link_box = toga.Box(children=[link_local, link_dbx], style=Pack(direction=ROW))
-        info_box = toga.Box(children=[path_label, error_label, link_box], style=Pack(direction=COLUMN))
-        content_box = toga.Box(children=[image_view, info_box], style=Pack(direction=ROW, width=CONTENT_WIDTH))
+        info_box = toga.Box(
+            children=[path_label, error_label, link_box],
+            style=Pack(direction=COLUMN)
+        )
+        content_box = toga.Box(
+            children=[image_view, info_box],
+            style=Pack(direction=ROW, width=CONTENT_WIDTH)
+        )
 
         hline = toga.Divider(style=Pack(padding=(PADDING, 0, PADDING, 0)))
 
@@ -97,13 +103,22 @@ class SyncIssuesWindow(Window):
         self.size = WINDOW_SIZE
         self._impl.native.titlebarAppearsTransparent = True
 
-        sync_errors_box = toga.Box(children=[self.placeholder_label], style=self.box_style)
-        self.scroll_container = toga.ScrollContainer(content=sync_errors_box, style=Pack(flex=1))
+        sync_errors_box = toga.Box(
+            children=[self.placeholder_label],
+            style=self.box_style
+        )
+        self.scroll_container = toga.ScrollContainer(
+            content=sync_errors_box,
+            style=Pack(flex=1)
+        )
 
         clear_background(self.scroll_container)
 
         self.periodic_refresh_gui()
-        self.content = VibrantBox(children=[self.scroll_container], material=VisualEffectMaterial.Popover)
+        self.content = VibrantBox(
+            children=[self.scroll_container],
+            material=VisualEffectMaterial.Popover
+        )
 
         self.center()
 
@@ -122,9 +137,15 @@ class SyncIssuesWindow(Window):
 
         if new_errors != self._cached_errors:
             if len(new_errors) == 0:
-                sync_errors_box = toga.Box(children=[self.placeholder_label], style=self.box_style)
+                sync_errors_box = toga.Box(
+                    children=[self.placeholder_label],
+                    style=self.box_style
+                )
             else:
-                sync_errors_box = toga.Box(children=list(SyncIssueBox(e) for e in new_errors), style=self.box_style)
+                sync_errors_box = toga.Box(
+                    children=list(SyncIssueBox(e) for e in new_errors),
+                    style=self.box_style
+                )
 
             clear_background(sync_errors_box)
             self.scroll_container.content = sync_errors_box

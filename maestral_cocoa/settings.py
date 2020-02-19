@@ -54,7 +54,8 @@ class SettingsWindow(SettingsGui):
     def on_unlink_pressed(self, widget):
         self.unlink_dialog = Dialog(
             title='Unlink your Dropbox account?',
-            message='You will still keep your Dropbox folder on this computer but your files will stop syncing.',
+            message=('You will still keep your Dropbox folder on this '
+                     'computer but your files will stop syncing.'),
             button_labels=('Unlink', 'Cancel'),
             default='Cancel',
             callback=self.on_unlink_decided,
@@ -84,7 +85,8 @@ class SettingsWindow(SettingsGui):
 
     def on_update_interval_selected(self, widget):
         value = str(widget.value)
-        self.mdbx.set_conf('app', 'update_notification_interval', self._update_interval_mapping[value])
+        self.mdbx.set_conf('app', 'update_notification_interval',
+                           self._update_interval_mapping[value])
 
     def on_autostart_clicked(self, widget):
         self.autostart.enabled = widget.state == ON
@@ -137,7 +139,7 @@ class SettingsWindow(SettingsGui):
         if acc_space_usage_type == 'team':
             acc_space_usage += ' (Team)'
 
-        if acc_type is not '':
+        if acc_type != '':
             acc_type_text = ', Dropbox {0}'.format(acc_type.capitalize())
         else:
             acc_type_text = ''

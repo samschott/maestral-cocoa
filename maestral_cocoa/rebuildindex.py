@@ -51,25 +51,34 @@ class RebuildIndexDialog(Window):
 
         self.msg_title = Label(
             text='Rebuilt the Maestral index?',
-            style=Pack(width=self.CONTENT_WIDTH, padding_bottom=15, font_weight=BOLD, font_size=13),
+            style=Pack(
+                width=self.CONTENT_WIDTH, padding_bottom=15,
+                font_weight=BOLD, font_size=13
+            ),
         )
 
         self.info = Label(
             text=(
-                'If you encounter sync issues, please open "Show Sync Issues..." to check for '
-                'incompatible file names, insufficient permissions or other issues which '
-                'should be resolved manually. After resolving them, please pause and resume '
-                'syncing. Only rebuild the index if you continue to have problems after '
-                'taking those steps.\n\n'
+                'If you encounter sync issues, please open "Show Sync Issues..." to '
+                'check for incompatible file names, insufficient permissions or other '
+                'issues which should be resolved manually. After resolving them, please '
+                'pause and resume syncing. Only rebuild the index if you continue to '
+                'have problems after taking those steps.\n\n'
                 'Rebuilding the index may take several minutes, depending on the size of '
-                'your Dropbox. Please do not modify any items in your local Dropbox folder '
-                'during this process. Any changes to local files while rebuilding may be lost.'
+                'your Dropbox. Please do not modify any items in your local Dropbox '
+                'folder during this process. Any changes to local files while rebuilding '
+                'may be lost.'
             ),
             linebreak_mode=WORD_WRAP,
             style=Pack(width=self.CONTENT_WIDTH, padding_bottom=15, flex=1, font_size=12),
         )
-        self.progress_bar = toga.ProgressBar(style=Pack(width=self.CONTENT_WIDTH, padding_bottom=7, visibility=HIDDEN))
-        self.status_label = toga.Label('', style=Pack(width=self.CONTENT_WIDTH, padding_bottom=7))
+        self.progress_bar = toga.ProgressBar(
+            style=Pack(width=self.CONTENT_WIDTH, padding_bottom=7, visibility=HIDDEN)
+        )
+        self.status_label = toga.Label(
+            '',
+            style=Pack(width=self.CONTENT_WIDTH, padding_bottom=7)
+        )
         self.dialog_buttons = DialogButtons(
             labels=[self.REBUILD_BTN, self.CANCEL_BTN],
             default=self.CANCEL_BTN,
