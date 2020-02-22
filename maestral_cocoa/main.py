@@ -22,7 +22,7 @@ import toga
 from toga.style.pack import Pack, FONT_SIZE_CHOICES
 
 # maestral modules
-from maestral.utils import pending_link, pending_dropbox_folder
+from maestral.utils.backend import pending_link, pending_dropbox_folder
 from maestral.utils.autostart import AutoStart
 from maestral.constants import (
     IDLE, SYNCING, PAUSED, STOPPED, DISCONNECTED, SYNC_ERROR, ERROR,

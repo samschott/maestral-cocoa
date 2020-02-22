@@ -6,11 +6,11 @@ from toga.style import Pack
 from toga.constants import RIGHT, COLUMN
 from toga.sources import Source
 
+from maestral.utils.path import is_child
+
 from .utils import async_call, run_maestral_async
 from .private.widgets import Window, IconForPath, DialogButtons, Switch
 from .private.constants import ON, OFF, MIXED
-
-from maestral.utils.path import is_child
 
 
 class Node:
