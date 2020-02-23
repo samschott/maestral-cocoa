@@ -82,6 +82,7 @@ class MaestralGui(SystemTrayApp):
     def startup(self):
 
         self._started = False
+        self.mdbx = None
 
         self.settings_window = None
         self.sync_issues_window = None
@@ -531,7 +532,7 @@ class MaestralGui(SystemTrayApp):
 
         # stop sync daemon if we started it or ``stop_daemon`` is ``True``
         # never stop the daemon process if it is the current process
-        if (stop_daemon or self._started) and not threaded:
+        if (stop_daemon or self._started) and not threaded and self.mdbx:
             self.mdbx._pyroRelease()
             stop_maestral_daemon_process(self.config_name)
 
@@ -573,10 +574,10 @@ def run_from_console():
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', help='config name', default='maestral')
+    parser.add_argument('-c', '--config-name', help='config name', default='maestral')
     args = parser.parse_args()
 
-    run(args.c)
+    run(args.config_name)
 
 
 if __name__ == '__main__':
