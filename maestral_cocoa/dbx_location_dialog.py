@@ -6,7 +6,7 @@ from toga.style.pack import Pack, FONT_SIZE_CHOICES
 from maestral.utils.appdirs import get_home_dir
 from maestral.utils.path import delete
 
-from .private.widgets import IconForPath
+from .private.widgets import IconForPath, Selection
 from .dialogs import Dialog
 from .utils import select_folder_sheet, alert_sheet
 
@@ -44,7 +44,7 @@ class DbxLocationDialog(Dialog):
             'click "Unlink" below.'
         ).format(old_path, self.mdbx.get_conf('main', 'default_dir_name'))
 
-        self.combobox_dbx_location = toga.Selection(
+        self.combobox_dbx_location = Selection(
             items=[
                 self.dbx_location_user_selected,
                 toga.SECTION_BREAK,
@@ -124,12 +124,8 @@ class DbxLocationDialog(Dialog):
             self._continue()
 
     def _continue(self):
-        self.mdbx.create_dropbox_directory(path=self._chosen_dropbox_folder,
-                                           overwrite=False)
-        self.mdbx.set_conf('internal', 'cursor', '')
-        self.mdbx.set_conf('internal', 'lastsync', 0.0)
-
-        self.mdbx.start_sync()
+        self.mdbx.create_dropbox_directory(path=self._chosen_dropbox_folder)
+        self.mdbx.rebuild_index_async()
         self.accepted = 0
         self.close()
 
