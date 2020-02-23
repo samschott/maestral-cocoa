@@ -578,6 +578,7 @@ class Window(toga.Window):
         self._is_dialog = yes
         animation = NSWindowAnimationBehaviorAlertPanel if yes else NSWindowAnimationBehaviorDefault
         self._impl.native.animationBehavior = animation
+        self._impl.native.level = 3
 
 
 # ==== Application =======================================================================
