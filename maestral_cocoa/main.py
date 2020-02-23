@@ -35,6 +35,7 @@ from maestral.daemon import (
     get_maestral_pid,
     get_maestral_proxy,
     Start,
+    Pyro5
 )
 from maestral import __author__, __url__
 from maestral import __version__ as __daemon_version__
@@ -121,8 +122,11 @@ class MaestralGui(SystemTrayApp):
     async def periodic_refresh_gui(self, interval=0.5):
 
         while self.periodic_updates:
-            self.update_status()
-            self.update_error()
+            try:
+                self.update_status()
+                self.update_error()
+            except Pyro5.errors.CommunicationError:
+                self.exit()
 
             await asyncio.sleep(interval)
 
@@ -533,7 +537,6 @@ class MaestralGui(SystemTrayApp):
         # stop sync daemon if we started it or ``stop_daemon`` is ``True``
         # never stop the daemon process if it is the current process
         if (stop_daemon or self._started) and not threaded and self.mdbx:
-            self.mdbx._pyroRelease()
             stop_maestral_daemon_process(self.config_name)
 
         super().exit()
