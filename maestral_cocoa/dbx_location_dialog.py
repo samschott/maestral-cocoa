@@ -71,12 +71,12 @@ class DbxLocationDialog(Dialog):
         if btn_name == 'Quit':
             self.spinner.start()
             self.accepted = 1
-            self.close()
+            self.app.exit(stop_daemon=True)
         elif btn_name == 'Unlink':
             self.spinner.start()
             self.mdbx.unlink()
             self.accepted = 1
-            self.close()
+            self.app.exit(stop_daemon=True)
         elif btn_name == 'Select':
             # apply dropbox path
             self._chosen_dropbox_folder = osp.join(
@@ -124,7 +124,7 @@ class DbxLocationDialog(Dialog):
             self._continue()
 
     def _continue(self):
-        self.mdbx.create_dropbox_directory(path=self._chosen_dropbox_folder)
+        self.mdbx.create_dropbox_directory(self._chosen_dropbox_folder)
         self.mdbx.rebuild_index_async()
         self.accepted = 0
         self.close()

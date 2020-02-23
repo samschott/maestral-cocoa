@@ -154,8 +154,6 @@ class MaestralGui(SystemTrayApp):
             self.set_icon(ERROR)
             self.mdbx = self._get_or_start_maestral_daemon(run=False)
             res = DbxLocationDialog(self.mdbx, app=self).runModal()
-            if res != 0:
-                self.exit(stop_daemon=True)
         else:
             self.mdbx = self._get_or_start_maestral_daemon()
 
