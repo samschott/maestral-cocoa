@@ -102,7 +102,7 @@ class SetupDialog(SetupDialogGui):
                 # start maestral
                 start_maestral_daemon_thread(self.config_name, run=False)
                 self.mdbx = get_maestral_proxy(self.config_name)
-                self.mdbx.reset_state()
+                self.mdbx.reset_sync_state()
                 self.mdbx.get_account_info()
 
                 # initialize fs source
