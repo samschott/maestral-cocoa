@@ -69,9 +69,6 @@ class SetupDialog(SetupDialogGui):
     # ====================================================================================
 
     def on_start(self, widget):
-        # start with fresh config
-        self._conf.reset_to_defaults()
-        self._state.reset_to_defaults()
         # start auth flow
         self.btn_auth_token.url = self.auth_session.get_auth_url()
         self.go_forward()
@@ -105,6 +102,7 @@ class SetupDialog(SetupDialogGui):
                 # start maestral
                 start_maestral_daemon_thread(self.config_name, run=False)
                 self.mdbx = get_maestral_proxy(self.config_name)
+                self.mdbx.reset_state()
                 self.mdbx.get_account_info()
 
                 # initialize fs source
