@@ -535,8 +535,11 @@ class MaestralGui(SystemTrayApp):
         threaded = os.getpid() == get_maestral_pid(self.config_name)
 
         # stop sync daemon if we started it or ``stop_daemon`` is ``True``
-        # never stop the daemon process if it is the current process
-        if (stop_daemon or self._started) and not threaded and self.mdbx:
+        # never stop the daemon if it runs in a thread of the current process
+        if threaded:
+            self.mdbx.stop_sync()
+            self.mdbx.shutdown_pyro_daemon()
+        elif stop_daemon or self._started:
             stop_maestral_daemon_process(self.config_name)
 
         super().exit()
