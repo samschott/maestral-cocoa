@@ -515,7 +515,7 @@ class MaestralGui(SystemTrayApp):
                                 'gui': toga.__version__,
                                 'desktop': 'Cocoa',
                             },
-                        'error': err,
+                        'original exception': err,
                     }
                 )
 
