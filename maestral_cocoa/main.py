@@ -519,7 +519,7 @@ class MaestralGui(SystemTrayApp):
                     }
                 )
 
-            self.mdbx.analytics = auto_share_checkbox
+            self.mdbx.analytics = self.mdbx.analytics or auto_share_checkbox
 
     def exit(self, *args, stop_daemon=False):
         """Quits Maestral.
