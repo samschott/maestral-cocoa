@@ -512,7 +512,7 @@ class MaestralGui(SystemTrayApp):
                             {
                                 'platform': platform.platform(),
                                 'python': platform.python_version(),
-                                'gui': toga.__version__,
+                                'gui': f'toga {toga.__version__}',
                                 'desktop': 'Cocoa',
                             },
                         'original exception': err,
