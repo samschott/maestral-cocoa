@@ -2,9 +2,6 @@
 import os.path as osp
 
 # maestral modules
-from maestral.config import MaestralConfig, MaestralState
-from maestral.oauth import OAuth2Session
-from maestral.daemon import start_maestral_daemon_thread, get_maestral_proxy
 from maestral.utils.path import delete
 from maestral.utils.appdirs import get_home_dir
 
@@ -12,30 +9,25 @@ from maestral.utils.appdirs import get_home_dir
 from .private.constants import OFF
 from .utils import alert_sheet, run_async, async_call
 from .setup_gui import SetupDialogGui
-from .excluded_folders_gui import FileSystemSource
+from .selective_sync_gui import FileSystemSource
 
 
 class SetupDialog(SetupDialogGui):
 
     accepted = False
 
-    def __init__(self, config_name='maestral', app=None, after_close=None):
-        super().__init__(config_name, app=app)
+    def __init__(self, app, after_close=None):
+        super().__init__(app=app)
         self.after_close = after_close
 
-        self.config_name = config_name
-        self.mdbx = None
-        # use only for reading, before daemon is attached
-        self._conf = MaestralConfig(config_name)
-        self._state = MaestralState(config_name)
+        self.mdbx = self.app.mdbx
 
-        self.auth_session = OAuth2Session(self.config_name)
         self._chosen_dropbox_folder = None
 
         self.excluded_folders = []
 
         # set up combobox
-        default_location = osp.dirname(self._conf.get('main', 'path')) or get_home_dir()
+        default_location = osp.dirname(self.mdbx.get_conf('main', 'path')) or get_home_dir()
         self._update_comboxbox_location(default_location)
 
         # connect buttons to callbacks
@@ -45,7 +37,7 @@ class SetupDialog(SetupDialogGui):
         self.dialog_buttons_folders_page.on_press = self.on_folders_excluded
         self.close_button.on_press = lambda s: self.close()
 
-        default_folder_name = self._conf.get('main', 'default_dir_name')
+        default_folder_name = self.mdbx.get_conf.get('main', 'default_dir_name')
         location_label_text = self.dbx_location_label.text.format(default_folder_name)
         self.dbx_location_label.text = location_label_text
 
@@ -70,7 +62,7 @@ class SetupDialog(SetupDialogGui):
 
     def on_start(self, widget):
         # start auth flow
-        self.btn_auth_token.url = self.auth_session.get_auth_url()
+        self.btn_auth_token.url = self.mdbx.get_auth_url()
         self.go_forward()
 
     @async_call
@@ -93,17 +85,9 @@ class SetupDialog(SetupDialogGui):
             self.dialog_buttons_link_page.enabled = False
             self.text_field_auth_token.enabled = False
 
-            res = await run_async(self.auth_session.verify_auth_token, token)
+            res = await run_async(self.mdbx.link, token)
 
-            if res == OAuth2Session.Success:
-                # save token
-                self.auth_session.save_creds()
-
-                # start maestral
-                start_maestral_daemon_thread(self.config_name, run=False)
-                self.mdbx = get_maestral_proxy(self.config_name)
-                self.mdbx.reset_sync_state()
-                self.mdbx.get_account_info()
+            if res == 0:
 
                 # initialize fs source
                 self.fs_source = FileSystemSource(gui_parent=self, mdbx=self.mdbx)
@@ -115,7 +99,7 @@ class SetupDialog(SetupDialogGui):
                 # switch to next page
                 self.go_forward()
 
-            elif res == OAuth2Session.InvalidToken:
+            elif res == 1:
                 alert_sheet(
                     window=self,
                     title='Authentication failed.',
@@ -124,7 +108,7 @@ class SetupDialog(SetupDialogGui):
                     icon=self.app.icon,
                 )
 
-            elif res == OAuth2Session.ConnectionFailed:
+            elif res == 2:
                 alert_sheet(
                     window=self,
                     title='Connection failed.',

@@ -42,7 +42,7 @@ setup(
     install_requires=[
         'bugsnag',
         'click',
-        'maestral==0.6.0.dev4',
+        'maestral==1.0.0.dev1',
         'markdown2',
         'toga',
     ],

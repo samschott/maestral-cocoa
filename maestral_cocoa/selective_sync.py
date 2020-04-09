@@ -1,7 +1,7 @@
 import logging
 
 from .private.constants import ON, OFF, MIXED
-from .excluded_folders_gui import ExcludedFoldersGui
+from .selective_sync_gui import ExcludedFoldersGui
 
 
 logger = logging.getLogger(__name__)

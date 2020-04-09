@@ -22,7 +22,6 @@ import toga
 from toga.style.pack import Pack, FONT_SIZE_CHOICES
 
 # maestral modules
-from maestral.utils.backend import pending_link, pending_dropbox_folder
 from maestral.utils.autostart import AutoStart
 from maestral.constants import (
     IDLE, SYNCING, PAUSED, STOPPED, DISCONNECTED, SYNC_ERROR, ERROR,
@@ -45,9 +44,9 @@ from maestral_cocoa import __version__ as __gui_version__
 from maestral_cocoa.utils import async_call, run_maestral_async, alert
 from maestral_cocoa.private.widgets import (MenuItem, MenuItemSeparator, Menu,
                                             StatusBarItem, SystemTrayApp)
+from maestral_cocoa.setup import SetupDialog
 from maestral_cocoa.settings import SettingsWindow
 from maestral_cocoa.syncissues import SyncIssuesWindow
-from maestral_cocoa.rebuildindex import RebuildIndexDialog
 from maestral_cocoa.dbx_location_dialog import DbxLocationDialog
 from maestral_cocoa.dialogs import Dialog, UpdateDialog, ProgressDialog, RelinkDialog
 from maestral_cocoa.resources import APP_ICON_PATH, TRAY_ICON_PATH
@@ -142,36 +141,31 @@ class MaestralGui(SystemTrayApp):
 
     def load_maestral(self):
 
-        if pending_link(self.config_name):
-            from .setup import SetupDialog
-            logger.info('Setting up Maestral...')
-            res = SetupDialog(self.config_name, app=self).runModal()
+        self.mdbx = self.get_or_start_maestral_daemon()
+
+        if self.mdbx.pending_link:
+            res = SetupDialog(self).runModal()
             self._started = True
 
-            if res == 0:
-                logger.info('Setup complete.')
-                self.mdbx = get_maestral_proxy(self.config_name)
-                self.mdbx.run()
-            else:
-                logger.info('Setup aborted by user.')
+            if res > 0:
                 self.exit(stop_daemon=True)
-        elif pending_dropbox_folder(self.config_name):
-            self.set_icon(ERROR)
-            self.mdbx = self._get_or_start_maestral_daemon(run=False)
-            res = DbxLocationDialog(self.mdbx, app=self).runModal()
-        else:
-            self.mdbx = self._get_or_start_maestral_daemon()
 
-    def _get_or_start_maestral_daemon(self, run=True):
+        elif self.mdbx.pending_dropbox_folder:
+            self.set_icon(ERROR)
+            DbxLocationDialog(self.mdbx, app=self).runModal()
+
+        self.mdbx.start_sync()
+
+    def get_or_start_maestral_daemon(self):
 
         pid = get_maestral_pid(self.config_name)
         if pid:
             self._started = False
         else:
             if IS_MACOS_BUNDLE:
-                res = start_maestral_daemon_thread(self.config_name, run=run)
+                res = start_maestral_daemon_thread(self.config_name)
             else:
-                res = start_maestral_daemon_process(self.config_name, run=run)
+                res = start_maestral_daemon_process(self.config_name)
 
             if res == Start.Failed:
                 title = 'Could not start Maestral'
@@ -323,7 +317,27 @@ class MaestralGui(SystemTrayApp):
         SyncIssuesWindow(self.mdbx, app=self).raise_()
 
     def on_rebuild_clicked(self, widget):
-        RebuildIndexDialog(self.mdbx, app=self).raise_()
+        self.rebuild_dialog = Dialog(
+            title='Rebuilt Maestral\'s sync index?',
+            message=(
+                'Rebuilding the index may take several minutes, depending on the size of '
+                'your Dropbox. Any changes to local files will be synced once rebuilding '
+                'has completed. If you quit Maestral during the process, rebuilding will '
+                'be resumed on the next launch.'
+            ),
+            button_labels=('Rebuild', 'Cancel'),
+            icon=self.icon,
+            callback=self.on_rebuild_decided,
+        )
+
+        self.rebuild_dialog.raise_()
+
+    def on_rebuild_decided(self, btn_name):
+
+        if btn_name == 'Rebuild':
+            self.mdbx.rebuild_index()
+
+        self.rebuild_dialog.close()
 
     # ==== other callbacks  ==============================================================
 

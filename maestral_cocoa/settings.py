@@ -7,7 +7,7 @@ from maestral.utils.autostart import AutoStart
 from .utils import async_call, run_maestral_async, alert_sheet
 from .private.constants import ON, OFF
 from .settings_gui import SettingsGui
-from .excluded_folders import ExcludedFoldersDialog
+from .selective_sync import ExcludedFoldersDialog
 from .dialogs import Dialog
 
 

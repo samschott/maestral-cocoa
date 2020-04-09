@@ -271,9 +271,7 @@ class RelinkDialog(Window):
         self.mdbx = mdbx
         self.reason = reason
 
-        from maestral.oauth import OAuth2Session
-        self.auth_session = OAuth2Session(self.mdbx.config_name)
-        url = self.auth_session.get_auth_url()
+        url = self.mdbx.get_auth_url()
 
         if self.reason == self.EXPIRED:
             reason = 'expired'
@@ -343,15 +341,13 @@ class RelinkDialog(Window):
         if btn_name == self.CANCEL_BTN:
             self.app.exit()
         elif btn_name == self.UNLINK_BTN:
-            self.auth_session.delete_creds()
+            self.mdbx.unlink()
             self.app.exit()
         elif btn_name == self.LINK_BTN:
             self.do_relink()
 
     @async_call
     async def do_relink(self):
-
-        from maestral.oauth import OAuth2Session
 
         self.dialog_buttons[self.LINK_BTN].enabled = False
         self.dialog_buttons[self.CANCEL_BTN].enabled = False
@@ -361,12 +357,11 @@ class RelinkDialog(Window):
         self.spinner.start()
 
         token = self.token_field.value
-        res = await run_async(self.auth_session.verify_auth_token, token)
+        res = await run_async(self.mdbx.link, token)
 
         self.spinner.stop()
 
-        if res == OAuth2Session.Success:
-            self.auth_session.save_creds()
+        if res == 0:
             alert_sheet(
                 window=self,
                 title='Relink successful!',
@@ -374,14 +369,14 @@ class RelinkDialog(Window):
                 callback=self.app.restart,
                 icon=self.app.icon,
             )
-        elif res == OAuth2Session.InvalidToken:
+        elif res == 1:
             alert_sheet(
                 window=self,
                 title='Invalid token',
                 message='Please make sure you copy the correct token.',
                 icon=self.app.icon,
             )
-        elif res == OAuth2Session.ConnectionFailed:
+        elif res == 2:
             alert_sheet(
                 window=self,
                 title='Connection failed',

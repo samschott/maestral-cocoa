@@ -37,7 +37,7 @@ class SetupDialogGui(Window):
     )
     btn_box_style = Pack(width=CONTENT_WIDTH, padding_bottom=20)
 
-    def __init__(self, config_name, app):
+    def __init__(self, app):
         # noinspection PyTypeChecker
         super().__init__(title='Maestral Setup',
                          size=(self.WINDOW_WIDTH, self.WINDOW_HEIGHT),
@@ -47,8 +47,6 @@ class SetupDialogGui(Window):
         self._impl.native.styleMask |= NSFullSizeContentViewWindowMask
         self._impl.native.movableByWindowBackground = True
         self._impl.native.level = 3
-
-        self.config_name = config_name
 
         # ==== welcome page ==============================================================
 
