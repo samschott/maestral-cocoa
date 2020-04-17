@@ -232,7 +232,7 @@ class MaestralGui(SystemTrayApp):
         s1 = MenuItemSeparator()
 
         self.item_status = MenuItem(IDLE)
-        initial_text = self.PAUSE_TEXT if self.mdbx.syncing else self.RESUME_TEXT
+        initial_text = self.RESUME_TEXT if self.mdbx.paused else self.PAUSE_TEXT
         self.item_pause = MenuItem(initial_text, action=self.on_start_stop_clicked)
         self.menu_recent_files = Menu()
         self.item_recent_files = MenuItem('Recently Changed Files', submenu=self.menu_recent_files)
@@ -392,7 +392,7 @@ class MaestralGui(SystemTrayApp):
         n_sync_errors = len(self.mdbx.sync_errors)
         status = self.mdbx.status
         is_paused = self.mdbx.paused
-        is_stopped = self.mdbx.stopped
+        is_stopped = not self.mdbx.running
 
         # update icon
         if is_paused:
@@ -456,12 +456,12 @@ class MaestralGui(SystemTrayApp):
             self.menu_snooze.remove(self.separator_snooze)
 
     def update_error(self):
-        errs = self.mdbx.maestral_errors
+        errs = self.mdbx.fatal_errors
 
         if not errs:
             return
 
-        self.mdbx.clear_maestral_errors()
+        self.mdbx.clear_fatal_errors()
 
         self.set_icon(ERROR)
         self.item_pause.label = self.RESUME_TEXT
@@ -472,15 +472,14 @@ class MaestralGui(SystemTrayApp):
 
         err = errs[-1]
 
-        if err['type'] in ('RevFileError', 'BadInputError', 'CursorResetError',
-                           'InotifyError', 'OutOfMemoryError'):
-            alert(err['title'], err['message'], level='error', icon=self.icon)
-        elif err['type'] == 'DropboxDeletedError':
+        if err['type'] == 'NoDropboxDirError':
             self._exec_dbx_location_dialog()
-        elif err['type'] == 'DropboxAuthError':
+        elif err['type'] == 'TokenRevokedError':
             self._exec_relink_dialog(RelinkDialog.REVOKED)
         elif err['type'] == 'TokenExpiredError':
             self._exec_relink_dialog(RelinkDialog.EXPIRED)
+        elif 'MaestralApiError' in err['inherits'] or 'SyncError' in err['inherits']:
+            alert(err['title'], err['message'], level='error', icon=self.icon)
         else:
             self._exec_error_dialog(err)
 
