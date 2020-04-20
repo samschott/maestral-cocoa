@@ -9,7 +9,7 @@ from maestral.utils.appdirs import get_home_dir
 
 # local imports
 from .private.constants import OFF
-from .utils import alert_sheet, run_async, async_call
+from .utils import alert_sheet, run_maestral_async, async_call
 from .setup_gui import SetupDialogGui
 from .selective_sync_gui import FileSystemSource
 
@@ -26,7 +26,7 @@ class SetupDialog(SetupDialogGui):
 
         self._chosen_dropbox_folder = None
 
-        self.excluded_folders = []
+        self.excluded_items = []
 
         # set up combobox
         default_location = osp.dirname(self.mdbx.get_conf('main', 'path')) or get_home_dir()
@@ -36,10 +36,10 @@ class SetupDialog(SetupDialogGui):
         self.btn_start.on_press = self.on_start
         self.dialog_buttons_link_page.on_press = self.on_link_dialog
         self.dialog_buttons_location_page.on_press = self.on_dbx_location
-        self.dialog_buttons_folders_page.on_press = self.on_folders_excluded
+        self.dialog_buttons_selective_sync_page.on_press = self.on_items_selected
         self.close_button.on_press = lambda s: self.close()
 
-        default_folder_name = self.mdbx.get_conf.get('main', 'default_dir_name')
+        default_folder_name = self.mdbx.get_conf('main', 'default_dir_name')
         location_label_text = self.dbx_location_label.text.format(default_folder_name)
         self.dbx_location_label.text = location_label_text
 
@@ -87,16 +87,16 @@ class SetupDialog(SetupDialogGui):
             self.dialog_buttons_link_page.enabled = False
             self.text_field_auth_token.enabled = False
 
-            res = await run_async(self.mdbx.link, token)
+            res = await run_maestral_async(self.mdbx.config_name, 'link', token)
 
             if res == 0:
 
                 # initialize fs source
                 self.fs_source = FileSystemSource(gui_parent=self, mdbx=self.mdbx)
                 self.fs_source.included.style.padding_left = 10
-                self.folders_page.add(self.fs_source.included,
-                                      self.dialog_buttons_folders_page)
-                self.dropbox_folders_tree.data = self.fs_source  # triggers loading
+                self.selective_sync_page.add(self.fs_source.included,
+                                             self.dialog_buttons_selective_sync_page)
+                self.dropbox_tree.data = self.fs_source  # triggers loading
 
                 # switch to next page
                 self.go_forward()
@@ -190,17 +190,17 @@ class SetupDialog(SetupDialogGui):
             # switch to next page
             self.go_forward()
 
-    def on_folders_excluded(self, btn_name):
+    def on_items_selected(self, btn_name):
 
         if btn_name == 'Select':
 
-            self.get_selected_folders(self.fs_source)
-            self.mdbx.set_conf('main', 'excluded_folders', self.excluded_folders)
+            self.get_selected_items(self.fs_source)
+            self.mdbx.set_excluded_items(self.excluded_items)
 
             # if any excluded folders are currently on the drive, delete them
-            for folder in self.excluded_folders:
-                local_folder = self.mdbx.to_local_path(folder)
-                delete(local_folder)
+            for item in self.excluded_items:
+                local_item = self.mdbx.to_local_path(item)
+                delete(local_item)
 
             # switch to next page
             self.go_forward()
@@ -212,14 +212,14 @@ class SetupDialog(SetupDialogGui):
     # Helper functions
     # ====================================================================================
 
-    def get_selected_folders(self, parent):
+    def get_selected_items(self, parent):
 
         for child in parent._children:
             child_path_lower = child.path.lower()
             if child.included.state == OFF:
-                self.excluded_folders.append(child_path_lower)
+                self.excluded_items.append(child_path_lower)
 
-            self.get_selected_folders(child)
+            self.get_selected_items(child)
 
     # ====================================================================================
     # run window as application modal

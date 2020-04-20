@@ -91,7 +91,7 @@ class SetupDialogGui(Window):
         )
         self.text_field_auth_token = toga.TextInput(
             placeholder='Authorization Token',
-            style=Pack(width=self.CONTENT_WIDTH)
+            style=Pack(width=self.CONTENT_WIDTH, text_align=CENTER,)
         )
         self.spinner_link = toga.ActivityIndicator(style=Pack(width=32, height=32))
         self.dialog_buttons_link_page = DialogButtons(
@@ -156,31 +156,32 @@ class SetupDialogGui(Window):
             style=self.page_style,
         )
 
-        # ==== exclude folders page ======================================================
+        # ==== selective sync page =======================================================
 
         label3 = Label(
-            text=('Please select which folders to sync below. The initial download may '
-                  'take a while, depending on the size of your Dropbox.'),
+            text=('Please select which files and folders to sync below. The initial '
+                  'download may take some time, depending on the size of your Dropbox.'),
             linebreak_mode=WORD_WRAP,
             style=Pack(width=self.CONTENT_WIDTH, padding=(20, 0, 20, 0))
         )
-        self.dropbox_folders_tree = toga.Tree(
-            headings=['Folder', 'Included'],
+        self.dropbox_tree = toga.Tree(
+            headings=['  Name', '  Included'],
+            accessors=['name', 'included'],
             data=[],
             style=Pack(width=self.CONTENT_WIDTH, padding_bottom=20, flex=1),
             multiple_select=True,
         )
-        self.dropbox_folders_tree._impl.columns[0].setMinWidth(150)
+        self.dropbox_tree._impl.columns[0].setMinWidth(150)
 
-        self.dialog_buttons_folders_page = DialogButtons(
+        self.dialog_buttons_selective_sync_page = DialogButtons(
             labels=['Select', 'Back'],
             style=self.btn_box_style,
         )
 
-        self.folders_page = toga.Box(
+        self.selective_sync_page = toga.Box(
             children=[
                 label3,
-                self.dropbox_folders_tree,
+                self.dropbox_tree,
             ],
             style=self.page_style,
         )
@@ -212,7 +213,7 @@ class SetupDialogGui(Window):
 
         self.pages = (
             self.welcome_page, self.link_page,
-            self.dbx_location_page, self.folders_page,
+            self.dbx_location_page, self.selective_sync_page,
             self.done_page
         )
         self.content = self.pages[0]
@@ -243,7 +244,7 @@ class SetupDialogGui(Window):
         ]
 
     def on_loading_failed(self):
-        self.dialog_buttons_folders_page['Select'].enabled = False
+        self.dialog_buttons_selective_sync_page['Select'].enabled = False
 
     @staticmethod
     def _relpath(path):

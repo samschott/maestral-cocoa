@@ -15,7 +15,7 @@ from maestral.utils.autostart import AutoStart
 from .utils import async_call, run_maestral_async, alert_sheet
 from .private.constants import ON, OFF
 from .settings_gui import SettingsGui
-from .selective_sync import ExcludedFoldersDialog
+from .selective_sync import SelectiveSyncDialog
 from .dialogs import Dialog
 
 
@@ -59,7 +59,7 @@ class SettingsWindow(SettingsGui):
             self.mdbx.resume_sync()
 
     def on_folder_selection_pressed(self, widget):
-        ExcludedFoldersDialog(self.mdbx, app=self.app).show_as_sheet(self)
+        SelectiveSyncDialog(self.mdbx, app=self.app).show_as_sheet(self)
 
     def on_unlink_pressed(self, widget):
         self.unlink_dialog = Dialog(

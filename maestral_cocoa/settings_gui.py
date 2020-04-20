@@ -99,11 +99,11 @@ class SettingsGui(Window):
         # ==== sync settings section =====================================================
 
         self._label_select_folders = Label(
-            'Select folders to sync:',
+            'Selective sync:',
             style=Pack(text_align=RIGHT, width=self.COLUMN_WIDTH_LEFT)
         )
         self.btn_select_folders = toga.Button(
-            label='Choose folders to sync...',
+            label='Select files and folders...',
             on_press=self.on_folder_selection_pressed,
             style=Pack(padding_left=self.COLUMN_PADDING, width=self.BUTTON_WIDTH)
         )
