@@ -100,6 +100,7 @@ class DialogButtons(toga.Box):
         if default:
             try:
                 default_index = labels.index(default)
+                # TODO: move objc API access to factory
                 self._buttons[default_index]._impl.native.keyEquivalent = at('\r')
             except ValueError:
                 pass
@@ -504,6 +505,7 @@ class StatusBarItem:
 
 # ==== Custom Window =====================================================================
 
+# TODO: move objc API access to factory
 class Window(toga.Window):
 
     def __init__(self, id=None, title=None, position=None, size=(640, 480),
