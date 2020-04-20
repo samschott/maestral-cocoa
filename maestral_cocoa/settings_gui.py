@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # system imports
+import sys
 import os
 import os.path as osp
 import time
@@ -131,7 +132,7 @@ class SettingsGui(Window):
             style=Pack(direction=COLUMN)
         )
 
-        # ==== sync settings section =====================================================
+        # ==== system settings section ===================================================
 
         self._label_update_interval = Label(
             'Check for updates:',
@@ -169,29 +170,79 @@ class SettingsGui(Window):
             style=Pack(width=self.COLUMN_WIDTH_RIGHT)
         )
 
-        maestral_settings_box = toga.Box(
-            children=[
-                toga.Box(
-                    children=[self._label_update_interval, self.combobox_update_interval],
-                    style=Pack(alignment=CENTER, padding_bottom=self.ELEMENT_PADDING),
-                ),
+        self._label_cli_tool = Label(
+            'Command line tool:',
+            style=Pack(text_align=RIGHT, width=self.COLUMN_WIDTH_LEFT)
+        )
+
+        self.label_cli_tool_info = Label(
+            "Install the 'maestral' command line tool to /usr/local/bin.",
+            style=Pack(
+                color=GRAY,
+                width=self.COLUMN_WIDTH_RIGHT,
+                padding_left=self.COLUMN_PADDING,
+            )
+        )
+
+        self.btn_cli_tool = toga.Button(
+            'Install',
+            on_press=self.on_cli_pressed,
+            style=Pack(
+                width=self.BUTTON_WIDTH / 2,
+                padding_bottom=self.SUBELEMENT_PADDING,
+                padding_left=self.COLUMN_PADDING,
+            )
+        )
+
+        children = [
+            toga.Box(
+               children=[self._label_update_interval,
+                         self.combobox_update_interval],
+               style=Pack(
+                   alignment=CENTER, padding_bottom=self.ELEMENT_PADDING
+               ),
+            ),
+            toga.Box(
+               children=[
+                   self._label_system_settings,
+                   toga.Box(
+                       children=[
+                           self.checkbox_autostart,
+                           self.checkbox_notifications,
+                           self.checkbox_analytics
+                       ],
+                       style=Pack(
+                           alignment=TOP, direction=COLUMN,
+                           padding_left=self.COLUMN_PADDING,
+                       ),
+                   )
+               ],
+            )
+        ]
+
+        if getattr(sys, 'frozen', False):
+            children.append(
                 toga.Box(
                     children=[
-                        self._label_system_settings,
-                        toga.Box(
-                            children=[
-                                self.checkbox_autostart, self.checkbox_notifications,
-                                self.checkbox_analytics
-                            ],
-                            style=Pack(
-                                alignment=TOP, direction=COLUMN,
-                                padding_left=self.COLUMN_PADDING
-                            ),
-                        )
+                        self._label_cli_tool,
+                        self.btn_cli_tool,
                     ],
+                    style=Pack(alignment=CENTER, padding_top=self.ELEMENT_PADDING)
                 )
-            ],
-            style=Pack(direction=COLUMN)
+            )
+            children.append(
+                toga.Box(
+                    children=[
+                        Label(' ', style=Pack(text_align=RIGHT, width=self.COLUMN_WIDTH_LEFT)),
+                        self.label_cli_tool_info,
+                    ],
+                    style=Pack(alignment=CENTER, padding_top=self.SUBELEMENT_PADDING)
+                )
+            )
+
+        maestral_settings_box = toga.Box(
+            children=children,
+            style=Pack(direction=COLUMN),
         )
 
         # ==== about section =============================================================
@@ -309,4 +360,7 @@ class SettingsGui(Window):
         pass
 
     def on_analytics_clicked(self, widget):
+        pass
+
+    def on_cli_pressed(self, widget):
         pass

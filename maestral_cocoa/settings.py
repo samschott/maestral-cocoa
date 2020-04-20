@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 
 # system imports
+import sys
+import os
 import os.path as osp
 import asyncio
+from subprocess import call
 
 # external imports
 from maestral.utils.notify import FILECHANGE, SYNCISSUE
@@ -24,6 +27,8 @@ class SettingsWindow(SettingsGui):
         'Monthly': 60 * 60 * 24 * 30,
         'Never': 0
     }
+
+    _macos_cli_tool_path = '/usr/local/bin/maestral'
 
     def __init__(self, mdbx, app):
         super().__init__(app=app)
@@ -102,6 +107,36 @@ class SettingsWindow(SettingsGui):
     def on_analytics_clicked(self, widget):
         self.mdbx.analytics = widget.state == ON
 
+    def on_cli_pressed(self, widget):
+
+        if osp.islink(self._macos_cli_tool_path):
+            os.remove(self._macos_cli_tool_path)
+        else:
+            maestral_cli = os.path.join(getattr(sys, '_MEIPASS', ''), 'maestral_cli')
+            call(['ln', '-s', maestral_cli, self._macos_cli_tool_path])
+
+        self._udpdate_cli_tool_button()
+
+    def _udpdate_cli_tool_button(self):
+        if osp.islink(self._macos_cli_tool_path):
+            self.btn_cli_tool.enabled = True
+            self.btn_cli_tool.label = 'Uninstall'
+            self.label_cli_tool_info.text = (
+                "CLI installed. See 'maestral --help' for available commands."
+            )
+        elif osp.exists(self._macos_cli_tool_path):
+            self.btn_cli_tool.enabled = False
+            self.btn_cli_tool.label = 'Install'
+            self.label_cli_tool_info.text = (
+                'CLI already installed from Python package.'
+            )
+        else:
+            self.btn_cli_tool.enabled = True
+            self.btn_cli_tool.label = 'Install'
+            self.label_cli_tool_info.text = (
+                "Install the 'maestral' command line tool to /usr/local/bin."
+            )
+
     # ==== populate gui with data ========================================================
 
     @async_call
@@ -132,6 +167,7 @@ class SettingsWindow(SettingsGui):
             key=lambda x: abs(self._update_interval_mapping[x] - update_interval)
         )
         self.combobox_update_interval.value = closest_key
+        self._udpdate_cli_tool_button()
 
     def set_account_info_from_cache(self):
 
