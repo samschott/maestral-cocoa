@@ -338,6 +338,9 @@ class RelinkDialog(Window):
         self.content = outer_box
 
     def on_dialog_press(self, btn_name):
+
+        self.spinner.start()
+
         if btn_name == self.CANCEL_BTN:
             self.app.exit()
         elif btn_name == self.UNLINK_BTN:
@@ -353,8 +356,6 @@ class RelinkDialog(Window):
         self.dialog_buttons[self.CANCEL_BTN].enabled = False
         self.dialog_buttons[self.UNLINK_BTN].enabled = False
         self.token_field.enabled = False
-
-        self.spinner.start()
 
         token = self.token_field.value
         res = await run_async(self.mdbx.link, token)
