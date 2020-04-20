@@ -179,6 +179,7 @@ class SettingsGui(Window):
             "Install the 'maestral' command line tool to /usr/local/bin.",
             style=Pack(
                 color=GRAY,
+                font_size=12,
                 width=self.COLUMN_WIDTH_RIGHT,
                 padding_left=self.COLUMN_PADDING,
             )
