@@ -1,15 +1,21 @@
+# -*- coding: utf-8 -*-
+
+# system imports
 import os.path as osp
 
+# external imports
 import toga
 from toga.style.pack import Pack, FONT_SIZE_CHOICES
 from toga.constants import COLUMN, CENTER
-
 from maestral.utils.appdirs import get_home_dir
 
-from .private.widgets import (Label, Spacer, DialogButtons, FollowLinkButton,
-                              Selection, Window, IconForPath)
+# local imports
+from .private.widgets import (
+    Label, Spacer, DialogButtons, FollowLinkButton, Selection, Window, IconForPath
+)
 from .private.constants import WORD_WRAP, NSFullSizeContentViewWindowMask
 from .utils import select_folder_sheet
+
 
 # set default font size to 13 pt, as in macOS
 Pack.validated_property('font_size', choices=FONT_SIZE_CHOICES, initial=13)

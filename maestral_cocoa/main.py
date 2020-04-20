@@ -1,10 +1,4 @@
-# !/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Oct 31 16:23:13 2018
-
-@author: samschott
-"""
 # system imports
 import sys
 import os
@@ -15,13 +9,11 @@ import time
 from subprocess import Popen
 from datetime import datetime, timedelta
 
-# external packages
+# external imports
 import click
 import markdown2
 import toga
 from toga.style.pack import Pack, FONT_SIZE_CHOICES
-
-# maestral modules
 from maestral.utils.autostart import AutoStart
 from maestral.constants import (
     IDLE, SYNCING, PAUSED, STOPPED, DISCONNECTED, SYNC_ERROR, ERROR,

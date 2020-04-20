@@ -1,13 +1,17 @@
+# -*- coding: utf-8 -*-
+
+# system imports
 import os
 import os.path as osp
 
+# external imports
 import toga
 from toga.style import Pack
 from toga.constants import RIGHT, COLUMN
 from toga.sources import Source
-
 from maestral.utils.path import is_child
 
+# local imports
 from .utils import async_call, run_maestral_async
 from .private.widgets import Window, IconForPath, DialogButtons, Switch
 from .private.constants import ON, OFF, MIXED

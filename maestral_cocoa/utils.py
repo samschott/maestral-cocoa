@@ -1,11 +1,6 @@
 # -*- coding: utf-8 -*-
-"""
-@author: Sam Schott  (ss2151@cam.ac.uk)
 
-(c) Sam Schott; This work is licensed under a Creative Commons
-Attribution-NonCommercial-NoDerivs 2.0 UK: England & Wales License.
-
-"""
+# system imports
 import asyncio
 import inspect
 import sys
@@ -13,14 +8,15 @@ import traceback
 from functools import wraps
 from concurrent.futures import ThreadPoolExecutor
 
+# external imports
 import toga
 from toga.fonts import Font, SYSTEM, BOLD
 from toga_cocoa.libs import *
 from toga.handlers import long_running_task
 from toga.platform import get_platform_factory
-
 from maestral.daemon import MaestralProxy
 
+# local imports
 from .private.constants import (
     NSCompositeSourceOver,
     NSStackViewGravityBottom,

@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+
+# local imports
 from .private.constants import ON, OFF, MIXED
 from .selective_sync_gui import ExcludedFoldersGui
 

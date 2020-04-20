@@ -1,29 +1,28 @@
-# !/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Oct 31 16:23:13 2018
 
-@author: samschott
-"""
+# system imports
 import os.path as osp
 import asyncio
 import urllib.parse
 
+# external imports
 import toga
 from toga.style.pack import Pack
 from toga.constants import ROW, COLUMN
 
+# local imports
 from .utils import async_call, clear_background
 from .private.widgets import Label, FollowLinkButton, VibrantBox, IconForPath, Window
 from .private.constants import TRUNCATE_HEAD, WORD_WRAP, VisualEffectMaterial
+
 
 CONTENT_WIDTH = 330
 PADDING = 10
 ICON_SIZE = 48
 WINDOW_SIZE = (CONTENT_WIDTH + 4 * PADDING, 400)
 
-# TODO: use toga.DetailedList to display sync errors (once it is view-based)
 
+# TODO: use toga.DetailedList to display sync errors (once it is view-based)
 
 class SyncIssueBox(toga.Box):
 

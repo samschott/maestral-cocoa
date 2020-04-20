@@ -1,11 +1,13 @@
+# -*- coding: utf-8 -*-
+
 # system imports
 import os.path as osp
 
-# maestral modules
+# external imports
 from maestral.utils.path import delete
 from maestral.utils.appdirs import get_home_dir
 
-# maestral_cocoa modules
+# local imports
 from .private.constants import OFF
 from .utils import alert_sheet, run_async, async_call
 from .setup_gui import SetupDialogGui

@@ -1,15 +1,11 @@
-# !/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Oct 31 16:23:13 2018
 
-@author: samschott
-"""
-
+# external imports
 import toga
 from toga.style import Pack
 from toga.constants import COLUMN, ROW, BOLD
 
+# local imports
 from . import __url__
 from .private.widgets import (
     Window, DialogButtons, VibrantBox,

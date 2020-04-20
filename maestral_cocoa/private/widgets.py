@@ -1,12 +1,6 @@
 # -*- coding: utf-8 -*-
-"""
-@author: Sam Schott  (ss2151@cam.ac.uk)
 
-(c) Sam Schott; This work is licensed under a Creative Commons
-Attribution-NonCommercial-NoDerivs 2.0 UK: England & Wales License.
-
-"""
-
+# external imports
 import click
 
 import toga
@@ -16,12 +10,12 @@ from toga.icons import Icon
 from toga.style.pack import Pack
 from toga.constants import ROW, RIGHT
 from toga_cocoa.libs import at
-
 from maestral_cocoa.utils import clear_background
+
+# local imports
 from . import factory as private_factory
 from .constants import (
-    ON, MIXED,
-    TRUNCATE_TAIL, VisualEffectMaterial,
+    ON, MIXED, TRUNCATE_TAIL, VisualEffectMaterial,
     NSWindowAnimationBehaviorDefault, NSWindowAnimationBehaviorAlertPanel,
 )
 

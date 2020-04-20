@@ -1,13 +1,17 @@
+# -*- coding: utf-8 -*-
+
+# system imports
 import os
 import os.path as osp
 import time
 
-from maestral import __version__ as __daemon_version__
-
+# external imports
 import toga
 from toga.style.pack import Pack
 from toga.constants import ROW, COLUMN, TOP, RIGHT, CENTER, GRAY
+from maestral import __version__ as __daemon_version__
 
+# local imports
 from . import __url__, __author__
 from . import __version__ as __gui_version__
 from .utils import apply_round_clipping, select_folder_sheet

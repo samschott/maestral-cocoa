@@ -1,13 +1,9 @@
 # -*- coding: utf-8 -*-
-"""
-@author: Sam Schott  (ss2151@cam.ac.uk)
 
-(c) Sam Schott; This work is licensed under a Creative Commons
-Attribution-NonCommercial-NoDerivs 2.0 UK: England & Wales License.
-
-"""
+# system imports
 import os.path as osp
 
+# external imports
 from toga import SECTION_BREAK
 from toga.platform import get_platform_factory
 from toga_cocoa.libs import *
@@ -21,12 +17,14 @@ from toga_cocoa.widgets.selection import Selection as TogaSelection
 from toga_cocoa.widgets.multilinetextinput import MultilineTextInput as TogaMultilineTextInput
 from toga_cocoa.factory import *
 
+# local imports
 from .constants import (
     WORD_WRAP, CHARACTER_WRAP, CLIP, TRUNCATE_HEAD, TRUNCATE_MIDDLE, TRUNCATE_TAIL,
     NSButtonTypeMomentaryPushIn, NSFocusRingTypeNone, NSControlState,
     NSSquareStatusItemLength,
     ON, OFF, MIXED,
 )
+
 
 NSWorkspace = ObjCClass('NSWorkspace')
 NSVisualEffectView = ObjCClass('NSVisualEffectView')

@@ -1,9 +1,14 @@
+# -*- coding: utf-8 -*-
+
+# system imports
 import os.path as osp
 import asyncio
 
+# external imports
 from maestral.utils.notify import FILECHANGE, SYNCISSUE
 from maestral.utils.autostart import AutoStart
 
+# local imports
 from .utils import async_call, run_maestral_async, alert_sheet
 from .private.constants import ON, OFF
 from .settings_gui import SettingsGui
