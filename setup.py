@@ -44,7 +44,7 @@ setup(
         'click',
         'maestral==1.0.0.dev3',
         'markdown2',
-        'toga',
+        'toga>=0.3.0.dev19',
     ],
     zip_safe=False,
     entry_points={
