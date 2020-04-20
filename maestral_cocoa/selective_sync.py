@@ -1,10 +1,5 @@
-import logging
-
 from .private.constants import ON, OFF, MIXED
 from .selective_sync_gui import ExcludedFoldersGui
-
-
-logger = logging.getLogger(__name__)
 
 
 class ExcludedFoldersDialog(ExcludedFoldersGui):
@@ -29,7 +24,6 @@ class ExcludedFoldersDialog(ExcludedFoldersGui):
 
         self.get_changed_folders(self.fs_source)
 
-        logger.debug(f'new excluded folders: {self.excluded_folders}')
         self.mdbx.set_excluded_folders(self.excluded_folders)
 
     def get_changed_folders(self, parent):
@@ -38,10 +32,8 @@ class ExcludedFoldersDialog(ExcludedFoldersGui):
             if child.is_selection_modified():
                 child_path_lower = child.path.lower()
                 if child.included.state == OFF:
-                    logger.debug(f'excluding: {child.path}')
                     self.excluded_folders.append(child_path_lower)
                 elif child.included.state in (MIXED, ON):
-                    logger.debug(f'including: {child.path}')
                     while child_path_lower in self.excluded_folders:
                         self.excluded_folders.remove(child_path_lower)
 

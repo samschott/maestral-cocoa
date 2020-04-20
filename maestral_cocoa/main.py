@@ -9,7 +9,6 @@ Created on Wed Oct 31 16:23:13 2018
 import os
 import os.path as osp
 import asyncio
-import logging
 import platform
 import time
 from subprocess import Popen
@@ -53,12 +52,11 @@ from maestral_cocoa.resources import APP_ICON_PATH, TRAY_ICON_PATH
 
 
 Pack.validated_property('font_size', choices=FONT_SIZE_CHOICES, initial=13)
-logger = logging.getLogger(__name__)
 
 
 # TODO:
 #  - fix memory leak: bug filed with rubicon
-#  - wait for toga v0.3.0.dev19, include toga as private package
+#  - wait for toga v0.3.0.dev19 or include toga as private package
 
 class MaestralGui(SystemTrayApp):
     """A Qt GUI for the Maestral daemon."""
@@ -541,8 +539,6 @@ class MaestralGui(SystemTrayApp):
             quitting the GUI, if ``False``, it will be kept alive. If ``None``, the
             daemon will only be stopped if it was started by the GUI.
         """
-        logger.info('Quitting...')
-
         self.periodic_updates = False
 
         threaded = os.getpid() == get_maestral_pid(self.config_name)
@@ -559,8 +555,6 @@ class MaestralGui(SystemTrayApp):
 
     def restart(self, *args):
         """Restarts the Maestral GUI and sync daemon."""
-
-        logger.info('Restarting...')
 
         # schedule restart after current process has quit
         pid = os.getpid()  # get ID of current process
