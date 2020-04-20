@@ -17,13 +17,12 @@ from toga.style.pack import Pack, FONT_SIZE_CHOICES
 from maestral.utils.autostart import AutoStart
 from maestral.constants import (
     IDLE, SYNCING, PAUSED, STOPPED, DISCONNECTED, SYNC_ERROR, ERROR,
-    APP_NAME, BUNDLE_ID, IS_MACOS_BUNDLE
+    APP_NAME, BUNDLE_ID
 )
 from maestral.daemon import (
     start_maestral_daemon_process,
-    start_maestral_daemon_thread,
+    start_maestral_daemon,
     stop_maestral_daemon_process,
-    stop_maestral_daemon_thread,
     get_maestral_pid,
     get_maestral_proxy,
     Start,
@@ -158,10 +157,7 @@ class MaestralGui(SystemTrayApp):
         if pid:
             self._started = False
         else:
-            if IS_MACOS_BUNDLE:
-                res = start_maestral_daemon_thread(self.config_name)
-            else:
-                res = start_maestral_daemon_process(self.config_name)
+            res = start_maestral_daemon_process(self.config_name)
 
             if res == Start.Failed:
                 title = 'Could not start Maestral'
@@ -541,13 +537,8 @@ class MaestralGui(SystemTrayApp):
         """
         self.periodic_updates = False
 
-        threaded = os.getpid() == get_maestral_pid(self.config_name)
-
         # stop sync daemon if we started it or ``stop_daemon`` is ``True``
-        # never stop the daemon if it runs in a thread of the current process
-        if threaded:
-            await run_async(stop_maestral_daemon_thread, self.config_name)
-        elif stop_daemon or self._started:
+        if stop_daemon or self._started:
             await run_async(stop_maestral_daemon_process, self.config_name)
 
         super().exit()
@@ -604,7 +595,6 @@ def run_cli():
         from maestral.cli import main
         main()
     elif parsed_args.frozen_daemon:
-        from maestral.daemon import start_maestral_daemon
         start_maestral_daemon(parsed_args.config_name)
     else:
         run(parsed_args.config_name)
