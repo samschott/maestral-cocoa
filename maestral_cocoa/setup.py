@@ -6,6 +6,7 @@ import os.path as osp
 # external imports
 from maestral.utils.path import delete
 from maestral.utils.appdirs import get_home_dir
+from maestral.errors import NotLinkedError
 
 # local imports
 from .private.constants import OFF
@@ -51,9 +52,10 @@ class SetupDialog(SetupDialogGui):
         if self.current_index() == 4:
             accepted = 0
         else:
-            if self.mdbx:
+            try:
                 self.mdbx.unlink()
-                self.mdbx._pyroRelease()
+            except NotLinkedError:
+                pass
             accepted = 1
 
         self.stopModal(accepted)

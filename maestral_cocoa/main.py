@@ -116,7 +116,7 @@ class MaestralGui(SystemTrayApp):
                 self.update_status()
                 self.update_error()
             except Pyro5.errors.CommunicationError:
-                await self.exit()
+                super().exit()
 
             await asyncio.sleep(self.refresh_interval)
 
