@@ -30,6 +30,7 @@ from maestral.daemon import (
     start_maestral_daemon_process,
     start_maestral_daemon_thread,
     stop_maestral_daemon_process,
+    stop_maestral_daemon_thread,
     get_maestral_pid,
     get_maestral_proxy,
     Start,
@@ -40,7 +41,7 @@ from maestral import __version__ as __daemon_version__
 
 # local imports
 from maestral_cocoa import __version__ as __gui_version__
-from maestral_cocoa.utils import async_call, run_maestral_async, alert
+from maestral_cocoa.utils import async_call, run_async, run_maestral_async, alert
 from maestral_cocoa.private.widgets import (MenuItem, MenuItemSeparator, Menu,
                                             StatusBarItem, SystemTrayApp)
 from maestral_cocoa.setup import SetupDialog
@@ -123,7 +124,7 @@ class MaestralGui(SystemTrayApp):
                 self.update_status()
                 self.update_error()
             except Pyro5.errors.CommunicationError:
-                self.exit()
+                await self.exit()
 
             await asyncio.sleep(interval)
 
@@ -532,7 +533,8 @@ class MaestralGui(SystemTrayApp):
 
             self.mdbx.analytics = self.mdbx.analytics or auto_share_checkbox
 
-    def exit(self, *args, stop_daemon=False):
+    @async_call
+    async def exit(self, *args, stop_daemon=False):
         """Quits Maestral.
 
         :param bool stop_daemon: If ``True``, the sync daemon will be stopped when
@@ -546,10 +548,9 @@ class MaestralGui(SystemTrayApp):
         # stop sync daemon if we started it or ``stop_daemon`` is ``True``
         # never stop the daemon if it runs in a thread of the current process
         if threaded:
-            self.mdbx.stop_sync()
-            self.mdbx.shutdown_pyro_daemon()
+            await run_async(stop_maestral_daemon_thread, self.config_name)
         elif stop_daemon or self._started:
-            stop_maestral_daemon_process(self.config_name)
+            await run_async(stop_maestral_daemon_process, self.config_name)
 
         super().exit()
 
