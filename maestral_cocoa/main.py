@@ -94,7 +94,6 @@ class MaestralGui(SystemTrayApp):
         self.item_sync_issues = None
         self.item_pause = None
         self.menu_recent_files = None
-        self._n_sync_errors = None
 
         self.autostart = AutoStart(self.config_name, gui=True)
 
@@ -109,6 +108,7 @@ class MaestralGui(SystemTrayApp):
         self.setup_ui_linked()
 
         self.periodic_updates = True
+        self.refresh_interval = 2
         self.periodic_refresh_gui()
         self.periodic_check_for_updates()
 
@@ -118,7 +118,7 @@ class MaestralGui(SystemTrayApp):
             self._cached_status = status
 
     @async_call
-    async def periodic_refresh_gui(self, interval=0.5):
+    async def periodic_refresh_gui(self):
 
         while self.periodic_updates:
             try:
@@ -127,11 +127,15 @@ class MaestralGui(SystemTrayApp):
             except Pyro5.errors.CommunicationError:
                 await self.exit()
 
-            await asyncio.sleep(interval)
+            await asyncio.sleep(self.refresh_interval)
 
     def on_menu_open(self, sender):
         self.update_recent_files()
         self.update_snoozed()
+        self.refresh_interval = 0.5
+
+    def on_menu_close(self, sender):
+        self.refresh_interval = 2
 
     @async_call
     async def periodic_check_for_updates(self, interval=30 * 60):
@@ -281,6 +285,7 @@ class MaestralGui(SystemTrayApp):
         )
 
         self.menu.on_open = self.on_menu_open
+        self.menu.on_close = self.on_menu_close
 
         # --------------- switch to idle icon -------------------
         self.set_icon(IDLE)
