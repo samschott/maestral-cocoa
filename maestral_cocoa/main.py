@@ -75,6 +75,7 @@ class MaestralGui(SystemTrayApp):
         self._started = False
         self.mdbx = None
 
+        self.setup_dialog = None
         self.settings_window = None
         self.sync_issues_window = None
         self.rebuild_dialog = None
@@ -86,6 +87,9 @@ class MaestralGui(SystemTrayApp):
         self.item_pause = None
         self.menu_recent_files = None
 
+        self.periodic_updates = True
+        self.refresh_interval = 2
+
         self.autostart = AutoStart(self.config_name, gui=True)
 
         self.menu = Menu()
@@ -94,14 +98,7 @@ class MaestralGui(SystemTrayApp):
         self.tray = StatusBarItem(self.icon_mapping.get(DISCONNECTED), menu=self.menu)
 
         self.setup_ui_unlinked()
-
         self.load_maestral()
-        self.setup_ui_linked()
-
-        self.periodic_updates = True
-        self.refresh_interval = 2
-        self.periodic_refresh_gui()
-        self.periodic_check_for_updates()
 
     def set_icon(self, status):
         if status != self._cached_status:
@@ -139,17 +136,33 @@ class MaestralGui(SystemTrayApp):
         self.mdbx = self.get_or_start_maestral_daemon()
 
         if self.mdbx.pending_link:
-            res = SetupDialog(self).runModal()
-            self._started = True
-
-            if res > 0:
-                self.exit(stop_daemon=True)
+            self.setup_dialog = SetupDialog(self)
+            self.setup_dialog.raise_()
+            self.setup_dialog.on_close = self._on_setup_completed
 
         elif self.mdbx.pending_dropbox_folder:
             self.set_icon(ERROR)
-            DbxLocationDialog(self.mdbx, app=self).runModal()
+            self.setup_dialog = DbxLocationDialog(self.mdbx, app=self)
+            self.setup_dialog.raise_()
+            self.setup_dialog.on_close = self._on_setup_completed
 
-        self.mdbx.start_sync()
+        else:
+            self.mdbx.start_sync()
+
+            self.setup_ui_linked()
+            self.periodic_refresh_gui()
+            self.periodic_check_for_updates()
+
+    def _on_setup_completed(self):
+
+        if self.setup_dialog.accepted == 0:
+            self.mdbx.start_sync()
+
+            self.setup_ui_linked()
+            self.periodic_refresh_gui()
+            self.periodic_check_for_updates()
+        else:
+            self.exit(stop_daemon=True)
 
     def get_or_start_maestral_daemon(self):
 

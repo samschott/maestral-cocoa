@@ -71,22 +71,27 @@ class DbxLocationDialog(Dialog):
         self.msg_content.style.height = 170
 
     def on_dialog_pressed(self, btn_name):
+
         self.dialog_buttons.enabled = False
+
         if btn_name == 'Quit':
             self.spinner.start()
             self.accepted = 1
-            self.app.exit(stop_daemon=True)
+            self.close()
+
         elif btn_name == 'Unlink':
             self.spinner.start()
             self.mdbx.unlink()
             self.accepted = 1
-            self.app.exit(stop_daemon=True)
+            self.close()
+
         elif btn_name == 'Select':
             # apply dropbox path
             self._chosen_dropbox_folder = osp.join(
                 self.dbx_location_user_selected,
                 self.mdbx.get_conf('main', 'default_dir_name')
             )
+
             if osp.isdir(self._chosen_dropbox_folder):
                 alert_sheet(
                     window=self,
@@ -113,6 +118,7 @@ class DbxLocationDialog(Dialog):
                     icon=self.app.icon,
                     callback=self._on_exists,
                 )
+
             else:
                 self._continue()
 
@@ -165,6 +171,3 @@ class DbxLocationDialog(Dialog):
             return osp.relpath(path, usr)
         else:
             return path
-
-    def on_close(self):
-        self.stopModal(self.accepted)

@@ -17,7 +17,7 @@ from .selective_sync_gui import FileSystemSource
 
 class SetupDialog(SetupDialogGui):
 
-    accepted = False
+    accepted = 1
 
     def __init__(self, app, after_close=None):
         super().__init__(app=app)
@@ -50,15 +50,13 @@ class SetupDialog(SetupDialogGui):
 
     def on_close(self):
         if self.current_index() == 4:
-            accepted = 0
+            self.accepted = 0
         else:
             try:
                 self.mdbx.unlink()
             except NotLinkedError:
                 pass
-            accepted = 1
-
-        self.stopModal(accepted)
+            self.accepted = 1
 
     # ====================================================================================
     # User interaction callbacks
@@ -222,11 +220,3 @@ class SetupDialog(SetupDialogGui):
                 self.excluded_items.append(child_path_lower)
 
             self.get_selected_items(child)
-
-    # ====================================================================================
-    # run window as application modal
-    # ====================================================================================
-
-    def runModal(self):
-        self.raise_()
-        return self.app._impl.native.runModalForWindow(self._impl.native)
