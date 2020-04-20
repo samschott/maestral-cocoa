@@ -6,11 +6,14 @@
 Attribution-NonCommercial-NoDerivs 2.0 UK: England & Wales License.
 
 """
-import sys
-import os.path as osp
 
-_root = getattr(sys, '_MEIPASS', osp.dirname(osp.abspath(__file__)))
+import pkg_resources
 
-APP_ICON_PATH = osp.join(_root, 'maestral.icns')
-TRAY_ICON_PATH = osp.join(_root, 'systray-{}.pdf')
-FACEHOLDER_PATH = osp.join(_root, 'faceholder.pdf')
+
+def resource_path(name):
+    return pkg_resources.resource_filename('maestral_cocoa', f'resources/{name}')
+
+
+APP_ICON_PATH = resource_path('maestral.icns')
+TRAY_ICON_PATH = resource_path('systray-{}.pdf')
+FACEHOLDER_PATH = resource_path('faceholder.pdf')
