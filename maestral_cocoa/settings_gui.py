@@ -196,27 +196,27 @@ class SettingsGui(Window):
 
         children = [
             toga.Box(
-               children=[self._label_update_interval,
-                         self.combobox_update_interval],
-               style=Pack(
-                   alignment=CENTER, padding_bottom=self.ELEMENT_PADDING
-               ),
+                children=[self._label_update_interval,
+                          self.combobox_update_interval],
+                style=Pack(
+                    alignment=CENTER, padding_bottom=self.ELEMENT_PADDING
+                ),
             ),
             toga.Box(
-               children=[
-                   self._label_system_settings,
-                   toga.Box(
-                       children=[
-                           self.checkbox_autostart,
-                           self.checkbox_notifications,
-                           self.checkbox_analytics
-                       ],
-                       style=Pack(
-                           alignment=TOP, direction=COLUMN,
-                           padding_left=self.COLUMN_PADDING,
-                       ),
-                   )
-               ],
+                children=[
+                    self._label_system_settings,
+                    toga.Box(
+                        children=[
+                            self.checkbox_autostart,
+                            self.checkbox_notifications,
+                            self.checkbox_analytics
+                        ],
+                        style=Pack(
+                            alignment=TOP, direction=COLUMN,
+                            padding_left=self.COLUMN_PADDING,
+                        ),
+                    )
+                ],
             )
         ]
 
