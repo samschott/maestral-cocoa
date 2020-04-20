@@ -83,7 +83,7 @@ class SetupDialogGui(Window):
             text=('To link Maestral to your Dropbox account, please retrieve an '
                   'authorization token from Dropbox and enter it below.'),
             linebreak_mode=WORD_WRAP,
-            style=Pack(width=self.CONTENT_WIDTH, text_align=CENTER, padding_bottom=10)
+            style=Pack(width=self.CONTENT_WIDTH * 0.9, text_align=CENTER, padding_bottom=10)
         )
         self.btn_auth_token = FollowLinkButton(
             'Retrieve Token',
@@ -91,7 +91,7 @@ class SetupDialogGui(Window):
         )
         self.text_field_auth_token = toga.TextInput(
             placeholder='Authorization Token',
-            style=Pack(width=self.CONTENT_WIDTH, text_align=CENTER,)
+            style=Pack(width=self.CONTENT_WIDTH * 0.9, text_align=CENTER,)
         )
         self.spinner_link = toga.ActivityIndicator(style=Pack(width=32, height=32))
         self.dialog_buttons_link_page = DialogButtons(
@@ -136,7 +136,7 @@ class SetupDialogGui(Window):
                 toga.SECTION_BREAK,
                 self.COMBOBOX_CHOOSE
             ],
-            style=Pack(width=self.CONTENT_WIDTH, padding_bottom=20),
+            style=Pack(width=self.CONTENT_WIDTH * 0.9, padding_bottom=20),
             on_select=self._on_button_location_pressed
         )
 
