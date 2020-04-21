@@ -11,7 +11,6 @@ from datetime import datetime, timedelta
 
 # external imports
 import click
-import markdown2
 import toga
 from toga.style.pack import Pack, FONT_SIZE_CHOICES
 from maestral.utils.autostart import AutoStart
