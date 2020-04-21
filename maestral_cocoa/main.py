@@ -384,11 +384,9 @@ class MaestralGui(SystemTrayApp):
 
     def show_update_dialog(self, latest_release, release_notes):
 
-        html_notes = markdown2.markdown(release_notes)
-        html_notes = html_notes.replace('<h4>', '<br/> <h4>')
         UpdateDialog(
             version=latest_release,
-            release_notes=html_notes,
+            release_notes=release_notes,
             icon=self.icon
         ).raise_()
 

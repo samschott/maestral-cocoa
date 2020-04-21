@@ -4,6 +4,7 @@
 import toga
 from toga.style import Pack
 from toga.constants import COLUMN, ROW, BOLD, CENTER
+import markdown2
 
 # local imports
 from . import __url__
@@ -221,9 +222,13 @@ class UpdateDialog(Dialog):
         )
         clear_background(label)
 
+        html_notes = markdown2.markdown(release_notes)
+        html_notes = html_notes.replace('<h4>', '<br/> <h4>')
+        html_notes = html_notes.replace('<h3>', '<br/> <h3>')
+
         text_view_height = self.WINDOW_MIN_HEIGHT - Dialog.WINDOW_MIN_HEIGHT - 15
         text_view = RichMultilineTextInput(
-            html=release_notes,
+            html=html_notes,
             readonly=True,
             style=Pack(width=self.CONTENT_WIDTH, height=text_view_height,
                        padding_bottom=15)
