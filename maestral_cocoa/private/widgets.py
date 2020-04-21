@@ -108,6 +108,9 @@ class DialogButtons(toga.Box):
     def __getitem__(self, item):
         return next(btn for btn in self._buttons if btn.label == item)
 
+    def __iter__(self):
+        return iter(self._buttons)
+
     @property
     def enabled(self):
         return any(btn.enabled for btn in self)
