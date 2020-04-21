@@ -7,6 +7,7 @@ import os.path as osp
 from toga import SECTION_BREAK
 from toga.platform import get_platform_factory
 from toga_cocoa.libs import *
+from toga_cocoa.colors import native_color
 from toga_cocoa.keys import toga_key, Key
 from toga_cocoa.app import App as TogaApp
 from toga_cocoa.widgets.base import Widget
@@ -64,13 +65,18 @@ class IconForPath:
 
 # ==== labels ============================================================================
 
-def attributed_str_from_html(raw_html, font=None):
+def attributed_str_from_html(raw_html, font=None, color=NSColor.labelColor):
     """Converts html to a NSAttributed string using the system font family and color."""
 
-    html_value = '<span style="font-family: \'{0}\'; font-size: {1}; color: {2}">{3}</span>'
-    font_family = font.fontName if font else '-apple-system'
+    html_value = """
+    <style>
+    *{{font-family: '{0}'; font-size: {1}; color: {2}}}
+    </style>
+    {3}
+    """
+    font_family = font.fontName if font else 'system-ui'
     font_size = font.pointSize if font else 13
-    c = NSColor.labelColor.colorUsingColorSpace(NSColorSpace.deviceRGBColorSpace)
+    c = color.colorUsingColorSpace(NSColorSpace.deviceRGBColorSpace)
     c_str = f'rgb({c.redComponent * 255},{c.blueComponent * 255},{c.greenComponent * 255})'
     html_value = html_value.format(font_family, font_size, c_str, raw_html)
     nsstring = NSString(at(html_value))
@@ -117,6 +123,7 @@ class RichLabel(Widget):
     a too small height for a given width."""
 
     def create(self):
+        self._color = None
         self.native = NSTextView.alloc().init()
         self.native.impl = self
         self.native.interface = self.interface
@@ -132,13 +139,20 @@ class RichLabel(Widget):
         self.add_constraints()
 
     def set_html(self, value):
-        attr_str = attributed_str_from_html(value, self.native.font)
+        if self._color:
+            attr_str = attributed_str_from_html(value, self.native.font, color=self._color)
+        else:
+            attr_str = attributed_str_from_html(value, self.native.font)
         self.native.textStorage.setAttributedString(attr_str)
         self.rehint()
 
     def set_font(self, value):
         if value:
             self.native.font = value._impl.native
+
+    def set_color(self, value):
+        if value:
+            self._color = native_color(value)
 
     def rehint(self):
         self.interface.intrinsic.width = at_least(self.interface.MIN_WIDTH)
