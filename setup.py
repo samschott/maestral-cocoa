@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import sys
 from setuptools import setup, find_packages
 
@@ -42,9 +44,9 @@ setup(
     install_requires=[
         'bugsnag',
         'click',
-        'maestral==1.0.0.dev3',
+        'maestral==1.0.0.dev4',
         'markdown2',
-        'toga>=0.3.0.dev19',
+        'toga==0.3.0.dev19',
     ],
     zip_safe=False,
     entry_points={
