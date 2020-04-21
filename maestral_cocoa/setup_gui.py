@@ -91,6 +91,7 @@ class SetupDialogGui(Window):
         )
         self.text_field_auth_token = toga.TextInput(
             placeholder='Authorization Token',
+            on_change=self._token_field_validator,
             style=Pack(width=self.CONTENT_WIDTH * 0.9, text_align=CENTER,)
         )
         self.spinner_link = toga.ActivityIndicator(style=Pack(width=32, height=32))
@@ -98,6 +99,7 @@ class SetupDialogGui(Window):
             labels=('Link', 'Cancel'),
             style=self.btn_box_style
         )
+        self.dialog_buttons_link_page['Link'].enabled = False
 
         self.link_page = toga.Box(
             children=[
@@ -242,6 +244,9 @@ class SetupDialogGui(Window):
             toga.SECTION_BREAK,
             self.COMBOBOX_CHOOSE
         ]
+
+    def _token_field_validator(self, widget):
+        self.dialog_buttons_link_page['Link'].enabled = len(widget.value) > 10
 
     def on_loading_failed(self):
         self.dialog_buttons_selective_sync_page['Select'].enabled = False

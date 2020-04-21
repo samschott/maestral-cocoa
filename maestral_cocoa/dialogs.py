@@ -3,7 +3,7 @@
 # external imports
 import toga
 from toga.style import Pack
-from toga.constants import COLUMN, ROW, BOLD
+from toga.constants import COLUMN, ROW, BOLD, CENTER
 
 # local imports
 from . import __url__
@@ -12,17 +12,18 @@ from .private.widgets import (
     Label, RichMultilineTextInput, FollowLinkButton
 )
 from .private.constants import VisualEffectMaterial, WORD_WRAP
-from .utils import clear_background, async_call, run_async, alert_sheet
+from .utils import clear_background, async_call, run_maestral_async, alert_sheet
 
 
 # NSAlert's are the preferred way of alerting the user. However, we use our own dialogs
 # in the following cases:
 #
 #  - NSAlert is to static / inflexible to achieve our goal (see RelinkDialog, Unlink).
-#  - We want to show a dialog from a async widget callback: this currently causes trouble
+#  - We want to show a dialog from an async widget callback: this currently causes trouble
 #    with Toga's handling of the event loop.
 #  - We want to keep the event loop running while showing the dialog *and* we cannot
 #    use an NSAlert as sheet.
+
 
 class Dialog(Window):
     """A generic dialog following cocoa's NSAlert style."""
@@ -39,7 +40,8 @@ class Dialog(Window):
     ICON_SIZE = (60, 60)
     ICON_PADDING_RIGHT = 20
 
-    CONTENT_WIDTH = WINDOW_WIDTH - PADDING_LEFT - PADDING_RIGHT - ICON_PADDING_RIGHT - ICON_SIZE[0]
+    CONTENT_WIDTH = (WINDOW_WIDTH - PADDING_LEFT - PADDING_RIGHT
+                     - ICON_PADDING_RIGHT - ICON_SIZE[0])
 
     def __init__(self, title='Alert', message='', button_labels=('Ok',), default='Ok',
                  accessory_view=None, icon=None, callback=None, app=None):
@@ -88,7 +90,7 @@ class Dialog(Window):
             labels=button_labels,
             default=default,
             on_press=callback,
-            style=Pack(width=self.CONTENT_WIDTH, padding=0)
+            style=Pack(width=self.CONTENT_WIDTH, padding=0, alignment=CENTER)
         )
         self.dialog_buttons.children.insert(0, self.spinner)
 
@@ -124,18 +126,16 @@ class Dialog(Window):
         self.center()
 
     def show_as_sheet(self, window):
-        # change the background material to translucent sheet
         self.content.material = VisualEffectMaterial.Sheet
         super().show_as_sheet(window)
 
     def show(self):
-        # change the background material to opaque window background
         self.content.material = VisualEffectMaterial.WindowBackground
         super().show()
 
 
 class ProgressDialog(Dialog):
-    """A dialog to relink Maestral."""
+    """A dialog to show progress."""
 
     def __init__(self, msg_title='Progress', icon=None, callback=None, app=None):
 
@@ -161,7 +161,8 @@ class DetailedDialog(Dialog):
     WINDOW_WIDTH = 650
     WINDOW_MIN_HEIGHT = 400
 
-    CONTENT_WIDTH = WINDOW_WIDTH - Dialog.PADDING_LEFT - Dialog.PADDING_RIGHT - Dialog.ICON_PADDING_RIGHT - Dialog.ICON_SIZE[0]
+    CONTENT_WIDTH = (WINDOW_WIDTH - Dialog.PADDING_LEFT - Dialog.PADDING_RIGHT
+                     - Dialog.ICON_PADDING_RIGHT - Dialog.ICON_SIZE[0])
 
     def __init__(self, title='Alert', message='', button_labels=('Ok',), default='Ok',
                  icon=None, callback=None, details_title='Traceback', details='', app=None):
@@ -195,11 +196,13 @@ class DetailedDialog(Dialog):
 
 
 class UpdateDialog(Dialog):
+    """A dialog to show available updates with release notes."""
 
     WINDOW_WIDTH = 700
     WINDOW_MIN_HEIGHT = 400
 
-    CONTENT_WIDTH = WINDOW_WIDTH - Dialog.PADDING_LEFT - Dialog.PADDING_RIGHT - Dialog.ICON_PADDING_RIGHT - Dialog.ICON_SIZE[0]
+    CONTENT_WIDTH = (WINDOW_WIDTH - Dialog.PADDING_LEFT - Dialog.PADDING_RIGHT
+                     - Dialog.ICON_PADDING_RIGHT - Dialog.ICON_SIZE[0])
 
     def __init__(self, version='', release_notes='', icon=None, app=None):
 
@@ -244,7 +247,7 @@ class UpdateDialog(Dialog):
         self.msg_content.style.height = 40
 
 
-class RelinkDialog(Window):
+class RelinkDialog(Dialog):
     """A dialog to relink Maestral."""
 
     EXPIRED = 0
@@ -258,13 +261,11 @@ class RelinkDialog(Window):
     CANCEL_BTN = 'Cancel'
     UNLINK_BTN = 'Unlink and Quit'
 
-    CONTENT_WIDTH = 390
+    CONTENT_WIDTH = 325
 
-    def __init__(self, mdbx, reason, app):
-        super().__init__(title='Relink Maestral', closeable=False, minimizable=False,
-                         resizeable=False, is_dialog=True, app=app)
+    def __init__(self, app, reason):
 
-        self.mdbx = mdbx
+        self.mdbx = app.mdbx
         self.reason = reason
 
         url = self.mdbx.get_auth_url()
@@ -281,23 +282,6 @@ class RelinkDialog(Window):
         msg = ('Your Dropbox access has {0}. To continue syncing, please retrieve a new '
                'authorization token from Dropbox and enter it below.').format(reason, url)
 
-        self.msg_title = Label(
-            text=title,
-            style=Pack(
-                width=self.CONTENT_WIDTH,
-                padding_bottom=10,
-                font_weight=BOLD, font_size=13
-            ),
-        )
-        self.image = toga.ImageView(
-            self.app.icon,
-            style=Pack(width=60, height=60, padding_right=20)
-        )
-        self.info = Label(
-            text=msg,
-            linebreak_mode=WORD_WRAP,
-            style=Pack(width=self.CONTENT_WIDTH, padding_bottom=10, font_size=12, flex=1)
-        )
         self.website_button = FollowLinkButton(
             label='Retrieve Token', url=url, style=Pack(padding_bottom=10)
         )
@@ -306,55 +290,46 @@ class RelinkDialog(Window):
             on_change=self.token_field_validator,
             style=Pack(width=self.CONTENT_WIDTH, padding_bottom=20)
         )
-        self.spinner = toga.ActivityIndicator(style=Pack(width=16, height=16))
-        self.dialog_buttons = DialogButtons(
-            labels=[self.LINK_BTN, self.CANCEL_BTN, self.UNLINK_BTN],
-            on_press=self.on_dialog_press,
-            style=Pack(width=self.CONTENT_WIDTH)
-        )
-        self.dialog_buttons[self.LINK_BTN].enabled = False
-        self.dialog_buttons.children.insert(0, self.spinner)
 
-        action_box = toga.Box(
+        token_box = toga.Box(
             children=[
-                self.msg_title,
-                self.info,
                 self.website_button,
                 self.token_field,
-                self.dialog_buttons,
             ],
-            style=Pack(direction=COLUMN)
+            style=Pack(direction=COLUMN,)
         )
 
-        outer_box = toga.Box(
-            children=[self.image, action_box],
-            style=Pack(direction=ROW, padding=20)
-        )
+        super().__init__(title=title, message=msg, accessory_view=token_box,
+                         button_labels=(self.LINK_BTN, self.CANCEL_BTN, self.UNLINK_BTN),
+                         callback=self.on_dialog_press, app=app)
 
-        self.content = outer_box
+        self.dialog_buttons[self.LINK_BTN].enabled = False
 
     def on_dialog_press(self, btn_name):
 
+        for btn in self.dialog_buttons:
+            btn.enabled = False
+
+        self.token_field.enabled = False
         self.spinner.start()
 
         if btn_name == self.CANCEL_BTN:
             self.app.exit()
         elif btn_name == self.UNLINK_BTN:
-            self.mdbx.unlink()
-            self.app.exit()
+            self.do_unlink()
         elif btn_name == self.LINK_BTN:
             self.do_relink()
 
     @async_call
+    async def do_unlink(self):
+        await run_maestral_async(self.mdbx.config_name, 'unlink')
+        self.app.exit()
+
+    @async_call
     async def do_relink(self):
 
-        self.dialog_buttons[self.LINK_BTN].enabled = False
-        self.dialog_buttons[self.CANCEL_BTN].enabled = False
-        self.dialog_buttons[self.UNLINK_BTN].enabled = False
-        self.token_field.enabled = False
-
         token = self.token_field.value
-        res = await run_async(self.mdbx.link, token)
+        res = await run_maestral_async(self.mdbx.config_name, 'link', token)
 
         self.spinner.stop()
 
@@ -381,6 +356,8 @@ class RelinkDialog(Window):
                 icon=self.app.icon,
             )
 
+        self.dialog_buttons[self.CANCEL_BTN].enabled = True
+        self.dialog_buttons[self.UNLINK_BTN].enabled = True
         self.token_field.enabled = True
 
     def token_field_validator(self, widget):

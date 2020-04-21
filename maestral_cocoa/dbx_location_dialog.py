@@ -22,18 +22,21 @@ Pack.validated_property('font_size', choices=FONT_SIZE_CHOICES, initial=13)
 class DbxLocationDialog(Dialog):
 
     WINDOW_WIDTH = 600
-    CONTENT_WIDTH = WINDOW_WIDTH - Dialog.PADDING_LEFT - Dialog.PADDING_RIGHT - Dialog.ICON_PADDING_RIGHT - Dialog.ICON_SIZE[0]
+    CONTENT_WIDTH = (WINDOW_WIDTH - Dialog.PADDING_LEFT - Dialog.PADDING_RIGHT
+                     - Dialog.ICON_PADDING_RIGHT - Dialog.ICON_SIZE[0])
 
     COMBOBOX_CHOOSE = 'Choose...'
 
     dbx_location_user_selected = 'DBX LOCATION'
 
-    accepted = 1
+    ACCEPTED = 0
+    REJECTED = 1
 
-    def __init__(self, mdbx, app):
+    def __init__(self, app):
 
-        self.mdbx = mdbx
+        self.mdbx = self.app.mdbx
         self.config_name = self.mdbx.config_name
+        self.exit_status = self.REJECTED
 
         old_path = self.mdbx.get_conf('main', 'path')
 
@@ -75,14 +78,13 @@ class DbxLocationDialog(Dialog):
         self.dialog_buttons.enabled = False
 
         if btn_name == 'Quit':
-            self.spinner.start()
-            self.accepted = 1
+            self.exit_status = self.REJECTED
             self.close()
 
         elif btn_name == 'Unlink':
             self.spinner.start()
             self.mdbx.unlink()
-            self.accepted = 1
+            self.exit_status = self.REJECTED
             self.close()
 
         elif btn_name == 'Select':
@@ -124,7 +126,7 @@ class DbxLocationDialog(Dialog):
 
     def _on_exists(self, choice):
 
-        if choice == 0:  # replace
+        if choice == 0:    # replace
             delete(self._chosen_dropbox_folder)
             self._continue()
         elif choice == 1:  # cancel
@@ -135,8 +137,8 @@ class DbxLocationDialog(Dialog):
 
     def _continue(self):
         self.mdbx.create_dropbox_directory(self._chosen_dropbox_folder)
-        self.mdbx.rebuild_index_async()
-        self.accepted = 0
+        self.mdbx.rebuild_index()
+        self.exit_status = self.ACCEPTED
         self.close()
 
     def _on_button_location_pressed(self, widget):

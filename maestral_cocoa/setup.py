@@ -17,16 +17,16 @@ from .selective_sync_gui import FileSystemSource
 
 class SetupDialog(SetupDialogGui):
 
-    accepted = 1
+    ACCEPTED = 0
+    REJECTED = 1
 
-    def __init__(self, app, after_close=None):
+    def __init__(self, app):
         super().__init__(app=app)
-        self.after_close = after_close
+        self.exit_status = self.REJECTED
 
         self.mdbx = self.app.mdbx
 
         self._chosen_dropbox_folder = None
-
         self.excluded_items = []
 
         # set up combobox
@@ -38,25 +38,11 @@ class SetupDialog(SetupDialogGui):
         self.dialog_buttons_link_page.on_press = self.on_link_dialog
         self.dialog_buttons_location_page.on_press = self.on_dbx_location
         self.dialog_buttons_selective_sync_page.on_press = self.on_items_selected
-        self.close_button.on_press = lambda s: self.close()
+        self.close_button.on_press = self.close
 
         default_folder_name = self.mdbx.get_conf('main', 'default_dir_name')
         location_label_text = self.dbx_location_label.text.format(default_folder_name)
         self.dbx_location_label.text = location_label_text
-
-    # ====================================================================================
-    # Close callback
-    # ====================================================================================
-
-    def on_close(self):
-        if self.current_index() == 4:
-            self.accepted = 0
-        else:
-            try:
-                self.mdbx.unlink()
-            except NotLinkedError:
-                pass
-            self.accepted = 1
 
     # ====================================================================================
     # User interaction callbacks
@@ -165,7 +151,7 @@ class SetupDialog(SetupDialogGui):
 
     def _on_exists(self, choice):
 
-        if choice == 0:  # replace
+        if choice == 0:    # replace
             delete(self._chosen_dropbox_folder)
             self._continue()
         elif choice == 1:  # cancel
@@ -204,6 +190,7 @@ class SetupDialog(SetupDialogGui):
 
             # switch to next page
             self.go_forward()
+            self.exit_status = self.ACCEPTED
 
         elif btn_name == 'Back':
             self.go_back()
