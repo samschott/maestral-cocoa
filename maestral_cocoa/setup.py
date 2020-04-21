@@ -6,7 +6,6 @@ import os.path as osp
 # external imports
 from maestral.utils.path import delete
 from maestral.utils.appdirs import get_home_dir
-from maestral.errors import NotLinkedError
 
 # local imports
 from .private.constants import OFF
@@ -38,7 +37,7 @@ class SetupDialog(SetupDialogGui):
         self.dialog_buttons_link_page.on_press = self.on_link_dialog
         self.dialog_buttons_location_page.on_press = self.on_dbx_location
         self.dialog_buttons_selective_sync_page.on_press = self.on_items_selected
-        self.close_button.on_press = self.close
+        self.close_button.on_press = lambda s: self.close()
 
         default_folder_name = self.mdbx.get_conf('main', 'default_dir_name')
         location_label_text = self.dbx_location_label.text.format(default_folder_name)
