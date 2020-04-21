@@ -230,6 +230,7 @@ class RichMultilineTextInput(toga.MultilineTextInput):
         # Create a platform specific implementation of a Label
         self._impl = self.factory.RichMultilineTextInput(interface=self)
         self.html = html
+        self.readonly = readonly
 
     @property
     def html(self):
