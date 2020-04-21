@@ -120,6 +120,7 @@ class MaestralGui(SystemTrayApp):
         self.update_recent_files()
         self.update_snoozed()
         self.refresh_interval = 0.5
+        self.update_status()
 
     def on_menu_close(self, sender):
         self.refresh_interval = 2
