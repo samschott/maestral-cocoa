@@ -34,7 +34,7 @@ class DbxLocationDialog(Dialog):
 
     def __init__(self, app):
 
-        self.mdbx = self.app.mdbx
+        self.mdbx = app.mdbx
         self.config_name = self.mdbx.config_name
         self.exit_status = self.REJECTED
 

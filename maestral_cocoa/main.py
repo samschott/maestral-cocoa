@@ -161,8 +161,6 @@ class MaestralGui(SystemTrayApp):
             self.periodic_refresh_gui()
             self.periodic_check_for_updates()
         else:
-            if not self.mdbx.pending_link:
-                self.mdbx.unlink()
             self.exit(stop_daemon=True)
 
     def get_or_start_maestral_daemon(self):
@@ -489,7 +487,9 @@ class MaestralGui(SystemTrayApp):
             self._exec_error_dialog(err)
 
     def _exec_dbx_location_dialog(self):
-        DbxLocationDialog(self.mdbx).raise_()
+        self.setup_dialog = DbxLocationDialog(self)
+        self.setup_dialog.raise_()
+        self.setup_dialog.on_close = self._on_setup_completed
 
     def _exec_relink_dialog(self, reason):
         RelinkDialog(self, reason).raise_()

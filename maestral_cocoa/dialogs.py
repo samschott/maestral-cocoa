@@ -312,14 +312,12 @@ class RelinkDialog(Dialog):
 
     def on_dialog_press(self, btn_name):
 
-        for btn in self.dialog_buttons:
-            btn.enabled = False
-
+        self.dialog_buttons.enabled = False
         self.token_field.enabled = False
         self.spinner.start()
 
         if btn_name == self.CANCEL_BTN:
-            self.app.exit()
+            self.app.exit(stop_daemon=True)
         elif btn_name == self.UNLINK_BTN:
             self.do_unlink()
         elif btn_name == self.LINK_BTN:
@@ -328,7 +326,7 @@ class RelinkDialog(Dialog):
     @async_call
     async def do_unlink(self):
         await run_maestral_async(self.mdbx.config_name, 'unlink')
-        self.app.exit()
+        self.app.exit(stop_daemon=True)
 
     @async_call
     async def do_relink(self):
