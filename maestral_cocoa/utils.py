@@ -282,6 +282,7 @@ def alert(title, message, details=None, details_title='Traceback', button_names=
     alert = _construct_alert(title, message, details, details_title, button_names,
                              checkbox_text, level, icon)
 
+    NSApplication.sharedApplication.activateIgnoringOtherApps(True)
     result = alert.runModal()
 
     if checkbox_text:
