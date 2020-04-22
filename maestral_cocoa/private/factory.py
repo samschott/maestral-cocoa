@@ -69,10 +69,9 @@ def attributed_str_from_html(raw_html, font=None, color=NSColor.labelColor):
     """Converts html to a NSAttributed string using the system font family and color."""
 
     html_value = """
-    <style>
-    *{{font-family: '{0}'; font-size: {1}; color: {2}}}
-    </style>
+    <span style="font-family: '{0}'; font-size: {1}; color: {2}">
     {3}
+    </span>
     """
     font_family = font.fontName if font else 'system-ui'
     font_size = font.pointSize if font else 13

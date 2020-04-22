@@ -223,15 +223,14 @@ class UpdateDialog(Dialog):
         clear_background(label)
 
         html_notes = markdown2.markdown(release_notes)
-        html_notes = html_notes.replace('<h4>', '<br/> <h4>')
-        html_notes = html_notes.replace('<h3>', '<br/> <h3>')
+        html_notes = html_notes.replace('</ul>', '</ul><br/>')
 
         text_view_height = self.WINDOW_MIN_HEIGHT - Dialog.WINDOW_MIN_HEIGHT - 15
         text_view = RichMultilineTextInput(
             html=html_notes,
             readonly=True,
             style=Pack(width=self.CONTENT_WIDTH, height=text_view_height,
-                       padding_bottom=15)
+                       padding_bottom=15, font_family='Helvetica Neue')
         )
         accessory_view = toga.Box(
             children=[link_button, label, text_view],
