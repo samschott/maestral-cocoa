@@ -177,7 +177,7 @@ class MaestralGui(SystemTrayApp):
                 message = ('Could not start or connect to sync daemon. Please try again '
                            'and contact the developer if this issue persists.')
                 alert(title, message, level='error', icon=self.icon)
-                self.exit()
+                self.exit(stop_daemon=True)
             elif res == Start.AlreadyRunning:
                 self._started = False
             elif res == Start.Ok:
