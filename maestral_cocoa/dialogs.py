@@ -5,6 +5,7 @@ import toga
 from toga.style import Pack
 from toga.constants import COLUMN, ROW, BOLD, CENTER
 import markdown2
+from maestral import __version__
 
 # local imports
 from . import __url__
@@ -238,8 +239,8 @@ class UpdateDialog(Dialog):
         )
 
         message = (
-            f'Maestral v{version} is available. Please use your package manager '
-            f'to update or download the latest binary from GitHub.'
+            f'Maestral v{version} is available, you have v{__version__}. Please use your '
+            f'package manager to update or download the latest binary from GitHub.'
         )
 
         super().__init__(
