@@ -153,6 +153,9 @@ class RichLabel(Widget):
         if value:
             self._color = native_color(value)
 
+        # update html
+        self.set_html(self.interface.html)
+
     def rehint(self):
         self.interface.intrinsic.width = at_least(self.interface.MIN_WIDTH)
         self.interface.intrinsic.height = at_least(self.interface.MIN_HEIGHT)

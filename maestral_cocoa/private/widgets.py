@@ -251,6 +251,8 @@ class RichLabel(Widget):
     def __init__(self, html, id=None, style=None, factory=private_factory):
         super().__init__(id=id, style=style, factory=factory)
 
+        self._html = html
+
         # Create a platform specific implementation of a Label
         self._impl = self.factory.RichLabel(interface=self)
         self.html = html
