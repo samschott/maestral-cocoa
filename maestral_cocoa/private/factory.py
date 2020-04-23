@@ -65,7 +65,7 @@ class IconForPath:
 
 # ==== labels ============================================================================
 
-def attributed_str_from_html(raw_html, font=None, color=NSColor.labelColor):
+def attributed_str_from_html(raw_html, font=None, color=None):
     """Converts html to a NSAttributed string using the system font family and color."""
 
     html_value = """
@@ -75,6 +75,7 @@ def attributed_str_from_html(raw_html, font=None, color=NSColor.labelColor):
     """
     font_family = font.fontName if font else 'system-ui'
     font_size = font.pointSize if font else 13
+    color = color or NSColor.labelColor
     c = color.colorUsingColorSpace(NSColorSpace.deviceRGBColorSpace)
     c_str = f'rgb({c.redComponent * 255},{c.blueComponent * 255},{c.greenComponent * 255})'
     html_value = html_value.format(font_family, font_size, c_str, raw_html)
@@ -138,10 +139,7 @@ class RichLabel(Widget):
         self.add_constraints()
 
     def set_html(self, value):
-        if self._color:
-            attr_str = attributed_str_from_html(value, self.native.font, color=self._color)
-        else:
-            attr_str = attributed_str_from_html(value, self.native.font)
+        attr_str = attributed_str_from_html(value, self.native.font, self._color)
         self.native.textStorage.setAttributedString(attr_str)
         self.rehint()
 
