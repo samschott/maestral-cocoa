@@ -503,7 +503,8 @@ class MaestralGui(SystemTrayApp):
             message = ('A report has been sent to the developers. '
                        'Please restart Maestral to continue syncing.')
 
-            alert(title, message, details=err['traceback'], level='error', icon=self.icon)
+            html_traceback = err['traceback'].replace('\n', '<br />')
+            alert(title, message, details=html_traceback, level='error', icon=self.icon)
 
         else:
             message = ('You can send a report to the developers or open an issue on '
