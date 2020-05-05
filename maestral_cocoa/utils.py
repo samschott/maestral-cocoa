@@ -221,7 +221,6 @@ def _construct_alert(title, message, details=None, details_title='Traceback',
         scroll.borderType = NSBezelBorder
 
         trace = NSTextView.alloc().init()
-        trace.insertText(details)
         trace.editable = False
         trace.verticallyResizable = True
         trace.horizontallyResizable = True
