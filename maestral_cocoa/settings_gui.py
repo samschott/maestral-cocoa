@@ -10,10 +10,10 @@ import time
 import toga
 from toga.style.pack import Pack
 from toga.constants import ROW, COLUMN, TOP, RIGHT, CENTER, GRAY
-from maestral import __version__
+from maestral import __version__ as __daemon_version__
 
 # local imports
-from . import __url__, __author__
+from . import __url__, __author__, __version__
 from .utils import apply_round_clipping, select_folder_sheet
 from .private.widgets import Label, RichLabel, Switch, Selection, IconForPath, Window
 from .resources import FACEHOLDER_PATH
@@ -256,7 +256,7 @@ class SettingsGui(Window):
                 toga.Box(
                     children=[
                         Label(
-                            f'v{__version__}',
+                            f'GUI v{__version__}, daemon v{__daemon_version__}',
                             style=Pack(
                                 padding_bottom=self.SUBELEMENT_PADDING,
                                 width=self.COLUMN_WIDTH_RIGHT)
