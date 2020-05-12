@@ -34,11 +34,10 @@ class SettingsWindow(SettingsGui):
         super().__init__(app=app)
 
         self.mdbx = mdbx
-        self.refresh = True
+        self._periodic_refresh = False
         self.autostart = AutoStart(self.mdbx.config_name, gui=True)
 
         self.refresh_gui()
-        self.periodic_refresh_gui()
 
     # ==== callbacks to implement ========================================================
 
@@ -76,7 +75,7 @@ class SettingsWindow(SettingsGui):
     @async_call
     async def on_unlink_decided(self, btn_name):
         if btn_name == 'Unlink':
-            self.refresh = False
+            self._periodic_refresh = False
             self.unlink_dialog.dialog_buttons.enabled = False
             self.unlink_dialog.spinner.start()
             await run_maestral_async(self.mdbx.config_name, 'unlink')
@@ -142,9 +141,10 @@ class SettingsWindow(SettingsGui):
     @async_call
     async def periodic_refresh_gui(self, interval=2):
 
-        while self.refresh:
-            if self.visible:
-                self.refresh_gui()
+        self._periodic_refresh = True
+
+        while self._periodic_refresh:
+            self.refresh_gui()
             await asyncio.sleep(interval)
 
     def refresh_gui(self):
@@ -190,4 +190,8 @@ class SettingsWindow(SettingsGui):
         self.label_usage.text = acc_space_usage
 
     def on_close(self):
-        self.refresh = False
+        self._periodic_refresh = False
+
+    def show(self):
+        self.periodic_refresh_gui()
+        super().show()

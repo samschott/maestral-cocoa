@@ -307,7 +307,6 @@ class MaestralGui(SystemTrayApp):
             self.item_pause.label = self.PAUSE_TEXT
 
     def on_settings_clicked(self, widget):
-        self.settings_window.refresh = True
         self.settings_window.raise_()
 
     def on_sync_issues_clicked(self, widget):
