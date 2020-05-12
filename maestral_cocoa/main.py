@@ -22,7 +22,6 @@ from maestral.daemon import (
     start_maestral_daemon_process,
     start_maestral_daemon,
     stop_maestral_daemon_process,
-    get_maestral_pid,
     get_maestral_proxy,
     Start,
     Pyro5
@@ -166,22 +165,18 @@ class MaestralGui(SystemTrayApp):
 
     def get_or_start_maestral_daemon(self):
 
-        pid = get_maestral_pid(self.config_name)
-        if pid:
-            self._started = False
-        else:
-            res = start_maestral_daemon_process(self.config_name)
+        res = start_maestral_daemon_process(self.config_name)
 
-            if res == Start.Failed:
-                title = 'Could not start Maestral'
-                message = ('Could not start or connect to sync daemon. Please try again '
-                           'and contact the developer if this issue persists.')
-                alert(title, message, level='error', icon=self.icon)
-                self.exit(stop_daemon=True)
-            elif res == Start.AlreadyRunning:
-                self._started = False
-            elif res == Start.Ok:
-                self._started = True
+        if res == Start.Failed:
+            title = 'Could not start Maestral'
+            message = ('Could not start or connect to sync daemon. Please try again '
+                       'and contact the developer if this issue persists.')
+            alert(title, message, level='error', icon=self.icon)
+            self.exit(stop_daemon=True)
+        elif res == Start.AlreadyRunning:
+            self._started = False
+        elif res == Start.Ok:
+            self._started = True
 
         return get_maestral_proxy(self.config_name)
 
