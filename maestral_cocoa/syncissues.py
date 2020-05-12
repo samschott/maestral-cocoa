@@ -96,7 +96,7 @@ class SyncIssuesWindow(Window):
         super().__init__(title='Maestral Sync Issues', release_on_close=False, app=app)
 
         self.mdbx = mdbx
-        self.refresh = True
+        self._periodic_refresh = False
         self._cached_errors = []
 
         self.size = WINDOW_SIZE
@@ -121,13 +121,15 @@ class SyncIssuesWindow(Window):
 
         self.center()
 
+        self.refresh_gui()
+
     @async_call
     async def periodic_refresh_gui(self, interval=1):
 
-        while self.refresh:
-            if self.visible:
-                self.refresh_gui()
+        self._periodic_refresh = True
 
+        while self._periodic_refresh:
+            self.refresh_gui()
             await asyncio.sleep(interval)
 
     def refresh_gui(self):
@@ -152,4 +154,8 @@ class SyncIssuesWindow(Window):
             self._cached_errors = new_errors
 
     def on_close(self):
-        self.refresh = False
+        self._periodic_refresh = False
+
+    def show(self):
+        self.periodic_refresh_gui()
+        super().show()
