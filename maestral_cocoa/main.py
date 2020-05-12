@@ -45,10 +45,6 @@ from maestral_cocoa.resources import APP_ICON_PATH, TRAY_ICON_PATH
 Pack.validated_property('font_size', choices=FONT_SIZE_CHOICES, initial=13)
 
 
-# TODO:
-#  - fix memory leak: bug filed with rubicon
-#  - wait for toga v0.3.0.dev19 or include toga as private package
-
 class MaestralGui(SystemTrayApp):
     """A Qt GUI for the Maestral daemon."""
 
