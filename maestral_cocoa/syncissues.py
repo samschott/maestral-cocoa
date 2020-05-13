@@ -85,11 +85,6 @@ class SyncIssueBox(toga.Box):
 
 class SyncIssuesWindow(Window):
 
-    placeholder_label = Label(
-        'No sync issues 😊',
-        style=Pack(padding_bottom=PADDING, width=CONTENT_WIDTH)
-    )
-
     box_style = Pack(direction=COLUMN, width=CONTENT_WIDTH, padding=2 * PADDING)
 
     def __init__(self, mdbx, app=None):
@@ -102,8 +97,13 @@ class SyncIssuesWindow(Window):
         self.size = WINDOW_SIZE
         self._impl.native.titlebarAppearsTransparent = True
 
+        placeholder_label = Label(
+            'No sync issues 😊',
+            style=Pack(padding_bottom=PADDING, width=CONTENT_WIDTH)
+        )
+
         sync_errors_box = toga.Box(
-            children=[self.placeholder_label],
+            children=[placeholder_label],
             style=self.box_style
         )
         self.scroll_container = toga.ScrollContainer(
@@ -138,8 +138,14 @@ class SyncIssuesWindow(Window):
 
         if new_errors != self._cached_errors:
             if len(new_errors) == 0:
+
+                placeholder_label = Label(
+                    'No sync issues 😊',
+                    style=Pack(padding_bottom=PADDING, width=CONTENT_WIDTH)
+                )
+
                 sync_errors_box = toga.Box(
-                    children=[self.placeholder_label],
+                    children=[placeholder_label],
                     style=self.box_style
                 )
             else:
