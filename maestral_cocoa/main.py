@@ -595,7 +595,8 @@ def run_cli():
     parsed_args, remaining = parser.parse_known_args()
 
     if parsed_args.cli:
-        sys.argv = ['maestral'] + remaining + ['-c', parsed_args.config_name]
+        sys.argv[0] = 'maestral'
+        sys.argv.remove('--cli')
         from maestral.cli import main
         main()
     elif parsed_args.frozen_daemon:
