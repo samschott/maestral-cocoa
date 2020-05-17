@@ -5,14 +5,13 @@ import sys
 import os
 import os.path as osp
 import asyncio
-from subprocess import call
 
 # external imports
 from maestral.utils.notify import FILECHANGE, SYNCISSUE
 from maestral.utils.autostart import AutoStart
 
 # local imports
-from .utils import async_call, run_maestral_async, alert_sheet
+from .utils import request_authorization_from_user_and_run, async_call, run_maestral_async, alert_sheet
 from .private.constants import ON, OFF
 from .settings_gui import SettingsGui
 from .selective_sync import SelectiveSyncDialog
@@ -109,10 +108,16 @@ class SettingsWindow(SettingsGui):
     def on_cli_pressed(self, widget):
 
         if osp.islink(self._macos_cli_tool_path):
-            os.remove(self._macos_cli_tool_path)
+            try:
+                os.remove(self._macos_cli_tool_path)
+            except PermissionError:
+                request_authorization_from_user_and_run(['/bin/rm', '-f', self._macos_cli_tool_path])
         else:
             maestral_cli = os.path.join(getattr(sys, '_MEIPASS', ''), 'maestral_cli')
-            call(['ln', '-s', maestral_cli, self._macos_cli_tool_path])
+            try:
+                os.symlink(maestral_cli, self._macos_cli_tool_path)
+            except PermissionError:
+                request_authorization_from_user_and_run(['/bin/ln', '-s', maestral_cli, self._macos_cli_tool_path])
 
         self._udpdate_cli_tool_button()
 
