@@ -32,7 +32,9 @@ from .private.constants import (
     kAuthorizationRightExecute,
     kAuthorizationEmptyEnvironment,
     kAuthorizationEnvironmentPrompt,
-    errAuthorizationToolExecuteFailure, errAuthorizationSuccess, errAuthorizationCanceled,
+    errAuthorizationToolExecuteFailure,
+    errAuthorizationSuccess,
+    errAuthorizationCanceled,
 )
 from .private.factory import attributed_str_from_html
 
@@ -107,7 +109,8 @@ def clear_background(widget):
 
 # ==== custom dialogs ====================================================================
 
-def save_file_sheet(window, suggested_filename, message='', file_types=None, callback=print):
+def save_file_sheet(window, suggested_filename, message='', file_types=None,
+                    callback=print):
     """Cocoa save file dialog implementation.
 
     We restrict the panel invocation to only choose files. We also allow
@@ -138,10 +141,12 @@ def save_file_sheet(window, suggested_filename, message='', file_types=None, cal
         if callback:
             callback(path)
 
-    panel.beginSheetModalForWindow(window._impl.native, completionHandler=completionHandler)
+    panel.beginSheetModalForWindow(window._impl.native,
+                                   completionHandler=completionHandler)
 
 
-def open_file_sheet(window, message='', file_types=None, multiselect=False, callback=print):
+def open_file_sheet(window, message='', file_types=None, multiselect=False,
+                    callback=print):
     """Cocoa open file dialog implementation.
     We restrict the panel invocation to only choose files. We also allow
     creating directories but not selecting directories.
@@ -182,7 +187,8 @@ def open_file_sheet(window, message='', file_types=None, multiselect=False, call
         if callback:
             callback(paths)
 
-    panel.beginSheetModalForWindow(window._impl.native, completionHandler=completionHandler)
+    panel.beginSheetModalForWindow(window._impl.native,
+                                   completionHandler=completionHandler)
 
 
 def select_folder_sheet(window, message='', multiselect=False, callback=print):
@@ -215,7 +221,8 @@ def select_folder_sheet(window, message='', multiselect=False, callback=print):
         if callback:
             callback(paths)
 
-    panel.beginSheetModalForWindow(window._impl.native, completionHandler=completionHandler)
+    panel.beginSheetModalForWindow(window._impl.native,
+                                   completionHandler=completionHandler)
 
 
 def _construct_alert(title, message, details=None, details_title='Traceback',
@@ -279,7 +286,8 @@ def alert_sheet(window, title, message, details=None, details_title='Traceback',
     def completionHandler(r: int) -> None:
         callback(r - NSAlertFirstButtonReturn)
 
-    alert.beginSheetModalForWindow(window._impl.native, completionHandler=completionHandler)
+    alert.beginSheetModalForWindow(window._impl.native,
+                                   completionHandler=completionHandler)
 
 
 def alert(title, message, details=None, details_title='Traceback', button_names=('Ok',),
@@ -298,7 +306,8 @@ def alert(title, message, details=None, details_title='Traceback', button_names=
     result = alert.runModal()
 
     if checkbox_text:
-        return result - NSAlertFirstButtonReturn, alert.suppressionButton.state == NSOnState
+        return (result - NSAlertFirstButtonReturn,
+                alert.suppressionButton.state == NSOnState)
     else:
         return result - NSAlertFirstButtonReturn
 
@@ -396,7 +405,9 @@ def _osx_sudo_start():
     auth = ctypes.c_void_p()
     r_auth = ctypes.byref(auth)
 
-    flags = kAuthorizationFlagInteractionAllowed | kAuthorizationFlagExtendRights | kAuthorizationFlagPreAuthorize
+    flags = (kAuthorizationFlagInteractionAllowed
+             | kAuthorizationFlagExtendRights
+             | kAuthorizationFlagPreAuthorize)
     sec.AuthorizationCreate(None, None, flags, r_auth)
 
     return auth
@@ -409,27 +420,33 @@ def _osx_sudo_cmd(auth, exe, auth_text=None):
     if auth_text:
         auth_text = auth_text.encode()
 
-    item = AuthorizationItem(name=kAuthorizationRightExecute, valueLength=len(cmd), value=cmd, flags=0)
+    item = AuthorizationItem(name=kAuthorizationRightExecute, valueLength=len(cmd),
+                             value=cmd, flags=0)
     rights = AuthorizationRights(count=1, items=pointer(item))
 
     if not auth_text:
         env_p = kAuthorizationEmptyEnvironment
     else:
-        prompt_item = AuthorizationItem(name=kAuthorizationEnvironmentPrompt, valueLength=len(auth_text),
+        prompt_item = AuthorizationItem(name=kAuthorizationEnvironmentPrompt,
+                                        valueLength=len(auth_text),
                                         value=auth_text, flags=0)
         environment = AuthorizationEnvironment(count=1, items=pointer(prompt_item))
         env_p = pointer(environment)
 
-    flags = kAuthorizationFlagInteractionAllowed | kAuthorizationFlagExtendRights | kAuthorizationFlagPreAuthorize
+    flags = (kAuthorizationFlagInteractionAllowed
+             | kAuthorizationFlagExtendRights
+             | kAuthorizationFlagPreAuthorize)
     sec.AuthorizationCopyRights(auth, byref(rights), env_p, flags, None)
     argv = (c_char_p * (len(argv) + 1))(*(argv + [None]))
-    # channel = POINTER(FILE)()
+
     i = 0
     while True:
         io = ctypes.c_void_p()
         r_io = ctypes.byref(io)
 
-        err = sec.AuthorizationExecuteWithPrivileges(auth, cmd, kAuthorizationFlagDefaults, argv, r_io)
+        err = sec.AuthorizationExecuteWithPrivileges(auth, cmd,
+                                                     kAuthorizationFlagDefaults,
+                                                     argv, r_io)
 
         if err == errAuthorizationSuccess:
             break
