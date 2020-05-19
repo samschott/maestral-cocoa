@@ -161,7 +161,7 @@ class MaestralGui(SystemTrayApp):
 
     def get_or_start_maestral_daemon(self):
 
-        res = start_maestral_daemon_process(self.config_name)
+        res = start_maestral_daemon_process(self.config_name, detach=False)
 
         if res == Start.Failed:
             title = 'Could not start Maestral'
