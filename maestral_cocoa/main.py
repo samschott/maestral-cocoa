@@ -594,7 +594,8 @@ def run_cli():
     freeze_support()
 
     parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument('--cli', action='store_true', help='Forward calls to CLI.')
+    parser.add_argument('--cli', action='store_true')
+    parser.add_argument('-c', '--config-name', default='maestral')
     parsed_args, remaining = parser.parse_known_args()
 
     if parsed_args.cli:
