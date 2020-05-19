@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 # system imports
-import sys
 import os
 import os.path as osp
 import asyncio
@@ -23,7 +22,6 @@ from maestral.daemon import (
     stop_maestral_daemon_process,
     get_maestral_proxy,
     Start,
-    freeze_support,
     Pyro5
 )
 from maestral import __author__, __url__
