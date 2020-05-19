@@ -587,7 +587,11 @@ def run_cli():
     support launching the daemon from frozen executables as produced for instance by
     PyInstaller.
     """
+
     import argparse
+    import multiprocessing
+
+    multiprocessing.freeze_support()
 
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument('-c', '--config-name', help='Configuration name', default='maestral')
