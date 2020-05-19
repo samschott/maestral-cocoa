@@ -126,7 +126,8 @@ class MaestralGui(SystemTrayApp):
             await asyncio.sleep(interval)
             await self.auto_check_for_updates()
 
-    def load_maestral(self):
+    @async_call
+    async def load_maestral(self):
 
         self.mdbx = self.get_or_start_maestral_daemon()
 
