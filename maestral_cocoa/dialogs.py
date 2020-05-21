@@ -285,7 +285,7 @@ class RelinkDialog(Dialog):
             raise ValueError(f'Invalid reason {self.reason}')
 
         msg = ('Your Dropbox access has {0}. To continue syncing, please retrieve a new '
-               'authorization token from Dropbox and enter it below.').format(reason, url)
+               'authorization token from Dropbox and enter it below.').format(reason)
 
         self.website_button = FollowLinkButton(
             label='Retrieve Token', url=url, style=Pack(padding_bottom=10)

@@ -5,14 +5,13 @@ import sys
 import os
 import os.path as osp
 import asyncio
-from subprocess import call
 
 # external imports
 from maestral.utils.notify import FILECHANGE, SYNCISSUE
 from maestral.utils.autostart import AutoStart
 
 # local imports
-from .utils import async_call, run_maestral_async, alert_sheet
+from .utils import request_authorization_from_user_and_run, async_call, run_maestral_async, alert_sheet
 from .private.constants import ON, OFF
 from .settings_gui import SettingsGui
 from .selective_sync import SelectiveSyncDialog
@@ -34,11 +33,10 @@ class SettingsWindow(SettingsGui):
         super().__init__(app=app)
 
         self.mdbx = mdbx
-        self.refresh = True
+        self._periodic_refresh = False
         self.autostart = AutoStart(self.mdbx.config_name, gui=True)
 
         self.refresh_gui()
-        self.periodic_refresh_gui()
 
     # ==== callbacks to implement ========================================================
 
@@ -76,7 +74,7 @@ class SettingsWindow(SettingsGui):
     @async_call
     async def on_unlink_decided(self, btn_name):
         if btn_name == 'Unlink':
-            self.refresh = False
+            self._periodic_refresh = False
             self.unlink_dialog.dialog_buttons.enabled = False
             self.unlink_dialog.spinner.start()
             await run_maestral_async(self.mdbx.config_name, 'unlink')
@@ -110,10 +108,16 @@ class SettingsWindow(SettingsGui):
     def on_cli_pressed(self, widget):
 
         if osp.islink(self._macos_cli_tool_path):
-            os.remove(self._macos_cli_tool_path)
+            try:
+                os.remove(self._macos_cli_tool_path)
+            except PermissionError:
+                request_authorization_from_user_and_run(['/bin/rm', '-f', self._macos_cli_tool_path])
         else:
             maestral_cli = os.path.join(getattr(sys, '_MEIPASS', ''), 'maestral_cli')
-            call(['ln', '-s', maestral_cli, self._macos_cli_tool_path])
+            try:
+                os.symlink(maestral_cli, self._macos_cli_tool_path)
+            except PermissionError:
+                request_authorization_from_user_and_run(['/bin/ln', '-s', maestral_cli, self._macos_cli_tool_path])
 
         self._udpdate_cli_tool_button()
 
@@ -142,9 +146,10 @@ class SettingsWindow(SettingsGui):
     @async_call
     async def periodic_refresh_gui(self, interval=2):
 
-        while self.refresh:
-            if self.visible:
-                self.refresh_gui()
+        self._periodic_refresh = True
+
+        while self._periodic_refresh:
+            self.refresh_gui()
             await asyncio.sleep(interval)
 
     def refresh_gui(self):
@@ -190,4 +195,8 @@ class SettingsWindow(SettingsGui):
         self.label_usage.text = acc_space_usage
 
     def on_close(self):
-        self.refresh = False
+        self._periodic_refresh = False
+
+    def show(self):
+        self.periodic_refresh_gui()
+        super().show()

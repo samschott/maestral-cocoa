@@ -128,7 +128,7 @@ class SetupDialogGui(Window):
                   'next step, you will be asked to choose which folders to sync.'),
             linebreak_mode=WORD_WRAP,
             style=Pack(
-                width=self.CONTENT_WIDTH, height=80,
+                width=self.CONTENT_WIDTH, height=90,
                 padding_bottom=20, text_align=CENTER
             )
         )

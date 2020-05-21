@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 # system imports
-import sys
 import os
 import os.path as osp
 import asyncio
@@ -20,9 +19,7 @@ from maestral.constants import (
 )
 from maestral.daemon import (
     start_maestral_daemon_process,
-    start_maestral_daemon,
     stop_maestral_daemon_process,
-    get_maestral_pid,
     get_maestral_proxy,
     Start,
     Pyro5
@@ -45,10 +42,6 @@ from maestral_cocoa.resources import APP_ICON_PATH, TRAY_ICON_PATH
 
 Pack.validated_property('font_size', choices=FONT_SIZE_CHOICES, initial=13)
 
-
-# TODO:
-#  - fix memory leak: bug filed with rubicon
-#  - wait for toga v0.3.0.dev19 or include toga as private package
 
 class MaestralGui(SystemTrayApp):
     """A Qt GUI for the Maestral daemon."""
@@ -131,7 +124,8 @@ class MaestralGui(SystemTrayApp):
             await asyncio.sleep(interval)
             await self.auto_check_for_updates()
 
-    def load_maestral(self):
+    @async_call
+    async def load_maestral(self):
 
         self.mdbx = self.get_or_start_maestral_daemon()
 
@@ -166,22 +160,18 @@ class MaestralGui(SystemTrayApp):
 
     def get_or_start_maestral_daemon(self):
 
-        pid = get_maestral_pid(self.config_name)
-        if pid:
-            self._started = False
-        else:
-            res = start_maestral_daemon_process(self.config_name)
+        res = start_maestral_daemon_process(self.config_name)
 
-            if res == Start.Failed:
-                title = 'Could not start Maestral'
-                message = ('Could not start or connect to sync daemon. Please try again '
-                           'and contact the developer if this issue persists.')
-                alert(title, message, level='error', icon=self.icon)
-                self.exit(stop_daemon=True)
-            elif res == Start.AlreadyRunning:
-                self._started = False
-            elif res == Start.Ok:
-                self._started = True
+        if res == Start.Failed:
+            title = 'Could not start Maestral'
+            message = ('Could not start or connect to sync daemon. Please try again '
+                       'and contact the developer if this issue persists.')
+            alert(title, message, level='error', icon=self.icon)
+            self.exit(stop_daemon=True)
+        elif res == Start.AlreadyRunning:
+            self._started = False
+        elif res == Start.Ok:
+            self._started = True
 
         return get_maestral_proxy(self.config_name)
 
@@ -316,7 +306,6 @@ class MaestralGui(SystemTrayApp):
             self.item_pause.label = self.PAUSE_TEXT
 
     def on_settings_clicked(self, widget):
-        self.settings_window.refresh = True
         self.settings_window.raise_()
 
     def on_sync_issues_clicked(self, widget):
@@ -570,7 +559,7 @@ class MaestralGui(SystemTrayApp):
         self.exit(stop_daemon=True)
 
 
-def run(config_name='maestral') -> MaestralGui:
+def run(config_name='maestral'):
 
     MaestralGui.config_name = config_name
 
@@ -585,30 +574,3 @@ def run(config_name='maestral') -> MaestralGui:
     )
 
     return app.main_loop()
-
-
-def run_cli():
-    """
-    This is the main entry point for frozen executables.
-    If only the --config-name option is given, it starts the GUI with the given config.
-    If the --cli option is given, all following arguments will be passed to the CLI.
-    If the --frozen-daemon option is given, an idle maestral daemon is started. This is to
-    support launching the daemon from frozen executables as produced for instance by
-    PyInstaller.
-    """
-    import argparse
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--config-name', help='Configuration name', default='maestral')
-    parser.add_argument('--cli', action='store_true', help='Forward calls to CLI.')
-    parser.add_argument('--frozen-daemon', action='store_true', help='Start daemon only')
-    parsed_args, remaining = parser.parse_known_args()
-
-    if parsed_args.cli:
-        sys.argv = ['maestral'] + remaining + ['-c', parsed_args.config_name]
-        from maestral.cli import main
-        main()
-    elif parsed_args.frozen_daemon:
-        start_maestral_daemon(parsed_args.config_name)
-    else:
-        run(parsed_args.config_name)

@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 
-# system imports
-import gc
-
 # external imports
 from rubicon.objc.eventloop import CFTimerHandle, CFRunLoopTimerCallBack
 
@@ -14,7 +11,6 @@ def _cf_timer_callback(self, callback, args):
     def cf_timer_callback(cftimer, extra):
         callback(*args)
         self._loop._timers.discard(self)
-        gc.collect()
 
     return CFRunLoopTimerCallBack(cf_timer_callback)
 

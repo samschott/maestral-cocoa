@@ -85,25 +85,25 @@ class SyncIssueBox(toga.Box):
 
 class SyncIssuesWindow(Window):
 
-    placeholder_label = Label(
-        'No sync issues 😊',
-        style=Pack(padding_bottom=PADDING, width=CONTENT_WIDTH)
-    )
-
     box_style = Pack(direction=COLUMN, width=CONTENT_WIDTH, padding=2 * PADDING)
 
     def __init__(self, mdbx, app=None):
         super().__init__(title='Maestral Sync Issues', release_on_close=False, app=app)
 
         self.mdbx = mdbx
-        self.refresh = True
+        self._periodic_refresh = False
         self._cached_errors = []
 
         self.size = WINDOW_SIZE
         self._impl.native.titlebarAppearsTransparent = True
 
+        placeholder_label = Label(
+            'No sync issues 😊',
+            style=Pack(padding_bottom=PADDING, width=CONTENT_WIDTH)
+        )
+
         sync_errors_box = toga.Box(
-            children=[self.placeholder_label],
+            children=[placeholder_label],
             style=self.box_style
         )
         self.scroll_container = toga.ScrollContainer(
@@ -121,13 +121,15 @@ class SyncIssuesWindow(Window):
 
         self.center()
 
+        self.refresh_gui()
+
     @async_call
     async def periodic_refresh_gui(self, interval=1):
 
-        while self.refresh:
-            if self.visible:
-                self.refresh_gui()
+        self._periodic_refresh = True
 
+        while self._periodic_refresh:
+            self.refresh_gui()
             await asyncio.sleep(interval)
 
     def refresh_gui(self):
@@ -136,8 +138,14 @@ class SyncIssuesWindow(Window):
 
         if new_errors != self._cached_errors:
             if len(new_errors) == 0:
+
+                placeholder_label = Label(
+                    'No sync issues 😊',
+                    style=Pack(padding_bottom=PADDING, width=CONTENT_WIDTH)
+                )
+
                 sync_errors_box = toga.Box(
-                    children=[self.placeholder_label],
+                    children=[placeholder_label],
                     style=self.box_style
                 )
             else:
@@ -152,4 +160,8 @@ class SyncIssuesWindow(Window):
             self._cached_errors = new_errors
 
     def on_close(self):
-        self.refresh = False
+        self._periodic_refresh = False
+
+    def show(self):
+        self.periodic_refresh_gui()
+        super().show()

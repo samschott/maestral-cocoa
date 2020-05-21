@@ -22,13 +22,13 @@ setup(
     install_requires=[
         'bugsnag',
         'click',
-        'maestral>=1.0.0',
+        'maestral>=1.0.3',
         'markdown2',
         'toga==0.3.0.dev19',
     ],
     zip_safe=False,
     entry_points={
-        'console_scripts': ['maestral_cocoa=maestral_cocoa.main:run_cli'],
+        'console_scripts': ['maestral_cocoa=maestral_cocoa.cli:main'],
     },
     python_requires='>=3.6',
     classifiers=[
