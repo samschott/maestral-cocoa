@@ -13,7 +13,7 @@ import pkg_resources
 
 def resource_path(name):
     folder = getattr(sys, '_MEIPASS',
-                     pkg_resources.resource_filename('maestral', 'resources'))
+                     pkg_resources.resource_filename('maestral_cocoa', 'resources'))
     return osp.join(folder, name)
 
 
