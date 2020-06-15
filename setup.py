@@ -22,7 +22,7 @@ setup(
     install_requires=[
         'bugsnag',
         'click',
-        'maestral>=1.0.3',
+        'maestral>=1.1.0',
         'markdown2',
         'toga==0.3.0.dev19',
     ],
