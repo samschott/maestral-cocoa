@@ -6,12 +6,15 @@
 Attribution-NonCommercial-NoDerivs 2.0 UK: England & Wales License.
 
 """
-
+import sys
+import os.path as osp
 import pkg_resources
 
 
 def resource_path(name):
-    return pkg_resources.resource_filename('maestral_cocoa', f'resources/{name}')
+    folder = getattr(sys, '_MEIPASS',
+                     pkg_resources.resource_filename('maestral_cocoa', 'resources'))
+    return osp.join(folder, name)
 
 
 APP_ICON_PATH = resource_path('maestral.icns')
