@@ -392,6 +392,7 @@ class StatusBarItem:
 
 
 class CocoaSystemTrayApp(NSApplication):
+
     @objc_method
     def sendEvent_(self, event) -> None:
         if event.type == NSKeyDown:
@@ -408,8 +409,10 @@ class CocoaSystemTrayApp(NSApplication):
                 self.sendAction_to_from_(SEL('redo:'), None, self)
             elif toga_event == {'key': Key.A, 'modifiers': {Key.MOD_1}}:
                 self.sendAction_to_from_(SEL('selectAll:'), None, self)
-
-        send_super(__class__, self, 'sendEvent:', event)
+            else:
+                send_super(__class__, self, 'sendEvent:', event)
+        else:
+            send_super(__class__, self, 'sendEvent:', event)
 
 
 class SystemTrayAppDelegate(NSObject):
