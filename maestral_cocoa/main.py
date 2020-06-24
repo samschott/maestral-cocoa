@@ -86,7 +86,7 @@ class MaestralGui(SystemTrayApp):
 
         self.menu = Menu()
         self._cached_status = DISCONNECTED
-        self._cached_recent_files = []
+        self._cached_recent_changes = []
         self.tray = StatusBarItem(self.icon_mapping.get(DISCONNECTED), menu=self.menu)
 
         self.setup_ui_unlinked()
@@ -416,13 +416,15 @@ class MaestralGui(SystemTrayApp):
         """Update menu with list of recently changed files."""
 
         if self.menu.visible:
-            recent_files = self.mdbx.get_state('sync', 'recent_changes')
 
-            if recent_files != self._cached_recent_files:
+            recent_changes = self.mdbx.get_state('sync', 'recent_changes')
+
+            if recent_changes != self._cached_recent_changes:
 
                 self.menu_recent_files.clear()
 
-                for dbx_path in reversed(recent_files):
+                for entry in recent_changes:
+                    dbx_path = entry.get('path_display')
                     fname = osp.basename(dbx_path)
                     local_path = self.mdbx.to_local_path(dbx_path)
                     menu_item = MenuItem(
@@ -432,7 +434,7 @@ class MaestralGui(SystemTrayApp):
                     menu_item.local_path = local_path
                     self.menu_recent_files.add(menu_item)
 
-                self._cached_recent_files = recent_files
+                self._cached_recent_changes = recent_changes
 
     def update_snoozed(self):
         minutes = self.mdbx.notification_snooze
