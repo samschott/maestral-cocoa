@@ -97,17 +97,17 @@ class SyncIssuesWindow(Window):
         self.size = WINDOW_SIZE
         self._impl.native.titlebarAppearsTransparent = True
 
-        placeholder_label = Label(
+        self.placeholder_label = Label(
             'No sync issues 😊',
             style=Pack(padding_bottom=PADDING, width=CONTENT_WIDTH)
         )
 
-        sync_errors_box = toga.Box(
-            children=[placeholder_label],
+        self.sync_errors_box = toga.Box(
+            children=[self.placeholder_label],
             style=self.box_style
         )
         self.scroll_container = toga.ScrollContainer(
-            content=sync_errors_box,
+            content=self.sync_errors_box,
             style=Pack(flex=1)
         )
 
@@ -138,25 +138,13 @@ class SyncIssuesWindow(Window):
 
         if new_errors != self._cached_errors:
             if len(new_errors) == 0:
-
-                placeholder_label = Label(
-                    'No sync issues 😊',
-                    style=Pack(padding_bottom=PADDING, width=CONTENT_WIDTH)
-                )
-
-                sync_errors_box = toga.Box(
-                    children=[placeholder_label],
-                    style=self.box_style
-                )
+                self.sync_errors_box.remove(*self.sync_errors_box.children)
+                self.sync_errors_box.add(self.placeholder_label)
             else:
-                sync_errors_box = toga.Box(
-                    children=list(SyncIssueBox(e) for e in new_errors),
-                    style=self.box_style
-                )
+                self.sync_errors_box.remove(self.placeholder_label)
+                self.sync_errors_box.add(SyncIssueBox(e) for e in new_errors)
 
-            clear_background(sync_errors_box)
-            self.scroll_container.content = sync_errors_box
-
+            clear_background(self.sync_errors_box)
             self._cached_errors = new_errors
 
     def on_close(self):
