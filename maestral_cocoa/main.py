@@ -30,8 +30,9 @@ from maestral import __version__ as __daemon_version__
 # local imports
 from maestral_cocoa import __version__ as __gui_version__
 from maestral_cocoa.utils import async_call, run_async, run_maestral_async, alert
-from maestral_cocoa.private.widgets import (MenuItem, MenuItemSeparator, Menu,
-                                            StatusBarItem, SystemTrayApp)
+from maestral_cocoa.private.widgets import (
+    MenuItem, MenuItemSeparator, Menu, StatusBarItem, SystemTrayApp
+)
 from maestral_cocoa.setup import SetupDialog
 from maestral_cocoa.settings import SettingsWindow
 from maestral_cocoa.syncissues import SyncIssuesWindow
