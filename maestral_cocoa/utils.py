@@ -8,14 +8,22 @@ import time
 import traceback
 from functools import wraps
 from concurrent.futures import ThreadPoolExecutor
-from ctypes import cdll, util, c_char_p, c_void_p, byref, pointer
+from ctypes import (
+    cdll, util, c_char_p, c_void_p, byref, pointer, Structure, c_uint32, POINTER
+)
 
 # external imports
 import toga
 from toga.fonts import Font, SYSTEM, BOLD
-from toga_cocoa.libs import *
 from toga.handlers import long_running_task
 from toga.platform import get_platform_factory
+from toga_cocoa.libs import (
+    NSAlertStyle, NSImage, NSImageInterpolationHigh, NSGraphicsContext, NSRect, NSPoint,
+    NSBezierPath, NSColor, NSArray, NSSavePanel, NSFileHandlingPanelOKButton,
+    NSOpenPanel, NSAlert, NSMakeRect, NSScrollView, NSBezelBorder, NSTextView,
+    NSTextField, NSLayoutAttributeLeading, NSAlertFirstButtonReturn, NSApplication,
+    NSOnState,
+)
 from rubicon.objc import (
     ObjCClass, NSMakeSize
 )
