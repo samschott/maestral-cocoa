@@ -8,8 +8,7 @@ import time
 import traceback
 from functools import wraps
 from concurrent.futures import ThreadPoolExecutor
-import ctypes
-import ctypes.util
+from ctypes import cdll, util, c_char_p, c_void_p, byref, pointer
 
 # external imports
 import toga
@@ -17,7 +16,9 @@ from toga.fonts import Font, SYSTEM, BOLD
 from toga_cocoa.libs import *
 from toga.handlers import long_running_task
 from toga.platform import get_platform_factory
-from rubicon.objc import ObjCClass
+from rubicon.objc import (
+    ObjCClass, NSMakeSize
+)
 from maestral.daemon import MaestralProxy
 
 # local imports
@@ -38,7 +39,7 @@ from .private.constants import (
 )
 from .private.factory import attributed_str_from_html
 
-sec = ctypes.cdll.LoadLibrary(ctypes.util.find_library('Security'))
+sec = cdll.LoadLibrary(util.find_library('Security'))
 
 NSAutoreleasePool = ObjCClass('NSAutoreleasePool')
 NSVisualEffectView = ObjCClass('NSVisualEffectView')
@@ -402,8 +403,8 @@ AuthorizationRef = c_void_p
 
 
 def _osx_sudo_start():
-    auth = ctypes.c_void_p()
-    r_auth = ctypes.byref(auth)
+    auth = c_void_p()
+    r_auth = byref(auth)
 
     flags = (kAuthorizationFlagInteractionAllowed
              | kAuthorizationFlagExtendRights
@@ -441,8 +442,8 @@ def _osx_sudo_cmd(auth, exe, auth_text=None):
 
     i = 0
     while True:
-        io = ctypes.c_void_p()
-        r_io = ctypes.byref(io)
+        io = c_void_p()
+        r_io = byref(io)
 
         err = sec.AuthorizationExecuteWithPrivileges(auth, cmd,
                                                      kAuthorizationFlagDefaults,

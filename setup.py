@@ -24,7 +24,7 @@ setup(
         'click',
         'maestral>=1.1.0',
         'markdown2',
-        'toga==0.3.0.dev19',
+        'toga==0.3.0.dev22',
         'rubicon-objc>=0.4.0',
     ],
     zip_safe=False,
