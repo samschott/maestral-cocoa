@@ -433,6 +433,8 @@ class SystemTrayApp(TogaApp):
     def create(self):
         self.native = CocoaSystemTrayApp.sharedApplication
         self.native.activationPolicy = NSApplicationActivationPolicyAccessory
+
+        self.interface.icon.bind(self.interface.factory)
         self.native.applicationIconImage = self.interface.icon._impl.native
 
         self.resource_path = osp.dirname(osp.dirname(NSBundle.mainBundle.bundlePath))
