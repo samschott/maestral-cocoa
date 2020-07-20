@@ -24,7 +24,7 @@ WINDOW_SIZE = (CONTENT_WIDTH + 4 * PADDING, 400)
 
 # TODO: use toga.DetailedList to display sync errors (once it is view-based)
 
-class SyncIssueBox(toga.Box):
+class SyncIssueView(toga.Box):
 
     dbx_address = "https://www.dropbox.com/preview"
 
@@ -137,12 +137,19 @@ class SyncIssuesWindow(Window):
         new_errors = self.mdbx.sync_errors
 
         if new_errors != self._cached_errors:
+
+            print(self.sync_errors_box.children)
+
+            # remove old errors
+            for child in self.sync_errors_box.children.copy():
+                self.sync_errors_box.remove(child)
+
+            # add new errors
             if len(new_errors) == 0:
-                self.sync_errors_box.remove(*self.sync_errors_box.children)
                 self.sync_errors_box.add(self.placeholder_label)
             else:
-                self.sync_errors_box.remove(self.placeholder_label)
-                self.sync_errors_box.add(SyncIssueBox(e) for e in new_errors)
+                for e in new_errors:
+                    self.sync_errors_box.add(SyncIssueView(e))
 
             clear_background(self.sync_errors_box)
             self._cached_errors = new_errors
