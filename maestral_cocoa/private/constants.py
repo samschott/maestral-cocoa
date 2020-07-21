@@ -72,3 +72,9 @@ class VisualEffectMaterial(Enum):
 
 
 NSVisualEffectMaterial = VisualEffectMaterial
+
+NSUTF8StringEncoding = 4
+NSImageLeading = 7
+
+NSTextEncodingNameDocumentOption = 'TextEncodingName'
+NSImageNameFollowLinkFreestandingTemplate = 'NSFollowLinkFreestandingTemplate'

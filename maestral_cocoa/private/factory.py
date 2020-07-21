@@ -15,6 +15,7 @@ from toga_cocoa.widgets.switch import Switch as TogaSwitch, at_least
 from toga_cocoa.widgets.label import Label as TogaLabel
 from toga_cocoa.widgets.button import Button as TogaButton
 from toga_cocoa.widgets.selection import Selection as TogaSelection
+from toga_cocoa.window import Window as TogaWindow
 from toga_cocoa.widgets.multilinetextinput import MultilineTextInput as TogaMultilineTextInput
 from toga_cocoa.factory import *
 
@@ -22,7 +23,10 @@ from toga_cocoa.factory import *
 from .constants import (
     WORD_WRAP, CHARACTER_WRAP, CLIP, TRUNCATE_HEAD, TRUNCATE_MIDDLE, TRUNCATE_TAIL,
     NSButtonTypeMomentaryPushIn, NSFocusRingTypeNone, NSControlState,
-    NSSquareStatusItemLength,
+    NSSquareStatusItemLength, NSWindowAnimationBehaviorDefault,
+    NSWindowAnimationBehaviorAlertPanel, NSUTF8StringEncoding, NSImageLeading,
+    NSImageNameFollowLinkFreestandingTemplate, NSVisualEffectStateActive,
+    NSVisualEffectBlendingModeBehindWindow,
     ON, OFF, MIXED,
 )
 
@@ -34,15 +38,6 @@ NSStatusBar = ObjCClass('NSStatusBar')
 NSColorSpace = ObjCClass('NSColorSpace')
 
 shared_workspace = NSWorkspace.sharedWorkspace
-
-NSVisualEffectBlendingModeBehindWindow = 0
-NSVisualEffectStateActive = 1
-NSCompositeSourceOver = 2
-NSUTF8StringEncoding = 4
-NSImageLeading = 7
-
-NSTextEncodingNameDocumentOption = 'TextEncodingName'
-NSImageNameFollowLinkFreestandingTemplate = 'NSFollowLinkFreestandingTemplate'
 
 
 # ==== icons =============================================================================
@@ -458,3 +453,54 @@ class SystemTrayApp(TogaApp):
 
     def open_document(self, path):
         pass
+
+
+class Window(TogaWindow):
+
+    def is_visible(self):
+        return bool(self.native.isVisible)
+
+    def center(self):
+        self.native.center()
+
+    def raise_(self):
+        self.show()
+        self.native.orderFrontRegardless()
+        if self.interface.app:
+            self.interface.app._impl.native.activateIgnoringOtherApps(True)
+
+    def show_as_sheet(self, window):
+        window._impl.native.beginSheet(self.native, completionHandler=None)
+
+    def hide(self):
+        self.native.orderOut(None)
+
+    def close(self):
+
+        if self.native.sheetParent:
+            # end sheet session before closing
+            self.native.sheetParent.endSheet(self.native)
+
+        self.native.close()
+
+    @property
+    def release_on_close(self):
+        return self.native.releasedWhenClosed
+
+    @release_on_close.setter
+    def release_on_close(self, value):
+        self.native.releasedWhenClosed = value
+
+    def set_dialog(self, value):
+
+        animation = NSWindowAnimationBehaviorAlertPanel if value else NSWindowAnimationBehaviorDefault
+        self.native.animationBehavior = animation
+        self.native.level = 3
+
+    def start_modal(self):
+        self.raise_()
+        return self.interface.app._impl.native.runModalForWindow(self.native)
+
+    def stop_modal(self, res=0):
+        if self.interface.app._impl.native.modalWindow == self.native:
+            self.interface.app._impl.native.stopModalWithCode(res)

@@ -15,7 +15,6 @@ from toga_cocoa.libs import at
 from . import factory as private_factory
 from .constants import (
     ON, MIXED, TRUNCATE_TAIL, VisualEffectMaterial,
-    NSWindowAnimationBehaviorDefault, NSWindowAnimationBehaviorAlertPanel,
 )
 
 
@@ -501,7 +500,6 @@ class StatusBarItem:
 
 # ==== Custom Window =====================================================================
 
-# TODO: move objc API access to factory
 class Window(toga.Window):
 
     def __init__(self, id=None, title=None, position=None, size=(640, 480),
@@ -520,52 +518,42 @@ class Window(toga.Window):
             self.center()
 
     # visibility and positioning
+
     @property
     def visible(self):
-        return bool(self._impl.native.isVisible)
+        return self._impl.is_visible()
 
     def center(self):
-        self._impl.native.center()
+        self._impl.center()
 
     def raise_(self):
-        self.show()
-        self._impl.native.orderFrontRegardless()
-        if self.app:
-            self.app._impl.native.activateIgnoringOtherApps(True)
+        self._impl.raise_()
 
     def hide(self):
-        self._impl.native.orderOut(None)
+        self._impl.hide()
 
     # sheet support
 
     def show_as_sheet(self, window):
-        window._impl.native.beginSheet(self._impl.native, completionHandler=None)
+        self._impl.show_as_sheet(window)
 
     # application modal support
 
-    def runModal(self):
-        self.raise_()
-        return self.app._impl.native.runModalForWindow(self._impl.native)
+    def start_modal(self):
+        self._impl.start_modal()
 
-    def stopModal(self, res=0):
-        if self.app._impl.native.modalWindow == self._impl.native:
-            self.app._impl.native.stopModalWithCode(res)
+    def stop_modal(self, res=0):
+        self._impl.start_modal(res)
 
-    # close with handling sheet session
-
-    def close(self):
-        if self._impl.native.sheetParent:
-            self._impl.native.sheetParent.endSheet(self._impl.native)
-
-        self._impl.native.close()
+    # other
 
     @property
     def release_on_close(self):
-        return self._impl.native.releasedWhenClosed
+        return self._impl.release_on_close
 
     @release_on_close.setter
     def release_on_close(self, value):
-        self._impl.native.releasedWhenClosed = value
+        self._impl.release_on_close = value
 
     @property
     def is_dialog(self):
@@ -574,9 +562,7 @@ class Window(toga.Window):
     @is_dialog.setter
     def is_dialog(self, yes):
         self._is_dialog = yes
-        animation = NSWindowAnimationBehaviorAlertPanel if yes else NSWindowAnimationBehaviorDefault
-        self._impl.native.animationBehavior = animation
-        self._impl.native.level = 3
+        self._impl.set_dialog(True)
 
 
 # ==== Application =======================================================================
