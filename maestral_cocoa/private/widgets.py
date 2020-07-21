@@ -12,10 +12,13 @@ from toga.constants import ROW, RIGHT, TRANSPARENT
 from toga_cocoa.libs import at
 
 # local imports
-from . import factory as private_factory
+from .platform import get_platform_factory
 from .constants import (
     ON, MIXED, TRUNCATE_TAIL, VisualEffectMaterial,
 )
+
+
+private_factory = get_platform_factory()
 
 
 # ==== layout widgets ====================================================================

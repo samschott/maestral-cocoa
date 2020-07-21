@@ -17,17 +17,19 @@ from toga_cocoa.widgets.button import Button as TogaButton
 from toga_cocoa.widgets.selection import Selection as TogaSelection
 from toga_cocoa.window import Window as TogaWindow
 from toga_cocoa.widgets.multilinetextinput import MultilineTextInput as TogaMultilineTextInput
-from toga_cocoa.factory import *
 
 # local imports
-from .constants import (
+from ...constants import (
     WORD_WRAP, CHARACTER_WRAP, CLIP, TRUNCATE_HEAD, TRUNCATE_MIDDLE, TRUNCATE_TAIL,
+    ON, OFF, MIXED,
+)
+from .constants import (
     NSButtonTypeMomentaryPushIn, NSFocusRingTypeNone, NSControlState,
     NSSquareStatusItemLength, NSWindowAnimationBehaviorDefault,
     NSWindowAnimationBehaviorAlertPanel, NSUTF8StringEncoding, NSImageLeading,
     NSImageNameFollowLinkFreestandingTemplate, NSVisualEffectStateActive,
     NSVisualEffectBlendingModeBehindWindow,
-    ON, OFF, MIXED,
+
 )
 
 

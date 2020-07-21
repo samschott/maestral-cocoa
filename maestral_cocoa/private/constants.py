@@ -16,43 +16,6 @@ TRUNCATE_TAIL = 3
 WORD_WRAP = 10
 CHARACTER_WRAP = 11
 
-NSSquareStatusItemLength = -2
-NSWindowBelow = -1
-NSVisualEffectStateActive = 1
-NSVisualEffectBlendingModeBehindWindow = 0
-NSFullSizeContentViewWindowMask = 32768
-NSLayoutFormatDirectionLeadingToTrailing = 0
-NSCompositeSourceOver = 2
-
-NSBezelStyleInline = 15
-NSButtonTypeMomentaryPushIn = 7
-NSFocusRingTypeNone = 1
-
-NSStackViewGravityBottom = 3
-NSUserInterfaceLayoutOrientationVertical = 1
-
-NSWindowAnimationBehaviorDefault = 0
-NSWindowAnimationBehaviorAlertPanel = 5
-
-errAuthorizationSuccess = 0
-errAuthorizationToolExecuteFailure = -60031
-errAuthorizationCanceled = -60006
-errAuthorizationInternal = -60008
-kAuthorizationFlagDefaults = 0
-kAuthorizationFlagInteractionAllowed = 1
-kAuthorizationFlagExtendRights = 2
-kAuthorizationFlagPreAuthorize = 16
-kAuthorizationRightExecute = b'system.privilege.admin'
-kAuthorizationEnvironmentPrompt = b'prompt'
-kAuthorizationEmptyEnvironment = None
-
-
-def NSControlState(boolean):
-    return {
-        False: 0,
-        True: 1
-    }[boolean]
-
 
 class VisualEffectMaterial(Enum):
     Titlebar = 3  # The material for a window’s titlebar
@@ -68,13 +31,3 @@ class VisualEffectMaterial(Enum):
     ContentBackground = 18  # The material for the background of opaque content
     UnderWindowBackground = 21  # The material for under a window's background
     UnderPageBackground = 22  # The material for the area behind the pages of a document
-    UltraDark = 9  # Deprecated: use target instead
-
-
-NSVisualEffectMaterial = VisualEffectMaterial
-
-NSUTF8StringEncoding = 4
-NSImageLeading = 7
-
-NSTextEncodingNameDocumentOption = 'TextEncodingName'
-NSImageNameFollowLinkFreestandingTemplate = 'NSFollowLinkFreestandingTemplate'
