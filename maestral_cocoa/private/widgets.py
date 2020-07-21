@@ -8,9 +8,8 @@ from toga.handlers import wrapped_handler
 from toga.widgets.base import Widget
 from toga.icons import Icon
 from toga.style.pack import Pack
-from toga.constants import ROW, RIGHT
+from toga.constants import ROW, RIGHT, TRANSPARENT
 from toga_cocoa.libs import at
-from maestral_cocoa.utils import clear_background
 
 # local imports
 from . import factory as private_factory
@@ -26,9 +25,8 @@ class Spacer(toga.Box):
     """A widget to take up space and push others to the side."""
 
     def __init__(self, direction=ROW):
-        style = Pack(flex=1, direction=direction)
+        style = Pack(flex=1, direction=direction, background_color=TRANSPARENT)
         super().__init__(style=style)
-        clear_background(self)
 
 
 class VibrantBox(Widget):
@@ -84,7 +82,7 @@ class DialogButtons(toga.Box):
         self.add(Spacer())
 
         for label in labels[::-1]:
-            style = Pack(padding_left=10, alignment=RIGHT)
+            style = Pack(padding_left=10, alignment=RIGHT, background_color=TRANSPARENT)
             btn = toga.Button(label=label, on_press=self._on_press, style=style)
             self.add(btn)
             self._buttons.insert(0, btn)
@@ -98,8 +96,6 @@ class DialogButtons(toga.Box):
                 self._buttons[default_index]._impl.native.keyEquivalent = at('\r')
             except ValueError:
                 pass
-
-        clear_background(self)
 
     def _on_press(self, widget):
         if self.on_press:

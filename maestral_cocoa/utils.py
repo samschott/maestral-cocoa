@@ -19,7 +19,7 @@ from toga.handlers import long_running_task
 from toga.platform import get_platform_factory
 from toga_cocoa.libs import (
     NSAlertStyle, NSImage, NSImageInterpolationHigh, NSGraphicsContext, NSRect, NSPoint,
-    NSBezierPath, NSColor, NSArray, NSSavePanel, NSFileHandlingPanelOKButton,
+    NSBezierPath, NSArray, NSSavePanel, NSFileHandlingPanelOKButton,
     NSOpenPanel, NSAlert, NSMakeRect, NSScrollView, NSBezelBorder, NSTextView,
     NSTextField, NSLayoutAttributeLeading, NSAlertFirstButtonReturn, NSApplication,
     NSOnState,
@@ -101,19 +101,6 @@ def apply_round_clipping(imageView: toga.ImageView):
 
     pool.drain()
     del pool
-
-
-def clear_background(widget):
-    """Removed all background from the given widget and its children."""
-    widget._impl.native.backgroundColor = NSColor.clearColor
-    widget._impl.native.drawsBackground = False
-    for child in widget.children:
-        clear_background(child)
-
-    content = getattr(widget, 'content', None)
-
-    if content is not None:
-        clear_background(content)
 
 
 # ==== custom dialogs ====================================================================
