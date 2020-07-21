@@ -17,6 +17,8 @@ def _find_library(name):
         if osp.islink(path):
             return path
 
+    return None
+
 
 util.find_library = _find_library
 
