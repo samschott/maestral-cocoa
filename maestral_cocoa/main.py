@@ -29,7 +29,7 @@ from maestral import __version__ as __daemon_version__
 
 # local imports
 from maestral_cocoa import __version__ as __gui_version__
-from maestral_cocoa.utils import async_call, run_async, run_maestral_async, alert
+from maestral_cocoa.utils import async_call, run_async, run_maestral_async
 from maestral_cocoa.private.widgets import (
     MenuItem, MenuItemSeparator, Menu, StatusBarItem, SystemTrayApp
 )
@@ -167,7 +167,7 @@ class MaestralGui(SystemTrayApp):
             title = 'Could not start Maestral'
             message = ('Could not start or connect to sync daemon. Please try again '
                        'and contact the developer if this issue persists.')
-            alert(title, message, level='error', icon=self.icon)
+            self.alert(title, message, level='error')
             self.exit(stop_daemon=True)
         elif res == Start.AlreadyRunning:
             self._started = False
@@ -475,7 +475,7 @@ class MaestralGui(SystemTrayApp):
         elif err['type'] == 'TokenExpiredError':
             self._exec_relink_dialog(RelinkDialog.EXPIRED)
         elif 'MaestralApiError' in err['inherits'] or 'SyncError' in err['inherits']:
-            alert(err['title'], err['message'], level='error', icon=self.icon)
+            self.alert(err['title'], err['message'], level='error')
         else:
             self._exec_error_dialog(err)
 
@@ -496,17 +496,16 @@ class MaestralGui(SystemTrayApp):
                        'Please restart Maestral to continue syncing.')
 
             html_traceback = err['traceback'].replace('\n', '<br />')
-            alert(title, message, details=html_traceback, level='error', icon=self.icon)
+            self.alert(title, message, details=html_traceback, level='error')
 
         else:
             message = ('You can send a report to the developers or open an issue on '
                        'GitHub. Please restart Maestral to continue syncing.')
-            btn_no, auto_share_checkbox = alert(
+            btn_no, auto_share_checkbox = self.alert(
                 title, message,
                 details=err['traceback'],
                 button_names=('Send to Developers', 'Don\'t send'),
                 checkbox_text='Always send error reports',
-                icon=self.icon,
             )
 
             if btn_no == 0:

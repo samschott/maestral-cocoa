@@ -9,7 +9,7 @@ from maestral.utils.appdirs import get_home_dir
 
 # local imports
 from .private.constants import OFF
-from .utils import alert_sheet, run_maestral_async, async_call
+from .utils import run_maestral_async, async_call
 from .setup_gui import SetupDialogGui
 from .selective_sync_gui import FileSystemSource
 
@@ -60,11 +60,9 @@ class SetupDialog(SetupDialogGui):
 
         token = self.text_field_auth_token.value
         if not token:
-            alert_sheet(
-                window=self,
+            self.alert_sheet(
                 title='Authentication failed.',
                 message='Please enter an authentication token.',
-                icon=self.app.icon,
             )
 
         else:
@@ -87,21 +85,17 @@ class SetupDialog(SetupDialogGui):
                 self.go_forward()
 
             elif res == 1:
-                alert_sheet(
-                    window=self,
+                self.alert_sheet(
                     title='Authentication failed.',
                     message=('Please make sure that you entered the '
                              'correct authentication token.'),
-                    icon=self.app.icon,
                 )
 
             elif res == 2:
-                alert_sheet(
-                    window=self,
+                self.alert_sheet(
                     title='Connection failed.',
                     message=('Please make sure that you are connected '
                              'to the internet and try again.'),
-                    icon=self.app.icon,
                 )
 
             # reset contents of link page
@@ -113,67 +107,56 @@ class SetupDialog(SetupDialogGui):
     def on_dbx_location(self, btn_name):
 
         if btn_name == 'Select':
-            # apply dropbox path
+
             self._chosen_dropbox_folder = osp.join(
                 self.dbx_location_user_selected,
                 self.mdbx.get_conf('main', 'default_dir_name')
             )
-            if osp.isdir(self._chosen_dropbox_folder):
-                msg = ('The folder "{}" already exists. Would you like '
-                       'to replace it or merge its contents with Dropbox?')
-                alert_sheet(
-                    window=self,
-                    title='Folder already exists',
-                    message=msg.format(self._chosen_dropbox_folder),
-                    button_labels=('Replace', 'Cancel', 'Merge'),
-                    icon=self.app.icon,
-                    callback=self._on_exists,
-                )
 
-            elif osp.isfile(self._chosen_dropbox_folder):
-                msg = ('There already is a file named "{}" at this location. '
-                       'Would you like to replace it?')
-                alert_sheet(
-                    window=self,
-                    title='File conflict',
-                    message=msg.format(self.mdbx.get_conf('main', 'default_dir_name')),
-                    button_labels=('Replace', 'Cancel'),
-                    icon=self.app.icon,
-                    callback=self._on_exists,
+            # if a file / folder exists, ask for conflict resolution
+            if osp.exists(self._chosen_dropbox_folder):
+                if osp.isdir(self._chosen_dropbox_folder):
+                    msg = ('The folder "{}" already exists. Would you like '
+                           'to replace it or merge its contents with Dropbox?')
+                    choice = self.alert_sheet(
+                        title='Folder already exists',
+                        message=msg.format(self._chosen_dropbox_folder),
+                        button_labels=('Replace', 'Cancel', 'Merge'),
+                    )
+
+                else:
+                    msg = ('There already is a file named "{}" at this location. '
+                           'Would you like to replace it?')
+                    choice = self.alert_sheet(
+                        title='File conflict',
+                        message=msg.format(self.mdbx.get_conf('main', 'default_dir_name')),
+                        button_labels=('Replace', 'Cancel'),
+                    )
+
+                if choice == 0:  # replace
+                    delete(self._chosen_dropbox_folder)
+                elif choice == 1:  # cancel
+                    return
+                elif choice == 2:  # merge
+                    pass
+
+            # try to create the directory
+            # continue to next page if success or alert user if failed
+            try:
+                self.mdbx.create_dropbox_directory(path=self._chosen_dropbox_folder)
+            except OSError:
+                self.alert_sheet(
+                    title='Could not create folder',
+                    message=('Please make sure that you have permissions '
+                             'to write to the selected location.'),
+                    button_labels=('Ok',),
                 )
             else:
-                self._continue()
+                self.go_forward()
 
         elif btn_name == 'Cancel & Unlink':
             self.mdbx.unlink()
             self.close()
-
-    def _on_exists(self, choice):
-
-        if choice == 0:    # replace
-            delete(self._chosen_dropbox_folder)
-            self._continue()
-        elif choice == 1:  # cancel
-            return
-        elif choice == 2:  # merge
-            self._continue()
-
-    def _continue(self):
-
-        try:
-            self.mdbx.create_dropbox_directory(path=self._chosen_dropbox_folder)
-        except OSError:
-            alert_sheet(
-                window=self,
-                title='Could not create folder',
-                message=('Please make sure that you have permissions '
-                         'to write to the selected location.'),
-                button_labels=('Ok',),
-                icon=self.app.icon,
-            )
-        else:
-            # switch to next page
-            self.go_forward()
 
     def on_items_selected(self, btn_name):
 

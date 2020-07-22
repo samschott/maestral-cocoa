@@ -514,7 +514,7 @@ class Window(toga.Window):
         if app:
             self.app = app
 
-        self._impl.native.releasedWhenClosed = release_on_close
+        self.release_on_close = release_on_close
         self.is_dialog = is_dialog
 
         if not position:
@@ -540,24 +540,6 @@ class Window(toga.Window):
     def show_as_sheet(self, window):
         self._impl.show_as_sheet(window)
 
-    # application modal support
-
-    def start_modal(self):
-        self._impl.start_modal()
-
-    def stop_modal(self, res=0):
-        self._impl.start_modal(res)
-
-    # other
-
-    @property
-    def release_on_close(self):
-        return self._impl.release_on_close
-
-    @release_on_close.setter
-    def release_on_close(self, value):
-        self._impl.release_on_close = value
-
     @property
     def is_dialog(self):
         return self._is_dialog
@@ -566,6 +548,45 @@ class Window(toga.Window):
     def is_dialog(self, yes):
         self._is_dialog = yes
         self._impl.set_dialog(True)
+
+    # application modal support
+
+    def start_modal(self):
+        self._impl.start_modal()
+
+    def stop_modal(self, res=0):
+        self._impl.start_modal(res)
+
+    # memory management
+
+    @property
+    def release_on_close(self):
+        return self._release_on_close
+
+    @release_on_close.setter
+    def release_on_close(self, value):
+        self._release_on_close = value
+        self._impl.set_release_on_close(value)
+
+    # dialogs
+
+    def save_file_sheet(self, title='', message='', suggested_filename='untitled', file_types=None):
+        return self._impl.save_file_sheet(title, message, suggested_filename, file_types)
+
+    def open_file_sheet(self, title='', message='', initial_directory=None, file_types=None, multiselect=False):
+        return self._impl.open_file_sheet(title, message, initial_directory, file_types, multiselect)
+
+    def select_folder_sheet(self, title='', message='', initial_directory=None, multiselect=False):
+        return self._impl.select_folder_sheet(self, title, message, initial_directory, multiselect)
+
+    def alert_sheet(self, title='', message='', details=None, details_title='Traceback',
+                    button_labels=('Ok',), checkbox_text=None, level='info', icon=None):
+
+        if not icon and self.app:
+            icon = self.app.icon
+
+        return self._impl.alert_sheet(self, title, message, details, details_title,
+                button_labels, checkbox_text, level, icon)
 
 
 # ==== Application =======================================================================
@@ -580,3 +601,11 @@ class SystemTrayApp(toga.App):
 
     def _create_impl(self):
         return self.factory.SystemTrayApp(interface=self)
+
+    def alert(self, title, message, details=None, details_title='Traceback',
+              button_names=('Ok',), checkbox_text=None, level='info', icon=None):
+
+        icon = icon or self.icon
+
+        return self._impl.alert(title, message, details, details_title, button_names,
+                                checkbox_text, level, icon)

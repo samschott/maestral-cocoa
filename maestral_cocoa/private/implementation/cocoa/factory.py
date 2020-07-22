@@ -19,10 +19,7 @@ from toga_cocoa.window import Window as TogaWindow
 from toga_cocoa.widgets.multilinetextinput import MultilineTextInput as TogaMultilineTextInput
 
 # local imports
-from ...constants import (
-    WORD_WRAP, CHARACTER_WRAP, CLIP, TRUNCATE_HEAD, TRUNCATE_MIDDLE, TRUNCATE_TAIL,
-    ON, OFF, MIXED,
-)
+from . import dialogs
 from .constants import (
     NSButtonTypeMomentaryPushIn, NSFocusRingTypeNone, NSControlState,
     NSSquareStatusItemLength, NSWindowAnimationBehaviorDefault,
@@ -30,6 +27,10 @@ from .constants import (
     NSImageNameFollowLinkFreestandingTemplate, NSVisualEffectStateActive,
     NSVisualEffectBlendingModeBehindWindow,
 
+)
+from ...constants import (
+    WORD_WRAP, CHARACTER_WRAP, CLIP, TRUNCATE_HEAD, TRUNCATE_MIDDLE, TRUNCATE_TAIL,
+    ON, OFF, MIXED,
 )
 
 
@@ -456,6 +457,12 @@ class SystemTrayApp(TogaApp):
     def open_document(self, path):
         pass
 
+    def alert(self, title, message, details, details_title, button_names, checkbox_text,
+              level, icon):
+
+        return dialogs.alert(title, message, details, details_title, button_names,
+                             checkbox_text, level, icon)
+
 
 class Window(TogaWindow):
 
@@ -485,12 +492,7 @@ class Window(TogaWindow):
 
         self.native.close()
 
-    @property
-    def release_on_close(self):
-        return self.native.releasedWhenClosed
-
-    @release_on_close.setter
-    def release_on_close(self, value):
+    def set_release_on_close(self, value):
         self.native.releasedWhenClosed = value
 
     def set_dialog(self, value):
@@ -506,3 +508,20 @@ class Window(TogaWindow):
     def stop_modal(self, res=0):
         if self.interface.app._impl.native.modalWindow == self.native:
             self.interface.app._impl.native.stopModalWithCode(res)
+
+    # dialogs
+
+    def save_file_sheet(self, title, message, suggested_filename, file_types):
+        return dialogs.save_file_sheet(self.interface, suggested_filename, title, message, file_types)
+
+    def open_file_sheet(self, title, message, initial_directory, file_types, multiselect):
+        return dialogs.open_file_sheet(self.interface, title, message, file_types, multiselect)
+
+    def select_folder_sheet(self, title, message, initial_directory, multiselect):
+        return dialogs.select_folder_sheet(self.interface, title, message, multiselect)
+
+    def alert_sheet(self, title, message, details, details_title, button_labels,
+                    checkbox_text, level, icon):
+
+        return dialogs.alert_sheet(self.interface, title, message, details, details_title,
+                                   button_labels, checkbox_text, level, icon)

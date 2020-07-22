@@ -14,7 +14,6 @@ from .private.widgets import (
     Label, Spacer, DialogButtons, FollowLinkButton, Selection, Window, IconForPath
 )
 from .private.constants import WORD_WRAP, NSFullSizeContentViewWindowMask
-from .utils import select_folder_sheet
 
 
 # set default font size to 13 pt, as in macOS
@@ -223,17 +222,13 @@ class SetupDialogGui(Window):
     def _on_button_location_pressed(self, widget):
 
         if widget.value == self.COMBOBOX_CHOOSE:
-            select_folder_sheet(
-                window=self,
-                callback=self._on_dbx_location_selected,
-            )
+            paths = self.select_folder_sheet()
 
-    def _on_dbx_location_selected(self, paths):
-        if len(paths) > 0:
-            path = paths[0]
-            self._update_comboxbox_location(path)
-        else:
-            self.combobox_dbx_location.value = self.combobox_dbx_location.items[0]
+            if len(paths) > 0:
+                path = paths[0]
+                self._update_comboxbox_location(path)
+            else:
+                self.combobox_dbx_location.value = self.combobox_dbx_location.items[0]
 
     def _update_comboxbox_location(self, path):
         self.dbx_location_user_selected = path

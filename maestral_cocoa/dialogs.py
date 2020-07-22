@@ -14,7 +14,7 @@ from .private.widgets import (
     Label, RichMultilineTextInput, FollowLinkButton
 )
 from .private.constants import VisualEffectMaterial, WORD_WRAP
-from .utils import async_call, run_maestral_async, alert_sheet
+from .utils import async_call, run_maestral_async
 
 
 # NSAlert's are the preferred way of alerting the user. However, we use our own dialogs
@@ -353,26 +353,20 @@ class RelinkDialog(Dialog):
         self.spinner.stop()
 
         if res == 0:
-            alert_sheet(
-                window=self,
+            self.alert_sheet(
                 title='Relink successful!',
                 message='Click OK to restart.',
-                callback=self.app.restart,
-                icon=self.app.icon,
             )
+            self.app.restart()
         elif res == 1:
-            alert_sheet(
-                window=self,
+            self.alert_sheet(
                 title='Invalid token',
                 message='Please make sure you copy the correct token.',
-                icon=self.app.icon,
             )
         elif res == 2:
-            alert_sheet(
-                window=self,
+            self.alert_sheet(
                 title='Connection failed',
                 message='Please check your internet connection.',
-                icon=self.app.icon,
             )
 
         self.dialog_buttons[self.CANCEL_BTN].enabled = True

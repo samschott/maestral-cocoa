@@ -14,7 +14,7 @@ from maestral import __version__ as __daemon_version__
 
 # local imports
 from . import __url__, __author__, __version__
-from .utils import apply_round_clipping, select_folder_sheet
+from .utils import apply_round_clipping
 from .private.widgets import Label, RichLabel, Switch, Selection, IconForPath, Window
 from .resources import FACEHOLDER_PATH
 
@@ -299,23 +299,19 @@ class SettingsGui(Window):
     def _on_button_location_pressed(self, widget):
 
         if widget.value == self.COMBOBOX_CHOOSE:
-            select_folder_sheet(
-                window=self,
+            paths = self.select_folder_sheet(
                 message=('Choose a new place for your Dropbox folder. A folder named '
                          f'"Dropbox ({self.mdbx.config_name.title()})" will be '
                          'created in the selected location.'),
-                callback=self._on_dbx_location_selected,
             )
 
-    def _on_dbx_location_selected(self, paths):
+            if len(paths) > 0:
+                path = paths[0]
 
-        if len(paths) > 0:
-            path = paths[0]
-
-            self._update_combobox_location(path)
-            self.on_dbx_location_selected(path)
-        else:
-            self.combobox_dbx_location.value = self.combobox_dbx_location.items[0]
+                self._update_combobox_location(path)
+                self.on_dbx_location_selected(path)
+            else:
+                self.combobox_dbx_location.value = self.combobox_dbx_location.items[0]
 
     def _update_combobox_location(self, path):
         if path != self._cached_dbx_location:
