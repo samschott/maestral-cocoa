@@ -14,7 +14,7 @@ from .private.widgets import (
     Label, RichMultilineTextInput, FollowLinkButton
 )
 from .private.constants import VisualEffectMaterial, WORD_WRAP
-from .utils import async_call, run_maestral_async
+from .utils import call_async_maestral
 
 
 # NSAlert's are the preferred way of alerting the user. However, we use our own dialogs
@@ -156,7 +156,11 @@ class ProgressDialog(Dialog):
 
         self.progress_bar = toga.ProgressBar(
             max=0,
-            style=Pack(width=self.CONTENT_WIDTH, padding=(0, 0, 10, 0))
+            style=Pack(
+                width=self.CONTENT_WIDTH,
+                padding=(0, 0, 10, 0),
+                background_color=TRANSPARENT
+            )
         )
         self.progress_bar.start()
 
@@ -339,32 +343,30 @@ class RelinkDialog(Dialog):
         elif btn_name == self.LINK_BTN:
             self.do_relink()
 
-    @async_call
     async def do_unlink(self):
-        await run_maestral_async(self.mdbx.config_name, 'unlink')
+        await call_async_maestral(self.mdbx.config_name, 'unlink')
         self.app.exit(stop_daemon=True)
 
-    @async_call
     async def do_relink(self):
 
         token = self.token_field.value
-        res = await run_maestral_async(self.mdbx.config_name, 'link', token)
+        res = await call_async_maestral(self.mdbx.config_name, 'link', token)
 
         self.spinner.stop()
 
         if res == 0:
-            self.alert_sheet(
+            await self.alert_sheet(
                 title='Relink successful!',
                 message='Click OK to restart.',
             )
             self.app.restart()
         elif res == 1:
-            self.alert_sheet(
+            await self.alert_sheet(
                 title='Invalid token',
                 message='Please make sure you copy the correct token.',
             )
         elif res == 2:
-            self.alert_sheet(
+            await self.alert_sheet(
                 title='Connection failed',
                 message='Please check your internet connection.',
             )

@@ -5,8 +5,13 @@ import os.path as osp
 
 # external imports
 from toga import SECTION_BREAK
+from toga.constants import LEFT
 from toga.platform import get_platform_factory
-from toga_cocoa.libs import *
+from toga_cocoa.libs import (
+    ObjCClass, NSColor, NSString, at, NSTextView, NSImage, NSRecessedBezelStyle,
+    NSTextAlignment, NSViewMaxYMargin, NSMenuItem, SEL, objc_method, NSKeyDown, NSMenu,
+    NSApplication, send_super, NSObject, NSApplicationActivationPolicyAccessory, NSBundle
+)
 from toga_cocoa.colors import native_color
 from toga_cocoa.keys import toga_key, Key
 from toga_cocoa.app import App as TogaApp
@@ -17,6 +22,7 @@ from toga_cocoa.widgets.button import Button as TogaButton
 from toga_cocoa.widgets.selection import Selection as TogaSelection
 from toga_cocoa.window import Window as TogaWindow
 from toga_cocoa.widgets.multilinetextinput import MultilineTextInput as TogaMultilineTextInput
+from toga_cocoa.factory import *
 
 # local imports
 from . import dialogs
@@ -137,13 +143,13 @@ class RichLabel(Widget):
         self.add_constraints()
 
     def set_html(self, value):
-        attr_str = attributed_str_from_html(value, self.native.font, self._color)
+        attr_str = attributed_str_from_html(value, color=self._color)
         self.native.textStorage.setAttributedString(attr_str)
         self.rehint()
 
-    def set_font(self, value):
-        if value:
-            self.native.font = value._impl.native
+    def set_font(self, font):
+        if font:
+            self.native.font = font.bind(self.interface.factory).native
 
     def set_color(self, value):
         if value:
@@ -161,7 +167,7 @@ class RichMultilineTextInput(TogaMultilineTextInput):
     """A scrollable text view with html support."""
 
     def set_html(self, value):
-        attr_str = attributed_str_from_html(value, self.text.font)
+        attr_str = attributed_str_from_html(value, font=self.text.font)
         self.text.textStorage.setAttributedString(attr_str)
 
 
@@ -203,9 +209,9 @@ class Switch(TogaSwitch):
     def get_state(self):
         return self._to_toga[self.native.state]
 
-    def set_font(self, value):
-        if value:
-            self.native.font = value._impl.native
+    def set_font(self, font):
+        if font:
+            self.native.font = font.bind(self.interface.factory).native
 
     def rehint(self):
         content_size = self.native.intrinsicContentSize()
@@ -511,17 +517,21 @@ class Window(TogaWindow):
 
     # dialogs
 
-    def save_file_sheet(self, title, message, suggested_filename, file_types):
-        return dialogs.save_file_sheet(self.interface, suggested_filename, title, message, file_types)
+    async def save_file_sheet(self, title, message, suggested_filename, file_types):
+        return await dialogs.save_file_sheet(self.interface, suggested_filename, title,
+                                             message, file_types)
 
-    def open_file_sheet(self, title, message, initial_directory, file_types, multiselect):
-        return dialogs.open_file_sheet(self.interface, title, message, file_types, multiselect)
+    async def open_file_sheet(self, title, message, initial_directory, file_types,
+                              multiselect):
+        return await dialogs.open_file_sheet(self.interface, title, message, file_types,
+                                             multiselect)
 
-    def select_folder_sheet(self, title, message, initial_directory, multiselect):
-        return dialogs.select_folder_sheet(self.interface, title, message, multiselect)
+    async def select_folder_sheet(self, title, message, initial_directory, multiselect):
+        return await dialogs.select_folder_sheet(self.interface, title, message,
+                                                 multiselect)
 
-    def alert_sheet(self, title, message, details, details_title, button_labels,
-                    checkbox_text, level, icon):
-
-        return dialogs.alert_sheet(self.interface, title, message, details, details_title,
-                                   button_labels, checkbox_text, level, icon)
+    async def alert_sheet(self, title, message, details, details_title, button_labels,
+                          checkbox_text, level, icon):
+        return await dialogs.alert_sheet(self.interface, title, message, details,
+                                         details_title, button_labels, checkbox_text,
+                                         level, icon)

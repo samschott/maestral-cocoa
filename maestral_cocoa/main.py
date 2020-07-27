@@ -29,7 +29,7 @@ from maestral import __version__ as __daemon_version__
 
 # local imports
 from maestral_cocoa import __version__ as __gui_version__
-from maestral_cocoa.utils import async_call, run_async, run_maestral_async
+from maestral_cocoa.utils import call_async, call_async_maestral
 from maestral_cocoa.private.widgets import (
     MenuItem, MenuItemSeparator, Menu, StatusBarItem, SystemTrayApp
 )
@@ -43,9 +43,12 @@ from maestral_cocoa.resources import APP_ICON_PATH, TRAY_ICON_PATH
 
 Pack.validated_property('font_size', choices=FONT_SIZE_CHOICES, initial=13)
 
+loop = asyncio.get_event_loop()
+loop.set_debug(True)
+
 
 class MaestralGui(SystemTrayApp):
-    """A Qt GUI for the Maestral daemon."""
+    """A native GUI for the Maestral daemon."""
 
     PAUSE_TEXT = 'Pause Syncing'
     RESUME_TEXT = 'Resume Syncing'
@@ -80,7 +83,6 @@ class MaestralGui(SystemTrayApp):
         self.item_pause = None
         self.menu_recent_files = None
 
-        self.periodic_updates = True
         self.refresh_interval = 2
 
         self.autostart = AutoStart(self.config_name, gui=True)
@@ -88,20 +90,22 @@ class MaestralGui(SystemTrayApp):
         self.menu = Menu()
         self._cached_status = DISCONNECTED
         self._cached_recent_changes = []
-        self.tray = StatusBarItem(self.icon_mapping.get(DISCONNECTED), menu=self.menu)
+        self.tray = StatusBarItem(
+            icon=self.icon_mapping.get(DISCONNECTED),
+            menu=self.menu
+        )
 
         self.setup_ui_unlinked()
-        self.load_maestral()
+        asyncio.ensure_future(self.load_maestral())
 
     def set_icon(self, status):
         if status != self._cached_status:
             self.tray.icon = self.icon_mapping.get(status, self.icon_mapping[SYNCING])
             self._cached_status = status
 
-    @async_call
     async def periodic_refresh_gui(self):
 
-        while self.periodic_updates:
+        while True:
             try:
                 self.update_status()
                 self.update_error()
@@ -119,13 +123,11 @@ class MaestralGui(SystemTrayApp):
     def on_menu_close(self, sender):
         self.refresh_interval = 2
 
-    @async_call
     async def periodic_check_for_updates(self, interval=30 * 60):
-        while self.periodic_updates:
+        while True:
             await asyncio.sleep(interval)
             await self.auto_check_for_updates()
 
-    @async_call
     async def load_maestral(self):
 
         self.mdbx = self.get_or_start_maestral_daemon()
@@ -143,10 +145,10 @@ class MaestralGui(SystemTrayApp):
 
         else:
             self.mdbx.start_sync()
-
             self.setup_ui_linked()
-            self.periodic_refresh_gui()
-            self.periodic_check_for_updates()
+
+            asyncio.ensure_future(self.periodic_refresh_gui())
+            asyncio.ensure_future(self.periodic_check_for_updates())
 
     def _on_setup_completed(self):
 
@@ -154,10 +156,10 @@ class MaestralGui(SystemTrayApp):
             self.mdbx.start_sync()
 
             self.setup_ui_linked()
-            self.periodic_refresh_gui()
-            self.periodic_check_for_updates()
+            asyncio.ensure_future(self.periodic_refresh_gui())
+            asyncio.ensure_future(self.periodic_check_for_updates())
         else:
-            self.exit(stop_daemon=True)
+            asyncio.ensure_future(self.exit(stop_daemon=True))
 
     def get_or_start_maestral_daemon(self):
 
@@ -168,7 +170,7 @@ class MaestralGui(SystemTrayApp):
             message = ('Could not start or connect to sync daemon. Please try again '
                        'and contact the developer if this issue persists.')
             self.alert(title, message, level='error')
-            self.exit(stop_daemon=True)
+            asyncio.ensure_future(self.exit(stop_daemon=True))
         elif res == Start.AlreadyRunning:
             self._started = False
         elif res == Start.Ok:
@@ -184,25 +186,22 @@ class MaestralGui(SystemTrayApp):
         item_folder = MenuItem('Open Dropbox Folder')
         item_website = MenuItem('Launch Dropbox Website', action=self.on_website_clicked)
 
-        s0 = MenuItemSeparator()
-
         item_status = MenuItem('Setting up...')
-
-        s1 = MenuItemSeparator()
 
         item_login = MenuItem('Start on login', checkable=True,
                               action=lambda s: self.autostart.toggle())
         item_login.checked = self.autostart.enabled
         item_help = MenuItem('Help Center', action=self.on_help_clicked)
 
-        s2 = MenuItemSeparator()
-
-        item_quit = MenuItem('Quit Maestral', action=lambda s: self.exit())
+        item_quit = MenuItem('Quit Maestral', action=self.exit)
 
         self.menu.add(
-            item_folder, item_website, s0,
-            item_status, s1,
-            item_login, item_help, s2,
+            item_folder, item_website,
+            MenuItemSeparator(),
+            item_status,
+            MenuItemSeparator(),
+            item_login, item_help,
+            MenuItemSeparator(),
             item_quit
         )
 
@@ -217,49 +216,67 @@ class MaestralGui(SystemTrayApp):
 
         self.menu.clear()
 
-        item_folder = MenuItem('Open Dropbox Folder', action=lambda s: click.launch(self.mdbx.dropbox_path))
+        item_folder = MenuItem(
+            'Open Dropbox Folder',
+            action=lambda s: click.launch(self.mdbx.dropbox_path)
+        )
         item_website = MenuItem('Launch Dropbox Website', action=self.on_website_clicked)
-
-        s0 = MenuItemSeparator()
 
         self.item_email = MenuItem(self.mdbx.get_state('account', 'email'))
         self.item_usage = MenuItem(self.mdbx.get_state('account', 'usage'))
 
-        s1 = MenuItemSeparator()
-
         self.item_status = MenuItem(IDLE)
-        initial_text = self.RESUME_TEXT if self.mdbx.paused else self.PAUSE_TEXT
-        self.item_pause = MenuItem(initial_text, action=self.on_start_stop_clicked)
+        self.item_pause = MenuItem(
+            self.RESUME_TEXT if self.mdbx.paused else self.PAUSE_TEXT,
+            action=self.on_start_stop_clicked
+        )
         self.menu_recent_files = Menu()
-        self.item_recent_files = MenuItem('Recently Changed Files', submenu=self.menu_recent_files)
-
-        s2 = MenuItemSeparator()
+        self.item_recent_files = MenuItem(
+            'Recently Changed Files',
+            submenu=self.menu_recent_files
+        )
 
         self.item_snooze = MenuItem('Snooze Notifications')
 
         def snooze_for(minutes):
             self.mdbx.notification_snooze = minutes
 
-        self.item_snooze30 = MenuItem('For the next 30 minutes', action=lambda s: snooze_for(30))
-        self.item_snooze60 = MenuItem('For the next hour', action=lambda s: snooze_for(60))
-        self.item_snooze480 = MenuItem('For the next 8 hours', action=lambda s: snooze_for(480))
+        self.item_snooze30 = MenuItem(
+            'For the next 30 minutes',
+            action=lambda s: snooze_for(30)
+        )
+        self.item_snooze60 = MenuItem(
+            'For the next hour',
+            action=lambda s: snooze_for(60)
+        )
+        self.item_snooze480 = MenuItem(
+            'For the next 8 hours',
+            action=lambda s: snooze_for(480)
+        )
 
-        self.menu_snooze = Menu(items=[self.item_snooze30, self.item_snooze60, self.item_snooze480])
+        self.menu_snooze = Menu(
+            items=[self.item_snooze30, self.item_snooze60, self.item_snooze480]
+        )
         self.item_snooze.submenu = self.menu_snooze
 
-        self.item_resume_notifications = MenuItem('Turn on notifications', action=lambda s: snooze_for(0))
+        self.item_resume_notifications = MenuItem(
+            'Turn on notifications',
+            action=lambda s: snooze_for(0)
+        )
         self.separator_snooze = MenuItemSeparator()
 
-        self.item_sync_issues = MenuItem('Show Sync Issues...', action=self.on_sync_issues_clicked)
+        self.item_sync_issues = MenuItem(
+            'Show Sync Issues...',
+            action=self.on_sync_issues_clicked
+        )
         item_rebuild = MenuItem('Rebuild index...', action=self.on_rebuild_clicked)
 
-        s3 = MenuItemSeparator()
-
         item_settings = MenuItem('Preferences...', action=self.on_settings_clicked)
-        self.item_updates = MenuItem('Check for Updates...', action=self.on_check_for_updates_clicked)
+        self.item_updates = MenuItem(
+            'Check for Updates...',
+            action=self.on_check_for_updates_clicked
+        )
         item_help = MenuItem('Help Center', action=self.on_help_clicked)
-
-        s4 = MenuItemSeparator()
 
         if self._started:
             item_quit = MenuItem('Quit Maestral', action=self.exit)
@@ -267,12 +284,17 @@ class MaestralGui(SystemTrayApp):
             item_quit = MenuItem('Quit Maestral GUI', action=self.exit)
 
         self.menu.add(
-            item_folder, item_website, s0,
-            self.item_email, self.item_usage, s1,
-            self.item_status, self.item_pause, self.item_recent_files, s2,
+            item_folder, item_website,
+            MenuItemSeparator(),
+            self.item_email, self.item_usage,
+            MenuItemSeparator(),
+            self.item_status, self.item_pause, self.item_recent_files,
+            MenuItemSeparator(),
             self.item_snooze, self.item_sync_issues,
-            item_rebuild, s3,
-            item_settings, self.item_updates, item_help, s4,
+            item_rebuild,
+            MenuItemSeparator(),
+            item_settings, self.item_updates, item_help,
+            MenuItemSeparator(),
             item_quit,
         )
 
@@ -345,7 +367,7 @@ class MaestralGui(SystemTrayApp):
         if interval == 0 or time.time() - last_update_check < interval:  # checks disabled
             return
 
-        res = await run_maestral_async(self.config_name, 'check_for_updates')
+        res = await call_async_maestral(self.config_name, 'check_for_updates')
         if res['update_available']:
             self.mdbx.set_state('app', 'update_notification_last', time.time())
             self.show_update_dialog(res['latest_release'], res['release_notes'])
@@ -355,7 +377,7 @@ class MaestralGui(SystemTrayApp):
         progress = ProgressDialog('Checking for Updates', app=self)
         progress.raise_()
 
-        res = await run_maestral_async(self.config_name, 'check_for_updates')
+        res = await call_async_maestral(self.config_name, 'check_for_updates')
 
         if not progress.visible:
             return  # aborted by user
@@ -368,7 +390,10 @@ class MaestralGui(SystemTrayApp):
             self.show_update_dialog(res['latest_release'], res['release_notes'])
         elif not res['update_available']:
             message = 'Maestral v{} is the newest version available.'.format(res['latest_release'])
-            Dialog('You’re up-to-date!', message, icon=self.icon).raise_()
+            self.alert(
+                title='You’re up-to-date!',
+                message=message
+            )
 
     def show_update_dialog(self, latest_release, release_notes):
 
@@ -532,7 +557,6 @@ class MaestralGui(SystemTrayApp):
 
             self.mdbx.analytics = self.mdbx.analytics or auto_share_checkbox
 
-    @async_call
     async def exit(self, *args, stop_daemon=False):
         """Quits Maestral.
 
@@ -540,11 +564,10 @@ class MaestralGui(SystemTrayApp):
             quitting the GUI, if ``False``, it will be kept alive. If ``None``, the
             daemon will only be stopped if it was started by the GUI.
         """
-        self.periodic_updates = False
 
         # stop sync daemon if we started it or ``stop_daemon`` is ``True``
         if stop_daemon or self._started:
-            await run_async(stop_maestral_daemon_process, self.config_name)
+            await call_async(stop_maestral_daemon_process, self.config_name)
 
         super().exit()
 
@@ -558,7 +581,7 @@ class MaestralGui(SystemTrayApp):
               shell=True)
 
         # quit Maestral
-        self.exit(stop_daemon=True)
+        asyncio.ensure_future(self.exit(stop_daemon=True))
 
 
 def run(config_name='maestral'):

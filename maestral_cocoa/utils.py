@@ -1,12 +1,8 @@
 # -*- coding: utf-8 -*-
 
 # system imports
-import sys
 import asyncio
-import inspect
 import time
-import traceback
-from functools import wraps
 from concurrent.futures import ThreadPoolExecutor
 from ctypes import (
     cdll, util, c_char_p, c_void_p, byref, pointer, Structure, c_uint32, POINTER
@@ -14,10 +10,8 @@ from ctypes import (
 
 # external imports
 import toga
-from toga.handlers import long_running_task
 from toga_cocoa.libs import (
-    NSAlertStyle, NSImage, NSImageInterpolationHigh, NSGraphicsContext, NSRect, NSPoint,
-    NSBezierPath
+    NSImage, NSImageInterpolationHigh, NSGraphicsContext, NSRect, NSPoint, NSBezierPath
 )
 from rubicon.objc import (
     ObjCClass, NSMakeSize
@@ -87,59 +81,15 @@ def apply_round_clipping(imageView: toga.ImageView):
 
 # ==== async calls =======================================================================
 
-default_executor = ThreadPoolExecutor(10)
+thread_pool_executor = ThreadPoolExecutor(10)
 
 
-async def func_with_cleanup(func, *args, **kwargs):
-    try:
-        await func(*args, **kwargs)
-    except Exception as e:
-        print('Error in async handler:', e, file=sys.stderr)
-        traceback.print_exc()
-
-
-def async_call(func):
-    """Wrap a function so it can be invoked.
-
-    If the function is a bound method, or function, it will be invoked as is.
-    If the function is a generator, it will be invoked asynchronously, with
-        the yield values from the generator representing the duration
-        to sleep between iterations.
-    If the function is a coroutine, it will be installed on the asynchronous
-        event loop.
-
-    Returns a wrapped function that will invoke the function. The wrapper
-    function is annotated with the original function on the `_raw` attribute.
-    """
-
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        if asyncio.iscoroutinefunction(func):
-            asyncio.ensure_future(
-                func_with_cleanup(func, *args, **kwargs)
-            )
-        else:
-            result = func(*args, **kwargs)
-            if inspect.isgenerator(result):
-                asyncio.ensure_future(
-                    long_running_task(result, cleanup=None)
-                )
-            else:
-                try:
-                    return result
-                except Exception as e:
-                    print('Error in handler:', e, file=sys.stderr)
-                    traceback.print_exc()
-
-    return wrapper
-
-
-def run_async(func, *args):
+def call_async(func, *args):
     loop = asyncio.get_event_loop()
-    return loop.run_in_executor(default_executor, func, *args)
+    return loop.run_in_executor(thread_pool_executor, func, *args)
 
 
-def run_maestral_async(config_name, func_name, *args):
+def call_async_maestral(config_name, func_name, *args):
 
     def func(*inner_args):
         with MaestralProxy(config_name) as m:
@@ -147,7 +97,7 @@ def run_maestral_async(config_name, func_name, *args):
             return m_func(*inner_args)
 
     loop = asyncio.get_event_loop()
-    return loop.run_in_executor(default_executor, func, *args)
+    return loop.run_in_executor(thread_pool_executor, func, *args)
 
 
 # ==== system calls ======================================================================

@@ -2,8 +2,6 @@
 
 # system imports
 import sys
-import os
-import os.path as osp
 import time
 
 # external imports
@@ -15,7 +13,7 @@ from maestral import __version__ as __daemon_version__
 # local imports
 from . import __url__, __author__, __version__
 from .utils import apply_round_clipping
-from .private.widgets import Label, RichLabel, Switch, Selection, IconForPath, Window
+from .private.widgets import Label, RichLabel, Switch, Selection, Window
 from .resources import FACEHOLDER_PATH
 
 year = time.localtime().tm_year
@@ -36,20 +34,18 @@ class SettingsGui(Window):
     COMBOBOX_CHOOSE = 'Choose...'
 
     faceholder = toga.Image(FACEHOLDER_PATH)
-    _cached_pic_stat = os.stat(FACEHOLDER_PATH)
-    _cached_dbx_location = None
-
-    mdbx = None
 
     def __init__(self, **kwargs):
         super().__init__(title='Maestral Settings', resizeable=False, minimizable=False,
                          release_on_close=False, **kwargs)
 
         # ==== account info section ======================================================
+
         self.profile_pic_view = toga.ImageView(
             self.faceholder,
             style=Pack(width=self.COLUMN_WIDTH_LEFT, height=70)
         )
+        # FIXME: remove access to native API
         self.profile_pic_view._impl.native.imageAlignment = 3
         apply_round_clipping(self.profile_pic_view)
 
@@ -79,7 +75,6 @@ class SettingsGui(Window):
         )
         self.btn_unlink = toga.Button(
             'Unlink this Dropbox...',
-            on_press=self.on_unlink_pressed,
             style=Pack(width=self.BUTTON_WIDTH)
         )
 
@@ -103,7 +98,6 @@ class SettingsGui(Window):
         )
         self.btn_select_folders = toga.Button(
             label='Select files and folders...',
-            on_press=self.on_folder_selection_pressed,
             style=Pack(padding_left=self.COLUMN_PADDING, width=self.BUTTON_WIDTH)
         )
 
@@ -113,7 +107,6 @@ class SettingsGui(Window):
         )
         self.combobox_dbx_location = Selection(
             items=['DBX Location', toga.SECTION_BREAK, self.COMBOBOX_CHOOSE],
-            on_select=self._on_button_location_pressed,
             style=Pack(padding_left=self.COLUMN_PADDING, width=self.BUTTON_WIDTH)
         )
 
@@ -139,7 +132,6 @@ class SettingsGui(Window):
         )
         self.combobox_update_interval = Selection(
             items=['Daily', 'Weekly', 'Monthly', 'Never'],
-            on_select=self.on_update_interval_selected,
             style=Pack(padding_left=self.COLUMN_PADDING, width=self.BUTTON_WIDTH)
         )
 
@@ -149,7 +141,6 @@ class SettingsGui(Window):
         )
         self.checkbox_autostart = Switch(
             label='Start Maestral on login',
-            on_toggle=self.on_autostart_clicked,
             style=Pack(
                 padding_bottom=self.SUBELEMENT_PADDING,
                 width=self.COLUMN_WIDTH_RIGHT
@@ -157,7 +148,6 @@ class SettingsGui(Window):
         )
         self.checkbox_notifications = Switch(
             label='Enable notifications',
-            on_toggle=self.on_notifications_clicked,
             style=Pack(
                 padding_bottom=self.SUBELEMENT_PADDING,
                 width=self.COLUMN_WIDTH_RIGHT
@@ -165,7 +155,6 @@ class SettingsGui(Window):
         )
         self.checkbox_analytics = Switch(
             label='Share crash reports',
-            on_toggle=self.on_analytics_clicked,
             style=Pack(width=self.COLUMN_WIDTH_RIGHT)
         )
 
@@ -186,7 +175,6 @@ class SettingsGui(Window):
 
         self.btn_cli_tool = toga.Button(
             'Install',
-            on_press=self.on_cli_pressed,
             style=Pack(
                 width=self.BUTTON_WIDTH / 2,
                 padding_bottom=self.SUBELEMENT_PADDING,
@@ -233,7 +221,10 @@ class SettingsGui(Window):
             children.append(
                 toga.Box(
                     children=[
-                        Label(' ', style=Pack(text_align=RIGHT, width=self.COLUMN_WIDTH_LEFT)),
+                        Label(
+                            ' ',
+                            style=Pack(text_align=RIGHT, width=self.COLUMN_WIDTH_LEFT)
+                        ),
                         self.label_cli_tool_info,
                     ],
                     style=Pack(alignment=CENTER, padding_top=self.SUBELEMENT_PADDING)
@@ -295,68 +286,3 @@ class SettingsGui(Window):
         )
 
         self.content = main_box
-
-    def _on_button_location_pressed(self, widget):
-
-        if widget.value == self.COMBOBOX_CHOOSE:
-            paths = self.select_folder_sheet(
-                message=('Choose a new place for your Dropbox folder. A folder named '
-                         f'"Dropbox ({self.mdbx.config_name.title()})" will be '
-                         'created in the selected location.'),
-            )
-
-            if len(paths) > 0:
-                path = paths[0]
-
-                self._update_combobox_location(path)
-                self.on_dbx_location_selected(path)
-            else:
-                self.combobox_dbx_location.value = self.combobox_dbx_location.items[0]
-
-    def _update_combobox_location(self, path):
-        if path != self._cached_dbx_location:
-            self._cached_dbx_location = path
-            icon = IconForPath(path)
-            short_path = osp.basename(path)
-            self.combobox_dbx_location.items = [
-                (icon, short_path), toga.SECTION_BREAK, self.COMBOBOX_CHOOSE
-            ]
-
-    def set_profile_pic(self, path):
-        path = path if osp.isfile(path) else FACEHOLDER_PATH
-        new_stat = os.stat(path)
-        if new_stat != self._cached_pic_stat:
-            try:
-                self.profile_pic_view.image = toga.Image(path)
-            except OSError:
-                self.profile_pic_view.image = self.faceholder
-            self.profile_pic_view._impl.native.imageAlignment = 3
-            apply_round_clipping(self.profile_pic_view)
-
-            self._cached_pic_stat = new_stat
-
-    # ==== callbacks to implement ========================================================
-
-    def on_dbx_location_selected(self, path):
-        pass
-
-    def on_folder_selection_pressed(self, widget):
-        pass
-
-    def on_unlink_pressed(self, yes):
-        pass
-
-    def on_update_interval_selected(self, widget):
-        pass
-
-    def on_autostart_clicked(self, widget):
-        pass
-
-    def on_notifications_clicked(self, widget):
-        pass
-
-    def on_analytics_clicked(self, widget):
-        pass
-
-    def on_cli_pressed(self, widget):
-        pass

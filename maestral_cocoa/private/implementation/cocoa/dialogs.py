@@ -27,7 +27,8 @@ NSAppearance = ObjCClass('NSAppearance')
 NSStackView = ObjCClass('NSStackView')
 
 
-def save_file_sheet(window, suggested_filename, title='', message='', file_types=None):
+async def save_file_sheet(window, suggested_filename, title='', message='',
+                          file_types=None):
     """Cocoa save file dialog implementation.
 
     We restrict the panel invocation to only choose files. We also allow
@@ -70,7 +71,8 @@ def save_file_sheet(window, suggested_filename, title='', message='', file_types
     return await future
 
 
-def open_file_sheet(window, title='', message='', file_types=None, multiselect=False):
+async def open_file_sheet(window, title='', message='', file_types=None,
+                          multiselect=False):
     """Cocoa open file dialog implementation.
     We restrict the panel invocation to only choose files. We also allow
     creating directories but not selecting directories.
@@ -122,7 +124,7 @@ def open_file_sheet(window, title='', message='', file_types=None, multiselect=F
     return await future
 
 
-def select_folder_sheet(window, title='', message='', multiselect=False):
+async def select_folder_sheet(window, title='', message='', multiselect=False):
     """Cocoa select folder dialog implementation.
 
     Args:
@@ -208,9 +210,8 @@ def _construct_alert(title, message, details=None, details_title='Traceback',
     return alert
 
 
-def alert_sheet(window, title, message, details=None, details_title='Traceback',
-                button_labels=('Ok',), checkbox_text=None, level='info',
-                icon=None):
+async def alert_sheet(window, title, message, details=None, details_title='Traceback',
+                      button_labels=('Ok',), checkbox_text=None, level='info', icon=None):
     """
     Shows an alert sheet attached to `window`. If `details` are given, they will be shown
     in a scroll view. If `checkbox_text` is given, an additional checkbox is shown.
@@ -245,7 +246,7 @@ def alert(title, message, details=None, details_title='Traceback', button_names=
                              checkbox_text, level, icon)
 
     NSApplication.sharedApplication.activateIgnoringOtherApps(True)
-    result = alert.start_modal()
+    result = alert.runModal()
 
     if checkbox_text:
         return (result - NSAlertFirstButtonReturn,

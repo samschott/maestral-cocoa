@@ -11,7 +11,6 @@ from toga.style.pack import Pack
 from toga.constants import ROW, COLUMN, TRANSPARENT
 
 # local imports
-from .utils import async_call
 from .private.widgets import Label, FollowLinkButton, VibrantBox, IconForPath, Window
 from .private.constants import TRUNCATE_HEAD, WORD_WRAP, VisualEffectMaterial
 
@@ -22,11 +21,9 @@ ICON_SIZE = 48
 WINDOW_SIZE = (CONTENT_WIDTH + 4 * PADDING, 400)
 
 
-# TODO: use toga.DetailedList to display sync errors (once it is view-based)
-
 class SyncIssueView(toga.Box):
 
-    dbx_address = "https://www.dropbox.com/preview"
+    dbx_address = 'https://www.dropbox.com/preview'
 
     def __init__(self, sync_err):
         style = Pack(width=CONTENT_WIDTH, direction=COLUMN, background_color=TRANSPARENT)
@@ -35,7 +32,7 @@ class SyncIssueView(toga.Box):
         text_width = CONTENT_WIDTH - 15 - ICON_SIZE
 
         self.sync_err = sync_err
-        dbx_address = self.dbx_address + urllib.parse.quote(self.sync_err["dbx_path"])
+        dbx_address = self.dbx_address + urllib.parse.quote(self.sync_err['dbx_path'])
 
         icon = IconForPath(self.sync_err['local_path'])
         image_view = toga.ImageView(
@@ -62,7 +59,7 @@ class SyncIssueView(toga.Box):
             )
         )
         error_label = Label(
-            self.sync_err["title"] + ":\n" + self.sync_err["message"],
+            self.sync_err['title'] + ':\n' + self.sync_err['message'],
             linebreak_mode=WORD_WRAP,
             style=Pack(
                 font_size=11,
@@ -74,8 +71,8 @@ class SyncIssueView(toga.Box):
 
         link_local = FollowLinkButton(
             'Show in Finder',
-            url=self.sync_err["local_path"],
-            enabled=osp.exists(self.sync_err["local_path"]),
+            url=self.sync_err['local_path'],
+            enabled=osp.exists(self.sync_err['local_path']),
             locate=True,
             style=Pack(
                 padding_right=PADDING,
@@ -119,7 +116,6 @@ class SyncIssuesWindow(Window):
         super().__init__(title='Maestral Sync Issues', release_on_close=False, app=app)
 
         self.mdbx = mdbx
-        self._periodic_refresh = False
         self._cached_errors = []
 
         self.size = WINDOW_SIZE
@@ -144,7 +140,6 @@ class SyncIssuesWindow(Window):
             style=Pack(flex=1, background_color=TRANSPARENT)
         )
 
-        self.periodic_refresh_gui()
         self.content = VibrantBox(
             children=[self.scroll_container],
             material=VisualEffectMaterial.Popover
@@ -153,13 +148,11 @@ class SyncIssuesWindow(Window):
         self.center()
 
         self.refresh_gui()
+        self._periodic_refresh_task = asyncio.Task(self.periodic_refresh_gui())
 
-    @async_call
     async def periodic_refresh_gui(self, interval=1):
 
-        self._periodic_refresh = True
-
-        while self._periodic_refresh:
+        while True:
             self.refresh_gui()
             await asyncio.sleep(interval)
 
@@ -185,8 +178,8 @@ class SyncIssuesWindow(Window):
             self._cached_errors = new_errors
 
     def on_close(self):
-        self._periodic_refresh = False
+        self._periodic_refresh_task.cancel()
 
     def show(self):
-        self.periodic_refresh_gui()
+        asyncio.ensure_future(self._periodic_refresh_task)
         super().show()

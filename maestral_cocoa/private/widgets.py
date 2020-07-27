@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import asyncio
 
 # external imports
 import click
@@ -77,15 +78,13 @@ class DialogButtons(toga.Box):
                  style=None, factory=None):
         super().__init__(id=id, style=style, factory=factory)
 
-        self.on_press = on_press
-
         # always display buttons in a row, to the right
         self.style.update(direction=ROW)
         self.add(Spacer())
 
         for label in labels[::-1]:
             style = Pack(padding_left=10, alignment=RIGHT, background_color=TRANSPARENT)
-            btn = toga.Button(label=label, on_press=self._on_press, style=style)
+            btn = toga.Button(label=label, style=style)
             self.add(btn)
             self._buttons.insert(0, btn)
 
@@ -99,9 +98,28 @@ class DialogButtons(toga.Box):
             except ValueError:
                 pass
 
-    def _on_press(self, widget):
-        if self.on_press:
-            self.on_press(widget.label)
+        self.on_press = on_press
+
+    @property
+    def on_press(self):
+        return self._on_press
+
+    @on_press.setter
+    def on_press(self, handler):
+
+        if not handler:
+            new_handler = None
+        elif asyncio.iscoroutinefunction(handler):
+            async def new_handler(widget):
+                return await handler(widget.label)
+        else:
+            def new_handler(widget):
+                return handler(widget.label)
+
+        for btn in self._buttons:
+            btn.on_press = new_handler
+
+        self._on_press = new_handler
 
     def __getitem__(self, item):
         return next(btn for btn in self._buttons if btn.label == item)
@@ -144,11 +162,25 @@ class Switch(toga.Switch):
     @on_toggle.setter
     def on_toggle(self, handler):
 
-        def new_handler(*args, **kwargs):
-            if self.state == MIXED:
-                self.state = ON
-            if handler:
-                handler(*args, **kwargs)
+        if not handler:
+
+            def new_handler(*args, **kwargs):
+                if self.state == MIXED:
+                    self.state = ON
+
+        elif asyncio.iscoroutinefunction(handler):
+
+            async def new_handler(*args, **kwargs):
+                if self.state == MIXED:
+                    self.state = ON
+                return await handler(*args, **kwargs)
+
+        else:
+
+            def new_handler(*args, **kwargs):
+                if self.state == MIXED:
+                    self.state = ON
+                return handler(*args, **kwargs)
 
         self._on_toggle = wrapped_handler(self, new_handler)
         self._impl.set_on_toggle(self._on_toggle)
@@ -505,9 +537,9 @@ class StatusBarItem:
 
 class Window(toga.Window):
 
-    def __init__(self, id=None, title=None, position=None, size=(640, 480),
-                 toolbar=None, resizeable=True, closeable=True, minimizable=True,
-                 release_on_close=True, is_dialog=False, app=None, factory=None):
+    def __init__(self, id=None, title=None, position=None, size=(640, 480), toolbar=None,
+                 resizeable=True, closeable=True, minimizable=True, release_on_close=True,
+                 is_dialog=False, app=None, factory=private_factory):
         initial_position = position or (100, 100)
         super().__init__(id, title, initial_position, size, toolbar, resizeable,
                          closeable, minimizable, factory)
@@ -570,23 +602,30 @@ class Window(toga.Window):
 
     # dialogs
 
-    def save_file_sheet(self, title='', message='', suggested_filename='untitled', file_types=None):
-        return self._impl.save_file_sheet(title, message, suggested_filename, file_types)
+    async def save_file_sheet(self, title='', message='', suggested_filename='untitled',
+                              file_types=None):
+        return await self._impl.save_file_sheet(title, message, suggested_filename,
+                                                file_types)
 
-    def open_file_sheet(self, title='', message='', initial_directory=None, file_types=None, multiselect=False):
-        return self._impl.open_file_sheet(title, message, initial_directory, file_types, multiselect)
+    async def open_file_sheet(self, title='', message='', initial_directory=None,
+                              file_types=None, multiselect=False):
+        return await self._impl.open_file_sheet(title, message, initial_directory,
+                                                file_types, multiselect)
 
-    def select_folder_sheet(self, title='', message='', initial_directory=None, multiselect=False):
-        return self._impl.select_folder_sheet(self, title, message, initial_directory, multiselect)
+    async def select_folder_sheet(self, title='', message='', initial_directory=None,
+                                  multiselect=False):
+        return await self._impl.select_folder_sheet(title, message, initial_directory,
+                                                    multiselect)
 
-    def alert_sheet(self, title='', message='', details=None, details_title='Traceback',
-                    button_labels=('Ok',), checkbox_text=None, level='info', icon=None):
+    async def alert_sheet(self, title='', message='', details=None,
+                          details_title='Traceback', button_labels=('Ok',),
+                          checkbox_text=None, level='info', icon=None):
 
         if not icon and self.app:
             icon = self.app.icon
 
-        return self._impl.alert_sheet(self, title, message, details, details_title,
-                button_labels, checkbox_text, level, icon)
+        return await self._impl.alert_sheet(title, message, details, details_title,
+                                            button_labels, checkbox_text, level, icon)
 
 
 # ==== Application =======================================================================

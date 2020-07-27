@@ -4,14 +4,16 @@
 import os.path as osp
 
 # external imports
+import toga
 from maestral.utils.path import delete
 from maestral.utils.appdirs import get_home_dir
 
 # local imports
 from .private.constants import OFF
-from .utils import run_maestral_async, async_call
+from .private.widgets import IconForPath
+from .utils import call_async_maestral
 from .setup_gui import SetupDialogGui
-from .selective_sync_gui import FileSystemSource
+from .selective_sync import FileSystemSource
 
 
 class SetupDialog(SetupDialogGui):
@@ -38,6 +40,8 @@ class SetupDialog(SetupDialogGui):
         self.dialog_buttons_location_page.on_press = self.on_dbx_location
         self.dialog_buttons_selective_sync_page.on_press = self.on_items_selected
         self.close_button.on_press = self.on_finish
+        self.text_field_auth_token.on_change = self._token_field_validator
+        self.combobox_dbx_location.on_select = self._on_button_location_pressed
 
         default_folder_name = self.mdbx.get_conf('main', 'default_dir_name')
         location_label_text = self.dbx_location_label.text.format(default_folder_name)
@@ -47,12 +51,11 @@ class SetupDialog(SetupDialogGui):
     # User interaction callbacks
     # ====================================================================================
 
-    def on_start(self, widget):
+    async def on_start(self, widget):
         # start auth flow
         self.btn_auth_token.url = self.mdbx.get_auth_url()
         self.go_forward()
 
-    @async_call
     async def on_link_dialog(self, btn_name):
 
         if btn_name == 'Cancel':
@@ -60,7 +63,7 @@ class SetupDialog(SetupDialogGui):
 
         token = self.text_field_auth_token.value
         if not token:
-            self.alert_sheet(
+            await self.alert_sheet(
                 title='Authentication failed.',
                 message='Please enter an authentication token.',
             )
@@ -70,12 +73,15 @@ class SetupDialog(SetupDialogGui):
             self.dialog_buttons_link_page.enabled = False
             self.text_field_auth_token.enabled = False
 
-            res = await run_maestral_async(self.mdbx.config_name, 'link', token)
+            res = await call_async_maestral(self.mdbx.config_name, 'link', token)
 
             if res == 0:
 
                 # initialize fs source
-                self.fs_source = FileSystemSource(gui_parent=self, mdbx=self.mdbx)
+                self.fs_source = FileSystemSource(
+                    mdbx=self.mdbx,
+                    on_fs_loading_failed=self.on_loading_failed,
+                )
                 self.fs_source.included.style.padding_left = 10
                 self.selective_sync_page.add(self.fs_source.included,
                                              self.dialog_buttons_selective_sync_page)
@@ -85,14 +91,14 @@ class SetupDialog(SetupDialogGui):
                 self.go_forward()
 
             elif res == 1:
-                self.alert_sheet(
+                await self.alert_sheet(
                     title='Authentication failed.',
                     message=('Please make sure that you entered the '
                              'correct authentication token.'),
                 )
 
             elif res == 2:
-                self.alert_sheet(
+                await self.alert_sheet(
                     title='Connection failed.',
                     message=('Please make sure that you are connected '
                              'to the internet and try again.'),
@@ -104,7 +110,7 @@ class SetupDialog(SetupDialogGui):
             self.text_field_auth_token.enabled = True
             self.dialog_buttons_link_page.enabled = True
 
-    def on_dbx_location(self, btn_name):
+    async def on_dbx_location(self, btn_name):
 
         if btn_name == 'Select':
 
@@ -118,7 +124,7 @@ class SetupDialog(SetupDialogGui):
                 if osp.isdir(self._chosen_dropbox_folder):
                     msg = ('The folder "{}" already exists. Would you like '
                            'to replace it or merge its contents with Dropbox?')
-                    choice = self.alert_sheet(
+                    choice = await self.alert_sheet(
                         title='Folder already exists',
                         message=msg.format(self._chosen_dropbox_folder),
                         button_labels=('Replace', 'Cancel', 'Merge'),
@@ -127,7 +133,7 @@ class SetupDialog(SetupDialogGui):
                 else:
                     msg = ('There already is a file named "{}" at this location. '
                            'Would you like to replace it?')
-                    choice = self.alert_sheet(
+                    choice = await self.alert_sheet(
                         title='File conflict',
                         message=msg.format(self.mdbx.get_conf('main', 'default_dir_name')),
                         button_labels=('Replace', 'Cancel'),
@@ -145,7 +151,7 @@ class SetupDialog(SetupDialogGui):
             try:
                 self.mdbx.create_dropbox_directory(path=self._chosen_dropbox_folder)
             except OSError:
-                self.alert_sheet(
+                await self.alert_sheet(
                     title='Could not create folder',
                     message=('Please make sure that you have permissions '
                              'to write to the selected location.'),
@@ -158,11 +164,11 @@ class SetupDialog(SetupDialogGui):
             self.mdbx.unlink()
             self.close()
 
-    def on_items_selected(self, btn_name):
+    async def on_items_selected(self, btn_name):
 
         if btn_name == 'Select':
 
-            self.get_selected_items(self.fs_source)
+            self._get_selected_items(self.fs_source)
             self.mdbx.set_excluded_items(self.excluded_items)
 
             # if any excluded folders are currently on the drive, delete them
@@ -176,19 +182,54 @@ class SetupDialog(SetupDialogGui):
         elif btn_name == 'Back':
             self.go_back()
 
-    def on_finish(self, widget):
+    async def on_finish(self, widget):
         self.exit_status = self.ACCEPTED
         self.close()
+
+    async def _on_button_location_pressed(self, widget):
+
+        if widget.value == self.COMBOBOX_CHOOSE:
+            paths = await self.select_folder_sheet()
+
+            if len(paths) > 0:
+                path = paths[0]
+                self._update_comboxbox_location(path)
+            else:
+                self.combobox_dbx_location.value = self.combobox_dbx_location.items[0]
+
+    def _update_comboxbox_location(self, path):
+        self.dbx_location_user_selected = path
+        icon = IconForPath(path)
+        short_path = self._relpath(path)
+        self.combobox_dbx_location.items = [
+            (icon, short_path),
+            toga.SECTION_BREAK,
+            self.COMBOBOX_CHOOSE
+        ]
+
+    def _token_field_validator(self, widget):
+        self.dialog_buttons_link_page['Link'].enabled = len(widget.value) > 10
+
+    def on_loading_failed(self):
+        self.dialog_buttons_selective_sync_page['Select'].enabled = False
+
+    @staticmethod
+    def _relpath(path):
+        usr = osp.abspath(osp.join(get_home_dir(), osp.pardir))
+        if osp.commonprefix([path, usr]) == usr:
+            return osp.relpath(path, usr)
+        else:
+            return path
 
     # ====================================================================================
     # Helper functions
     # ====================================================================================
 
-    def get_selected_items(self, parent):
+    def _get_selected_items(self, parent):
 
         for child in parent._children:
             child_path_lower = child.path.lower()
             if child.included.state == OFF:
                 self.excluded_items.append(child_path_lower)
 
-            self.get_selected_items(child)
+            self._get_selected_items(child)

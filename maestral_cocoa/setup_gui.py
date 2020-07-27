@@ -1,19 +1,16 @@
 # -*- coding: utf-8 -*-
 
-# system imports
-import os.path as osp
-
 # external imports
 import toga
 from toga.style.pack import Pack, FONT_SIZE_CHOICES
 from toga.constants import COLUMN, CENTER
-from maestral.utils.appdirs import get_home_dir
 
 # local imports
 from .private.widgets import (
-    Label, Spacer, DialogButtons, FollowLinkButton, Selection, Window, IconForPath
+    Label, Spacer, DialogButtons, FollowLinkButton, Selection, Window
 )
-from .private.constants import WORD_WRAP, NSFullSizeContentViewWindowMask
+from .private.constants import WORD_WRAP
+from .private.implementation.cocoa.constants import NSFullSizeContentViewWindowMask
 
 
 # set default font size to 13 pt, as in macOS
@@ -90,7 +87,6 @@ class SetupDialogGui(Window):
         )
         self.text_field_auth_token = toga.TextInput(
             placeholder='Authorization Token',
-            on_change=self._token_field_validator,
             style=Pack(width=self.CONTENT_WIDTH * 0.9, text_align=CENTER,)
         )
         self.spinner_link = toga.ActivityIndicator(style=Pack(width=32, height=32))
@@ -138,7 +134,6 @@ class SetupDialogGui(Window):
                 self.COMBOBOX_CHOOSE
             ],
             style=Pack(width=self.CONTENT_WIDTH * 0.9, padding_bottom=20),
-            on_select=self._on_button_location_pressed
         )
 
         self.dialog_buttons_location_page = DialogButtons(
@@ -172,6 +167,8 @@ class SetupDialogGui(Window):
             style=Pack(width=self.CONTENT_WIDTH, padding_bottom=20, flex=1),
             multiple_select=True,
         )
+
+        # FIXME: remove access to native API
         self.dropbox_tree._impl.columns[0].setMinWidth(150)
 
         self.dialog_buttons_selective_sync_page = DialogButtons(
@@ -218,41 +215,6 @@ class SetupDialogGui(Window):
             self.done_page
         )
         self.content = self.pages[0]
-
-    def _on_button_location_pressed(self, widget):
-
-        if widget.value == self.COMBOBOX_CHOOSE:
-            paths = self.select_folder_sheet()
-
-            if len(paths) > 0:
-                path = paths[0]
-                self._update_comboxbox_location(path)
-            else:
-                self.combobox_dbx_location.value = self.combobox_dbx_location.items[0]
-
-    def _update_comboxbox_location(self, path):
-        self.dbx_location_user_selected = path
-        icon = IconForPath(path)
-        short_path = self._relpath(path)
-        self.combobox_dbx_location.items = [
-            (icon, short_path),
-            toga.SECTION_BREAK,
-            self.COMBOBOX_CHOOSE
-        ]
-
-    def _token_field_validator(self, widget):
-        self.dialog_buttons_link_page['Link'].enabled = len(widget.value) > 10
-
-    def on_loading_failed(self):
-        self.dialog_buttons_selective_sync_page['Select'].enabled = False
-
-    @staticmethod
-    def _relpath(path):
-        usr = osp.abspath(osp.join(get_home_dir(), osp.pardir))
-        if osp.commonprefix([path, usr]) == usr:
-            return osp.relpath(path, usr)
-        else:
-            return path
 
     def go_forward(self):
         self.goto_page(self.current_page + 1)
