@@ -22,7 +22,7 @@ from toga_cocoa.widgets.button import Button as TogaButton
 from toga_cocoa.widgets.selection import Selection as TogaSelection
 from toga_cocoa.window import Window as TogaWindow
 from toga_cocoa.widgets.multilinetextinput import MultilineTextInput as TogaMultilineTextInput
-from toga_cocoa.factory import *  # noqa: F401, F406
+from toga_cocoa.factory import *  # noqa: F401,F406
 
 # local imports
 from . import dialogs
