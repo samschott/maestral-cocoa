@@ -37,7 +37,7 @@ from maestral_cocoa.setup import SetupDialog
 from maestral_cocoa.settings import SettingsWindow
 from maestral_cocoa.syncissues import SyncIssuesWindow
 from maestral_cocoa.dbx_location_dialog import DbxLocationDialog
-from maestral_cocoa.dialogs import Dialog, UpdateDialog, ProgressDialog, RelinkDialog
+from maestral_cocoa.dialogs import UpdateDialog, ProgressDialog, RelinkDialog
 from maestral_cocoa.resources import APP_ICON_PATH, TRAY_ICON_PATH
 
 
@@ -74,7 +74,6 @@ class MaestralGui(SystemTrayApp):
         self.setup_dialog = None
         self.settings_window = None
         self.sync_issues_window = None
-        self.rebuild_dialog = None
 
         self.item_status = None
         self.item_email = None
@@ -335,7 +334,7 @@ class MaestralGui(SystemTrayApp):
         SyncIssuesWindow(self.mdbx, app=self).raise_()
 
     def on_rebuild_clicked(self, widget):
-        self.rebuild_dialog = Dialog(
+        choice = self.alert(
             title='Rebuilt Maestral\'s sync index?',
             message=(
                 'Rebuilding the index may take several minutes, depending on the size of '
@@ -345,17 +344,10 @@ class MaestralGui(SystemTrayApp):
             ),
             button_labels=('Rebuild', 'Cancel'),
             icon=self.icon,
-            callback=self.on_rebuild_decided,
         )
 
-        self.rebuild_dialog.raise_()
-
-    def on_rebuild_decided(self, btn_name):
-
-        if btn_name == 'Rebuild':
+        if choice == 0:
             self.mdbx.rebuild_index()
-
-        self.rebuild_dialog.close()
 
     # ==== other callbacks  ==============================================================
 
@@ -385,7 +377,10 @@ class MaestralGui(SystemTrayApp):
             progress.close()
 
         if res['error']:
-            Dialog('Could not check for updates', res['error'], icon=self.icon).raise_()
+            self.alert(
+                title='Could not check for updates',
+                message=res['error'],
+            )
         elif res['update_available']:
             self.show_update_dialog(res['latest_release'], res['release_notes'])
         elif not res['update_available']:
@@ -529,7 +524,7 @@ class MaestralGui(SystemTrayApp):
             btn_no, auto_share_checkbox = self.alert(
                 title, message,
                 details=err['traceback'],
-                button_names=('Send to Developers', 'Don\'t send'),
+                button_labels=('Send to Developers', 'Don\'t send'),
                 checkbox_text='Always send error reports',
             )
 

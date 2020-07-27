@@ -463,10 +463,10 @@ class SystemTrayApp(TogaApp):
     def open_document(self, path):
         pass
 
-    def alert(self, title, message, details, details_title, button_names, checkbox_text,
+    def alert(self, title, message, details, details_title, button_labels, checkbox_text,
               level, icon):
 
-        return dialogs.alert(title, message, details, details_title, button_names,
+        return dialogs.alert(title, message, details, details_title, button_labels,
                              checkbox_text, level, icon)
 
 

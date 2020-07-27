@@ -166,7 +166,7 @@ async def select_folder_sheet(window, title='', message='', multiselect=False):
 
 
 def _construct_alert(title, message, details=None, details_title='Traceback',
-                     button_names=('Ok',), checkbox_text=None, level='info', icon=None):
+                     button_labels=('Ok',), checkbox_text=None, level='info', icon=None):
     alert = NSAlert.alloc().init()
     alert.alertStyle = alert_style_for_level_str[level]
     alert.messageText = title
@@ -204,7 +204,7 @@ def _construct_alert(title, message, details=None, details_title='Traceback',
         alert.showsSuppressionButton = True
         alert.suppressionButton.title = checkbox_text
 
-    for name in button_names:
+    for name in button_labels:
         alert.addButtonWithTitle(name)
 
     return alert
@@ -233,23 +233,24 @@ async def alert_sheet(window, title, message, details=None, details_title='Trace
     return await future
 
 
-def alert(title, message, details=None, details_title='Traceback', button_names=('Ok',),
+def alert(title, message, details=None, details_title='Traceback', button_labels=('Ok',),
           checkbox_text=None, level='info', icon=None):
     """
     Shows an alert. If `details` are given, they will be shown in a scroll view. If
-    `checkbox_text` is given, an addition checkbox is shown. Returns the index of the
-    button pressed (right == 0) and, if a checkbox was shown, its checked state as bool
+    `checkbox_text` is given, an addition checkbox is shown. Returns the label of the
+    button pressed and, if a checkbox was shown, its checked state as bool
     (checked == True).
     """
     icon = icon.bind(factory).native if icon else None
-    alert = _construct_alert(title, message, details, details_title, button_names,
+    alert = _construct_alert(title, message, details, details_title, button_labels,
                              checkbox_text, level, icon)
 
     NSApplication.sharedApplication.activateIgnoringOtherApps(True)
     result = alert.runModal()
 
+    button_index = result - NSAlertFirstButtonReturn
+
     if checkbox_text:
-        return (result - NSAlertFirstButtonReturn,
-                alert.suppressionButton.state == NSOnState)
+        return button_index, alert.suppressionButton.state == NSOnState
     else:
-        return result - NSAlertFirstButtonReturn
+        return button_index

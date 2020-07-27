@@ -642,9 +642,9 @@ class SystemTrayApp(toga.App):
         return self.factory.SystemTrayApp(interface=self)
 
     def alert(self, title, message, details=None, details_title='Traceback',
-              button_names=('Ok',), checkbox_text=None, level='info', icon=None):
+              button_labels=('Ok',), checkbox_text=None, level='info', icon=None):
 
         icon = icon or self.icon
 
-        return self._impl.alert(title, message, details, details_title, button_names,
+        return self._impl.alert(title, message, details, details_title, button_labels,
                                 checkbox_text, level, icon)
