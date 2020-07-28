@@ -121,7 +121,7 @@ class Node:
 
         try:
             entries = await call_async_threaded_maestral(self.mdbx.config_name,
-                                                'list_folder', self.path)
+                                                         'list_folder', self.path)
         except (NotAFolderError, NotFoundError):
             entries = []
         except ConnectionError:
