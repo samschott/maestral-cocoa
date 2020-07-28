@@ -7,7 +7,7 @@ import time
 # external imports
 import toga
 from toga.style.pack import Pack
-from toga.constants import ROW, COLUMN, TOP, RIGHT, CENTER, GRAY
+from toga.constants import ROW, COLUMN, TOP, RIGHT, CENTER, GRAY, TRANSPARENT
 from maestral import __version__ as __daemon_version__
 
 # local imports
@@ -25,6 +25,7 @@ class SettingsGui(Window):
     COLUMN_WIDTH_LEFT = 210
     COLUMN_WIDTH_RIGHT = 350
     BUTTON_WIDTH = 180
+    IMAGE_WIDTH = 70
 
     SECTION_PADDING = 15
     ELEMENT_PADDING = 10
@@ -43,11 +44,21 @@ class SettingsGui(Window):
 
         self.profile_pic_view = toga.ImageView(
             self.faceholder,
-            style=Pack(width=self.COLUMN_WIDTH_LEFT, height=70)
+            style=Pack(
+                width=self.IMAGE_WIDTH,
+                height=self.IMAGE_WIDTH,
+                background_color=TRANSPARENT
+            )
         )
-        # FIXME: remove access to native API
-        self.profile_pic_view._impl.native.imageAlignment = 3
         apply_round_clipping(self.profile_pic_view)
+
+        self.profile_pic_view_spacer = toga.Box(
+            style=Pack(
+                width=self.COLUMN_WIDTH_LEFT - self.IMAGE_WIDTH,
+                direction=ROW,
+                background_color=TRANSPARENT,
+            )
+        )
 
         self.label_name = Label(
             'Account Name (Company Name)',
@@ -80,6 +91,7 @@ class SettingsGui(Window):
 
         account_info_box = toga.Box(
             children=[
+                self.profile_pic_view_spacer,
                 self.profile_pic_view,
                 toga.Box(
                     children=[self.label_name, self.label_email,
