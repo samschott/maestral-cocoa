@@ -14,7 +14,7 @@ from .private.widgets import (
     Label, RichMultilineTextInput, FollowLinkButton
 )
 from .private.constants import VisualEffectMaterial, WORD_WRAP
-from .utils import call_async_maestral
+from .utils import call_async_threaded_maestral
 
 
 # NSAlert's are the preferred way of alerting the user. However, we use our own dialogs
@@ -350,13 +350,13 @@ class RelinkDialog(Dialog):
             self.do_relink()
 
     async def do_unlink(self):
-        await call_async_maestral(self.mdbx.config_name, 'unlink')
+        await call_async_threaded_maestral(self.mdbx.config_name, 'unlink')
         self.app.exit(stop_daemon=True)
 
     async def do_relink(self):
 
         token = self.token_field.value
-        res = await call_async_maestral(self.mdbx.config_name, 'link', token)
+        res = await call_async_threaded_maestral(self.mdbx.config_name, 'link', token)
 
         self.spinner.stop()
 

@@ -13,7 +13,7 @@ from maestral.errors import NotAFolderError, NotFoundError
 
 # local imports
 from .selective_sync_gui import SelectiveSyncGui
-from .utils import call_async_maestral
+from .utils import call_async_threaded_maestral
 from .private.constants import ON, OFF, MIXED
 from .private.widgets import IconForPath, Switch
 
@@ -120,7 +120,7 @@ class Node:
     async def _load_children_async(self):
 
         try:
-            entries = await call_async_maestral(self.mdbx.config_name,
+            entries = await call_async_threaded_maestral(self.mdbx.config_name,
                                                 'list_folder', self.path)
         except (NotAFolderError, NotFoundError):
             entries = []

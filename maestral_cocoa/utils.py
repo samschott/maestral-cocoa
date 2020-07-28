@@ -84,12 +84,12 @@ def apply_round_clipping(imageView: toga.ImageView):
 thread_pool_executor = ThreadPoolExecutor(10)
 
 
-def call_async(func, *args):
+def call_async_threaded(func, *args):
     loop = asyncio.get_event_loop()
     return loop.run_in_executor(thread_pool_executor, func, *args)
 
 
-def call_async_maestral(config_name, func_name, *args):
+def call_async_threaded_maestral(config_name, func_name, *args):
 
     def func(*inner_args):
         with MaestralProxy(config_name) as m:

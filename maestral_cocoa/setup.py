@@ -11,7 +11,7 @@ from maestral.utils.appdirs import get_home_dir
 # local imports
 from .private.constants import OFF
 from .private.widgets import IconForPath
-from .utils import call_async_maestral
+from .utils import call_async_threaded_maestral
 from .setup_gui import SetupDialogGui
 from .selective_sync import FileSystemSource
 
@@ -70,7 +70,7 @@ class SetupDialog(SetupDialogGui):
             self.dialog_buttons_link_page.enabled = False
             self.text_field_auth_token.enabled = False
 
-            res = await call_async_maestral(self.mdbx.config_name, 'link', token)
+            res = await call_async_threaded_maestral(self.mdbx.config_name, 'link', token)
 
             if res == 0:
 

@@ -29,7 +29,7 @@ from maestral import __version__ as __daemon_version__
 
 # local imports
 from maestral_cocoa import __version__ as __gui_version__
-from maestral_cocoa.utils import call_async, call_async_maestral
+from maestral_cocoa.utils import call_async_threaded, call_async_threaded_maestral
 from maestral_cocoa.private.widgets import (
     MenuItem, MenuItemSeparator, Menu, StatusBarItem, SystemTrayApp
 )
@@ -366,7 +366,7 @@ class MaestralGui(SystemTrayApp):
         if interval == 0 or time.time() - last_update_check < interval:  # checks disabled
             return
 
-        res = await call_async_maestral(self.config_name, 'check_for_updates')
+        res = await call_async_threaded_maestral(self.config_name, 'check_for_updates')
         if res['update_available']:
             self.mdbx.set_state('app', 'update_notification_last', time.time())
             self.show_update_dialog(res['latest_release'], res['release_notes'])
@@ -376,7 +376,7 @@ class MaestralGui(SystemTrayApp):
         progress = ProgressDialog('Checking for Updates', app=self)
         progress.raise_()
 
-        res = await call_async_maestral(self.config_name, 'check_for_updates')
+        res = await call_async_threaded_maestral(self.config_name, 'check_for_updates')
 
         if not progress.visible:
             return  # aborted by user
@@ -571,7 +571,7 @@ class MaestralGui(SystemTrayApp):
 
         # stop sync daemon if we started it or ``stop_daemon`` is ``True``
         if stop_daemon or self._started:
-            await call_async(stop_maestral_daemon_process, self.config_name)
+            await call_async_threaded(stop_maestral_daemon_process, self.config_name)
 
         super().exit()
 
