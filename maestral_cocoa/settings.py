@@ -71,34 +71,23 @@ class SettingsWindow(SettingsGui):
     def on_folder_selection_pressed(self, widget):
         SelectiveSyncDialog(self.mdbx, app=self.app).show_as_sheet(self)
 
-    def on_unlink_pressed(self, widget):
-        self.unlink_dialog = Dialog(
+    async def on_unlink_pressed(self, widget):
+        choice = await self.alert_sheet(
             title='Unlink your Dropbox account?',
             message=('You will still keep your Dropbox folder on this '
                      'computer but your files will stop syncing.'),
             button_labels=('Unlink', 'Cancel'),
-            default='Cancel',
-            callback=self.on_unlink_decided,
-            icon=self.app.icon
         )
-        self.unlink_dialog.show_as_sheet(self)
 
-    async def on_unlink_decided(self, btn_name):
-        if btn_name == 'Unlink':
+        if choice == 0:
             self._periodic_refresh_task.cancel()
-            self.unlink_dialog.dialog_buttons.enabled = False
-            self.unlink_dialog.spinner.start()
-            await call_async_maestral(self.mdbx.config_name, 'unlink')
-            self.unlink_dialog.spinner.stop()
-            self.unlink_dialog.close()
+            self.mdbx.unlink()
             await self.alert_sheet(
                 title='Successfully unlinked',
                 message='Maestral will now quit.',
                 button_labels=('Ok',),
             )
             await self.app.exit(stop_daemon=True)
-        else:
-            self.unlink_dialog.close()
 
     async def on_update_interval_selected(self, widget):
         value = str(widget.value)
