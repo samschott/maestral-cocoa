@@ -391,7 +391,8 @@ class MaestralGui(SystemTrayApp):
         elif res['update_available']:
             self.show_update_dialog(res['latest_release'], res['release_notes'])
         elif not res['update_available']:
-            message = 'Maestral v{} is the newest version available.'.format(res['latest_release'])
+            message = ('Maestral v{} is the newest version '
+                       'available.').format(res['latest_release'])
             self.alert(
                 title='You’re up-to-date!',
                 message=message

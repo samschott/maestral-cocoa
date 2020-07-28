@@ -11,7 +11,9 @@ import toga
 from maestral.utils.autostart import AutoStart
 
 # local imports
-from .utils import request_authorization_from_user_and_run, call_async_maestral, apply_round_clipping
+from .utils import (
+    request_authorization_from_user_and_run, call_async_maestral, apply_round_clipping
+)
 from .private.constants import ON, OFF
 from .private.widgets import IconForPath
 from .settings_gui import SettingsGui
@@ -119,13 +121,17 @@ class SettingsWindow(SettingsGui):
             try:
                 os.remove(self._macos_cli_tool_path)
             except PermissionError:
-                request_authorization_from_user_and_run(['/bin/rm', '-f', self._macos_cli_tool_path])
+                request_authorization_from_user_and_run(
+                    ['/bin/rm', '-f', self._macos_cli_tool_path]
+                )
         else:
             maestral_cli = os.path.join(getattr(sys, '_MEIPASS', ''), 'maestral_cli')
             try:
                 os.symlink(maestral_cli, self._macos_cli_tool_path)
             except PermissionError:
-                request_authorization_from_user_and_run(['/bin/ln', '-s', maestral_cli, self._macos_cli_tool_path])
+                request_authorization_from_user_and_run(
+                    ['/bin/ln', '-s', maestral_cli, self._macos_cli_tool_path]
+                )
 
         self._udpdate_cli_tool_button()
 

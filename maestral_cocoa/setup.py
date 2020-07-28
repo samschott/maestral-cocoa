@@ -31,8 +31,9 @@ class SetupDialog(SetupDialogGui):
         self.excluded_items = []
 
         # set up combobox
-        default_location = osp.dirname(self.mdbx.get_conf('main', 'path')) or get_home_dir()
-        self._update_comboxbox_location(default_location)
+        default_location = self.mdbx.get_conf('main', 'path')
+        default_parent = osp.dirname(default_location) or get_home_dir()
+        self._update_comboxbox_location(default_parent)
 
         # connect buttons to callbacks
         self.btn_start.on_press = self.on_start
@@ -131,11 +132,12 @@ class SetupDialog(SetupDialogGui):
                     )
 
                 else:
+                    default_dirname = self.mdbx.get_conf('main', 'default_dir_name')
                     msg = ('There already is a file named "{}" at this location. '
                            'Would you like to replace it?')
                     choice = await self.alert_sheet(
                         title='File conflict',
-                        message=msg.format(self.mdbx.get_conf('main', 'default_dir_name')),
+                        message=msg.format(default_dirname),
                         button_labels=('Replace', 'Cancel'),
                     )
 

@@ -170,8 +170,8 @@ class ProgressDialog(Dialog):
             callback=callback, accessory_view=self.progress_bar, app=app
         )
 
-        # this is hackish but works as long as the window has not yet been shown
-        self.content_box._children.remove(self.msg_content)
+        # save some space...
+        self.content_box.remove(self.msg_content)
 
 
 class DetailedDialog(Dialog):
@@ -185,7 +185,8 @@ class DetailedDialog(Dialog):
                      - Dialog.ICON_PADDING_RIGHT - Dialog.ICON_SIZE[0])
 
     def __init__(self, title='Alert', message='', button_labels=('Ok',), default='Ok',
-                 icon=None, callback=None, details_title='Traceback', details='', app=None):
+                 icon=None, callback=None, details_title='Traceback', details='',
+                 app=None):
 
         label = Label(
             details_title,
@@ -202,7 +203,11 @@ class DetailedDialog(Dialog):
         text_view = RichMultilineTextInput(
             details,
             readonly=True,
-            style=Pack(width=self.CONTENT_WIDTH, height=text_view_height, padding_bottom=15)
+            style=Pack(
+                width=self.CONTENT_WIDTH,
+                height=text_view_height,
+                padding_bottom=15
+            )
         )
         accessory_view = toga.Box(
             children=[label, text_view],
