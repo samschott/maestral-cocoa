@@ -71,7 +71,8 @@ class Dialog(Window):
                 width=self.CONTENT_WIDTH,
                 padding_bottom=self.TITLE_PADDING_BOTTOM,
                 font_weight=BOLD,
-                font_size=13
+                font_size=13,
+                background_color=TRANSPARENT,
             ),
         )
         self.image = toga.ImageView(
