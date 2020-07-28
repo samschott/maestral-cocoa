@@ -44,6 +44,8 @@ class SetupDialogGui(Window):
         super().__init__(title='Maestral Setup',
                          size=(self.WINDOW_WIDTH, self.WINDOW_HEIGHT),
                          resizeable=False, minimizable=False, app=app)
+
+        # FIXME: remove private API access
         self._impl.native.titlebarAppearsTransparent = True
         self._impl.native.titleVisibility = 1
         self._impl.native.styleMask |= NSFullSizeContentViewWindowMask
@@ -79,7 +81,11 @@ class SetupDialogGui(Window):
             text=('To link Maestral to your Dropbox account, please retrieve an '
                   'authorization token from Dropbox and enter it below.'),
             linebreak_mode=WORD_WRAP,
-            style=Pack(width=self.CONTENT_WIDTH * 0.9, text_align=CENTER, padding_bottom=10)
+            style=Pack(
+                width=self.CONTENT_WIDTH * 0.9,
+                text_align=CENTER,
+                padding_bottom=10
+            )
         )
         self.btn_auth_token = FollowLinkButton(
             'Retrieve Token',
