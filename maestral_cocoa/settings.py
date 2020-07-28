@@ -11,14 +11,11 @@ import toga
 from maestral.utils.autostart import AutoStart
 
 # local imports
-from .utils import (
-    request_authorization_from_user_and_run, call_async_maestral, apply_round_clipping
-)
+from .utils import request_authorization_from_user_and_run, apply_round_clipping
 from .private.constants import ON, OFF
 from .private.widgets import IconForPath
 from .settings_gui import SettingsGui
 from .selective_sync import SelectiveSyncDialog
-from .dialogs import Dialog
 from .resources import FACEHOLDER_PATH
 
 
