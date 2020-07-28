@@ -22,9 +22,6 @@ class SelectiveSyncGui(Window):
             multiple_select=True,
         )
 
-        # FIXME: remove private API access
-        self.tree._impl.columns[0].setMinWidth(200)
-
         self.dialog_button = DialogButtons(
             labels=['Update', 'Cancel'],
             style=Pack(padding=(0, 20, 20, 20)),
