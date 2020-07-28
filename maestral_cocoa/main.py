@@ -259,7 +259,6 @@ class MaestralGui(SystemTrayApp):
             'Turn on notifications',
             action=self._snooze_for_0
         )
-        self.separator_snooze = MenuItemSeparator()
 
         self.item_sync_issues = MenuItem(
             'Show Sync Issues...',
@@ -466,18 +465,19 @@ class MaestralGui(SystemTrayApp):
                 self._cached_recent_changes = recent_changes
 
     def update_snoozed(self):
+
         minutes = self.mdbx.notification_snooze
 
         if minutes > 0:
             eta = datetime.now() + timedelta(minutes=minutes)
 
             self.item_snooze.label = 'Notifications snoozed until {}'.format(eta.strftime('%H:%M'))
-            self.menu_snooze.insert(0, self.separator_snooze)
+            self.menu_snooze.insert(0, MenuItemSeparator())
             self.menu_snooze.insert(0, self.item_resume_notifications)
         else:
             self.item_snooze.label = 'Snooze Notifications'
             self.menu_snooze.remove(self.item_resume_notifications)
-            self.menu_snooze.remove(self.separator_snooze)
+            self.menu_snooze.remove(MenuItemSeparator())
 
     def update_error(self):
         errs = self.mdbx.fatal_errors
