@@ -278,6 +278,7 @@ class VibrantBox(Widget):
 # ==== menus and status bar ==============================================================
 
 class TogaMenuItem(NSMenuItem):
+
     @objc_method
     def onPress_(self, obj) -> None:
         if self.interface.action:
@@ -285,6 +286,7 @@ class TogaMenuItem(NSMenuItem):
 
 
 class MenuItem:
+
     def __init__(self, interface):
         self.interface = interface
         self.native = TogaMenuItem.alloc().init()
@@ -324,6 +326,7 @@ class MenuItem:
 
 
 class MenuItemSeparator:
+
     def __init__(self, interface):
         self.interface = interface
         self.native = NSMenuItem.separatorItem()
