@@ -62,14 +62,10 @@ class SetupDialog(SetupDialogGui):
         if btn_name == 'Cancel':
             self.close()
 
-        token = self.text_field_auth_token.value
-        if not token:
-            await self.alert_sheet(
-                title='Authentication failed.',
-                message='Please enter an authentication token.',
-            )
+        elif btn_name == 'Link':
 
-        else:
+            token = self.text_field_auth_token.value
+
             self.spinner_link.start()
             self.dialog_buttons_link_page.enabled = False
             self.text_field_auth_token.enabled = False
