@@ -237,20 +237,17 @@ class MaestralGui(SystemTrayApp):
 
         self.item_snooze = MenuItem('Snooze Notifications')
 
-        def snooze_for(minutes):
-            self.mdbx.notification_snooze = minutes
-
         self.item_snooze30 = MenuItem(
             'For the next 30 minutes',
-            action=lambda s: snooze_for(30)
+            action=self._snooze_for_30
         )
         self.item_snooze60 = MenuItem(
             'For the next hour',
-            action=lambda s: snooze_for(60)
+            action=self._snooze_for_60
         )
         self.item_snooze480 = MenuItem(
             'For the next 8 hours',
-            action=lambda s: snooze_for(480)
+            action=self._snooze_for_480
         )
 
         self.menu_snooze = Menu(
@@ -260,7 +257,7 @@ class MaestralGui(SystemTrayApp):
 
         self.item_resume_notifications = MenuItem(
             'Turn on notifications',
-            action=lambda s: snooze_for(0)
+            action=self._snooze_for_0
         )
         self.separator_snooze = MenuItemSeparator()
 
@@ -339,8 +336,7 @@ class MaestralGui(SystemTrayApp):
             message=(
                 'Rebuilding the index may take several minutes, depending on the size of '
                 'your Dropbox. Any changes to local files will be synced once rebuilding '
-                'has completed. If you quit Maestral during the process, rebuilding will '
-                'be resumed on the next launch.'
+                'has completed.'
             ),
             button_labels=('Rebuild', 'Cancel'),
             icon=self.icon,
@@ -348,6 +344,18 @@ class MaestralGui(SystemTrayApp):
 
         if choice == 0:
             self.mdbx.rebuild_index()
+
+    def _snooze_for_0(self, widget):
+        self.mdbx.notification_snooze = 0
+
+    def _snooze_for_30(self, widget):
+        self.mdbx.notification_snooze = 30
+
+    def _snooze_for_60(self, widget):
+        self.mdbx.notification_snooze = 60
+
+    def _snooze_for_480(self, widget):
+        self.mdbx.notification_snooze = 480
 
     # ==== other callbacks  ==============================================================
 
