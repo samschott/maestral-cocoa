@@ -88,17 +88,17 @@ class DbxLocationDialog(Dialog):
 
         elif btn_name == 'Select':
             # apply dropbox path
-            self._chosen_dropbox_folder = osp.join(
+            chosen_dropbox_folder = osp.join(
                 self.dbx_location_user_selected,
                 self.mdbx.get_conf('main', 'default_dir_name')
             )
 
-            if osp.exists(self._chosen_dropbox_folder):
+            if osp.exists(chosen_dropbox_folder):
 
-                if osp.isdir(self._chosen_dropbox_folder):
+                if osp.isdir(chosen_dropbox_folder):
                     choice = self.alert_sheet(
                         title='Folder already exists',
-                        message=(f'The folder "{self._chosen_dropbox_folder}" already '
+                        message=(f'The folder "{chosen_dropbox_folder}" already '
                                  'exists. Would you like to replace it or merge its '
                                  'contents with Dropbox?'),
                         button_labels=('Replace', 'Cancel', 'Merge'),
@@ -108,8 +108,8 @@ class DbxLocationDialog(Dialog):
                     choice = self.alert_sheet(
                         title='File conflict',
                         message=(
-                            'There already is a file named "{}" at this location. Would you '
-                            'like to replace it?'.format(
+                            'There already is a file named "{}" at this location. Would '
+                            'you like to replace it?'.format(
                                 self.mdbx.get_conf('main', 'default_dir_name')
                             )
                         ),
@@ -117,17 +117,17 @@ class DbxLocationDialog(Dialog):
                     )
 
                 if choice == 0:  # replace
-                    delete(self._chosen_dropbox_folder)
+                    delete(chosen_dropbox_folder)
                 elif choice == 1:  # cancel
                     self.dialog_buttons.enabled = True
                     return
                 elif choice == 2:  # merge
                     pass
 
-        self.mdbx.create_dropbox_directory(self._chosen_dropbox_folder)
-        self.mdbx.rebuild_index()
-        self.exit_status = self.ACCEPTED
-        self.close()
+            self.mdbx.create_dropbox_directory(chosen_dropbox_folder)
+            self.mdbx.rebuild_index()
+            self.exit_status = self.ACCEPTED
+            self.close()
 
     async def _on_button_location_pressed(self, widget):
 
