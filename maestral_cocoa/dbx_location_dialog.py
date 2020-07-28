@@ -129,10 +129,10 @@ class DbxLocationDialog(Dialog):
         self.exit_status = self.ACCEPTED
         self.close()
 
-    def _on_button_location_pressed(self, widget):
+    async def _on_button_location_pressed(self, widget):
 
         if widget.value == self.COMBOBOX_CHOOSE:
-            paths = self.select_folder_sheet()
+            paths = await self.select_folder_sheet()
 
             if len(paths) > 0:
                 path = paths[0]
