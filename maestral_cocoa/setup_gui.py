@@ -161,15 +161,12 @@ class SetupDialogGui(Window):
             style=Pack(width=self.CONTENT_WIDTH, padding=(20, 0, 20, 0))
         )
         self.dropbox_tree = toga.Tree(
-            headings=['  Name', '  Included'],
+            headings=['Name', 'Included'],
             accessors=['name', 'included'],
             data=[],
             style=Pack(width=self.CONTENT_WIDTH, padding_bottom=20, flex=1),
             multiple_select=True,
         )
-
-        # FIXME: remove access to native API
-        self.dropbox_tree._impl.columns[0].setMinWidth(150)
 
         self.dialog_buttons_selective_sync_page = DialogButtons(
             labels=['Select', 'Back'],
