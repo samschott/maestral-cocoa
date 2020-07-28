@@ -7,7 +7,6 @@ import platform
 import time
 from subprocess import Popen
 from datetime import datetime, timedelta
-import traceback
 
 # external imports
 import click
@@ -43,17 +42,6 @@ from maestral_cocoa.resources import APP_ICON_PATH, TRAY_ICON_PATH
 
 
 Pack.validated_property('font_size', choices=FONT_SIZE_CHOICES, initial=13)
-
-
-def async_exception_handler(loop, context):
-    exc = context.get('exception')
-    if exc:
-        traceback.print_exception(type(exc), exc, exc.__traceback__)
-
-
-loop = asyncio.get_event_loop()
-loop.set_debug(True)
-loop.set_exception_handler(async_exception_handler)
 
 
 class MaestralGui(SystemTrayApp):
