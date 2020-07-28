@@ -35,6 +35,7 @@ class SyncIssueView(toga.Box):
         dbx_address = self.dbx_address + urllib.parse.quote(self.sync_err['dbx_path'])
 
         icon = IconForPath(self.sync_err['local_path'])
+        # noinspection PyTypeChecker
         image_view = toga.ImageView(
             image=icon,
             style=Pack(
