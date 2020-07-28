@@ -46,9 +46,6 @@ class SyncIssueView(toga.Box):
             ),
         )
 
-        # FIXME: avoid private API
-        image_view._impl.native.imageAlignment = 3
-
         path_label = Label(
             osp.basename(self.sync_err['local_path']),
             linebreak_mode=TRUNCATE_HEAD,
@@ -120,7 +117,7 @@ class SyncIssuesWindow(Window):
 
         self.size = WINDOW_SIZE
         # FIXME: avoid private API
-        self._impl.native.titlebarAppearsTransparent = True
+        # self._impl.native.titlebarAppearsTransparent = True
 
         self.placeholder_label = Label(
             'No sync issues 😊',
@@ -161,8 +158,6 @@ class SyncIssuesWindow(Window):
         new_errors = self.mdbx.sync_errors
 
         if new_errors != self._cached_errors:
-
-            print(self.sync_errors_box.children)
 
             # remove old errors
             for child in self.sync_errors_box.children.copy():
