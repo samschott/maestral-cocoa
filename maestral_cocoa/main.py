@@ -46,6 +46,17 @@ from maestral_cocoa.resources import APP_ICON_PATH, TRAY_ICON_PATH
 Pack.validated_property('font_size', choices=FONT_SIZE_CHOICES, initial=13)
 
 
+class MenuItemSnooze(MenuItem):
+
+    def __init__(self, label, snooze_time, mdbx):
+        super().__init__(label, action=self.snooze)
+        self.mdbx = mdbx
+        self.snooze_time = snooze_time
+
+    def snooze(self, widget):
+        self.mdbx.notification_snooze = self.snooze_time
+
+
 class MaestralGui(SystemTrayApp):
     """A native GUI for the Maestral daemon."""
 
@@ -234,30 +245,16 @@ class MaestralGui(SystemTrayApp):
             submenu=self.menu_recent_files
         )
 
-        self.item_snooze = MenuItem('Snooze Notifications')
-
-        self.item_snooze30 = MenuItem(
-            'For the next 30 minutes',
-            action=self._snooze_for_30
-        )
-        self.item_snooze60 = MenuItem(
-            'For the next hour',
-            action=self._snooze_for_60
-        )
-        self.item_snooze480 = MenuItem(
-            'For the next 8 hours',
-            action=self._snooze_for_480
-        )
+        self.item_snooze30 = MenuItemSnooze('For the next 30 minutes', 30, self.mdbx)
+        self.item_snooze60 = MenuItemSnooze('For the next hour', 60, self.mdbx)
+        self.item_snooze480 = MenuItemSnooze('For the next 8 hours', 480, self.mdbx)
+        self.item_resume_notifications = MenuItemSnooze('Turn on notifications', 0, self.mdbx)
 
         self.menu_snooze = Menu(
             items=[self.item_snooze30, self.item_snooze60, self.item_snooze480]
         )
-        self.item_snooze.submenu = self.menu_snooze
 
-        self.item_resume_notifications = MenuItem(
-            'Turn on notifications',
-            action=self._snooze_for_0
-        )
+        self.item_snooze = MenuItem('Snooze Notifications', submenu=self.menu_snooze)
 
         self.item_sync_issues = MenuItem(
             'Show Sync Issues...',
@@ -342,18 +339,6 @@ class MaestralGui(SystemTrayApp):
 
         if choice == 0:
             self.mdbx.rebuild_index()
-
-    def _snooze_for_0(self, widget):
-        self.mdbx.notification_snooze = 0
-
-    def _snooze_for_30(self, widget):
-        self.mdbx.notification_snooze = 30
-
-    def _snooze_for_60(self, widget):
-        self.mdbx.notification_snooze = 60
-
-    def _snooze_for_480(self, widget):
-        self.mdbx.notification_snooze = 480
 
     # ==== other callbacks  ==============================================================
 
