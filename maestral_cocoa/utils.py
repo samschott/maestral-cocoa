@@ -41,39 +41,39 @@ NSVisualEffectView = ObjCClass('NSVisualEffectView')
 
 # ==== toga gui helpers ==================================================================
 
-def apply_round_clipping(imageView: toga.ImageView):
+def apply_round_clipping(image_view: toga.ImageView):
     """Clips an image in a given toga.ImageView to a circular mask."""
 
     pool = NSAutoreleasePool.alloc().init()
 
-    image = imageView._impl.native.image  # get native NSImage
+    image = image_view._impl.native.image  # get native NSImage
 
-    composedImage = NSImage.alloc().initWithSize(image.size)
-    composedImage.lockFocus()
+    composed_image = NSImage.alloc().initWithSize(image.size)
+    composed_image.lockFocus()
 
     ctx = NSGraphicsContext.currentContext
     ctx.saveGraphicsState()
     ctx.imageInterpolation = NSImageInterpolationHigh
 
-    imageFrame = NSRect(NSPoint(0, 0), image.size)
-    clipPath = NSBezierPath.bezierPathWithRoundedRect(
-        imageFrame,
+    image_frame = NSRect(NSPoint(0, 0), image.size)
+    clip_path = NSBezierPath.bezierPathWithRoundedRect(
+        image_frame,
         xRadius=image.size.width / 2,
         yRadius=image.size.height / 2
     )
-    clipPath.addClip()
+    clip_path.addClip()
 
-    NSZeroRect = NSRect(NSPoint(0, 0), NSMakeSize(0, 0))
+    zero_rect = NSRect(NSPoint(0, 0), NSMakeSize(0, 0))
     image.drawInRect(
-        imageFrame,
-        fromRect=NSZeroRect,
+        image_frame,
+        fromRect=zero_rect,
         operation=NSCompositeSourceOver,
         fraction=1
     )
-    composedImage.unlockFocus()
+    composed_image.unlockFocus()
     ctx.restoreGraphicsState()
 
-    imageView._impl.native.image = composedImage
+    image_view._impl.native.image = composed_image
 
     pool.drain()
     del pool
