@@ -481,8 +481,8 @@ class Window(TogaWindow):
     def center(self):
         self.native.center()
 
-    def raise_(self):
-        self.show()
+    def force_to_front(self):
+        self.native.makeKeyAndOrderFront(None)
         self.native.orderFrontRegardless()
         if self.interface.app:
             self.interface.app._impl.native.activateIgnoringOtherApps(True)
@@ -511,7 +511,7 @@ class Window(TogaWindow):
         self.native.level = 3
 
     def start_modal(self):
-        self.raise_()
+        self.show()
         return self.interface.app._impl.native.runModalForWindow(self.native)
 
     def stop_modal(self, res=0):

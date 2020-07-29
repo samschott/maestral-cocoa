@@ -563,7 +563,8 @@ class Window(toga.Window):
         self._impl.center()
 
     def raise_(self):
-        self._impl.raise_()
+        self.show()
+        self._impl.force_to_front()
 
     def hide(self):
         self._impl.hide()
