@@ -176,9 +176,7 @@ class SettingsWindow(SettingsGui):
                 self.profile_pic_view.image = toga.Image(path)
             except OSError:
                 self.profile_pic_view.image = self.faceholder
-            self.profile_pic_view._impl.native.imageAlignment = 3
             apply_round_clipping(self.profile_pic_view)
-
             self._cached_pic_stat = new_stat
 
     # ==== populate gui with data ========================================================
