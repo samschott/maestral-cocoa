@@ -11,7 +11,9 @@ import toga
 from maestral.utils.autostart import AutoStart
 
 # local imports
-from .utils import request_authorization_from_user_and_run, apply_round_clipping
+from .utils import (
+    request_authorization_from_user_and_run, apply_round_clipping, create_task
+)
 from .private.constants import ON, OFF
 from .private.widgets import IconForPath
 from .settings_gui import SettingsGui
@@ -47,7 +49,7 @@ class SettingsWindow(SettingsGui):
         self.checkbox_analytics.on_toggle = self.on_analytics_clicked
         self.btn_cli_tool.on_press = self.on_cli_pressed
 
-        self._periodic_refresh_task = asyncio.Task(self.periodic_refresh_gui())
+        self._periodic_refresh_task = None
         self.refresh_gui()
 
     # ==== callback implementations ======================================================
@@ -230,8 +232,9 @@ class SettingsWindow(SettingsGui):
         self.label_usage.text = acc_space_usage
 
     def on_close(self):
-        self._periodic_refresh_task.cancel()
+        if self._periodic_refresh_task:
+            self._periodic_refresh_task.cancel()
 
     def show(self):
-        asyncio.ensure_future(self._periodic_refresh_task)
+        self._periodic_refresh_task = create_task(self.periodic_refresh_gui())
         super().show()

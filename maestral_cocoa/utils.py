@@ -84,6 +84,16 @@ def apply_round_clipping(image_view: toga.ImageView):
 thread_pool_executor = ThreadPoolExecutor(10)
 
 
+def create_task(coro):
+
+    loop = asyncio.get_event_loop()
+
+    try:
+        return loop.create_task(coro)
+    except AttributeError:
+        return asyncio.ensure_future(coro, loop=loop)
+
+
 def call_async_threaded(func, *args):
     loop = asyncio.get_event_loop()
     return loop.run_in_executor(thread_pool_executor, func, *args)

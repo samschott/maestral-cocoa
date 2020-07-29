@@ -11,6 +11,7 @@ from toga.style.pack import Pack
 from toga.constants import ROW, COLUMN, TRANSPARENT
 
 # local imports
+from .utils import create_task
 from .private.widgets import Label, FollowLinkButton, VibrantBox, IconForPath, Window
 from .private.constants import TRUNCATE_HEAD, WORD_WRAP, VisualEffectMaterial
 
@@ -146,7 +147,7 @@ class SyncIssuesWindow(Window):
         self.center()
 
         self.refresh_gui()
-        self._periodic_refresh_task = asyncio.Task(self.periodic_refresh_gui())
+        self._periodic_refresh_task = None
 
     async def periodic_refresh_gui(self, interval=1):
 
@@ -174,8 +175,9 @@ class SyncIssuesWindow(Window):
             self._cached_errors = new_errors
 
     def on_close(self):
-        self._periodic_refresh_task.cancel()
+        if self._periodic_refresh_task:
+            self._periodic_refresh_task.cancel()
 
     def show(self):
-        asyncio.ensure_future(self._periodic_refresh_task)
+        self._periodic_refresh_task = create_task(self.periodic_refresh_gui())
         super().show()

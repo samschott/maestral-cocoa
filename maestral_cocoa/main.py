@@ -29,7 +29,9 @@ from maestral import __version__ as __daemon_version__
 
 # local imports
 from maestral_cocoa import __version__ as __gui_version__
-from maestral_cocoa.utils import call_async_threaded, call_async_threaded_maestral
+from maestral_cocoa.utils import (
+    call_async_threaded, call_async_threaded_maestral, create_task
+)
 from maestral_cocoa.private.widgets import (
     MenuItem, MenuItemSeparator, Menu, StatusBarItem, SystemTrayApp
 )
@@ -143,8 +145,8 @@ class MaestralGui(SystemTrayApp):
             self.mdbx.start_sync()
             self.setup_ui_linked()
 
-            asyncio.ensure_future(self.periodic_refresh_gui())
-            asyncio.ensure_future(self.periodic_check_for_updates())
+            create_task(self.periodic_refresh_gui())
+            create_task(self.periodic_check_for_updates())
 
     def _on_setup_completed(self):
 
@@ -152,10 +154,10 @@ class MaestralGui(SystemTrayApp):
             self.mdbx.start_sync()
 
             self.setup_ui_linked()
-            asyncio.ensure_future(self.periodic_refresh_gui())
-            asyncio.ensure_future(self.periodic_check_for_updates())
+            create_task(self.periodic_refresh_gui())
+            create_task(self.periodic_check_for_updates())
         else:
-            asyncio.ensure_future(self.exit(stop_daemon=True))
+            create_task(self.exit(stop_daemon=True))
 
     def get_or_start_maestral_daemon(self):
 
@@ -166,7 +168,7 @@ class MaestralGui(SystemTrayApp):
             message = ('Could not start or connect to sync daemon. Please try again '
                        'and contact the developer if this issue persists.')
             self.alert(title, message, level='error')
-            asyncio.ensure_future(self.exit(stop_daemon=True))
+            create_task(self.exit(stop_daemon=True))
         elif res == Start.AlreadyRunning:
             self._started = False
         elif res == Start.Ok:
@@ -582,7 +584,7 @@ class MaestralGui(SystemTrayApp):
               shell=True)
 
         # quit Maestral
-        asyncio.ensure_future(self.exit(stop_daemon=True))
+        create_task(self.exit(stop_daemon=True))
 
 
 def run(config_name='maestral'):

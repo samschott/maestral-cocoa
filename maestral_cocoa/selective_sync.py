@@ -13,7 +13,7 @@ from maestral.errors import NotAFolderError, NotFoundError
 
 # local imports
 from .selective_sync_gui import SelectiveSyncGui
-from .utils import call_async_threaded_maestral
+from .utils import call_async_threaded_maestral, create_task
 from .private.constants import ON, OFF, MIXED
 from .private.widgets import IconForPath, Switch
 
@@ -70,7 +70,7 @@ class Node:
     def children(self):
         if self.is_folder and not self._did_start_loading:
             self._did_start_loading = True
-            asyncio.ensure_future(self._load_children_async())
+            create_task(self._load_children_async())
         return self._children
 
     def _init_selected(self):
