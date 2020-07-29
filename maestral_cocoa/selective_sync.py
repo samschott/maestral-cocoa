@@ -2,7 +2,6 @@
 
 # system imports
 import os.path as osp
-import asyncio
 
 # external imports
 from toga.sources import Source
