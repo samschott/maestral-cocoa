@@ -61,12 +61,11 @@ async def save_file_sheet(window, suggested_filename, title='', message='',
     loop = get_event_loop()
     future = loop.create_future()
 
-    def completionHandler(r: int) -> None:
+    def completion_handler(r: int) -> None:
         path = panel.URL.path if r == NSFileHandlingPanelOKButton else None
         future.set_result(path)
 
-    panel.beginSheetModalForWindow(window._impl.native,
-                                   completionHandler=completionHandler)
+    panel.beginSheetModalForWindow(window._impl.native, completionHandler=completion_handler)
 
     return await future
 
@@ -106,7 +105,7 @@ async def open_file_sheet(window, title='', message='', file_types=None,
     loop = get_event_loop()
     future = loop.create_future()
 
-    def completionHandler(r: int) -> None:
+    def completion_handler(r: int) -> None:
 
         if r == NSFileHandlingPanelOKButton:
             if multiselect:
@@ -118,8 +117,7 @@ async def open_file_sheet(window, title='', message='', file_types=None,
 
         future.set_result(paths)
 
-    panel.beginSheetModalForWindow(window._impl.native,
-                                   completionHandler=completionHandler)
+    panel.beginSheetModalForWindow(window._impl.native, completionHandler=completion_handler)
 
     return await future
 
@@ -147,7 +145,7 @@ async def select_folder_sheet(window, title='', message='', multiselect=False):
     loop = get_event_loop()
     future = loop.create_future()
 
-    def completionHandler(r: int) -> None:
+    def completion_handler(r: int) -> None:
 
         if r == NSFileHandlingPanelOKButton:
             if multiselect:
@@ -159,19 +157,18 @@ async def select_folder_sheet(window, title='', message='', multiselect=False):
 
         future.set_result(paths)
 
-    panel.beginSheetModalForWindow(window._impl.native,
-                                   completionHandler=completionHandler)
+    panel.beginSheetModalForWindow(window._impl.native, completionHandler=completion_handler)
 
     return await future
 
 
 def _construct_alert(title, message, details=None, details_title='Traceback',
                      button_labels=('Ok',), checkbox_text=None, level='info', icon=None):
-    alert = NSAlert.alloc().init()
-    alert.alertStyle = alert_style_for_level_str[level]
-    alert.messageText = title
-    alert.informativeText = message
-    alert.icon = icon
+    a = NSAlert.alloc().init()
+    a.alertStyle = alert_style_for_level_str[level]
+    a.messageText = title
+    a.informativeText = message
+    a.icon = icon
 
     if details:
         scroll = NSScrollView.alloc().initWithFrame(NSMakeRect(0, 0, 500, 250))
@@ -190,7 +187,7 @@ def _construct_alert(title, message, details=None, details_title='Traceback',
         scroll.documentView = trace
 
         title = NSTextField.labelWithString(details_title)
-        title.font = Font(SYSTEM, 12, weight=BOLD)._impl.native
+        title.font = Font(SYSTEM, 12, weight=BOLD).bind(factory).native
 
         stack = NSStackView.alloc().initWithFrame(NSMakeRect(0, 0, 500, 265))
         stack.orientation = NSUserInterfaceLayoutOrientationVertical
@@ -198,16 +195,16 @@ def _construct_alert(title, message, details=None, details_title='Traceback',
         stack.addView(title, inGravity=NSStackViewGravityBottom)
         stack.addView(scroll, inGravity=NSStackViewGravityBottom)
 
-        alert.accessoryView = stack
+        a.accessoryView = stack
 
     if checkbox_text:
-        alert.showsSuppressionButton = True
-        alert.suppressionButton.title = checkbox_text
+        a.showsSuppressionButton = True
+        a.suppressionButton.title = checkbox_text
 
     for name in button_labels:
-        alert.addButtonWithTitle(name)
+        a.addButtonWithTitle(name)
 
-    return alert
+    return a
 
 
 async def alert_sheet(window, title, message, details=None, details_title='Traceback',
@@ -218,17 +215,16 @@ async def alert_sheet(window, title, message, details=None, details_title='Trace
     Returns the index of the button pressed (right == 0).
     """
     icon = icon.bind(factory).native if icon else None
-    alert = _construct_alert(title, message, details, details_title, button_labels,
-                             checkbox_text, level, icon)
+    a = _construct_alert(title, message, details, details_title, button_labels,
+                         checkbox_text, level, icon)
 
     loop = get_event_loop()
     future = loop.create_future()
 
-    def completionHandler(r: int) -> None:
+    def completion_handler(r: int) -> None:
         future.set_result(r - NSAlertFirstButtonReturn)
 
-    alert.beginSheetModalForWindow(window._impl.native,
-                                   completionHandler=completionHandler)
+    a.beginSheetModalForWindow(window._impl.native, completionHandler=completion_handler)
 
     return await future
 
@@ -242,15 +238,15 @@ def alert(title, message, details=None, details_title='Traceback', button_labels
     (checked == True).
     """
     icon = icon.bind(factory).native if icon else None
-    alert = _construct_alert(title, message, details, details_title, button_labels,
-                             checkbox_text, level, icon)
+    a = _construct_alert(title, message, details, details_title, button_labels,
+                         checkbox_text, level, icon)
 
     NSApplication.sharedApplication.activateIgnoringOtherApps(True)
-    result = alert.runModal()
+    result = a.runModal()
 
     button_index = result - NSAlertFirstButtonReturn
 
     if checkbox_text:
-        return button_index, alert.suppressionButton.state == NSOnState
+        return button_index, a.suppressionButton.state == NSOnState
     else:
         return button_index
