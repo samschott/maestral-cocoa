@@ -111,29 +111,26 @@ class SetupDialog(SetupDialogGui):
 
         if btn_name == 'Select':
 
-            self._chosen_dropbox_folder = osp.join(
-                self.dbx_location_user_selected,
-                self.mdbx.get_conf('main', 'default_dir_name')
-            )
+            default_name = self.mdbx.get_conf('main', 'default_dir_name')
+            self._chosen_dropbox_folder = osp.join(self.dbx_location_user_selected, default_name)
 
             # if a file / folder exists, ask for conflict resolution
             if osp.exists(self._chosen_dropbox_folder):
                 if osp.isdir(self._chosen_dropbox_folder):
-                    msg = ('The folder "{}" already exists. Would you like '
+                    msg = ('A folder "{}" already exists at this location. Would you like '
                            'to replace it or merge its contents with Dropbox?')
                     choice = await self.alert_sheet(
                         title='Folder already exists',
-                        message=msg.format(self._chosen_dropbox_folder),
+                        message=msg.format(default_name),
                         button_labels=('Replace', 'Cancel', 'Merge'),
                     )
 
                 else:
-                    default_dirname = self.mdbx.get_conf('main', 'default_dir_name')
-                    msg = ('There already is a file named "{}" at this location. '
+                    msg = ('A file named "{}" already exists at this location. '
                            'Would you like to replace it?')
                     choice = await self.alert_sheet(
                         title='File conflict',
-                        message=msg.format(default_dirname),
+                        message=msg.format(default_name),
                         button_labels=('Replace', 'Cancel'),
                     )
 
