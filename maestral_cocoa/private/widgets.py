@@ -10,7 +10,6 @@ from toga.widgets.base import Widget
 from toga.icons import Icon
 from toga.style.pack import Pack
 from toga.constants import ROW, RIGHT, TRANSPARENT
-from toga_cocoa.libs import at
 
 # local imports
 from .platform import get_platform_factory
@@ -85,18 +84,15 @@ class DialogButtons(toga.Box):
         for label in labels[::-1]:
             style = Pack(padding_left=10, alignment=RIGHT, background_color=TRANSPARENT)
             btn = toga.Button(label=label, style=style)
+
+            if label == default:
+                # TODO: remove private API access
+                btn._impl.native.keyEquivalent = '\r'
+
             self.add(btn)
             self._buttons.insert(0, btn)
 
             btn.style.width = max(self.MIN_BUTTON_WIDTH, btn.intrinsic.width.value)
-
-        if default:
-            try:
-                default_index = labels.index(default)
-                # TODO: move objc API access to factory
-                self._buttons[default_index]._impl.native.keyEquivalent = at('\r')
-            except ValueError:
-                pass
 
         self.on_press = on_press
 
