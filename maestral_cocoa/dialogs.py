@@ -21,14 +21,13 @@ from .utils import call_async_threaded_maestral
 # in the following cases:
 #
 #  - NSAlert is to static / inflexible to achieve our goal (see RelinkDialog, Unlink).
-#  - We want to show a dialog from an async widget callback: this currently causes trouble
-#    with Toga's handling of the event loop.
 #  - We want to keep the event loop running while showing the dialog *and* we cannot
-#    use an NSAlert as sheet.
+#    use an NSAlert as sheet
+#
 
 
 class Dialog(Window):
-    """A generic dialog following cocoa's NSAlert style."""
+    """A generic dialog following cocoa's NSAlert style from macOS Catalina and lower."""
 
     WINDOW_WIDTH = 420
     WINDOW_MIN_HEIGHT = 150
