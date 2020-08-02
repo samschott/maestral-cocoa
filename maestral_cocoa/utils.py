@@ -8,18 +8,10 @@ from ctypes import (
     cdll, util, c_char_p, c_void_p, byref, pointer, Structure, c_uint32, POINTER
 )
 
-# external imports
-import toga
-from toga_cocoa.libs import (
-    NSImage, NSImageInterpolationHigh, NSGraphicsContext, NSRect, NSPoint, NSBezierPath
-)
-from rubicon.objc import (
-    ObjCClass, NSMakeSize
-)
+
 from maestral.daemon import MaestralProxy
 
 from .private.implementation.cocoa.constants import (
-    NSCompositeSourceOver,
     kAuthorizationFlagExtendRights,
     kAuthorizationFlagInteractionAllowed,
     kAuthorizationFlagDefaults,
@@ -34,49 +26,6 @@ from .private.implementation.cocoa.constants import (
 
 
 sec = cdll.LoadLibrary(util.find_library('Security'))
-
-NSAutoreleasePool = ObjCClass('NSAutoreleasePool')
-NSVisualEffectView = ObjCClass('NSVisualEffectView')
-
-
-# ==== toga gui helpers ==================================================================
-
-def apply_round_clipping(image_view: toga.ImageView):
-    """Clips an image in a given toga.ImageView to a circular mask."""
-
-    pool = NSAutoreleasePool.alloc().init()
-
-    image = image_view._impl.native.image  # get native NSImage
-
-    composed_image = NSImage.alloc().initWithSize(image.size)
-    composed_image.lockFocus()
-
-    ctx = NSGraphicsContext.currentContext
-    ctx.saveGraphicsState()
-    ctx.imageInterpolation = NSImageInterpolationHigh
-
-    image_frame = NSRect(NSPoint(0, 0), image.size)
-    clip_path = NSBezierPath.bezierPathWithRoundedRect(
-        image_frame,
-        xRadius=image.size.width / 2,
-        yRadius=image.size.height / 2
-    )
-    clip_path.addClip()
-
-    zero_rect = NSRect(NSPoint(0, 0), NSMakeSize(0, 0))
-    image.drawInRect(
-        image_frame,
-        fromRect=zero_rect,
-        operation=NSCompositeSourceOver,
-        fraction=1
-    )
-    composed_image.unlockFocus()
-    ctx.restoreGraphicsState()
-
-    image_view._impl.native.image = composed_image
-
-    pool.drain()
-    del pool
 
 
 # ==== async calls =======================================================================

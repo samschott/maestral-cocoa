@@ -650,3 +650,10 @@ class SystemTrayApp(toga.App):
 
         return self._impl.alert(title, message, details, details_title, button_labels,
                                 checkbox_text, level, icon)
+
+
+# ==== helpers ===========================================================================
+
+def apply_round_clipping(image_view: toga.ImageView, factory=private_factory):
+    """Clips an image in a given toga.ImageView to a circular mask."""
+    return factory.apply_round_clipping(image_view._impl)

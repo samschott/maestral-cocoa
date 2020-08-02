@@ -12,8 +12,7 @@ from maestral import __version__ as __daemon_version__
 
 # local imports
 from . import __url__, __author__, __version__
-from .utils import apply_round_clipping
-from .private.widgets import Label, RichLabel, Switch, Selection, Window
+from .private.widgets import Label, RichLabel, Switch, Selection, Window, apply_round_clipping
 from .resources import FACEHOLDER_PATH
 
 year = time.localtime().tm_year

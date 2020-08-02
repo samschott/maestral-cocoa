@@ -8,9 +8,10 @@ from toga import SECTION_BREAK
 from toga.constants import LEFT
 from toga.platform import get_platform_factory
 from toga_cocoa.libs import (
-    ObjCClass, NSColor, NSString, at, NSTextView, NSImage, NSRecessedBezelStyle,
+    ObjCClass, NSColor, NSString, at, NSTextView, NSRecessedBezelStyle,
     NSTextAlignment, NSViewMaxYMargin, NSMenuItem, SEL, objc_method, NSKeyDown, NSMenu,
-    NSApplication, send_super, NSObject, NSApplicationActivationPolicyAccessory, NSBundle
+    NSApplication, send_super, NSObject, NSApplicationActivationPolicyAccessory, NSBundle,
+    NSImage, NSImageInterpolationHigh, NSGraphicsContext, NSRect, NSPoint, NSBezierPath
 )
 from toga_cocoa.colors import native_color
 from toga_cocoa.keys import toga_key, Key
@@ -23,6 +24,7 @@ from toga_cocoa.widgets.selection import Selection as TogaSelection
 from toga_cocoa.window import Window as TogaWindow
 from toga_cocoa.widgets.multilinetextinput import MultilineTextInput as TogaMultilineTextInput
 from toga_cocoa.factory import *  # noqa: F401,F406
+from rubicon.objc import NSMakeSize
 
 # local imports
 from . import dialogs
@@ -31,7 +33,7 @@ from .constants import (
     NSSquareStatusItemLength, NSWindowAnimationBehaviorDefault,
     NSWindowAnimationBehaviorAlertPanel, NSUTF8StringEncoding, NSImageLeading,
     NSImageNameFollowLinkFreestandingTemplate, NSVisualEffectStateActive,
-    NSVisualEffectBlendingModeBehindWindow,
+    NSVisualEffectBlendingModeBehindWindow, NSCompositeSourceOver
 
 )
 from ...constants import (
@@ -45,8 +47,7 @@ NSVisualEffectView = ObjCClass('NSVisualEffectView')
 NSMutableAttributedString = ObjCClass('NSMutableAttributedString')
 NSStatusBar = ObjCClass('NSStatusBar')
 NSColorSpace = ObjCClass('NSColorSpace')
-
-shared_workspace = NSWorkspace.sharedWorkspace
+NSAutoreleasePool = ObjCClass('NSAutoreleasePool')
 
 
 # ==== icons =============================================================================
@@ -64,7 +65,7 @@ class IconForPath:
     def native(self):
         # always return a new pointer since an old one may be invalidated
         # icons are cached by AppKit anyways
-        return shared_workspace.iconForFile(str(self.path))
+        return NSWorkspace.sharedWorkspace.iconForFile(str(self.path))
 
 
 # ==== labels ============================================================================
@@ -538,3 +539,43 @@ class Window(TogaWindow):
         return await dialogs.alert_sheet(self.interface, title, message, details,
                                          details_title, button_labels, checkbox_text,
                                          level, icon)
+
+
+# ==== helpers ===========================================================================
+
+def apply_round_clipping(image_view_impl: ImageView):
+    """Clips an image in a given toga_cocoa.ImageView to a circular mask."""
+
+    pool = NSAutoreleasePool.alloc().init()
+
+    image = image_view_impl.native.image  # get native NSImage
+
+    composed_image = NSImage.alloc().initWithSize(image.size)
+    composed_image.lockFocus()
+
+    ctx = NSGraphicsContext.currentContext
+    ctx.saveGraphicsState()
+    ctx.imageInterpolation = NSImageInterpolationHigh
+
+    image_frame = NSRect(NSPoint(0, 0), image.size)
+    clip_path = NSBezierPath.bezierPathWithRoundedRect(
+        image_frame,
+        xRadius=image.size.width / 2,
+        yRadius=image.size.height / 2
+    )
+    clip_path.addClip()
+
+    zero_rect = NSRect(NSPoint(0, 0), NSMakeSize(0, 0))
+    image.drawInRect(
+        image_frame,
+        fromRect=zero_rect,
+        operation=NSCompositeSourceOver,
+        fraction=1
+    )
+    composed_image.unlockFocus()
+    ctx.restoreGraphicsState()
+
+    image_view_impl.native.image = composed_image
+
+    pool.drain()
+    del pool
