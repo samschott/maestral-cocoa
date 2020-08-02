@@ -118,7 +118,6 @@ class SyncIssuesWindow(Window):
         self._cached_errors = []
 
         self.size = WINDOW_SIZE
-        # FIXME: avoid private API
         # self._impl.native.titlebarAppearsTransparent = True
 
         self.placeholder_label = Label(
