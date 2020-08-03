@@ -4,13 +4,13 @@
 import asyncio
 import time
 from concurrent.futures import ThreadPoolExecutor
-from ctypes import (
-    cdll, util, c_char_p, c_void_p, byref, pointer, Structure, c_uint32, POINTER
-)
+from ctypes import c_char_p, c_void_p, byref, pointer, Structure, c_uint32, POINTER
 
-
+# external imports
+from rubicon.objc.runtime import load_library
 from maestral.daemon import MaestralProxy
 
+# local imports
 from .private.implementation.cocoa.constants import (
     kAuthorizationFlagExtendRights,
     kAuthorizationFlagInteractionAllowed,
@@ -25,7 +25,7 @@ from .private.implementation.cocoa.constants import (
 )
 
 
-sec = cdll.LoadLibrary(util.find_library('Security'))
+sec = load_library('Security')
 
 
 # ==== async calls =======================================================================
