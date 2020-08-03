@@ -160,8 +160,12 @@ class RichLabel(Widget):
         self.set_html(self.interface.html)
 
     def rehint(self):
-        self.interface.intrinsic.width = at_least(self.interface.MIN_WIDTH)
-        self.interface.intrinsic.height = at_least(self.interface.MIN_HEIGHT)
+        # force layout and get layout rect
+        self.native.layoutManager.glyphRangeForTextContainer(self.native.textContainer)
+        rect = self.native.layoutManager.usedRectForTextContainer(self.native.textContainer)
+
+        self.interface.intrinsic.width = at_least(rect.size.width)
+        self.interface.intrinsic.height = rect.size.height
 
 
 class RichMultilineTextInput(TogaMultilineTextInput):

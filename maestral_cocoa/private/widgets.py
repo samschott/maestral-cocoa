@@ -271,9 +271,6 @@ class RichMultilineTextInput(toga.MultilineTextInput):
 class RichLabel(Widget):
     """A label with html support."""
 
-    MIN_HEIGHT = 17
-    MIN_WIDTH = 50
-
     def __init__(self, html, id=None, style=None, factory=private_factory):
         super().__init__(id=id, style=style, factory=factory)
 
