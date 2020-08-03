@@ -261,13 +261,15 @@ class SettingsGui(Window):
                             f'GUI v{__version__}, daemon v{__daemon_version__}',
                             style=Pack(
                                 padding_bottom=self.SUBELEMENT_PADDING,
-                                width=self.COLUMN_WIDTH_RIGHT)
+                                width=self.COLUMN_WIDTH_RIGHT,
+                            ),
                         ),
                         RichLabel(
                             html=f'<a href="{_wiki_url}">{__url__}</a>',
                             style=Pack(
                                 padding_bottom=self.SUBELEMENT_PADDING,
-                                width=self.COLUMN_WIDTH_RIGHT)
+                                width=self.COLUMN_WIDTH_RIGHT,
+                            )
                         ),
                         Label(
                             f'(c) 2018 - {year}, {__author__}.',
