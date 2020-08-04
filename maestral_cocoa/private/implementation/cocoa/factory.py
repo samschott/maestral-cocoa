@@ -253,6 +253,7 @@ class Switch(TogaSwitch):
 
 
 class Selection(TogaSelection):
+    """Reimplements toga_cocoa.Selection to allow section breaks."""
 
     def add_item(self, item):
         if isinstance(item, tuple):

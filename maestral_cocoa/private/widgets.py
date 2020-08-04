@@ -215,6 +215,7 @@ class FollowLinkButton(Widget):
 
 
 class Selection(toga.Selection):
+    """Reimplements toga.Selection to allow section breaks."""
 
     def __init__(self, id=None, style=None, items=None, on_select=None, enabled=True,
                  factory=private_factory):
