@@ -5,20 +5,19 @@ import os.path as osp
 
 # external imports
 from toga import SECTION_BREAK
-from toga.constants import LEFT
+from toga.constants import LEFT, TRANSPARENT
 from toga.platform import get_platform_factory
 from toga_cocoa.libs import (
     ObjCClass, NSColor, NSString, at, NSTextView, NSRecessedBezelStyle,
     NSTextAlignment, NSViewMaxYMargin, NSMenuItem, SEL, objc_method, NSKeyDown, NSMenu,
     NSApplication, send_super, NSObject, NSApplicationActivationPolicyAccessory, NSBundle,
-    NSImage, NSImageInterpolationHigh, NSGraphicsContext, NSRect, NSPoint, NSBezierPath
+    NSImage, NSImageInterpolationHigh, NSGraphicsContext, NSRect, NSPoint, NSBezierPath, NSTextField
 )
 from toga_cocoa.colors import native_color
 from toga_cocoa.keys import toga_key, Key
 from toga_cocoa.app import App as TogaApp
 from toga_cocoa.widgets.base import Widget
 from toga_cocoa.widgets.switch import Switch as TogaSwitch, at_least
-from toga_cocoa.widgets.label import Label as TogaLabel
 from toga_cocoa.widgets.button import Button as TogaButton
 from toga_cocoa.widgets.selection import Selection as TogaSelection
 from toga_cocoa.window import Window as TogaWindow
@@ -93,7 +92,7 @@ def attributed_str_from_html(raw_html, font=None, color=None):
     return attr_str
 
 
-class Label(TogaLabel):
+class Label(Widget):
     """Reimplements toga_cocoa.Label with text wrapping."""
 
     _toga_to_cocoa_linebreakmode = {
@@ -106,11 +105,37 @@ class Label(TogaLabel):
     }
 
     def create(self):
-        super().create()
-        self.native.drawsBackground = False
+        self.native = NSTextField.labelWithString('')
+        self.native.impl = self
+        self.native.interface = self.interface
+
+        # Add the layout constraints
+        self.add_constraints()
+
+    def set_alignment(self, value):
+        self.native.alignment = NSTextAlignment(value)
+
+    def set_color(self, value):
+        if value:
+            self.native.textColor = native_color(value)
+
+    def set_font(self, font):
+        if font:
+            self.native.font = font.bind(self.interface.factory).native
+
+    def set_text(self, value):
+        self.native.stringValue = value
 
     def set_linebreak_mode(self, value):
         self.native.cell.lineBreakMode = self._toga_to_cocoa_linebreakmode[value]
+
+    def set_background_color(self, color):
+        if color in (None, TRANSPARENT):
+            self.native.backgroundColor = NSColor.clearColor
+            self.native.drawsBackground = False
+        else:
+            self.native.backgroundColor = native_color(color)
+            self.native.drawsBackground = True
 
     def rehint(self):
         if self.interface.linebreak_mode in (WORD_WRAP, CHARACTER_WRAP):
@@ -149,8 +174,11 @@ class RichLabel(Widget):
         self.rehint()
 
     def set_font(self, font):
-        if font:
-            self.native.font = font.bind(self.interface.factory).native
+        native_font = font.bind(self.interface.factory).native
+        attr_str = attributed_str_from_html(self.interface.html, color=self._color,
+                                            font=native_font)
+        self.native.textStorage.setAttributedString(attr_str)
+        self.rehint()
 
     def set_color(self, value):
         if value:
