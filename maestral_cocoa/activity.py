@@ -13,8 +13,8 @@ from toga.constants import ROW, COLUMN, TRANSPARENT, GRAY
 
 # local imports
 from .utils import create_task
-from .private.widgets import Label, FollowLinkButton, VibrantBox, IconForPath, Window
-from .private.constants import TRUNCATE_HEAD, VisualEffectMaterial
+from .private.widgets import Label, FollowLinkButton, IconForPath, Window
+from .private.constants import TRUNCATE_HEAD
 
 
 CONTENT_WIDTH = 400
@@ -71,7 +71,7 @@ class SyncEventView(toga.Box):
             )
         )
         details_label = Label(
-            f'{change_type} • {change_time} • {parent_dir}',
+            f'{change_type} {change_time} • {parent_dir}',
             style=Pack(
                 font_size=11,
                 color=GRAY,
@@ -90,13 +90,14 @@ class SyncEventView(toga.Box):
                 padding_right=PADDING,
                 font_size=11,
                 background_color=TRANSPARENT,
+                height=12
             ),
         )
         link_dbx = FollowLinkButton(
             'Show Online',
             url=dbx_address,
             enabled=exists,
-            style=Pack(font_size=11, background_color=TRANSPARENT)
+            style=Pack(font_size=11, background_color=TRANSPARENT, height=12)
         )
 
         link_box = toga.Box(
@@ -144,9 +145,8 @@ class ActivityWindow(Window):
             style=Pack(flex=1, background_color=TRANSPARENT)
         )
 
-        self.content = VibrantBox(
+        self.content = toga.Box(
             children=[self.scroll_container],
-            material=VisualEffectMaterial.Popover
         )
 
         self.center()
