@@ -64,7 +64,12 @@ class IconForPath:
     def native(self):
         # always return a new pointer since an old one may be invalidated
         # icons are cached by AppKit anyways
-        return NSWorkspace.sharedWorkspace.iconForFile(str(self.path))
+        path = str(self.path)
+        if osp.exists(path):
+            return NSWorkspace.sharedWorkspace.iconForFile(path)
+        else:
+            _, extension = osp.splitext(path)
+            return NSWorkspace.sharedWorkspace.iconForFileType(extension)
 
 
 # ==== labels ============================================================================
