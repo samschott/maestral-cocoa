@@ -88,7 +88,7 @@ class SyncEventView(toga.Box):
             locate=True,
             style=Pack(
                 padding_right=PADDING,
-                font_size=12,
+                font_size=11,
                 background_color=TRANSPARENT,
             ),
         )
@@ -96,7 +96,7 @@ class SyncEventView(toga.Box):
             'Show Online',
             url=dbx_address,
             enabled=exists,
-            style=Pack(font_size=12, background_color=TRANSPARENT)
+            style=Pack(font_size=11, background_color=TRANSPARENT)
         )
 
         link_box = toga.Box(
