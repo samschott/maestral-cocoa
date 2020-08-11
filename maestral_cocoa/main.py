@@ -98,7 +98,7 @@ class MaestralGui(SystemTrayApp):
 
         self.menu = Menu()
         self._cached_status = DISCONNECTED
-        self._cached_recent_changes = []
+        self._cached_history = []
         self.tray = StatusBarItem(
             icon=self.icon_mapping.get(DISCONNECTED),
             menu=self.menu
@@ -430,24 +430,25 @@ class MaestralGui(SystemTrayApp):
 
         if self.menu.visible:
 
-            recent_changes = self.mdbx.get_state('sync', 'recent_changes')
+            history = self.mdbx.get_history()
 
-            if recent_changes != self._cached_recent_changes:
+            if history != self._cached_history:
 
                 self.menu_recent_files.clear()
 
-                for entry in recent_changes:
-                    dbx_path = entry.get('path_display')
-                    fname = osp.basename(dbx_path)
-                    local_path = self.mdbx.to_local_path(dbx_path)
-                    menu_item = MenuItem(
-                        fname,
-                        action=lambda w: click.launch(w.local_path, locate=True)
-                    )
-                    menu_item.local_path = local_path
-                    self.menu_recent_files.add(menu_item)
+                for event in history:
+                    if event['item_type'] == 'file' and event['change_type'] != 'removed':
+                        dbx_path = event.get('dbx_path')
+                        fname = osp.basename(dbx_path)
+                        local_path = self.mdbx.to_local_path(dbx_path)
+                        menu_item = MenuItem(
+                            fname,
+                            action=lambda w: click.launch(w.local_path, locate=True)
+                        )
+                        menu_item.local_path = local_path
+                        self.menu_recent_files.add(menu_item)
 
-                self._cached_recent_changes = recent_changes
+                self._cached_history = history
 
     def update_snoozed(self):
 
