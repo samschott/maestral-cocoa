@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 # system imports
 import os
-import os.path as osp
 import asyncio
 import platform
 import time
@@ -38,6 +37,7 @@ from maestral_cocoa.private.widgets import (
 from maestral_cocoa.setup import SetupDialog
 from maestral_cocoa.settings import SettingsWindow
 from maestral_cocoa.syncissues import SyncIssuesWindow
+from maestral_cocoa.activity import ActivityWindow
 from maestral_cocoa.dbx_location_dialog import DbxLocationDialog
 from maestral_cocoa.dialogs import UpdateDialog, ProgressDialog, RelinkDialog
 from maestral_cocoa.resources import APP_ICON_PATH, TRAY_ICON_PATH
@@ -90,7 +90,6 @@ class MaestralGui(SystemTrayApp):
         self.item_usage = None
         self.item_sync_issues = None
         self.item_pause = None
-        self.menu_recent_files = None
 
         self.refresh_interval = 2
 
@@ -129,7 +128,6 @@ class MaestralGui(SystemTrayApp):
             await self.auto_check_for_updates()
 
     def on_menu_open(self, sender):
-        self.update_recent_files()
         self.update_snoozed()
         self.refresh_interval = 0.5
         self.update_status()
@@ -239,10 +237,9 @@ class MaestralGui(SystemTrayApp):
             self.RESUME_TEXT if self.mdbx.paused else self.PAUSE_TEXT,
             action=self.on_start_stop_clicked
         )
-        self.menu_recent_files = Menu()
-        self.item_recent_files = MenuItem(
-            'Recently Changed Files',
-            submenu=self.menu_recent_files
+        self.item_activity = MenuItem(
+            'Show Recent Changes...',
+            action=self.on_activity_clicked
         )
 
         self.item_snooze30 = MenuItemSnooze('For the next 30 minutes', 30, self.mdbx)
@@ -279,7 +276,7 @@ class MaestralGui(SystemTrayApp):
             MenuItemSeparator(),
             self.item_email, self.item_usage,
             MenuItemSeparator(),
-            self.item_status, self.item_pause, self.item_recent_files,
+            self.item_status, self.item_pause, self.item_activity,
             MenuItemSeparator(),
             self.item_snooze, self.item_sync_issues,
             item_rebuild,
@@ -324,6 +321,9 @@ class MaestralGui(SystemTrayApp):
 
     def on_sync_issues_clicked(self, widget):
         SyncIssuesWindow(self.mdbx, app=self).raise_()
+
+    def on_activity_clicked(self, widget):
+        ActivityWindow(self.mdbx, app=self).raise_()
 
     def on_rebuild_clicked(self, widget):
         choice = self.alert(
@@ -424,31 +424,6 @@ class MaestralGui(SystemTrayApp):
             self.item_email.label = self.mdbx.get_state('account', 'email')
 
             self.item_status.label = status
-
-    def update_recent_files(self):
-        """Update menu with list of recently changed files."""
-
-        if self.menu.visible:
-
-            history = self.mdbx.get_history()
-
-            if history != self._cached_history:
-
-                self.menu_recent_files.clear()
-
-                for event in history:
-                    if event['item_type'] == 'file' and event['change_type'] != 'removed':
-                        dbx_path = event.get('dbx_path')
-                        fname = osp.basename(dbx_path)
-                        local_path = self.mdbx.to_local_path(dbx_path)
-                        menu_item = MenuItem(
-                            fname,
-                            action=lambda w: click.launch(w.local_path, locate=True)
-                        )
-                        menu_item.local_path = local_path
-                        self.menu_recent_files.add(menu_item)
-
-                self._cached_history = history
 
     def update_snoozed(self):
 
