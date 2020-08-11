@@ -26,9 +26,9 @@ private_factory = get_platform_factory()
 class Spacer(toga.Box):
     """A widget to take up space and push others to the side."""
 
-    def __init__(self, direction=ROW):
+    def __init__(self, direction=ROW, factory=None):
         style = Pack(flex=1, direction=direction, background_color=TRANSPARENT)
-        super().__init__(style=style)
+        super().__init__(style=style, factory=factory)
 
 
 class VibrantBox(Widget):
