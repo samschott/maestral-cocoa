@@ -101,7 +101,7 @@ class SyncEventView(toga.Box):
 
         link_box = toga.Box(
             children=[link_local, link_dbx],
-            style=Pack(direction=ROW, background_color=TRANSPARENT)
+            style=Pack(direction=ROW, background_color=TRANSPARENT, height=12)
         )
         info_box = toga.Box(
             children=[filename_label, details_label],
@@ -132,7 +132,7 @@ class ActivityWindow(Window):
         super().__init__(title='Maestral Activity', release_on_close=False, app=app)
 
         self.mdbx = mdbx
-        self._cached_events = []
+        self._ids = set()
 
         self.size = WINDOW_SIZE
 
@@ -163,19 +163,14 @@ class ActivityWindow(Window):
     def refresh_gui(self):
 
         history = self.mdbx.get_history()
-        history.sort(key=lambda x: x['sync_time'], reverse=True)
 
-        if history != self._cached_events:
+        # add new events
+        for event in history:
+            new_id = event['id']
+            if new_id not in self._ids:
+                self.sync_event_box.insert(0, SyncEventView(event))
 
-            # remove old events
-            for child in self.sync_event_box.children.copy():
-                self.sync_event_box.remove(child)
-
-            # add new events
-            for event in history:
-                self.sync_event_box.add(SyncEventView(event))
-
-            self._cached_events = history
+            self._ids.add(new_id)
 
     def on_close(self):
         if self._periodic_refresh_task:
