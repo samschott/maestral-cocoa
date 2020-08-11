@@ -104,13 +104,16 @@ class SyncEventView(toga.Box):
             style=Pack(direction=ROW, background_color=TRANSPARENT)
         )
         info_box = toga.Box(
-            children=[filename_label, details_label, link_box],
+            children=[filename_label, details_label],
             style=Pack(direction=COLUMN, background_color=TRANSPARENT)
         )
         content_box = toga.Box(
             children=[image_view, info_box],
             style=Pack(direction=ROW, width=CONTENT_WIDTH, background_color=TRANSPARENT)
         )
+
+        if exists:
+            info_box.add(link_box)
 
         hline = toga.Divider(style=Pack(padding=(PADDING, 0, PADDING, 0)))
 
