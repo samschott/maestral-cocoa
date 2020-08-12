@@ -13,7 +13,7 @@ from toga.constants import ROW, COLUMN, TRANSPARENT, GREEN
 # local imports
 from .utils import create_task
 from .private.widgets import Label, FollowLinkButton, IconForPath, Window, ScrollContainer
-from .private.constants import TRUNCATE_HEAD, WORD_WRAP
+from .private.constants import WORD_WRAP
 
 
 PADDING = 10
@@ -46,7 +46,6 @@ class SyncIssueView(toga.Box):
 
         path_label = Label(
             osp.basename(self.sync_err['local_path']),
-            linebreak_mode=TRUNCATE_HEAD,
             style=Pack(
                 padding_bottom=PADDING / 2,
                 flex=1,

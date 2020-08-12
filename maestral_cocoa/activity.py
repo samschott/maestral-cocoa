@@ -14,7 +14,6 @@ from toga.constants import ROW, COLUMN, TRANSPARENT, GRAY
 # local imports
 from .utils import create_task
 from .private.widgets import Label, FollowLinkButton, IconForPath, Window, ScrollContainer
-from .private.constants import TRUNCATE_HEAD
 
 PADDING = 10
 ICON_SIZE = 32
@@ -58,7 +57,6 @@ class SyncEventView(toga.Box):
 
         filename_label = Label(
             filename,
-            linebreak_mode=TRUNCATE_HEAD,
             style=Pack(
                 padding_bottom=PADDING / 2,
                 flex=1,
