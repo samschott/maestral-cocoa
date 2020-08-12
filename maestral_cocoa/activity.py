@@ -13,7 +13,7 @@ from toga.constants import ROW, COLUMN, TRANSPARENT, GRAY
 
 # local imports
 from .utils import create_task
-from .private.widgets import Label, FollowLinkButton, IconForPath, Window
+from .private.widgets import Label, FollowLinkButton, IconForPath, Window, ScrollContainer
 from .private.constants import TRUNCATE_HEAD
 
 PADDING = 10
@@ -134,7 +134,7 @@ class ActivityWindow(Window):
                 background_color=TRANSPARENT,
             )
         )
-        self.scroll_container = toga.ScrollContainer(
+        self.scroll_container = ScrollContainer(
             content=self.sync_event_box,
             horizontal=False,
             style=Pack(flex=1, background_color=TRANSPARENT)

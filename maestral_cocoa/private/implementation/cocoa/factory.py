@@ -21,10 +21,11 @@ from toga_cocoa.widgets.base import Widget
 from toga_cocoa.widgets.switch import Switch as TogaSwitch, at_least
 from toga_cocoa.widgets.button import Button as TogaButton
 from toga_cocoa.widgets.selection import Selection as TogaSelection
+from toga_cocoa.widgets.scrollcontainer import ScrollContainer as TogaScrollContainer
 from toga_cocoa.window import Window as TogaWindow
 from toga_cocoa.widgets.multilinetextinput import MultilineTextInput as TogaMultilineTextInput
 from toga_cocoa.factory import *  # noqa: F401,F406
-from rubicon.objc import NSMakeSize
+from rubicon.objc import NSMakeSize, NSMakeRect
 
 # local imports
 from . import dialogs
@@ -318,6 +319,27 @@ class VibrantBox(Widget):
         content_size = self.native.intrinsicContentSize()
         self.interface.intrinsic.width = at_least(content_size.width)
         self.interface.intrinsic.height = at_least(content_size.height)
+
+
+class ScrollContainer(TogaScrollContainer):
+
+    def set_bounds(self, x, y, width, height):
+        super().set_bounds(x, y, width, height)
+        if not self.interface.horizontal:
+            self.interface.content._impl.native.frame = NSMakeRect(
+                0, 0,
+                width, self.interface.content.layout.height
+            )
+        elif not self.interface.vertical:
+            self.interface.content._impl.native.frame = NSMakeRect(
+                0, 0,
+                self.interface.content.layout.width, height
+            )
+        else:
+            self.interface.content._impl.native.frame = NSMakeRect(
+                0, 0,
+                self.interface.content.layout.width, self.interface.content.layout.height
+            )
 
 
 # ==== menus and status bar ==============================================================
