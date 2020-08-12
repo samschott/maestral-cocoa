@@ -16,11 +16,9 @@ from .utils import create_task
 from .private.widgets import Label, FollowLinkButton, IconForPath, Window
 from .private.constants import TRUNCATE_HEAD
 
-
-CONTENT_WIDTH = 400
 PADDING = 10
 ICON_SIZE = 32
-WINDOW_SIZE = (CONTENT_WIDTH + 4 * PADDING, 600)
+WINDOW_SIZE = (400, 600)
 
 
 class SyncEventView(toga.Box):
@@ -28,10 +26,8 @@ class SyncEventView(toga.Box):
     dbx_address = 'https://www.dropbox.com/preview'
 
     def __init__(self, sync_event):
-        style = Pack(width=CONTENT_WIDTH, direction=COLUMN, background_color=TRANSPARENT)
+        style = Pack(flex=1, direction=COLUMN, background_color=TRANSPARENT)
         super().__init__(style=style)
-
-        text_width = CONTENT_WIDTH - 15 - ICON_SIZE
 
         self.sync_event = sync_event
 
@@ -65,7 +61,7 @@ class SyncEventView(toga.Box):
             linebreak_mode=TRUNCATE_HEAD,
             style=Pack(
                 padding_bottom=PADDING / 2,
-                width=text_width,
+                flex=1,
                 background_color=TRANSPARENT,
                 font_size=11,
             )
@@ -75,7 +71,7 @@ class SyncEventView(toga.Box):
             style=Pack(
                 font_size=11,
                 color=GRAY,
-                width=text_width,
+                flex=1,
                 padding_bottom=PADDING / 2,
                 background_color=TRANSPARENT,
             )
@@ -102,15 +98,15 @@ class SyncEventView(toga.Box):
 
         link_box = toga.Box(
             children=[link_local, link_dbx],
-            style=Pack(direction=ROW, background_color=TRANSPARENT, height=12)
+            style=Pack(direction=ROW, flex=1, background_color=TRANSPARENT, height=12)
         )
         info_box = toga.Box(
             children=[filename_label, details_label],
-            style=Pack(direction=COLUMN, background_color=TRANSPARENT)
+            style=Pack(direction=COLUMN, flex=1, background_color=TRANSPARENT)
         )
         content_box = toga.Box(
             children=[image_view, info_box],
-            style=Pack(direction=ROW, width=CONTENT_WIDTH, background_color=TRANSPARENT)
+            style=Pack(direction=ROW, flex=1, background_color=TRANSPARENT)
         )
 
         if exists:
@@ -123,12 +119,6 @@ class SyncEventView(toga.Box):
 
 class ActivityWindow(Window):
 
-    box_style = Pack(
-        direction=COLUMN, width=CONTENT_WIDTH,
-        padding=2 * PADDING,
-        background_color=TRANSPARENT,
-    )
-
     def __init__(self, mdbx, app=None):
         super().__init__(title='Maestral Activity', release_on_close=False, app=app)
 
@@ -138,16 +128,18 @@ class ActivityWindow(Window):
         self.size = WINDOW_SIZE
 
         self.sync_event_box = toga.Box(
-            style=self.box_style
+            style=Pack(
+                direction=COLUMN, flex=1,
+                padding=2 * PADDING,
+                background_color=TRANSPARENT,
+            )
         )
         self.scroll_container = toga.ScrollContainer(
             content=self.sync_event_box,
+            horizontal=False,
             style=Pack(flex=1, background_color=TRANSPARENT)
         )
-
-        self.content = toga.Box(
-            children=[self.scroll_container],
-        )
+        self.content = self.scroll_container
 
         self.center()
 

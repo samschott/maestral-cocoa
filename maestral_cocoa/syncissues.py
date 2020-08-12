@@ -8,18 +8,17 @@ import urllib.parse
 # external imports
 import toga
 from toga.style.pack import Pack
-from toga.constants import ROW, COLUMN, TRANSPARENT
+from toga.constants import ROW, COLUMN, TRANSPARENT, GREEN
 
 # local imports
 from .utils import create_task
-from .private.widgets import Label, FollowLinkButton, VibrantBox, IconForPath, Window
-from .private.constants import TRUNCATE_HEAD, WORD_WRAP, VisualEffectMaterial
+from .private.widgets import Label, FollowLinkButton, IconForPath, Window
+from .private.constants import TRUNCATE_HEAD, WORD_WRAP
 
 
-CONTENT_WIDTH = 330
 PADDING = 10
 ICON_SIZE = 48
-WINDOW_SIZE = (CONTENT_WIDTH + 4 * PADDING, 400)
+WINDOW_SIZE = (370, 400)
 
 
 class SyncIssueView(toga.Box):
@@ -27,10 +26,8 @@ class SyncIssueView(toga.Box):
     dbx_address = 'https://www.dropbox.com/preview'
 
     def __init__(self, sync_err):
-        style = Pack(width=CONTENT_WIDTH, direction=COLUMN, background_color=TRANSPARENT)
+        style = Pack(flex=1, direction=COLUMN, background_color=TRANSPARENT)
         super().__init__(style=style)
-
-        text_width = CONTENT_WIDTH - 15 - ICON_SIZE
 
         self.sync_err = sync_err
         dbx_address = self.dbx_address + urllib.parse.quote(self.sync_err['dbx_path'])
@@ -43,7 +40,6 @@ class SyncIssueView(toga.Box):
                 width=ICON_SIZE,
                 height=ICON_SIZE,
                 padding=(0, 12, 0, 3),
-                flex=1,
                 background_color=TRANSPARENT,
             ),
         )
@@ -53,7 +49,7 @@ class SyncIssueView(toga.Box):
             linebreak_mode=TRUNCATE_HEAD,
             style=Pack(
                 padding_bottom=PADDING / 2,
-                width=text_width,
+                flex=1,
                 background_color=TRANSPARENT,
             )
         )
@@ -62,9 +58,9 @@ class SyncIssueView(toga.Box):
             linebreak_mode=WORD_WRAP,
             style=Pack(
                 font_size=11,
-                width=text_width,
+                width=WINDOW_SIZE[0] - 4 * PADDING - 15 - ICON_SIZE,
                 padding_bottom=PADDING / 2,
-                background_color=TRANSPARENT,
+                background_color=GREEN,
             )
         )
 
@@ -75,27 +71,28 @@ class SyncIssueView(toga.Box):
             locate=True,
             style=Pack(
                 padding_right=PADDING,
-                font_size=12,
+                font_size=11,
+                height=12,
                 background_color=TRANSPARENT,
             ),
         )
         link_dbx = FollowLinkButton(
             'Show Online',
             url=dbx_address,
-            style=Pack(font_size=12, background_color=TRANSPARENT)
+            style=Pack(font_size=11, height=12, background_color=TRANSPARENT)
         )
 
         link_box = toga.Box(
             children=[link_local, link_dbx],
-            style=Pack(direction=ROW, background_color=TRANSPARENT)
+            style=Pack(direction=ROW, flex=1, background_color=TRANSPARENT)
         )
         info_box = toga.Box(
             children=[path_label, error_label, link_box],
-            style=Pack(direction=COLUMN, background_color=TRANSPARENT)
+            style=Pack(direction=COLUMN, flex=1, background_color=TRANSPARENT)
         )
         content_box = toga.Box(
             children=[image_view, info_box],
-            style=Pack(direction=ROW, width=CONTENT_WIDTH, background_color=TRANSPARENT)
+            style=Pack(direction=ROW, flex=1, background_color=TRANSPARENT)
         )
 
         hline = toga.Divider(style=Pack(padding=(PADDING, 0, PADDING, 0)))
@@ -104,12 +101,6 @@ class SyncIssueView(toga.Box):
 
 
 class SyncIssuesWindow(Window):
-
-    box_style = Pack(
-        direction=COLUMN, width=CONTENT_WIDTH,
-        padding=2 * PADDING,
-        background_color=TRANSPARENT,
-    )
 
     def __init__(self, mdbx, app=None):
         super().__init__(title='Maestral Sync Issues', release_on_close=False, app=app)
@@ -123,25 +114,26 @@ class SyncIssuesWindow(Window):
             'No sync issues 😊',
             style=Pack(
                 padding_bottom=PADDING,
-                width=CONTENT_WIDTH,
+                flex=1,
                 background_color=TRANSPARENT,
             )
         )
 
         self.sync_errors_box = toga.Box(
             children=[self.placeholder_label],
-            style=self.box_style
+            style=Pack(
+                direction=COLUMN, flex=1,
+                padding=2 * PADDING,
+                background_color=TRANSPARENT,
+            )
         )
         self.scroll_container = toga.ScrollContainer(
             content=self.sync_errors_box,
+            horizontal=False,
             style=Pack(flex=1, background_color=TRANSPARENT)
         )
 
-        self.content = VibrantBox(
-            children=[self.scroll_container],
-            material=VisualEffectMaterial.Popover
-        )
-
+        self.content = self.scroll_container
         self.center()
 
         self.refresh_gui()
