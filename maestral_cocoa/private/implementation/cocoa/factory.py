@@ -11,7 +11,8 @@ from toga_cocoa.libs import (
     ObjCClass, NSColor, NSString, at, NSTextView, NSRecessedBezelStyle,
     NSTextAlignment, NSViewMaxYMargin, NSMenuItem, SEL, objc_method, NSKeyDown, NSMenu,
     NSApplication, send_super, NSObject, NSApplicationActivationPolicyAccessory, NSBundle,
-    NSImage, NSImageInterpolationHigh, NSGraphicsContext, NSRect, NSPoint, NSBezierPath, NSTextField
+    NSImage, NSImageInterpolationHigh, NSGraphicsContext, NSRect, NSPoint, NSBezierPath,
+    NSTextField
 )
 from toga_cocoa.colors import native_color
 from toga_cocoa.keys import toga_key, Key
@@ -143,13 +144,18 @@ class Label(Widget):
             self.native.drawsBackground = True
 
     def rehint(self):
-        if self.interface.linebreak_mode in (WORD_WRAP, CHARACTER_WRAP):
-            availableLabelWidth = self.interface.style.width
-            if availableLabelWidth:
-                self.native.preferredMaxLayoutWidth = availableLabelWidth
+
+        if self.interface.style.width:
+            self.native.preferredMaxLayoutWidth = self.interface.style.width
+
         content_size = self.native.intrinsicContentSize()
-        self.interface.intrinsic.width = at_least(content_size.width)
-        self.interface.intrinsic.height = at_least(content_size.height)
+
+        if self.interface.style.width:
+            self.interface.intrinsic.width = at_least(content_size.width)
+            self.interface.intrinsic.height = at_least(content_size.height)
+        else:
+            self.interface.intrinsic.width = at_least(0)
+            self.interface.intrinsic.height = at_least(content_size.height)
 
 
 class RichLabel(Widget):
