@@ -162,15 +162,10 @@ class ActivityWindow(Window):
 
     def refresh_gui(self):
 
-        history = self.mdbx.get_history()
-
-        # add new events
-        for event in history:
-            new_id = event['id']
-            if new_id not in self._ids:
+        for event in self.mdbx.get_history():
+            if event['id'] not in self._ids:
                 self.sync_event_box.insert(0, SyncEventView(event))
-
-            self._ids.add(new_id)
+                self._ids.add(event['id'])
 
     def on_close(self):
         if self._periodic_refresh_task:
