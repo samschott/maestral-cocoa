@@ -60,6 +60,7 @@ class SyncEventView(toga.Box):
             style=Pack(
                 padding_bottom=PADDING / 2,
                 flex=1,
+                height=14,
                 background_color=TRANSPARENT,
                 font_size=11,
             )
@@ -70,6 +71,7 @@ class SyncEventView(toga.Box):
                 font_size=11,
                 color=GRAY,
                 flex=1,
+                height=14,
                 padding_bottom=PADDING / 2,
                 background_color=TRANSPARENT,
             )
@@ -138,7 +140,6 @@ class ActivityWindow(Window):
             style=Pack(flex=1, background_color=TRANSPARENT)
         )
         self.content = self.scroll_container
-
         self.center()
 
         self.refresh_gui()
