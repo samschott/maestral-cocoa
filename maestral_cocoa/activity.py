@@ -3,17 +3,18 @@
 # system imports
 import os.path as osp
 import asyncio
-import urllib.parse
 from datetime import datetime
 
 # external imports
+import click
 import toga
 from toga.style.pack import Pack
 from toga.constants import ROW, COLUMN, TRANSPARENT, GRAY
 
 # local imports
 from .utils import create_task
-from .private.widgets import Label, FollowLinkButton, Icon, Window, ScrollContainer
+from .private.widgets import Label, FreestandingIconButton, Icon, Window, ScrollContainer
+from .private.constants import ImageTemplate
 
 PADDING = 10
 ICON_SIZE = 32
@@ -30,7 +31,6 @@ class SyncEventView(toga.Box):
 
         self.sync_event = sync_event
 
-        dbx_address = self.dbx_address + urllib.parse.quote(self.sync_event['dbx_path'])
         dirname, filename = osp.split(self.sync_event['local_path'])
         parent_dir = osp.basename(dirname)
         change_type = self.sync_event['change_type'].capitalize()
@@ -77,44 +77,36 @@ class SyncEventView(toga.Box):
             )
         )
 
-        link_local = FollowLinkButton(
-            'Show in Finder',
-            url=self.sync_event['local_path'],
+        link_button = FreestandingIconButton(
+            label='',
             enabled=exists,
-            locate=True,
+            icon=Icon(template=ImageTemplate.Reveal),
             style=Pack(
-                padding_right=PADDING,
-                font_size=11,
                 background_color=TRANSPARENT,
-                height=12
+                height=ICON_SIZE,
+                padding=(0, PADDING)
             ),
-        )
-        link_dbx = FollowLinkButton(
-            'Show Online',
-            url=dbx_address,
-            enabled=exists,
-            style=Pack(font_size=11, background_color=TRANSPARENT, height=12)
+            on_press=self._reveal
         )
 
-        link_box = toga.Box(
-            children=[link_local, link_dbx],
-            style=Pack(direction=ROW, flex=1, background_color=TRANSPARENT, height=12)
-        )
         info_box = toga.Box(
             children=[filename_label, details_label],
             style=Pack(direction=COLUMN, flex=1, background_color=TRANSPARENT)
         )
         content_box = toga.Box(
-            children=[image_view, info_box],
+            children=[image_view, info_box, link_button],
             style=Pack(direction=ROW, flex=1, background_color=TRANSPARENT)
         )
-
-        if exists:
-            info_box.add(link_box)
 
         hline = toga.Divider(style=Pack(padding=(PADDING, 0, PADDING, 0)))
 
         self.add(content_box, hline)
+
+    def _reveal(self, widget):
+        click.launch(self.sync_event['local_path'], locate=True)
+
+    def _open(self, widget):
+        click.launch(self.sync_event['local_path'])
 
 
 class ActivityWindow(Window):
