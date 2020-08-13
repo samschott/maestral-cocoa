@@ -142,21 +142,22 @@ class ActivityWindow(Window):
         self.content = self.scroll_container
         self.center()
 
-        self.refresh_gui()
+        create_task(self.refresh_gui())
         self._periodic_refresh_task = None
 
     async def periodic_refresh_gui(self, interval=1):
 
         while True:
-            self.refresh_gui()
+            await self.refresh_gui()
             await asyncio.sleep(interval)
 
-    def refresh_gui(self):
+    async def refresh_gui(self):
 
         for event in self.mdbx.get_history():
             if event['id'] not in self._ids:
                 self.sync_event_box.insert(0, SyncEventView(event))
                 self._ids.add(event['id'])
+                await asyncio.sleep(0.05)
 
     def on_close(self):
         if self._periodic_refresh_task:

@@ -84,6 +84,7 @@ class MaestralGui(SystemTrayApp):
         self.setup_dialog = None
         self.settings_window = None
         self.sync_issues_window = None
+        self.activity_window = None
 
         self.item_status = None
         self.item_email = None
@@ -218,6 +219,7 @@ class MaestralGui(SystemTrayApp):
             return
 
         self.settings_window = SettingsWindow(self.mdbx, app=self)
+        self.activity_window = ActivityWindow(self.mdbx, app=self)
 
         # ------------- populate context menu -------------------
 
@@ -323,7 +325,7 @@ class MaestralGui(SystemTrayApp):
         SyncIssuesWindow(self.mdbx, app=self).raise_()
 
     def on_activity_clicked(self, widget):
-        ActivityWindow(self.mdbx, app=self).raise_()
+        self.activity_window.raise_()
 
     def on_rebuild_clicked(self, widget):
         choice = self.alert(
