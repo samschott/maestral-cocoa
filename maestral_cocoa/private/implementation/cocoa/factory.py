@@ -33,13 +33,14 @@ from .constants import (
     NSButtonTypeMomentaryPushIn, NSFocusRingTypeNone, NSControlState,
     NSSquareStatusItemLength, NSWindowAnimationBehaviorDefault,
     NSWindowAnimationBehaviorAlertPanel, NSUTF8StringEncoding, NSImageLeading,
-    NSImageNameFollowLinkFreestandingTemplate, NSVisualEffectStateActive,
-    NSVisualEffectBlendingModeBehindWindow, NSCompositeSourceOver
-
+    NSVisualEffectStateActive, NSVisualEffectBlendingModeBehindWindow,
+    NSCompositeSourceOver, NSImageNameFollowLinkFreestandingTemplate,
+    NSImageNameInvalidDataFreestandingTemplate, NSImageNameRefreshFreestandingTemplate,
+    NSImageNameRevealFreestandingTemplate, NSImageNameStopProgressFreestandingTemplate
 )
 from ...constants import (
     WORD_WRAP, CHARACTER_WRAP, CLIP, TRUNCATE_HEAD, TRUNCATE_MIDDLE, TRUNCATE_TAIL,
-    ON, OFF, MIXED,
+    ON, OFF, MIXED, ImageTemplate
 )
 
 
@@ -53,25 +54,52 @@ NSAutoreleasePool = ObjCClass('NSAutoreleasePool')
 
 # ==== icons =============================================================================
 
-class IconForPath:
+class Icon:
     """Reimplements toga.Icon but provides the icon for the file / folder type
     instead of loading an icon from the file content."""
 
-    def __init__(self, interface, path):
+    _to_cocoa_template = {
+        None: None,
+        ImageTemplate.Refresh: NSImageNameRefreshFreestandingTemplate,
+        ImageTemplate.FollowLink: NSImageNameFollowLinkFreestandingTemplate,
+        ImageTemplate.Reveal: NSImageNameRevealFreestandingTemplate,
+        ImageTemplate.InvalidData: NSImageNameInvalidDataFreestandingTemplate,
+        ImageTemplate.StopProgress: NSImageNameStopProgressFreestandingTemplate
+    }
+
+    def __init__(self, interface, path=None, for_path=None, template=None):
         self.interface = interface
         self.interface._impl = self
         self.path = path
+        self.for_path = for_path
+        self.template = template
+
+        self._native = None
 
     @property
     def native(self):
-        # always return a new pointer since an old one may be invalidated
-        # icons are cached by AppKit anyways
-        path = str(self.path)
-        if osp.exists(path):
-            return NSWorkspace.sharedWorkspace.iconForFile(path)
-        else:
-            _, extension = osp.splitext(path)
-            return NSWorkspace.sharedWorkspace.iconForFileType(extension)
+
+        if self._native:
+            return self._native
+
+        if self.path:
+            self._native = NSImage.alloc().initWithContentsOfFile(self.path)
+            return self._native
+
+        elif self.for_path:
+            # always return a new pointer since an old one may be invalidated
+            # icons are cached by AppKit anyways
+            path = str(self.for_path)
+            if osp.exists(path):
+                return NSWorkspace.sharedWorkspace.iconForFile(path)
+            else:
+                _, extension = osp.splitext(path)
+                return NSWorkspace.sharedWorkspace.iconForFileType(extension)
+
+        elif self.template:
+            cocoa_template = self._to_cocoa_template[self.template]
+            self._native = NSImage.imageNamed(cocoa_template)
+            return self._native
 
 
 # ==== labels ============================================================================
@@ -218,7 +246,7 @@ class RichMultilineTextInput(TogaMultilineTextInput):
 
 # ==== buttons ===========================================================================
 
-class FollowLinkButton(TogaButton):
+class FreestandingIconButton(TogaButton):
     """A styled button to follow a link (file or url)"""
 
     def create(self):
@@ -227,13 +255,17 @@ class FollowLinkButton(TogaButton):
         self.native.bordered = False
         self.native.buttonType = NSButtonTypeMomentaryPushIn
         self.native.bezelStyle = NSRecessedBezelStyle
-        self.native.image = NSImage.imageNamed(NSImageNameFollowLinkFreestandingTemplate).resizeTo(11)
         self.native.imagePosition = NSImageLeading
         self.native.alignment = NSTextAlignment(LEFT)
         self.native.focusRingType = NSFocusRingTypeNone
 
     def set_label(self, label):
         self.native.title = ' {}'.format(self.interface.label)
+
+    def set_icon(self, icon_iface):
+        factory = get_platform_factory()
+        icon = icon_iface.bind(factory)
+        self.native.image = icon.native.resizeTo(11)
 
 
 class Switch(TogaSwitch):
@@ -281,7 +313,8 @@ class Selection(TogaSelection):
             self.native.addItemWithTitle(label)
 
             if icon_iface:
-                icon = icon_iface.bind(self.interface.factory)
+                factory = get_platform_factory()
+                icon = icon_iface.bind(factory)
                 icon = icon.native.resizeTo(16)
                 self.native.lastItem.image = icon
 
@@ -508,7 +541,8 @@ class SystemTrayApp(TogaApp):
         self.native = CocoaSystemTrayApp.sharedApplication
         self.native.activationPolicy = NSApplicationActivationPolicyAccessory
 
-        self.interface.icon.bind(self.interface.factory)
+        factory = get_platform_factory()
+        self.interface.icon.bind(factory)
         self.native.applicationIconImage = self.interface.icon._impl.native
 
         self.resource_path = osp.dirname(osp.dirname(NSBundle.mainBundle.bundlePath))

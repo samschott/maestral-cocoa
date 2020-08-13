@@ -32,7 +32,7 @@ from maestral_cocoa.utils import (
     call_async_threaded, call_async_threaded_maestral, create_task
 )
 from maestral_cocoa.private.widgets import (
-    MenuItem, MenuItemSeparator, Menu, StatusBarItem, SystemTrayApp
+    MenuItem, MenuItemSeparator, Menu, StatusBarItem, SystemTrayApp, Icon
 )
 from maestral_cocoa.setup import SetupDialog
 from maestral_cocoa.settings import SettingsWindow
@@ -65,13 +65,13 @@ class MaestralGui(SystemTrayApp):
     START_TEXT = 'Start Syncing'
 
     icon_mapping = {
-        IDLE: toga.Icon(TRAY_ICON_PATH.format('idle')),
-        SYNCING: toga.Icon(TRAY_ICON_PATH.format('syncing')),
-        PAUSED: toga.Icon(TRAY_ICON_PATH.format('paused')),
-        STOPPED: toga.Icon(TRAY_ICON_PATH.format('error')),
-        DISCONNECTED: toga.Icon(TRAY_ICON_PATH.format('disconnected')),
-        SYNC_ERROR: toga.Icon(TRAY_ICON_PATH.format('info')),
-        ERROR: toga.Icon(TRAY_ICON_PATH.format('error')),
+        IDLE: Icon(TRAY_ICON_PATH.format('idle')),
+        SYNCING: Icon(TRAY_ICON_PATH.format('syncing')),
+        PAUSED: Icon(TRAY_ICON_PATH.format('paused')),
+        STOPPED: Icon(TRAY_ICON_PATH.format('error')),
+        DISCONNECTED: Icon(TRAY_ICON_PATH.format('disconnected')),
+        SYNC_ERROR: Icon(TRAY_ICON_PATH.format('info')),
+        ERROR: Icon(TRAY_ICON_PATH.format('error')),
     }
 
     config_name = 'maestral'

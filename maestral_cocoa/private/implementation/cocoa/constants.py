@@ -63,4 +63,9 @@ NSUTF8StringEncoding = 4
 NSImageLeading = 7
 
 NSTextEncodingNameDocumentOption = 'TextEncodingName'
+
 NSImageNameFollowLinkFreestandingTemplate = 'NSFollowLinkFreestandingTemplate'
+NSImageNameInvalidDataFreestandingTemplate = 'NSImageNameInvalidDataFreestandingTemplate'
+NSImageNameRefreshFreestandingTemplate = 'NSImageNameRefreshFreestandingTemplate'
+NSImageNameRevealFreestandingTemplate = 'NSImageNameRevealFreestandingTemplate'
+NSImageNameStopProgressFreestandingTemplate = 'NSImageNameStopProgressFreestandingTemplate'

@@ -12,7 +12,7 @@ from toga.constants import ROW, COLUMN, TRANSPARENT, GREEN
 
 # local imports
 from .utils import create_task
-from .private.widgets import Label, FollowLinkButton, IconForPath, Window, ScrollContainer
+from .private.widgets import Label, FollowLinkButton, Icon, Window, ScrollContainer
 from .private.constants import WORD_WRAP
 
 
@@ -32,7 +32,7 @@ class SyncIssueView(toga.Box):
         self.sync_err = sync_err
         dbx_address = self.dbx_address + urllib.parse.quote(self.sync_err['dbx_path'])
 
-        icon = IconForPath(self.sync_err['local_path'])
+        icon = Icon(for_path=self.sync_err['local_path'])
         # noinspection PyTypeChecker
         image_view = toga.ImageView(
             image=icon,

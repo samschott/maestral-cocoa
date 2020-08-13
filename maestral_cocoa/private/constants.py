@@ -31,3 +31,11 @@ class VisualEffectMaterial(Enum):
     ContentBackground = 18  # The material for the background of opaque content
     UnderWindowBackground = 21  # The material for under a window's background
     UnderPageBackground = 22  # The material for the area behind the pages of a document
+
+
+class ImageTemplate(Enum):
+    FollowLink = 0
+    InvalidData = 1
+    Refresh = 2
+    Reveal = 3
+    StopProgress = 4

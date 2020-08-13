@@ -11,7 +11,7 @@ from maestral import __version__
 from . import __url__
 from .private.widgets import (
     Window, DialogButtons, VibrantBox,
-    Label, RichMultilineTextInput, FollowLinkButton
+    Label, RichMultilineTextInput, FollowLinkButton, Icon
 )
 from .private.constants import VisualEffectMaterial, WORD_WRAP
 from .utils import call_async_threaded_maestral
@@ -62,7 +62,7 @@ class Dialog(Window):
             if self.app:
                 icon = self.app.icon
             else:
-                icon = toga.Icon('')
+                icon = Icon('')
 
         self.msg_title = Label(
             text=title,

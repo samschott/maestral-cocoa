@@ -10,7 +10,7 @@ from maestral.utils.appdirs import get_home_dir
 
 # local imports
 from .private.constants import OFF
-from .private.widgets import IconForPath
+from .private.widgets import Icon
 from .utils import call_async_threaded_maestral
 from .setup_gui import SetupDialogGui
 from .selective_sync import FileSystemSource
@@ -194,7 +194,7 @@ class SetupDialog(SetupDialogGui):
 
     def _update_comboxbox_location(self, path):
         self.dbx_location_user_selected = path
-        icon = IconForPath(path)
+        icon = Icon(for_path=path)
         short_path = self._relpath(path)
         self.combobox_dbx_location.items = [
             (icon, short_path),

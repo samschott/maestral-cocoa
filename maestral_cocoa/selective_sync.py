@@ -14,7 +14,7 @@ from maestral.errors import NotAFolderError, NotFoundError
 from .selective_sync_gui import SelectiveSyncGui
 from .utils import call_async_threaded_maestral, create_task
 from .private.constants import ON, OFF, MIXED
-from .private.widgets import IconForPath, Switch
+from .private.widgets import Icon, Switch
 
 
 class Node:
@@ -25,10 +25,10 @@ class Node:
         self.path = path
         self.is_folder = is_folder
         if is_folder:
-            self._icon = IconForPath('/usr')
+            self._icon = Icon(for_path='/usr')
         else:
             # use a non-existing file to get generic icon
-            self._icon = IconForPath('/test.file')
+            self._icon = Icon(for_path='/test.file')
         self.parent = parent
         self._children = []
         self._did_start_loading = False

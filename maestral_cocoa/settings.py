@@ -13,7 +13,7 @@ from maestral.utils.autostart import AutoStart
 # local imports
 from .utils import request_authorization_from_user_and_run, create_task
 from .private.constants import ON, OFF
-from .private.widgets import IconForPath, apply_round_clipping
+from .private.widgets import Icon, apply_round_clipping
 from .settings_gui import SettingsGui
 from .selective_sync import SelectiveSyncDialog
 from .resources import FACEHOLDER_PATH
@@ -160,7 +160,7 @@ class SettingsWindow(SettingsGui):
     def _update_combobox_location(self, path):
         if path != self._cached_dbx_location:
             self._cached_dbx_location = path
-            icon = IconForPath(path)
+            icon = Icon(for_path=path)
             short_path = osp.basename(path)
             self.combobox_dbx_location.items = [
                 (icon, short_path), toga.SECTION_BREAK, self.COMBOBOX_CHOOSE

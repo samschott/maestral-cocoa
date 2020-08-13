@@ -10,7 +10,7 @@ from maestral.utils.appdirs import get_home_dir
 from maestral.utils.path import delete
 
 # local imports
-from .private.widgets import IconForPath, Selection
+from .private.widgets import Icon, Selection
 from .dialogs import Dialog
 
 
@@ -142,7 +142,7 @@ class DbxLocationDialog(Dialog):
 
     def _update_comboxbox_location(self, path):
         self.dbx_location_user_selected = path
-        icon = IconForPath(path)
+        icon = Icon(for_path=path)
         short_path = self._relpath(path)
         self.combobox_dbx_location.items = [
             (icon, short_path),

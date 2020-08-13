@@ -13,7 +13,7 @@ from toga.constants import ROW, COLUMN, TRANSPARENT, GRAY
 
 # local imports
 from .utils import create_task
-from .private.widgets import Label, FollowLinkButton, IconForPath, Window, ScrollContainer
+from .private.widgets import Label, FollowLinkButton, Icon, Window, ScrollContainer
 
 PADDING = 10
 ICON_SIZE = 32
@@ -40,9 +40,9 @@ class SyncEventView(toga.Box):
         exists = osp.exists(self.sync_event['local_path'])
 
         if self.sync_event['item_type'] == 'folder' and not exists:
-            icon = IconForPath('/usr')
+            icon = Icon(for_path='/usr')
         else:
-            icon = IconForPath(self.sync_event['local_path'])
+            icon = Icon(for_path=self.sync_event['local_path'])
 
         # noinspection PyTypeChecker
         image_view = toga.ImageView(

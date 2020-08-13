@@ -3,18 +3,16 @@ import asyncio
 
 # external imports
 import click
-
 import toga
 from toga.handlers import wrapped_handler
 from toga.widgets.base import Widget
-from toga.icons import Icon
 from toga.style.pack import Pack
 from toga.constants import ROW, RIGHT, TRANSPARENT
 
 # local imports
 from .platform import get_platform_factory
 from .constants import (
-    ON, MIXED, TRUNCATE_TAIL, VisualEffectMaterial,
+    ON, MIXED, TRUNCATE_TAIL, VisualEffectMaterial, ImageTemplate
 )
 
 
@@ -190,23 +188,28 @@ class Switch(toga.Switch):
         self._impl.set_on_toggle(self._on_toggle)
 
 
-class FollowLinkButton(Widget):
-    """A macOS style 'follow link' button that takes you to a file or web URL."""
+class FreestandingIconButton(toga.Widget):
+    """A freestanding button with an icon."""
 
-    def __init__(self, label, url=None, locate=False, id=None, style=None, enabled=True,
+    def __init__(self, label, icon=None, id=None, style=None, on_press=None, enabled=True,
                  factory=private_factory):
         super().__init__(id=id, enabled=enabled, style=style, factory=factory)
 
         # Create a platform specific implementation of a Button
-        self._impl = self.factory.FollowLinkButton(interface=self)
+        self._impl = self.factory.FreestandingIconButton(interface=self)
 
         # Set all the properties
-        self.locate = locate
         self.label = label
-        self.url = url
+        self.on_press = on_press
+        self.enabled = enabled
+        self.icon = icon
 
     @property
     def label(self):
+        """
+        Returns:
+            The button label as a ``str``
+        """
         return self._label
 
     @label.setter
@@ -218,8 +221,54 @@ class FollowLinkButton(Widget):
         self._impl.set_label(value)
         self._impl.rehint()
 
+    @property
+    def icon(self):
+        """
+        Returns:
+            The button icon
+        """
+        return self._icon
+
+    @icon.setter
+    def icon(self, value):
+        self._icon = value
+        self._impl.set_icon(value)
+        self._impl.rehint()
+
+    @property
+    def on_press(self):
+        """The handler to invoke when the button is pressed.
+
+        Returns:
+            The function ``callable`` that is called on button press.
+        """
+        return self._on_press
+
+    @on_press.setter
     def on_press(self, handler):
-        click.launch(self.url, locate=self.locate)
+        """Set the handler to invoke when the button is pressed.
+
+        Args:
+            handler (:obj:`callable`): The handler to invoke when the button is pressed.
+        """
+        self._on_press = wrapped_handler(self, handler)
+        self._impl.set_on_press(self._on_press)
+
+
+class FollowLinkButton(FreestandingIconButton):
+
+    def __init__(self, label, url=None, locate=False, id=None, style=None, enabled=True,
+                 factory=private_factory):
+        icon = Icon(template=ImageTemplate.FollowLink)
+        self.url = url
+        self.locate = locate
+        super().__init__(label, icon=icon, id=id, enabled=enabled, style=style,
+                         factory=factory)
+
+        def handler(widget):
+            click.launch(widget.url, locate=widget.locate)
+
+        self._on_press = wrapped_handler(self, handler)
 
 
 class Selection(toga.Selection):
@@ -301,7 +350,7 @@ class RichLabel(Widget):
 
 # ==== icons =============================================================================
 
-class IconForPath(toga.Icon):
+class Icon(toga.Icon):
     """
     Reimplements toga.Icon to provide the icon for the file / folder type
     instead of loading an icon from the file content.
@@ -309,12 +358,19 @@ class IconForPath(toga.Icon):
     :param path: File to path.
     """
 
-    def __init__(self, path, system=False):
+    def __init__(self, path=None, for_path=None, template=None, system=False):
         super().__init__(path, system)
+        self.for_path = for_path
+        self.template = template
 
     def bind(self, factory):
         if self._impl is None:
-            self._impl = private_factory.IconForPath(interface=self, path=self.path)
+            self._impl = private_factory.Icon(
+                interface=self,
+                path=self.path,
+                for_path=self.for_path,
+                template=self.template
+            )
 
         return self._impl
 
