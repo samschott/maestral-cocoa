@@ -5,25 +5,42 @@ import os.path as osp
 
 # external imports
 from toga import SECTION_BREAK
+from toga.constants import LEFT, TRANSPARENT
 from toga.platform import get_platform_factory
-from toga_cocoa.libs import *
+from toga_cocoa.libs import (
+    ObjCClass, NSColor, NSString, at, NSTextView, NSRecessedBezelStyle,
+    NSTextAlignment, NSViewMaxYMargin, NSMenuItem, SEL, objc_method, NSKeyDown, NSMenu,
+    NSApplication, send_super, NSObject, NSApplicationActivationPolicyAccessory, NSBundle,
+    NSImage, NSImageInterpolationHigh, NSGraphicsContext, NSRect, NSPoint, NSBezierPath,
+    NSTextField
+)
 from toga_cocoa.colors import native_color
 from toga_cocoa.keys import toga_key, Key
 from toga_cocoa.app import App as TogaApp
 from toga_cocoa.widgets.base import Widget
 from toga_cocoa.widgets.switch import Switch as TogaSwitch, at_least
-from toga_cocoa.widgets.label import Label as TogaLabel
 from toga_cocoa.widgets.button import Button as TogaButton
 from toga_cocoa.widgets.selection import Selection as TogaSelection
+from toga_cocoa.widgets.scrollcontainer import ScrollContainer as TogaScrollContainer
+from toga_cocoa.window import Window as TogaWindow
 from toga_cocoa.widgets.multilinetextinput import MultilineTextInput as TogaMultilineTextInput
-from toga_cocoa.factory import *
+from toga_cocoa.factory import *  # noqa: F401,F406
+from rubicon.objc import NSMakeSize, NSMakeRect
 
 # local imports
+from . import dialogs
 from .constants import (
-    WORD_WRAP, CHARACTER_WRAP, CLIP, TRUNCATE_HEAD, TRUNCATE_MIDDLE, TRUNCATE_TAIL,
     NSButtonTypeMomentaryPushIn, NSFocusRingTypeNone, NSControlState,
-    NSSquareStatusItemLength,
-    ON, OFF, MIXED,
+    NSSquareStatusItemLength, NSWindowAnimationBehaviorDefault,
+    NSWindowAnimationBehaviorAlertPanel, NSUTF8StringEncoding, NSImageLeading,
+    NSVisualEffectStateActive, NSVisualEffectBlendingModeBehindWindow,
+    NSCompositeSourceOver, NSImageNameFollowLinkFreestandingTemplate,
+    NSImageNameInvalidDataFreestandingTemplate, NSImageNameRefreshFreestandingTemplate,
+    NSImageNameRevealFreestandingTemplate, NSImageNameStopProgressFreestandingTemplate
+)
+from ...constants import (
+    WORD_WRAP, CHARACTER_WRAP, CLIP, TRUNCATE_HEAD, TRUNCATE_MIDDLE, TRUNCATE_TAIL,
+    ON, OFF, MIXED, ImageTemplate
 )
 
 
@@ -32,35 +49,57 @@ NSVisualEffectView = ObjCClass('NSVisualEffectView')
 NSMutableAttributedString = ObjCClass('NSMutableAttributedString')
 NSStatusBar = ObjCClass('NSStatusBar')
 NSColorSpace = ObjCClass('NSColorSpace')
-
-shared_workspace = NSWorkspace.sharedWorkspace
-
-NSVisualEffectBlendingModeBehindWindow = 0
-NSVisualEffectStateActive = 1
-NSCompositeSourceOver = 2
-NSUTF8StringEncoding = 4
-NSImageLeading = 7
-
-NSTextEncodingNameDocumentOption = 'TextEncodingName'
-NSImageNameFollowLinkFreestandingTemplate = 'NSFollowLinkFreestandingTemplate'
+NSAutoreleasePool = ObjCClass('NSAutoreleasePool')
 
 
 # ==== icons =============================================================================
 
-class IconForPath:
+class Icon:
     """Reimplements toga.Icon but provides the icon for the file / folder type
     instead of loading an icon from the file content."""
 
-    def __init__(self, interface, path):
+    _to_cocoa_template = {
+        None: None,
+        ImageTemplate.Refresh: NSImageNameRefreshFreestandingTemplate,
+        ImageTemplate.FollowLink: NSImageNameFollowLinkFreestandingTemplate,
+        ImageTemplate.Reveal: NSImageNameRevealFreestandingTemplate,
+        ImageTemplate.InvalidData: NSImageNameInvalidDataFreestandingTemplate,
+        ImageTemplate.StopProgress: NSImageNameStopProgressFreestandingTemplate
+    }
+
+    def __init__(self, interface, path=None, for_path=None, template=None):
         self.interface = interface
         self.interface._impl = self
         self.path = path
+        self.for_path = for_path
+        self.template = template
+
+        self._native = None
 
     @property
     def native(self):
-        # always return a new pointer since an old one may be invalidated
-        # icons are cached by AppKit anyways
-        return shared_workspace.iconForFile(str(self.path))
+
+        if self._native:
+            return self._native
+
+        if self.path:
+            self._native = NSImage.alloc().initWithContentsOfFile(self.path)
+            return self._native
+
+        elif self.for_path:
+            # always return a new pointer since an old one may be invalidated
+            # icons are cached by AppKit anyways
+            path = str(self.for_path)
+            if osp.exists(path):
+                return NSWorkspace.sharedWorkspace.iconForFile(path)
+            else:
+                _, extension = osp.splitext(path)
+                return NSWorkspace.sharedWorkspace.iconForFileType(extension)
+
+        elif self.template:
+            cocoa_template = self._to_cocoa_template[self.template]
+            self._native = NSImage.imageNamed(cocoa_template)
+            return self._native
 
 
 # ==== labels ============================================================================
@@ -88,7 +127,7 @@ def attributed_str_from_html(raw_html, font=None, color=None):
     return attr_str
 
 
-class Label(TogaLabel):
+class Label(Widget):
     """Reimplements toga_cocoa.Label with text wrapping."""
 
     _toga_to_cocoa_linebreakmode = {
@@ -101,20 +140,51 @@ class Label(TogaLabel):
     }
 
     def create(self):
-        super().create()
-        self.native.drawsBackground = False
+        self.native = NSTextField.labelWithString('')
+        self.native.impl = self
+        self.native.interface = self.interface
+
+        # Add the layout constraints
+        self.add_constraints()
+
+    def set_alignment(self, value):
+        self.native.alignment = NSTextAlignment(value)
+
+    def set_color(self, value):
+        if value:
+            self.native.textColor = native_color(value)
+
+    def set_font(self, font):
+        if font:
+            self.native.font = font.bind(self.interface.factory).native
+
+    def set_text(self, value):
+        self.native.stringValue = value
 
     def set_linebreak_mode(self, value):
         self.native.cell.lineBreakMode = self._toga_to_cocoa_linebreakmode[value]
 
+    def set_background_color(self, color):
+        if color in (None, TRANSPARENT):
+            self.native.backgroundColor = NSColor.clearColor
+            self.native.drawsBackground = False
+        else:
+            self.native.backgroundColor = native_color(color)
+            self.native.drawsBackground = True
+
     def rehint(self):
-        if self.interface.linebreak_mode in (WORD_WRAP, CHARACTER_WRAP):
-            availableLabelWidth = self.interface.style.width
-            if availableLabelWidth:
-                self.native.preferredMaxLayoutWidth = availableLabelWidth
+
+        if self.interface.style.width:
+            self.native.preferredMaxLayoutWidth = self.interface.style.width
+
         content_size = self.native.intrinsicContentSize()
-        self.interface.intrinsic.width = at_least(content_size.width)
-        self.interface.intrinsic.height = at_least(content_size.height)
+
+        if self.interface.style.width:
+            self.interface.intrinsic.width = at_least(content_size.width)
+            self.interface.intrinsic.height = at_least(content_size.height)
+        else:
+            self.interface.intrinsic.width = at_least(0)
+            self.interface.intrinsic.height = at_least(content_size.height)
 
 
 class RichLabel(Widget):
@@ -139,13 +209,16 @@ class RichLabel(Widget):
         self.add_constraints()
 
     def set_html(self, value):
-        attr_str = attributed_str_from_html(value, self.native.font, self._color)
+        attr_str = attributed_str_from_html(value, color=self._color)
         self.native.textStorage.setAttributedString(attr_str)
         self.rehint()
 
-    def set_font(self, value):
-        if value:
-            self.native.font = value._impl.native
+    def set_font(self, font):
+        native_font = font.bind(self.interface.factory).native
+        attr_str = attributed_str_from_html(self.interface.html, color=self._color,
+                                            font=native_font)
+        self.native.textStorage.setAttributedString(attr_str)
+        self.rehint()
 
     def set_color(self, value):
         if value:
@@ -155,21 +228,25 @@ class RichLabel(Widget):
         self.set_html(self.interface.html)
 
     def rehint(self):
-        self.interface.intrinsic.width = at_least(self.interface.MIN_WIDTH)
-        self.interface.intrinsic.height = at_least(self.interface.MIN_HEIGHT)
+        # force layout and get layout rect
+        self.native.layoutManager.glyphRangeForTextContainer(self.native.textContainer)
+        rect = self.native.layoutManager.usedRectForTextContainer(self.native.textContainer)
+
+        self.interface.intrinsic.width = at_least(rect.size.width)
+        self.interface.intrinsic.height = rect.size.height
 
 
 class RichMultilineTextInput(TogaMultilineTextInput):
     """A scrollable text view with html support."""
 
     def set_html(self, value):
-        attr_str = attributed_str_from_html(value, self.text.font)
+        attr_str = attributed_str_from_html(value, font=self.text.font)
         self.text.textStorage.setAttributedString(attr_str)
 
 
 # ==== buttons ===========================================================================
 
-class FollowLinkButton(TogaButton):
+class FreestandingIconButton(TogaButton):
     """A styled button to follow a link (file or url)"""
 
     def create(self):
@@ -178,13 +255,17 @@ class FollowLinkButton(TogaButton):
         self.native.bordered = False
         self.native.buttonType = NSButtonTypeMomentaryPushIn
         self.native.bezelStyle = NSRecessedBezelStyle
-        self.native.image = NSImage.imageNamed(NSImageNameFollowLinkFreestandingTemplate).resizeTo(11)
         self.native.imagePosition = NSImageLeading
         self.native.alignment = NSTextAlignment(LEFT)
         self.native.focusRingType = NSFocusRingTypeNone
 
     def set_label(self, label):
         self.native.title = ' {}'.format(self.interface.label)
+
+    def set_icon(self, icon_iface):
+        factory = get_platform_factory()
+        icon = icon_iface.bind(factory)
+        self.native.image = icon.native.resizeTo(11)
 
 
 class Switch(TogaSwitch):
@@ -205,9 +286,9 @@ class Switch(TogaSwitch):
     def get_state(self):
         return self._to_toga[self.native.state]
 
-    def set_font(self, value):
-        if value:
-            self.native.font = value._impl.native
+    def set_font(self, font):
+        if font:
+            self.native.font = font.bind(self.interface.factory).native
 
     def rehint(self):
         content_size = self.native.intrinsicContentSize()
@@ -216,6 +297,7 @@ class Switch(TogaSwitch):
 
 
 class Selection(TogaSelection):
+    """Reimplements toga_cocoa.Selection to allow section breaks."""
 
     def add_item(self, item):
         if isinstance(item, tuple):
@@ -231,7 +313,8 @@ class Selection(TogaSelection):
             self.native.addItemWithTitle(label)
 
             if icon_iface:
-                icon = icon_iface.bind(self.interface.factory)
+                factory = get_platform_factory()
+                icon = icon_iface.bind(factory)
                 icon = icon.native.resizeTo(16)
                 self.native.lastItem.image = icon
 
@@ -271,9 +354,31 @@ class VibrantBox(Widget):
         self.interface.intrinsic.height = at_least(content_size.height)
 
 
+class ScrollContainer(TogaScrollContainer):
+
+    def set_bounds(self, x, y, width, height):
+        super().set_bounds(x, y, width, height)
+        if not self.interface.horizontal:
+            self.interface.content._impl.native.frame = NSMakeRect(
+                0, 0,
+                width, self.interface.content.layout.height
+            )
+        elif not self.interface.vertical:
+            self.interface.content._impl.native.frame = NSMakeRect(
+                0, 0,
+                self.interface.content.layout.width, height
+            )
+        else:
+            self.interface.content._impl.native.frame = NSMakeRect(
+                0, 0,
+                self.interface.content.layout.width, self.interface.content.layout.height
+            )
+
+
 # ==== menus and status bar ==============================================================
 
 class TogaMenuItem(NSMenuItem):
+
     @objc_method
     def onPress_(self, obj) -> None:
         if self.interface.action:
@@ -281,6 +386,7 @@ class TogaMenuItem(NSMenuItem):
 
 
 class MenuItem:
+
     def __init__(self, interface):
         self.interface = interface
         self.native = TogaMenuItem.alloc().init()
@@ -320,6 +426,7 @@ class MenuItem:
 
 
 class MenuItemSeparator:
+
     def __init__(self, interface):
         self.interface = interface
         self.native = NSMenuItem.separatorItem()
@@ -392,6 +499,7 @@ class StatusBarItem:
 
 
 class CocoaSystemTrayApp(NSApplication):
+
     @objc_method
     def sendEvent_(self, event) -> None:
         if event.type == NSKeyDown:
@@ -408,8 +516,10 @@ class CocoaSystemTrayApp(NSApplication):
                 self.sendAction_to_from_(SEL('redo:'), None, self)
             elif toga_event == {'key': Key.A, 'modifiers': {Key.MOD_1}}:
                 self.sendAction_to_from_(SEL('selectAll:'), None, self)
-
-        send_super(__class__, self, 'sendEvent:', event)
+            else:
+                send_super(__class__, self, 'sendEvent:', event)
+        else:
+            send_super(__class__, self, 'sendEvent:', event)
 
 
 class SystemTrayAppDelegate(NSObject):
@@ -430,6 +540,9 @@ class SystemTrayApp(TogaApp):
     def create(self):
         self.native = CocoaSystemTrayApp.sharedApplication
         self.native.activationPolicy = NSApplicationActivationPolicyAccessory
+
+        factory = get_platform_factory()
+        self.interface.icon.bind(factory)
         self.native.applicationIconImage = self.interface.icon._impl.native
 
         self.resource_path = osp.dirname(osp.dirname(NSBundle.mainBundle.bundlePath))
@@ -453,3 +566,116 @@ class SystemTrayApp(TogaApp):
 
     def open_document(self, path):
         pass
+
+    def alert(self, title, message, details, details_title, button_labels, checkbox_text,
+              level, icon):
+
+        return dialogs.alert(title, message, details, details_title, button_labels,
+                             checkbox_text, level, icon)
+
+
+class Window(TogaWindow):
+
+    def is_visible(self):
+        return bool(self.native.isVisible)
+
+    def center(self):
+        self.native.center()
+
+    def force_to_front(self):
+        self.native.makeKeyAndOrderFront(None)
+        self.native.orderFrontRegardless()
+        if self.interface.app:
+            self.interface.app._impl.native.activateIgnoringOtherApps(True)
+
+    def show_as_sheet(self, window):
+        window._impl.native.beginSheet(self.native, completionHandler=None)
+
+    def hide(self):
+        self.native.orderOut(None)
+
+    def close(self):
+
+        if self.native.sheetParent:
+            # end sheet session before closing
+            self.native.sheetParent.endSheet(self.native)
+
+        self.native.close()
+
+    def set_release_on_close(self, value):
+        self.native.releasedWhenClosed = value
+
+    def set_dialog(self, value):
+
+        animation = NSWindowAnimationBehaviorAlertPanel if value else NSWindowAnimationBehaviorDefault
+        self.native.animationBehavior = animation
+        self.native.level = 3
+
+    def start_modal(self):
+        self.show()
+        return self.interface.app._impl.native.runModalForWindow(self.native)
+
+    def stop_modal(self, res=0):
+        if self.interface.app._impl.native.modalWindow == self.native:
+            self.interface.app._impl.native.stopModalWithCode(res)
+
+    # dialogs
+
+    async def save_file_sheet(self, title, message, suggested_filename, file_types):
+        return await dialogs.save_file_sheet(self.interface, suggested_filename, title,
+                                             message, file_types)
+
+    async def open_file_sheet(self, title, message, initial_directory, file_types,
+                              multiselect):
+        return await dialogs.open_file_sheet(self.interface, title, message, file_types,
+                                             multiselect)
+
+    async def select_folder_sheet(self, title, message, initial_directory, multiselect):
+        return await dialogs.select_folder_sheet(self.interface, title, message,
+                                                 multiselect)
+
+    async def alert_sheet(self, title, message, details, details_title, button_labels,
+                          checkbox_text, level, icon):
+        return await dialogs.alert_sheet(self.interface, title, message, details,
+                                         details_title, button_labels, checkbox_text,
+                                         level, icon)
+
+
+# ==== helpers ===========================================================================
+
+def apply_round_clipping(image_view_impl: ImageView):
+    """Clips an image in a given toga_cocoa.ImageView to a circular mask."""
+
+    pool = NSAutoreleasePool.alloc().init()
+
+    image = image_view_impl.native.image  # get native NSImage
+
+    composed_image = NSImage.alloc().initWithSize(image.size)
+    composed_image.lockFocus()
+
+    ctx = NSGraphicsContext.currentContext
+    ctx.saveGraphicsState()
+    ctx.imageInterpolation = NSImageInterpolationHigh
+
+    image_frame = NSRect(NSPoint(0, 0), image.size)
+    clip_path = NSBezierPath.bezierPathWithRoundedRect(
+        image_frame,
+        xRadius=image.size.width / 2,
+        yRadius=image.size.height / 2
+    )
+    clip_path.addClip()
+
+    zero_rect = NSRect(NSPoint(0, 0), NSMakeSize(0, 0))
+    image.drawInRect(
+        image_frame,
+        fromRect=zero_rect,
+        operation=NSCompositeSourceOver,
+        fraction=1
+    )
+    composed_image.unlockFocus()
+    ctx.restoreGraphicsState()
+
+    image_view_impl.native.image = composed_image
+
+    pool.drain()
+    del pool
