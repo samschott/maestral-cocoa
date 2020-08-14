@@ -22,9 +22,9 @@ setup(
     install_requires=[
         'bugsnag',
         'click',
-        'maestral>=1.2.0',
+        'maestral>=1.2.0.dev1',
         'markdown2',
-        'toga==0.3.0.dev22',
+        'toga==0.3.0.dev23',
         'rubicon-objc>=0.4.0',
     ],
     zip_safe=False,
