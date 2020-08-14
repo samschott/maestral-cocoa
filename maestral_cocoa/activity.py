@@ -26,9 +26,7 @@ class SyncEventRow:
     def __init__(self, sync_event):
         self.sync_event = sync_event
 
-        exists = osp.exists(self.sync_event['local_path'])
-
-        if self.sync_event['item_type'] == 'folder' and not exists:
+        if self.sync_event['item_type'] == 'folder':
             icon = Icon(for_path='/usr')
         else:
             icon = Icon(for_path=self.sync_event['local_path'])
@@ -46,12 +44,14 @@ class SyncEventRow:
             label='',
             icon=Icon(template=ImageTemplate.Reveal),
             on_press=self.on_reveal_pressed,
-            enabled=exists,
-            style=Pack(width=16, height=16)
-        ) if exists else ''
+            enabled=osp.exists(self.sync_event['local_path'])
+        )
 
     def on_reveal_pressed(self, widget):
         click.launch(self.sync_event['local_path'], locate=True)
+
+    def refresh(self):
+        self.reveal.enabled = osp.exists(self.sync_event['local_path'])
 
 
 class SyncEventSource(Source):
@@ -117,10 +117,17 @@ class ActivityWindow(Window):
 
     def refresh_gui(self):
 
+        needs_refresh = False
+
         for event in self.mdbx.get_history():
             if event['id'] not in self._ids:
                 self.table.data.insert(0, event)
                 self._ids.add(event['id'])
+                needs_refresh = True
+
+        if needs_refresh:
+            for row in self.table.data:
+                row.refresh()
 
     def on_close(self):
         if self._periodic_refresh_task:
