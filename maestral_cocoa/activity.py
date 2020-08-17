@@ -118,13 +118,14 @@ class ActivityWindow(Window):
                 title='Count not open item',
                 message='The file or folder no longer exists.'
             )
+
     async def periodic_refresh_gui(self, interval=1):
 
         while True:
-            self.refresh_gui()
+            await self.refresh_gui()
             await asyncio.sleep(interval)
 
-    def refresh_gui(self):
+    async def refresh_gui(self):
 
         needs_refresh = False
 
@@ -132,6 +133,7 @@ class ActivityWindow(Window):
             if event['id'] not in self._ids:
                 self.table.data.insert(0, event)
                 self._ids.add(event['id'])
+                await asyncio.sleep(0.002)
                 needs_refresh = True
 
         if needs_refresh:
