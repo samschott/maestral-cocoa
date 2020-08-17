@@ -102,6 +102,7 @@ class ActivityWindow(Window):
             headings=['File', 'Location', 'Change', 'Time', 'User', 'Locate'],
             accessors=['filename', 'location', 'type', 'time', 'username', 'reveal'],
             missing_value='--',
+            on_double_click=self.on_row_clicked,
             style=Pack(flex=1)
         )
         self.content = self.table
@@ -109,6 +110,14 @@ class ActivityWindow(Window):
         self.center()
         self._periodic_refresh_task = None
 
+    def on_row_clicked(self, sender, row):
+        res = click.launch(row.sync_event['local_path'])
+
+        if res != 0:
+            self.app.alert(
+                title='Count not open item',
+                message='The file or folder no longer exists.'
+            )
     async def periodic_refresh_gui(self, interval=1):
 
         while True:
