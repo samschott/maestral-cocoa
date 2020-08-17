@@ -99,7 +99,7 @@ class ActivityWindow(Window):
 
         self.table = toga.Table(
             data=SyncEventSource(),
-            headings=['File', 'Location', 'Change', 'Time', 'User', ' '],
+            headings=['File', 'Location', 'Change', 'Time', 'User', 'Locate'],
             accessors=['filename', 'location', 'type', 'time', 'username', 'reveal'],
             missing_value='--',
             style=Pack(flex=1)
