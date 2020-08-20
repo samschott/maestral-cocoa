@@ -13,8 +13,7 @@ import toga
 from toga.style.pack import Pack, FONT_SIZE_CHOICES
 from maestral.utils.autostart import AutoStart
 from maestral.constants import (
-    IDLE, SYNCING, PAUSED, STOPPED, DISCONNECTED, SYNC_ERROR, ERROR,
-    APP_NAME, BUNDLE_ID
+    IDLE, SYNCING, PAUSED, STOPPED, DISCONNECTED, SYNC_ERROR, ERROR, APP_NAME, BUNDLE_ID
 )
 from maestral.daemon import (
     start_maestral_daemon_process,
@@ -23,11 +22,11 @@ from maestral.daemon import (
     Start,
     Pyro5
 )
-from maestral import __author__, __url__
 from maestral import __version__ as __daemon_version__
 
 # local imports
 from maestral_cocoa import __version__ as __gui_version__
+from maestral_cocoa import __author__, __url__
 from maestral_cocoa.utils import (
     call_async_threaded, call_async_threaded_maestral, create_task
 )
@@ -43,6 +42,7 @@ from maestral_cocoa.dialogs import UpdateDialog, ProgressDialog, RelinkDialog
 from maestral_cocoa.resources import APP_ICON_PATH, TRAY_ICON_PATH
 
 
+# increase default font size from 12 to 13 points
 Pack.validated_property('font_size', choices=FONT_SIZE_CHOICES, initial=13)
 
 
