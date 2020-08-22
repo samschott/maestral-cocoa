@@ -26,26 +26,39 @@ class SyncEventRow:
     def __init__(self, sync_event):
         self.sync_event = sync_event
 
-        if self.sync_event['item_type'] == 'folder':
-            icon = Icon(for_path='/usr')
-        else:
-            icon = Icon(for_path=self.sync_event['local_path'])
-
         dirname, basename = osp.split(self.sync_event['local_path'])
         dt = datetime.fromtimestamp(self.sync_event['change_time_or_sync_time'])
 
         # attributes for table column values
-        self.filename = icon, basename
+        self._basename = basename
+        self._icon = None
         self.location = osp.basename(dirname)
         self.type = self.sync_event['change_type'].capitalize()
         self.time = dt.strftime('%d %b %Y %H:%M')
         self.username = self.sync_event['change_user_name']
-        self.reveal = FreestandingIconButton(
-            label='',
-            icon=Icon(template=ImageTemplate.Reveal),
-            on_press=self.on_reveal_pressed,
-            enabled=osp.exists(self.sync_event['local_path'])
-        )
+        self._reveal = None
+
+    @property
+    def filename(self):
+        if not self._icon:
+            if self.sync_event['item_type'] == 'folder':
+                self._icon = Icon(for_path='/usr')
+            else:
+                self._icon = Icon(for_path=self.sync_event['local_path'])
+
+        return self._icon, self._basename
+
+    @property
+    def reveal(self):
+        if not self._reveal:
+            self._reveal = FreestandingIconButton(
+                label='',
+                icon=Icon(template=ImageTemplate.Reveal),
+                on_press=self.on_reveal_pressed,
+                enabled=osp.exists(self.sync_event['local_path'])
+            )
+
+        return self._reveal
 
     def on_reveal_pressed(self, widget):
         click.launch(self.sync_event['local_path'], locate=True)
@@ -96,9 +109,12 @@ class ActivityWindow(Window):
         self._ids = set()
 
         self.size = WINDOW_SIZE
+        
+        sync_events = self.mdbx.get_history()
+        data_source = SyncEventSource(sync_events)
 
         self.table = toga.Table(
-            data=SyncEventSource(),
+            data=data_source,
             headings=['File', 'Location', 'Change', 'Time', 'User', 'Locate'],
             accessors=['filename', 'location', 'type', 'time', 'username', 'reveal'],
             missing_value='--',
