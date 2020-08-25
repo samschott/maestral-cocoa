@@ -104,17 +104,11 @@ class ActivityWindow(Window):
 
     def __init__(self, mdbx, app=None):
         super().__init__(title='Maestral Activity', release_on_close=False, app=app)
+        self.size = WINDOW_SIZE
 
         self.mdbx = mdbx
-        self._ids = set()
-
-        self.size = WINDOW_SIZE
-        
-        sync_events = self.mdbx.get_history()
-        data_source = SyncEventSource(sync_events)
 
         self.table = toga.Table(
-            data=data_source,
             headings=['File', 'Location', 'Change', 'Time', 'User', 'Locate'],
             accessors=['filename', 'location', 'type', 'time', 'username', 'reveal'],
             missing_value='--',
@@ -125,6 +119,7 @@ class ActivityWindow(Window):
 
         self.center()
         self._periodic_refresh_task = None
+        self._initial_load = False
 
     def on_row_clicked(self, sender, row):
         res = click.launch(row.sync_event['local_path'])
@@ -161,5 +156,12 @@ class ActivityWindow(Window):
             self._periodic_refresh_task.cancel()
 
     def show(self):
+        if not self._initial_load:
+            sync_events = self.mdbx.get_history()
+            data_source = SyncEventSource(reversed(sync_events))
+            self._ids = set(event['id'] for event in sync_events)
+            self.table.data = data_source
+            self._initial_load = True
+
         self._periodic_refresh_task = create_task(self.periodic_refresh_gui())
         super().show()
