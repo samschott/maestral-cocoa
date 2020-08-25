@@ -20,7 +20,7 @@ from maestral.daemon import (
     stop_maestral_daemon_process,
     get_maestral_proxy,
     Start,
-    Pyro5
+    CommunicationError
 )
 from maestral import __version__ as __daemon_version__
 
@@ -118,7 +118,7 @@ class MaestralGui(SystemTrayApp):
             try:
                 self.update_status()
                 self.update_error()
-            except Pyro5.errors.CommunicationError:
+            except CommunicationError:
                 super().exit()
 
             await asyncio.sleep(self.refresh_interval)
