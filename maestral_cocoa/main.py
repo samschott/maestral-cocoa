@@ -117,7 +117,7 @@ class MaestralGui(SystemTrayApp):
         while True:
             try:
                 self.update_status()
-                self.update_error()
+                await self.update_error()
             except CommunicationError:
                 super().exit()
 
@@ -370,16 +370,17 @@ class MaestralGui(SystemTrayApp):
             progress.close()
 
         if res['error']:
-            self.alert(
+            await self.alert_async(
                 title='Could not check for updates',
                 message=res['error'],
+                level='error'
             )
         elif res['update_available']:
             self.show_update_dialog(res['latest_release'], res['release_notes'])
         elif not res['update_available']:
             message = ('Maestral v{} is the newest version '
                        'available.').format(res['latest_release'])
-            self.alert(
+            await self.alert_async(
                 title='You’re up-to-date!',
                 message=message
             )
@@ -442,7 +443,7 @@ class MaestralGui(SystemTrayApp):
             self.menu_snooze.remove(self.item_resume_notifications)
             self.menu_snooze.remove(MenuItemSeparator())
 
-    def update_error(self):
+    async def update_error(self):
         errs = self.mdbx.fatal_errors
 
         if not errs:
@@ -466,9 +467,9 @@ class MaestralGui(SystemTrayApp):
         elif err['type'] == 'TokenExpiredError':
             self._exec_relink_dialog(RelinkDialog.EXPIRED)
         elif 'MaestralApiError' in err['inherits'] or 'SyncError' in err['inherits']:
-            self.alert(err['title'], err['message'], level='error')
+            await self.alert_async(err['title'], err['message'], level='error')
         else:
-            self._exec_error_dialog(err)
+            await self._exec_error_dialog(err)
 
     def _exec_dbx_location_dialog(self):
         self.setup_dialog = DbxLocationDialog(self)
@@ -478,7 +479,7 @@ class MaestralGui(SystemTrayApp):
     def _exec_relink_dialog(self, reason):
         RelinkDialog(self, reason).raise_()
 
-    def _exec_error_dialog(self, err):
+    async def _exec_error_dialog(self, err):
 
         title = 'An unexpected error occurred'
 
@@ -487,16 +488,17 @@ class MaestralGui(SystemTrayApp):
                        'Please restart Maestral to continue syncing.')
 
             html_traceback = err['traceback'].replace('\n', '<br />')
-            self.alert(title, message, details=html_traceback, level='error')
+            await self.alert_async(title, message, details=html_traceback, level='error')
 
         else:
             message = ('You can send a report to the developers or open an issue on '
                        'GitHub. Please restart Maestral to continue syncing.')
-            btn_no, auto_share_checkbox = self.alert(
+            btn_no, auto_share_checkbox = await self.alert_async(
                 title, message,
                 details=err['traceback'],
                 button_labels=('Send to Developers', 'Don\'t send'),
                 checkbox_text='Always send error reports',
+                level='error',
             )
 
             if btn_no == 0:

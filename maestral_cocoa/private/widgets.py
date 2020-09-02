@@ -709,6 +709,14 @@ class SystemTrayApp(toga.App):
         return self._impl.alert(title, message, details, details_title, button_labels,
                                 checkbox_text, level, icon)
 
+    async def alert_async(self, title, message, details=None, details_title='Traceback',
+                          button_labels=('Ok',), checkbox_text=None, level='info', icon=None):
+
+        icon = icon or self.icon
+
+        return await self._impl.alert_async(title, message, details, details_title,
+                                            button_labels, checkbox_text, level, icon)
+
 
 # ==== helpers ===========================================================================
 

@@ -9,9 +9,9 @@ from toga_cocoa.libs import (
     NSArray, NSSavePanel, NSFileHandlingPanelOKButton,
     NSOpenPanel, NSAlert, NSMakeRect, NSScrollView, NSBezelBorder, NSTextView,
     NSTextField, NSLayoutAttributeLeading, NSAlertFirstButtonReturn, NSApplication,
-    NSOnState, NSAlertStyle
+    NSOnState, NSAlertStyle, NSObject
 )
-from rubicon.objc import ObjCClass
+from rubicon.objc import ObjCClass, objc_method
 
 # local imports
 from . import factory
@@ -247,7 +247,53 @@ def alert(title, message, details=None, details_title='Traceback', button_labels
 
     button_index = result - NSAlertFirstButtonReturn
 
-    if checkbox_text:
+    if a.showsSuppressionButton:
         return button_index, a.suppressionButton.state == NSOnState
     else:
         return button_index
+
+
+class AlertButtonTarget(NSObject):
+
+    @objc_method
+    def buttonPressed_(self, button):
+        self.alert.window.close()
+        button_index = self.button_labels.index(button.title)
+
+        if self.alert.showsSuppressionButton:
+            res = (button_index, self.alert.suppressionButton.state == NSOnState)
+        else:
+            res = button_index
+
+        self.future.set_result(res)
+
+
+async def alert_async(title, message, details=None, details_title='Traceback',
+                      button_labels=('Ok',), checkbox_text=None, level='info', icon=None):
+    """
+    Shows an alert. If `details` are given, they will be shown in a scroll view. If
+    `checkbox_text` is given, an addition checkbox is shown. Returns the index of the
+    button pressed and, if a checkbox was shown, its checked state as bool.
+    """
+    icon = icon.bind(factory).native if icon else None
+    a = _construct_alert(title, message, details, details_title, button_labels,
+                         checkbox_text, level, icon)
+
+    NSApplication.sharedApplication.activateIgnoringOtherApps(True)
+
+    loop = get_event_loop()
+    future = loop.create_future()
+
+    target = AlertButtonTarget.alloc().init()
+    target.alert = a
+    target.button_labels = button_labels
+    target.future = future
+
+    for button in a.buttons:
+        button.target = target
+
+    a.layout()
+    a.window.center()
+    a.window.makeKeyAndOrderFront(None)
+
+    return await future

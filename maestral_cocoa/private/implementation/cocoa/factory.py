@@ -567,8 +567,14 @@ class SystemTrayApp(TogaApp):
     def open_document(self, path):
         pass
 
-    def alert(self, title, message, details, details_title, button_labels, checkbox_text,
-              level, icon):
+    async def alert_async(self, title, message, details, details_title, button_labels,
+                          checkbox_text, level, icon):
+
+        return await dialogs.alert_async(title, message, details, details_title,
+                                         button_labels, checkbox_text, level, icon)
+
+    def alert(self, title, message, details, details_title, button_labels,
+              checkbox_text, level, icon):
 
         return dialogs.alert(title, message, details, details_title, button_labels,
                              checkbox_text, level, icon)
