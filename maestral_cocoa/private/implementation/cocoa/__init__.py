@@ -8,4 +8,4 @@ from rubicon.objc import objc_const
 # so that asyncio events don't get processed while a modal dialog is shown.
 # This prevents possible exceptions when showing a modal dialog from an
 # asyncio coroutine. See https://github.com/beeware/toga/issues/1006
-eventloop.kCFRunLoopCommonModes = objc_const(eventloop.libcf, 'kCFRunLoopDefaultMode')
+# eventloop.kCFRunLoopCommonModes = objc_const(eventloop.libcf, 'kCFRunLoopDefaultMode')
