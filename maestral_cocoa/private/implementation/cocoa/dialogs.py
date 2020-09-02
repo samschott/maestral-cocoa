@@ -15,7 +15,10 @@ from rubicon.objc import ObjCClass, objc_method
 
 # local imports
 from . import factory
-from .constants import NSStackViewGravityBottom, NSUserInterfaceLayoutOrientationVertical
+from .constants import (
+    NSStackViewGravityBottom, NSUserInterfaceLayoutOrientationVertical,
+    NSWindowAnimationBehaviorAlertPanel
+)
 
 
 alert_style_for_level_str = {
@@ -293,6 +296,7 @@ async def alert_async(title, message, details=None, details_title='Traceback',
         button.target = target
 
     a.layout()
+    a.window.animationBehavior = NSWindowAnimationBehaviorAlertPanel
     a.window.center()
     a.window.makeKeyAndOrderFront(None)
 
