@@ -27,8 +27,8 @@ class Node:
         if is_folder:
             self._icon = Icon(for_path='/usr')
         else:
-            # use a non-existing file to get generic icon
-            self._icon = Icon(for_path='/test.file')
+            # use icon file file extension
+            self._icon = Icon(for_path=path)
         self.parent = parent
         self._children = []
         self._did_start_loading = False
