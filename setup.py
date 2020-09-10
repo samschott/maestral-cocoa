@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 
 from setuptools import setup, find_packages
-from maestral_cocoa import __author__, __version__
+from maestral_cocoa import __author__, __version__, __url__
 
 
 setup(
     name='maestral-cocoa',
     version=__version__,
     description='Open-source Dropbox client for macOS and Linux.',
-    url='https://github.com/SamSchott/maestral',
+    url=__url__,
     author=__author__,
     author_email='ss2151@cam.ac.uk',
     license='MIT',
@@ -18,6 +18,7 @@ setup(
     package_data={
         'maestral_cocoa': ['resources/*'],
     },
+    python_requires='>=3.6',
     setup_requires=['wheel'],
     install_requires=[
         'bugsnag',
@@ -30,8 +31,8 @@ setup(
     zip_safe=False,
     entry_points={
         'console_scripts': ['maestral_cocoa=maestral_cocoa.cli:main'],
+        'maestral_gui': ['maestral_cocoa=maestral_cocoa.main:run'],
     },
-    python_requires='>=3.6',
     classifiers=[
         'License :: OSI Approved :: MIT License',
         'Operating System :: MacOS',
