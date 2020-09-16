@@ -10,9 +10,8 @@ from maestral.utils.appdirs import get_home_dir
 from maestral.utils.path import delete
 
 # local imports
-from .private.widgets import IconForPath, Selection
+from .private.widgets import Icon, Selection
 from .dialogs import Dialog
-from .utils import select_folder_sheet, alert_sheet
 
 
 # set default font size to 13 pt, as in macOS
@@ -89,76 +88,61 @@ class DbxLocationDialog(Dialog):
 
         elif btn_name == 'Select':
             # apply dropbox path
-            self._chosen_dropbox_folder = osp.join(
+            chosen_dropbox_folder = osp.join(
                 self.dbx_location_user_selected,
                 self.mdbx.get_conf('main', 'default_dir_name')
             )
 
-            if osp.isdir(self._chosen_dropbox_folder):
-                alert_sheet(
-                    window=self,
-                    title='Folder already exists',
-                    message=(f'The folder "{self._chosen_dropbox_folder}" already '
-                             'exists. Would you like to replace it or merge its '
-                             'contents with Dropbox?'),
-                    button_labels=('Replace', 'Cancel', 'Merge'),
-                    icon=self.app.icon,
-                    callback=self._on_exists,
-                )
+            if osp.exists(chosen_dropbox_folder):
 
-            elif osp.isfile(self._chosen_dropbox_folder):
-                alert_sheet(
-                    window=self,
-                    title='File conflict',
-                    message=(
-                        'There already is a file named "{}" at this location. Would you '
-                        'like to replace it?'.format(
-                            self.mdbx.get_conf('main', 'default_dir_name')
-                        )
-                    ),
-                    button_labels=('Replace', 'Cancel'),
-                    icon=self.app.icon,
-                    callback=self._on_exists,
-                )
+                if osp.isdir(chosen_dropbox_folder):
+                    choice = self.alert_sheet(
+                        title='Folder already exists',
+                        message=(f'The folder "{chosen_dropbox_folder}" already '
+                                 'exists. Would you like to replace it or merge its '
+                                 'contents with Dropbox?'),
+                        button_labels=('Replace', 'Cancel', 'Merge'),
+                    )
 
-            else:
-                self._continue()
+                else:
+                    choice = self.alert_sheet(
+                        title='File conflict',
+                        message=(
+                            'There already is a file named "{}" at this location. Would '
+                            'you like to replace it?'.format(
+                                self.mdbx.get_conf('main', 'default_dir_name')
+                            )
+                        ),
+                        button_labels=('Replace', 'Cancel'),
+                    )
 
-    def _on_exists(self, choice):
+                if choice == 0:  # replace
+                    delete(chosen_dropbox_folder)
+                elif choice == 1:  # cancel
+                    self.dialog_buttons.enabled = True
+                    return
+                elif choice == 2:  # merge
+                    pass
 
-        if choice == 0:    # replace
-            delete(self._chosen_dropbox_folder)
-            self._continue()
-        elif choice == 1:  # cancel
-            self.dialog_buttons.enabled = True
-            return
-        elif choice == 2:  # merge
-            self._continue()
+            self.mdbx.create_dropbox_directory(chosen_dropbox_folder)
+            self.mdbx.rebuild_index()
+            self.exit_status = self.ACCEPTED
+            self.close()
 
-    def _continue(self):
-        self.mdbx.create_dropbox_directory(self._chosen_dropbox_folder)
-        self.mdbx.rebuild_index()
-        self.exit_status = self.ACCEPTED
-        self.close()
-
-    def _on_button_location_pressed(self, widget):
+    async def _on_button_location_pressed(self, widget):
 
         if widget.value == self.COMBOBOX_CHOOSE:
-            select_folder_sheet(
-                window=self,
-                callback=self._on_dbx_location_selected,
-            )
+            paths = await self.select_folder_sheet()
 
-    def _on_dbx_location_selected(self, paths):
-        if len(paths) > 0:
-            path = paths[0]
-            self._update_comboxbox_location(path)
-        else:
-            self.combobox_dbx_location.value = self.combobox_dbx_location.items[0]
+            if len(paths) > 0:
+                path = paths[0]
+                self._update_comboxbox_location(path)
+            else:
+                self.combobox_dbx_location.value = self.combobox_dbx_location.items[0]
 
     def _update_comboxbox_location(self, path):
         self.dbx_location_user_selected = path
-        icon = IconForPath(path)
+        icon = Icon(for_path=path)
         short_path = self._relpath(path)
         self.combobox_dbx_location.items = [
             (icon, short_path),

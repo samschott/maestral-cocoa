@@ -1,20 +1,16 @@
 # -*- coding: utf-8 -*-
 
-# system imports
-import os.path as osp
-
 # external imports
 import toga
 from toga.style.pack import Pack, FONT_SIZE_CHOICES
 from toga.constants import COLUMN, CENTER
-from maestral.utils.appdirs import get_home_dir
 
 # local imports
 from .private.widgets import (
-    Label, Spacer, DialogButtons, FollowLinkButton, Selection, Window, IconForPath
+    Label, Spacer, DialogButtons, FollowLinkButton, Selection, Window
 )
-from .private.constants import WORD_WRAP, NSFullSizeContentViewWindowMask
-from .utils import select_folder_sheet
+from .private.constants import WORD_WRAP
+from .private.implementation.cocoa.constants import NSFullSizeContentViewWindowMask
 
 
 # set default font size to 13 pt, as in macOS
@@ -48,6 +44,8 @@ class SetupDialogGui(Window):
         super().__init__(title='Maestral Setup',
                          size=(self.WINDOW_WIDTH, self.WINDOW_HEIGHT),
                          resizeable=False, minimizable=False, app=app)
+
+        # FIXME: remove private API access
         self._impl.native.titlebarAppearsTransparent = True
         self._impl.native.titleVisibility = 1
         self._impl.native.styleMask |= NSFullSizeContentViewWindowMask
@@ -83,7 +81,11 @@ class SetupDialogGui(Window):
             text=('To link Maestral to your Dropbox account, please retrieve an '
                   'authorization token from Dropbox and enter it below.'),
             linebreak_mode=WORD_WRAP,
-            style=Pack(width=self.CONTENT_WIDTH * 0.9, text_align=CENTER, padding_bottom=10)
+            style=Pack(
+                width=self.CONTENT_WIDTH * 0.9,
+                text_align=CENTER,
+                padding_bottom=10
+            )
         )
         self.btn_auth_token = FollowLinkButton(
             'Retrieve Token',
@@ -91,7 +93,6 @@ class SetupDialogGui(Window):
         )
         self.text_field_auth_token = toga.TextInput(
             placeholder='Authorization Token',
-            on_change=self._token_field_validator,
             style=Pack(width=self.CONTENT_WIDTH * 0.9, text_align=CENTER,)
         )
         self.spinner_link = toga.ActivityIndicator(style=Pack(width=32, height=32))
@@ -139,7 +140,6 @@ class SetupDialogGui(Window):
                 self.COMBOBOX_CHOOSE
             ],
             style=Pack(width=self.CONTENT_WIDTH * 0.9, padding_bottom=20),
-            on_select=self._on_button_location_pressed
         )
 
         self.dialog_buttons_location_page = DialogButtons(
@@ -167,13 +167,12 @@ class SetupDialogGui(Window):
             style=Pack(width=self.CONTENT_WIDTH, padding=(20, 0, 20, 0))
         )
         self.dropbox_tree = toga.Tree(
-            headings=['  Name', '  Included'],
+            headings=['Name', 'Included'],
             accessors=['name', 'included'],
             data=[],
             style=Pack(width=self.CONTENT_WIDTH, padding_bottom=20, flex=1),
             multiple_select=True,
         )
-        self.dropbox_tree._impl.columns[0].setMinWidth(150)
 
         self.dialog_buttons_selective_sync_page = DialogButtons(
             labels=['Select', 'Back'],
@@ -219,45 +218,6 @@ class SetupDialogGui(Window):
             self.done_page
         )
         self.content = self.pages[0]
-
-    def _on_button_location_pressed(self, widget):
-
-        if widget.value == self.COMBOBOX_CHOOSE:
-            select_folder_sheet(
-                window=self,
-                callback=self._on_dbx_location_selected,
-            )
-
-    def _on_dbx_location_selected(self, paths):
-        if len(paths) > 0:
-            path = paths[0]
-            self._update_comboxbox_location(path)
-        else:
-            self.combobox_dbx_location.value = self.combobox_dbx_location.items[0]
-
-    def _update_comboxbox_location(self, path):
-        self.dbx_location_user_selected = path
-        icon = IconForPath(path)
-        short_path = self._relpath(path)
-        self.combobox_dbx_location.items = [
-            (icon, short_path),
-            toga.SECTION_BREAK,
-            self.COMBOBOX_CHOOSE
-        ]
-
-    def _token_field_validator(self, widget):
-        self.dialog_buttons_link_page['Link'].enabled = len(widget.value) > 10
-
-    def on_loading_failed(self):
-        self.dialog_buttons_selective_sync_page['Select'].enabled = False
-
-    @staticmethod
-    def _relpath(path):
-        usr = osp.abspath(osp.join(get_home_dir(), osp.pardir))
-        if osp.commonprefix([path, usr]) == usr:
-            return osp.relpath(path, usr)
-        else:
-            return path
 
     def go_forward(self):
         self.goto_page(self.current_page + 1)

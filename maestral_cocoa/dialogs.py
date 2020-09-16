@@ -3,7 +3,7 @@
 # external imports
 import toga
 from toga.style import Pack
-from toga.constants import COLUMN, ROW, BOLD, CENTER
+from toga.constants import COLUMN, ROW, BOLD, CENTER, TRANSPARENT
 import markdown2
 from maestral import __version__
 
@@ -11,24 +11,23 @@ from maestral import __version__
 from . import __url__
 from .private.widgets import (
     Window, DialogButtons, VibrantBox,
-    Label, RichMultilineTextInput, FollowLinkButton
+    Label, RichMultilineTextInput, FollowLinkButton, Icon
 )
 from .private.constants import VisualEffectMaterial, WORD_WRAP
-from .utils import clear_background, async_call, run_maestral_async, alert_sheet
+from .utils import call_async_threaded_maestral
 
 
 # NSAlert's are the preferred way of alerting the user. However, we use our own dialogs
 # in the following cases:
 #
 #  - NSAlert is to static / inflexible to achieve our goal (see RelinkDialog, Unlink).
-#  - We want to show a dialog from an async widget callback: this currently causes trouble
-#    with Toga's handling of the event loop.
 #  - We want to keep the event loop running while showing the dialog *and* we cannot
-#    use an NSAlert as sheet.
+#    use an NSAlert as sheet
+#
 
 
 class Dialog(Window):
-    """A generic dialog following cocoa's NSAlert style."""
+    """A generic dialog following cocoa's NSAlert style from macOS Catalina and lower."""
 
     WINDOW_WIDTH = 420
     WINDOW_MIN_HEIGHT = 150
@@ -63,7 +62,7 @@ class Dialog(Window):
             if self.app:
                 icon = self.app.icon
             else:
-                icon = toga.Icon('')
+                icon = Icon('')
 
         self.msg_title = Label(
             text=title,
@@ -71,7 +70,8 @@ class Dialog(Window):
                 width=self.CONTENT_WIDTH,
                 padding_bottom=self.TITLE_PADDING_BOTTOM,
                 font_weight=BOLD,
-                font_size=13
+                font_size=13,
+                background_color=TRANSPARENT,
             ),
         )
         self.image = toga.ImageView(
@@ -79,20 +79,34 @@ class Dialog(Window):
             style=Pack(
                 width=self.ICON_SIZE[0],
                 height=self.ICON_SIZE[1],
-                padding_right=self.ICON_PADDING_RIGHT
+                padding_right=self.ICON_PADDING_RIGHT,
+                background_color=TRANSPARENT,
             )
         )
         self.msg_content = Label(
             text=message,
             linebreak_mode=WORD_WRAP,
-            style=Pack(width=self.CONTENT_WIDTH, padding_bottom=10, font_size=11, flex=1)
+            style=Pack(
+                width=self.CONTENT_WIDTH,
+                padding_bottom=10,
+                font_size=11,
+                flex=1,
+                background_color=TRANSPARENT,
+            )
         )
-        self.spinner = toga.ActivityIndicator(style=Pack(width=16, height=16))
+        self.spinner = toga.ActivityIndicator(
+            style=Pack(width=16, height=16, background_color=TRANSPARENT)
+        )
         self.dialog_buttons = DialogButtons(
             labels=button_labels,
             default=default,
             on_press=callback,
-            style=Pack(width=self.CONTENT_WIDTH, padding=0, alignment=CENTER)
+            style=Pack(
+                width=self.CONTENT_WIDTH,
+                padding=0,
+                alignment=CENTER,
+                background_color=TRANSPARENT,
+            )
         )
         self.dialog_buttons.children.insert(0, self.spinner)
 
@@ -105,7 +119,7 @@ class Dialog(Window):
                 self.accessory_view,
                 self.dialog_buttons,
             ],
-            style=Pack(direction=COLUMN)
+            style=Pack(direction=COLUMN, background_color=TRANSPARENT,)
         )
 
         self.outer_box = toga.Box(
@@ -115,11 +129,10 @@ class Dialog(Window):
                 padding=(
                     self.PADDING_TOP, self.PADDING_RIGHT,
                     self.PADDING_BOTTOM, self.PADDING_LEFT
-                )
+                ),
+                background_color=TRANSPARENT,
             )
         )
-
-        clear_background(self.outer_box)
 
         self.content = VibrantBox(
             children=[self.outer_box],
@@ -143,7 +156,11 @@ class ProgressDialog(Dialog):
 
         self.progress_bar = toga.ProgressBar(
             max=0,
-            style=Pack(width=self.CONTENT_WIDTH, padding=(0, 0, 10, 0))
+            style=Pack(
+                width=self.CONTENT_WIDTH,
+                padding=(0, 0, 10, 0),
+                background_color=TRANSPARENT
+            )
         )
         self.progress_bar.start()
 
@@ -152,8 +169,8 @@ class ProgressDialog(Dialog):
             callback=callback, accessory_view=self.progress_bar, app=app
         )
 
-        # this is hackish but works as long as the window has not yet been shown
-        self.content_box._children.remove(self.msg_content)
+        # save some space...
+        self.content_box.remove(self.msg_content)
 
 
 class DetailedDialog(Dialog):
@@ -167,23 +184,29 @@ class DetailedDialog(Dialog):
                      - Dialog.ICON_PADDING_RIGHT - Dialog.ICON_SIZE[0])
 
     def __init__(self, title='Alert', message='', button_labels=('Ok',), default='Ok',
-                 icon=None, callback=None, details_title='Traceback', details='', app=None):
+                 icon=None, callback=None, details_title='Traceback', details='',
+                 app=None):
 
         label = Label(
             details_title,
             style=Pack(
                 width=self.CONTENT_WIDTH,
                 padding_bottom=10,
-                font_size=12, font_weight=BOLD
+                font_size=12,
+                font_weight=BOLD,
+                background_color=TRANSPARENT,
             )
         )
-        clear_background(label)
 
         text_view_height = self.WINDOW_MIN_HEIGHT - Dialog.WINDOW_MIN_HEIGHT - 15
         text_view = RichMultilineTextInput(
             details,
             readonly=True,
-            style=Pack(width=self.CONTENT_WIDTH, height=text_view_height, padding_bottom=15)
+            style=Pack(
+                width=self.CONTENT_WIDTH,
+                height=text_view_height,
+                padding_bottom=15
+            )
         )
         accessory_view = toga.Box(
             children=[label, text_view],
@@ -217,11 +240,13 @@ class UpdateDialog(Dialog):
         label = Label(
             'Release Notes',
             style=Pack(
-                width=self.CONTENT_WIDTH, padding_bottom=10,
-                font_size=12, font_weight=BOLD
+                width=self.CONTENT_WIDTH,
+                padding_bottom=10,
+                font_size=12,
+                font_weight=BOLD,
+                background_color=TRANSPARENT,
             )
         )
-        clear_background(label)
 
         html_notes = markdown2.markdown(release_notes)
         html_notes = html_notes.replace('</ul>', '</ul><br/>')
@@ -323,40 +348,32 @@ class RelinkDialog(Dialog):
         elif btn_name == self.LINK_BTN:
             self.do_relink()
 
-    @async_call
     async def do_unlink(self):
-        await run_maestral_async(self.mdbx.config_name, 'unlink')
+        await call_async_threaded_maestral(self.mdbx.config_name, 'unlink')
         self.app.exit(stop_daemon=True)
 
-    @async_call
     async def do_relink(self):
 
         token = self.token_field.value
-        res = await run_maestral_async(self.mdbx.config_name, 'link', token)
+        res = await call_async_threaded_maestral(self.mdbx.config_name, 'link', token)
 
         self.spinner.stop()
 
         if res == 0:
-            alert_sheet(
-                window=self,
+            await self.alert_sheet(
                 title='Relink successful!',
                 message='Click OK to restart.',
-                callback=self.app.restart,
-                icon=self.app.icon,
             )
+            self.app.restart()
         elif res == 1:
-            alert_sheet(
-                window=self,
+            await self.alert_sheet(
                 title='Invalid token',
                 message='Please make sure you copy the correct token.',
-                icon=self.app.icon,
             )
         elif res == 2:
-            alert_sheet(
-                window=self,
+            await self.alert_sheet(
                 title='Connection failed',
                 message='Please check your internet connection.',
-                icon=self.app.icon,
             )
 
         self.dialog_buttons[self.CANCEL_BTN].enabled = True
