@@ -15,18 +15,23 @@ from .dialogs import Dialog
 
 
 # set default font size to 13 pt, as in macOS
-Pack.validated_property('font_size', choices=FONT_SIZE_CHOICES, initial=13)
+Pack.validated_property("font_size", choices=FONT_SIZE_CHOICES, initial=13)
 
 
 class DbxLocationDialog(Dialog):
 
     WINDOW_WIDTH = 600
-    CONTENT_WIDTH = (WINDOW_WIDTH - Dialog.PADDING_LEFT - Dialog.PADDING_RIGHT
-                     - Dialog.ICON_PADDING_RIGHT - Dialog.ICON_SIZE[0])
+    CONTENT_WIDTH = (
+        WINDOW_WIDTH
+        - Dialog.PADDING_LEFT
+        - Dialog.PADDING_RIGHT
+        - Dialog.ICON_PADDING_RIGHT
+        - Dialog.ICON_SIZE[0]
+    )
 
-    COMBOBOX_CHOOSE = 'Choose...'
+    COMBOBOX_CHOOSE = "Choose..."
 
-    dbx_location_user_selected = 'DBX LOCATION'
+    dbx_location_user_selected = "DBX LOCATION"
 
     ACCEPTED = 0
     REJECTED = 1
@@ -37,36 +42,41 @@ class DbxLocationDialog(Dialog):
         self.config_name = self.mdbx.config_name
         self.exit_status = self.REJECTED
 
-        old_path = self.mdbx.get_conf('main', 'path')
+        old_path = self.mdbx.get_conf("main", "path")
 
         message = (
-            'Your Dropbox folder has been moved or deleted from its original location. '
-            'Maestral will not work properly until you move it back. It used to be '
+            "Your Dropbox folder has been moved or deleted from its original location. "
+            "Maestral will not work properly until you move it back. It used to be "
             'located at:\n\n{0}\n\nTo move it back, click "Quit" below, move the '
-            'Dropbox folder back to its original location, and launch Maestral again. '
-            'To re-download your Dropbox, please select a location for your Dropbox '
+            "Dropbox folder back to its original location, and launch Maestral again. "
+            "To re-download your Dropbox, please select a location for your Dropbox "
             'folder below. Maestral will create a new folder named "{1}" in the '
-            'selected location.\n\nTo unlink your Dropbox account from Maestral, '
+            "selected location.\n\nTo unlink your Dropbox account from Maestral, "
             'click "Unlink" below.'
-        ).format(old_path, self.mdbx.get_conf('main', 'default_dir_name'))
+        ).format(old_path, self.mdbx.get_conf("main", "default_dir_name"))
 
         self.combobox_dbx_location = Selection(
             items=[
                 self.dbx_location_user_selected,
                 toga.SECTION_BREAK,
-                self.COMBOBOX_CHOOSE
+                self.COMBOBOX_CHOOSE,
             ],
             style=Pack(width=self.CONTENT_WIDTH, padding=(10, 0, 30, 0)),
-            on_select=self._on_button_location_pressed
+            on_select=self._on_button_location_pressed,
         )
 
         self._update_comboxbox_location(osp.dirname(old_path))
 
         # noinspection PyTypeChecker
-        super().__init__(title='Cannot find Dropbox folder', message=message,
-                         button_labels=('Select', 'Quit', 'Unlink'), default='Select',
-                         accessory_view=self.combobox_dbx_location,
-                         callback=self.on_dialog_pressed, app=app)
+        super().__init__(
+            title="Cannot find Dropbox folder",
+            message=message,
+            button_labels=("Select", "Quit", "Unlink"),
+            default="Select",
+            accessory_view=self.combobox_dbx_location,
+            callback=self.on_dialog_pressed,
+            app=app,
+        )
 
         self.msg_content.style.font_size = 12
         self.msg_content.style.width = 450
@@ -76,44 +86,46 @@ class DbxLocationDialog(Dialog):
 
         self.dialog_buttons.enabled = False
 
-        if btn_name == 'Quit':
+        if btn_name == "Quit":
             self.exit_status = self.REJECTED
             self.close()
 
-        elif btn_name == 'Unlink':
+        elif btn_name == "Unlink":
             self.spinner.start()
             self.mdbx.unlink()
             self.exit_status = self.REJECTED
             self.close()
 
-        elif btn_name == 'Select':
+        elif btn_name == "Select":
             # apply dropbox path
             chosen_dropbox_folder = osp.join(
                 self.dbx_location_user_selected,
-                self.mdbx.get_conf('main', 'default_dir_name')
+                self.mdbx.get_conf("main", "default_dir_name"),
             )
 
             if osp.exists(chosen_dropbox_folder):
 
                 if osp.isdir(chosen_dropbox_folder):
                     choice = self.alert_sheet(
-                        title='Folder already exists',
-                        message=(f'The folder "{chosen_dropbox_folder}" already '
-                                 'exists. Would you like to replace it or merge its '
-                                 'contents with Dropbox?'),
-                        button_labels=('Replace', 'Cancel', 'Merge'),
+                        title="Folder already exists",
+                        message=(
+                            f'The folder "{chosen_dropbox_folder}" already '
+                            "exists. Would you like to replace it or merge its "
+                            "contents with Dropbox?"
+                        ),
+                        button_labels=("Replace", "Cancel", "Merge"),
                     )
 
                 else:
                     choice = self.alert_sheet(
-                        title='File conflict',
+                        title="File conflict",
                         message=(
                             'There already is a file named "{}" at this location. Would '
-                            'you like to replace it?'.format(
-                                self.mdbx.get_conf('main', 'default_dir_name')
+                            "you like to replace it?".format(
+                                self.mdbx.get_conf("main", "default_dir_name")
                             )
                         ),
-                        button_labels=('Replace', 'Cancel'),
+                        button_labels=("Replace", "Cancel"),
                     )
 
                 if choice == 0:  # replace
@@ -147,7 +159,7 @@ class DbxLocationDialog(Dialog):
         self.combobox_dbx_location.items = [
             (icon, short_path),
             toga.SECTION_BREAK,
-            self.COMBOBOX_CHOOSE
+            self.COMBOBOX_CHOOSE,
         ]
 
     @staticmethod

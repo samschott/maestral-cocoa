@@ -29,16 +29,13 @@ kAuthorizationFlagDefaults = 0
 kAuthorizationFlagInteractionAllowed = 1
 kAuthorizationFlagExtendRights = 2
 kAuthorizationFlagPreAuthorize = 16
-kAuthorizationRightExecute = b'system.privilege.admin'
-kAuthorizationEnvironmentPrompt = b'prompt'
+kAuthorizationRightExecute = b"system.privilege.admin"
+kAuthorizationEnvironmentPrompt = b"prompt"
 kAuthorizationEmptyEnvironment = None
 
 
 def NSControlState(boolean):
-    return {
-        False: 0,
-        True: 1
-    }[boolean]
+    return {False: 0, True: 1}[boolean]
 
 
 class VisualEffectMaterial(Enum):
@@ -50,7 +47,9 @@ class VisualEffectMaterial(Enum):
     Sheet = 11  # The material for the background of sheet windows
     WindowBackground = 12  # The material for the background of opaque windows
     HUDWindow = 13  # The material for the background of heads-up display (HUD) windows
-    FullScreenUI = 15  # The material for the background of a full-screen modal interface
+    FullScreenUI = (
+        15  # The material for the background of a full-screen modal interface
+    )
     ToolTip = 17  # The material for the background of a tool tip
     ContentBackground = 18  # The material for the background of opaque content
     UnderWindowBackground = 21  # The material for under a window's background
@@ -62,10 +61,10 @@ NSVisualEffectMaterial = VisualEffectMaterial
 NSUTF8StringEncoding = 4
 NSImageLeading = 7
 
-NSTextEncodingNameDocumentOption = 'TextEncodingName'
+NSTextEncodingNameDocumentOption = "TextEncodingName"
 
-NSImageNameFollowLinkFreestandingTemplate = 'NSFollowLinkFreestandingTemplate'
-NSImageNameInvalidDataFreestandingTemplate = 'NSInvalidDataFreestandingTemplate'
-NSImageNameRefreshFreestandingTemplate = 'NSRefreshFreestandingTemplate'
-NSImageNameRevealFreestandingTemplate = 'NSRevealFreestandingTemplate'
-NSImageNameStopProgressFreestandingTemplate = 'NSStopProgressFreestandingTemplate'
+NSImageNameFollowLinkFreestandingTemplate = "NSFollowLinkFreestandingTemplate"
+NSImageNameInvalidDataFreestandingTemplate = "NSInvalidDataFreestandingTemplate"
+NSImageNameRefreshFreestandingTemplate = "NSRefreshFreestandingTemplate"
+NSImageNameRevealFreestandingTemplate = "NSRevealFreestandingTemplate"
+NSImageNameStopProgressFreestandingTemplate = "NSStopProgressFreestandingTemplate"

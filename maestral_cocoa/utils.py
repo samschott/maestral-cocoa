@@ -25,7 +25,7 @@ from .private.implementation.cocoa.constants import (
 )
 
 
-sec = load_library('Security')
+sec = load_library("Security")
 
 
 # ==== async calls =======================================================================
@@ -49,7 +49,6 @@ def call_async_threaded(func, *args):
 
 
 def call_async_threaded_maestral(config_name, func_name, *args):
-
     def func(*inner_args):
         with MaestralProxy(config_name) as m:
             m_func = m.__getattr__(func_name)
@@ -61,20 +60,18 @@ def call_async_threaded_maestral(config_name, func_name, *args):
 
 # ==== system calls ======================================================================
 
+
 class AuthorizationItem(Structure):
     _fields_ = [
-        ('name', c_char_p),
-        ('valueLength', c_uint32),
-        ('value', c_char_p),
-        ('flags', c_uint32)
+        ("name", c_char_p),
+        ("valueLength", c_uint32),
+        ("value", c_char_p),
+        ("flags", c_uint32),
     ]
 
 
 class AuthorizationItemSet(Structure):
-    _fields_ = [
-        ('count', c_uint32),
-        ('items', POINTER(AuthorizationItem))
-    ]
+    _fields_ = [("count", c_uint32), ("items", POINTER(AuthorizationItem))]
 
 
 AuthorizationRights = AuthorizationItemSet
@@ -87,9 +84,11 @@ def _osx_sudo_start():
     auth = c_void_p()
     r_auth = byref(auth)
 
-    flags = (kAuthorizationFlagInteractionAllowed
-             | kAuthorizationFlagExtendRights
-             | kAuthorizationFlagPreAuthorize)
+    flags = (
+        kAuthorizationFlagInteractionAllowed
+        | kAuthorizationFlagExtendRights
+        | kAuthorizationFlagPreAuthorize
+    )
     sec.AuthorizationCreate(None, None, flags, r_auth)
 
     return auth
@@ -102,22 +101,28 @@ def _osx_sudo_cmd(auth, exe, auth_text=None):
     if auth_text:
         auth_text = auth_text.encode()
 
-    item = AuthorizationItem(name=kAuthorizationRightExecute, valueLength=len(cmd),
-                             value=cmd, flags=0)
+    item = AuthorizationItem(
+        name=kAuthorizationRightExecute, valueLength=len(cmd), value=cmd, flags=0
+    )
     rights = AuthorizationRights(count=1, items=pointer(item))
 
     if not auth_text:
         env_p = kAuthorizationEmptyEnvironment
     else:
-        prompt_item = AuthorizationItem(name=kAuthorizationEnvironmentPrompt,
-                                        valueLength=len(auth_text),
-                                        value=auth_text, flags=0)
+        prompt_item = AuthorizationItem(
+            name=kAuthorizationEnvironmentPrompt,
+            valueLength=len(auth_text),
+            value=auth_text,
+            flags=0,
+        )
         environment = AuthorizationEnvironment(count=1, items=pointer(prompt_item))
         env_p = pointer(environment)
 
-    flags = (kAuthorizationFlagInteractionAllowed
-             | kAuthorizationFlagExtendRights
-             | kAuthorizationFlagPreAuthorize)
+    flags = (
+        kAuthorizationFlagInteractionAllowed
+        | kAuthorizationFlagExtendRights
+        | kAuthorizationFlagPreAuthorize
+    )
     sec.AuthorizationCopyRights(auth, byref(rights), env_p, flags, None)
     argv = (c_char_p * (len(argv) + 1))(*(argv + [None]))
 
@@ -126,9 +131,9 @@ def _osx_sudo_cmd(auth, exe, auth_text=None):
         io = c_void_p()
         r_io = byref(io)
 
-        err = sec.AuthorizationExecuteWithPrivileges(auth, cmd,
-                                                     kAuthorizationFlagDefaults,
-                                                     argv, r_io)
+        err = sec.AuthorizationExecuteWithPrivileges(
+            auth, cmd, kAuthorizationFlagDefaults, argv, r_io
+        )
 
         if err == errAuthorizationSuccess:
             break
@@ -137,9 +142,9 @@ def _osx_sudo_cmd(auth, exe, auth_text=None):
                 time.sleep(1)
                 i += 1
                 continue
-            raise RuntimeError('Execution failed')
+            raise RuntimeError("Execution failed")
         elif err == errAuthorizationCanceled:
-            raise PermissionError('Authorization canceled')
+            raise PermissionError("Authorization canceled")
 
 
 def _osx_sudo_end(auth):

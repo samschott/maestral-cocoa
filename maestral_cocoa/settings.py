@@ -22,13 +22,13 @@ from .resources import FACEHOLDER_PATH
 class SettingsWindow(SettingsGui):
 
     _update_interval_mapping = {
-        'Daily': 60 * 60 * 24,
-        'Weekly': 60 * 60 * 24 * 7,
-        'Monthly': 60 * 60 * 24 * 30,
-        'Never': 0
+        "Daily": 60 * 60 * 24,
+        "Weekly": 60 * 60 * 24 * 7,
+        "Monthly": 60 * 60 * 24 * 30,
+        "Never": 0,
     }
 
-    _macos_cli_tool_path = '/usr/local/bin/maestral'
+    _macos_cli_tool_path = "/usr/local/bin/maestral"
     _cached_pic_stat = os.stat(FACEHOLDER_PATH)
     _cached_dbx_location = None
 
@@ -53,15 +53,17 @@ class SettingsWindow(SettingsGui):
     # ==== callback implementations ======================================================
 
     async def on_dbx_location_selected(self, path):
-        new_path = osp.join(path, self.mdbx.get_conf('main', 'default_dir_name'))
+        new_path = osp.join(path, self.mdbx.get_conf("main", "default_dir_name"))
         try:
             self.mdbx.move_dropbox_directory(new_path)
         except OSError:
             await self.alert_sheet(
-                title='Could not move folder',
-                message=('Please make sure that you have permissions '
-                         'to write to the selected location.'),
-                button_labels=('Ok',),
+                title="Could not move folder",
+                message=(
+                    "Please make sure that you have permissions "
+                    "to write to the selected location."
+                ),
+                button_labels=("Ok",),
             )
             self.mdbx.resume_sync()
 
@@ -70,26 +72,29 @@ class SettingsWindow(SettingsGui):
 
     async def on_unlink_pressed(self, widget):
         choice = await self.alert_sheet(
-            title='Unlink your Dropbox account?',
-            message=('You will still keep your Dropbox folder on this '
-                     'computer but your files will stop syncing.'),
-            button_labels=('Unlink', 'Cancel'),
+            title="Unlink your Dropbox account?",
+            message=(
+                "You will still keep your Dropbox folder on this "
+                "computer but your files will stop syncing."
+            ),
+            button_labels=("Unlink", "Cancel"),
         )
 
         if choice == 0:
             self._periodic_refresh_task.cancel()
             self.mdbx.unlink()
             await self.alert_sheet(
-                title='Successfully unlinked',
-                message='Maestral will now quit.',
-                button_labels=('Ok',),
+                title="Successfully unlinked",
+                message="Maestral will now quit.",
+                button_labels=("Ok",),
             )
             await self.app.exit(stop_daemon=True)
 
     async def on_update_interval_selected(self, widget):
         value = str(widget.value)
-        self.mdbx.set_conf('app', 'update_notification_interval',
-                           self._update_interval_mapping[value])
+        self.mdbx.set_conf(
+            "app", "update_notification_interval", self._update_interval_mapping[value]
+        )
 
     async def on_autostart_clicked(self, widget):
         self.autostart.enabled = widget.state == ON
@@ -108,15 +113,15 @@ class SettingsWindow(SettingsGui):
                 os.remove(self._macos_cli_tool_path)
             except PermissionError:
                 request_authorization_from_user_and_run(
-                    ['/bin/rm', '-f', self._macos_cli_tool_path]
+                    ["/bin/rm", "-f", self._macos_cli_tool_path]
                 )
         else:
-            maestral_cli = os.path.join(getattr(sys, '_MEIPASS', ''), 'maestral_cli')
+            maestral_cli = os.path.join(getattr(sys, "_MEIPASS", ""), "maestral_cli")
             try:
                 os.symlink(maestral_cli, self._macos_cli_tool_path)
             except PermissionError:
                 request_authorization_from_user_and_run(
-                    ['/bin/ln', '-s', maestral_cli, self._macos_cli_tool_path]
+                    ["/bin/ln", "-s", maestral_cli, self._macos_cli_tool_path]
                 )
 
         self._udpdate_cli_tool_button()
@@ -124,19 +129,17 @@ class SettingsWindow(SettingsGui):
     def _udpdate_cli_tool_button(self):
         if osp.islink(self._macos_cli_tool_path):
             self.btn_cli_tool.enabled = True
-            self.btn_cli_tool.label = 'Uninstall'
+            self.btn_cli_tool.label = "Uninstall"
             self.label_cli_tool_info.text = (
                 "CLI installed. See 'maestral --help' for available commands."
             )
         elif osp.exists(self._macos_cli_tool_path):
             self.btn_cli_tool.enabled = False
-            self.btn_cli_tool.label = 'Install'
-            self.label_cli_tool_info.text = (
-                'CLI already installed from Python package.'
-            )
+            self.btn_cli_tool.label = "Install"
+            self.label_cli_tool_info.text = "CLI already installed from Python package."
         else:
             self.btn_cli_tool.enabled = True
-            self.btn_cli_tool.label = 'Install'
+            self.btn_cli_tool.label = "Install"
             self.label_cli_tool_info.text = (
                 "Install the 'maestral' command line tool to /usr/local/bin."
             )
@@ -144,9 +147,11 @@ class SettingsWindow(SettingsGui):
     async def _on_button_location_pressed(self, widget):
 
         if widget.value == self.COMBOBOX_CHOOSE:
-            message = ('Choose a new place for your Dropbox folder. A folder named '
-                       f'"Dropbox ({self.mdbx.config_name.title()})" will be '
-                       'created in the selected location.')
+            message = (
+                "Choose a new place for your Dropbox folder. A folder named "
+                f'"Dropbox ({self.mdbx.config_name.title()})" will be '
+                "created in the selected location."
+            )
             paths = await self.select_folder_sheet(message=message)
 
             if len(paths) > 0:
@@ -163,7 +168,9 @@ class SettingsWindow(SettingsGui):
             icon = Icon(for_path=path)
             short_path = osp.basename(path)
             self.combobox_dbx_location.items = [
-                (icon, short_path), toga.SECTION_BREAK, self.COMBOBOX_CHOOSE
+                (icon, short_path),
+                toga.SECTION_BREAK,
+                self.COMBOBOX_CHOOSE,
             ]
 
     def set_profile_pic(self, path):
@@ -197,31 +204,33 @@ class SettingsWindow(SettingsGui):
 
         # populate app section
         self.checkbox_autostart.state = ON if self.autostart.enabled else OFF
-        self.checkbox_notifications.state = ON if self.mdbx.notification_level <= 15 else OFF
+        self.checkbox_notifications.state = (
+            ON if self.mdbx.notification_level <= 15 else OFF
+        )
         self.checkbox_analytics.state = ON if self.mdbx.analytics else OFF
-        update_interval = self.mdbx.get_conf('app', 'update_notification_interval')
+        update_interval = self.mdbx.get_conf("app", "update_notification_interval")
         closest_key = min(
             self._update_interval_mapping,
-            key=lambda x: abs(self._update_interval_mapping[x] - update_interval)
+            key=lambda x: abs(self._update_interval_mapping[x] - update_interval),
         )
         self.combobox_update_interval.value = closest_key
         self._udpdate_cli_tool_button()
 
     def set_account_info_from_cache(self):
 
-        acc_display_name = self.mdbx.get_state('account', 'display_name')
-        acc_mail = self.mdbx.get_state('account', 'email')
-        acc_type = self.mdbx.get_state('account', 'type')
-        acc_space_usage = self.mdbx.get_state('account', 'usage')
-        acc_space_usage_type = self.mdbx.get_state('account', 'usage_type')
+        acc_display_name = self.mdbx.get_state("account", "display_name")
+        acc_mail = self.mdbx.get_state("account", "email")
+        acc_type = self.mdbx.get_state("account", "type")
+        acc_space_usage = self.mdbx.get_state("account", "usage")
+        acc_space_usage_type = self.mdbx.get_state("account", "usage_type")
 
-        if acc_space_usage_type == 'team':
-            acc_space_usage += ' (Team)'
+        if acc_space_usage_type == "team":
+            acc_space_usage += " (Team)"
 
-        if acc_type != '':
-            acc_type_text = ', Dropbox {0}'.format(acc_type.capitalize())
+        if acc_type != "":
+            acc_type_text = ", Dropbox {0}".format(acc_type.capitalize())
         else:
-            acc_type_text = ''
+            acc_type_text = ""
 
         self.label_name.text = acc_display_name
         self.label_email.text = acc_mail + acc_type_text

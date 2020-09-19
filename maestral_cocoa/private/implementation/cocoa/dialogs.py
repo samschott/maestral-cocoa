@@ -6,33 +6,47 @@ from asyncio import get_event_loop
 # external imports
 from toga.fonts import Font, SYSTEM, BOLD
 from toga_cocoa.libs import (
-    NSArray, NSSavePanel, NSFileHandlingPanelOKButton,
-    NSOpenPanel, NSAlert, NSMakeRect, NSScrollView, NSBezelBorder, NSTextView,
-    NSTextField, NSLayoutAttributeLeading, NSAlertFirstButtonReturn, NSApplication,
-    NSOnState, NSAlertStyle, NSObject
+    NSArray,
+    NSSavePanel,
+    NSFileHandlingPanelOKButton,
+    NSOpenPanel,
+    NSAlert,
+    NSMakeRect,
+    NSScrollView,
+    NSBezelBorder,
+    NSTextView,
+    NSTextField,
+    NSLayoutAttributeLeading,
+    NSAlertFirstButtonReturn,
+    NSApplication,
+    NSOnState,
+    NSAlertStyle,
+    NSObject,
 )
 from rubicon.objc import ObjCClass, objc_method
 
 # local imports
 from . import factory
 from .constants import (
-    NSStackViewGravityBottom, NSUserInterfaceLayoutOrientationVertical,
-    NSWindowAnimationBehaviorAlertPanel
+    NSStackViewGravityBottom,
+    NSUserInterfaceLayoutOrientationVertical,
+    NSWindowAnimationBehaviorAlertPanel,
 )
 
 
 alert_style_for_level_str = {
-    'info': NSAlertStyle.Informational,
-    'warning': NSAlertStyle.Warning,
-    'error': NSAlertStyle.Critical
+    "info": NSAlertStyle.Informational,
+    "warning": NSAlertStyle.Warning,
+    "error": NSAlertStyle.Critical,
 }
 
-NSAppearance = ObjCClass('NSAppearance')
-NSStackView = ObjCClass('NSStackView')
+NSAppearance = ObjCClass("NSAppearance")
+NSStackView = ObjCClass("NSStackView")
 
 
-async def save_file_sheet(window, suggested_filename, title='', message='',
-                          file_types=None):
+async def save_file_sheet(
+    window, suggested_filename, title="", message="", file_types=None
+):
     """Cocoa save file dialog implementation.
 
     We restrict the panel invocation to only choose files. We also allow
@@ -69,13 +83,16 @@ async def save_file_sheet(window, suggested_filename, title='', message='',
         path = panel.URL.path if r == NSFileHandlingPanelOKButton else None
         future.set_result(path)
 
-    panel.beginSheetModalForWindow(window._impl.native, completionHandler=completion_handler)
+    panel.beginSheetModalForWindow(
+        window._impl.native, completionHandler=completion_handler
+    )
 
     return await future
 
 
-async def open_file_sheet(window, title='', message='', file_types=None,
-                          multiselect=False):
+async def open_file_sheet(
+    window, title="", message="", file_types=None, multiselect=False
+):
     """Cocoa open file dialog implementation.
     We restrict the panel invocation to only choose files. We also allow
     creating directories but not selecting directories.
@@ -121,12 +138,14 @@ async def open_file_sheet(window, title='', message='', file_types=None,
 
         future.set_result(paths)
 
-    panel.beginSheetModalForWindow(window._impl.native, completionHandler=completion_handler)
+    panel.beginSheetModalForWindow(
+        window._impl.native, completionHandler=completion_handler
+    )
 
     return await future
 
 
-async def select_folder_sheet(window, title='', message='', multiselect=False):
+async def select_folder_sheet(window, title="", message="", multiselect=False):
     """Cocoa select folder dialog implementation.
 
     Args:
@@ -161,13 +180,23 @@ async def select_folder_sheet(window, title='', message='', multiselect=False):
 
         future.set_result(paths)
 
-    panel.beginSheetModalForWindow(window._impl.native, completionHandler=completion_handler)
+    panel.beginSheetModalForWindow(
+        window._impl.native, completionHandler=completion_handler
+    )
 
     return await future
 
 
-def _construct_alert(title, message, details=None, details_title='Traceback',
-                     button_labels=('Ok',), checkbox_text=None, level='info', icon=None):
+def _construct_alert(
+    title,
+    message,
+    details=None,
+    details_title="Traceback",
+    button_labels=("Ok",),
+    checkbox_text=None,
+    level="info",
+    icon=None,
+):
     a = NSAlert.alloc().init()
     a.alertStyle = alert_style_for_level_str[level]
     a.messageText = title
@@ -211,16 +240,33 @@ def _construct_alert(title, message, details=None, details_title='Traceback',
     return a
 
 
-async def alert_sheet(window, title, message, details=None, details_title='Traceback',
-                      button_labels=('Ok',), checkbox_text=None, level='info', icon=None):
+async def alert_sheet(
+    window,
+    title,
+    message,
+    details=None,
+    details_title="Traceback",
+    button_labels=("Ok",),
+    checkbox_text=None,
+    level="info",
+    icon=None,
+):
     """
     Shows an alert sheet attached to `window`. If `details` are given, they will be shown
     in a scroll view. If `checkbox_text` is given, an additional checkbox is shown.
     Returns the index of the button pressed (right == 0).
     """
     icon = icon.bind(factory).native if icon else None
-    a = _construct_alert(title, message, details, details_title, button_labels,
-                         checkbox_text, level, icon)
+    a = _construct_alert(
+        title,
+        message,
+        details,
+        details_title,
+        button_labels,
+        checkbox_text,
+        level,
+        icon,
+    )
 
     loop = get_event_loop()
     future = loop.create_future()
@@ -228,13 +274,23 @@ async def alert_sheet(window, title, message, details=None, details_title='Trace
     def completion_handler(r: int) -> None:
         future.set_result(r - NSAlertFirstButtonReturn)
 
-    a.beginSheetModalForWindow(window._impl.native, completionHandler=completion_handler)
+    a.beginSheetModalForWindow(
+        window._impl.native, completionHandler=completion_handler
+    )
 
     return await future
 
 
-def alert(title, message, details=None, details_title='Traceback', button_labels=('Ok',),
-          checkbox_text=None, level='info', icon=None):
+def alert(
+    title,
+    message,
+    details=None,
+    details_title="Traceback",
+    button_labels=("Ok",),
+    checkbox_text=None,
+    level="info",
+    icon=None,
+):
     """
     Shows an alert. If `details` are given, they will be shown in a scroll view. If
     `checkbox_text` is given, an addition checkbox is shown. Returns the label of the
@@ -242,8 +298,16 @@ def alert(title, message, details=None, details_title='Traceback', button_labels
     (checked == True).
     """
     icon = icon.bind(factory).native if icon else None
-    a = _construct_alert(title, message, details, details_title, button_labels,
-                         checkbox_text, level, icon)
+    a = _construct_alert(
+        title,
+        message,
+        details,
+        details_title,
+        button_labels,
+        checkbox_text,
+        level,
+        icon,
+    )
 
     NSApplication.sharedApplication.activateIgnoringOtherApps(True)
     result = a.runModal()
@@ -257,7 +321,6 @@ def alert(title, message, details=None, details_title='Traceback', button_labels
 
 
 class AlertButtonTarget(NSObject):
-
     @objc_method
     def buttonPressed_(self, button):
         self.alert.window.close()
@@ -271,16 +334,32 @@ class AlertButtonTarget(NSObject):
         self.future.set_result(res)
 
 
-async def alert_async(title, message, details=None, details_title='Traceback',
-                      button_labels=('Ok',), checkbox_text=None, level='info', icon=None):
+async def alert_async(
+    title,
+    message,
+    details=None,
+    details_title="Traceback",
+    button_labels=("Ok",),
+    checkbox_text=None,
+    level="info",
+    icon=None,
+):
     """
     Shows an alert. If `details` are given, they will be shown in a scroll view. If
     `checkbox_text` is given, an addition checkbox is shown. Returns the index of the
     button pressed and, if a checkbox was shown, its checked state as bool.
     """
     icon = icon.bind(factory).native if icon else None
-    a = _construct_alert(title, message, details, details_title, button_labels,
-                         checkbox_text, level, icon)
+    a = _construct_alert(
+        title,
+        message,
+        details,
+        details_title,
+        button_labels,
+        checkbox_text,
+        level,
+        icon,
+    )
 
     NSApplication.sharedApplication.activateIgnoringOtherApps(True)
 

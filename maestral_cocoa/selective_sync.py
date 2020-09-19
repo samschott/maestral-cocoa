@@ -18,14 +18,13 @@ from .private.widgets import Icon, Switch
 
 
 class Node:
-
     def __init__(self, path, parent, mdbx, is_folder):
         super().__init__()
         self.mdbx = mdbx
         self.path = path
         self.is_folder = is_folder
         if is_folder:
-            self._icon = Icon(for_path='/usr')
+            self._icon = Icon(for_path="/usr")
         else:
             # use icon file file extension
             self._icon = Icon(for_path=path)
@@ -34,9 +33,9 @@ class Node:
         self._did_start_loading = False
 
         self.included = Switch(
-            label='',
+            label="",
             on_toggle=self._on_selected_pressed,
-            style=Pack(background_color=TRANSPARENT)
+            style=Pack(background_color=TRANSPARENT),
         )
         self._init_selected()
 
@@ -56,7 +55,9 @@ class Node:
 
     def is_selection_modified(self):
         own_selection_modified = self.included.state != self._original_state
-        child_selection_modified = any(c.is_selection_modified() for c in self._children)
+        child_selection_modified = any(
+            c.is_selection_modified() for c in self._children
+        )
         return own_selection_modified or child_selection_modified
 
     # Property that returns the first column (icon, label)
@@ -74,11 +75,11 @@ class Node:
 
     def _init_selected(self):
 
-        excluded_items = getattr(self.mdbx, 'excluded_items', [])
+        excluded_items = getattr(self.mdbx, "excluded_items", [])
 
         # get included state from current list
         if self.path.lower() in excluded_items:
-            self._original_state = OFF   # item is excluded
+            self._original_state = OFF  # item is excluded
         elif any(is_child(self.path.lower(), f) for f in excluded_items):
             self._original_state = OFF  # item's parent is excluded
         elif any(is_child(f, self.path.lower()) for f in excluded_items):
@@ -87,9 +88,11 @@ class Node:
             self._original_state = ON  # item is fully included
 
         # get included state from parent if it has been user modified
-        if (self.parent
-                and self.parent.is_selection_modified()
-                and self.parent.included.state is not MIXED):
+        if (
+            self.parent
+            and self.parent.is_selection_modified()
+            and self.parent.included.state is not MIXED
+        ):
             self.included.state = self.parent.included.state
         else:
             self.included.state = self._original_state
@@ -108,7 +111,9 @@ class Node:
         # propagate to parent if checked or unchecked
         if self.parent:
             # get minimum of all other children's check state
-            checkstate_other_children = min(c.included.state for c in self.parent.children)
+            checkstate_other_children = min(
+                c.included.state for c in self.parent.children
+            )
             # set parent's state to that minimum, if it is >= 1
             # (there always could be included files)
             new_parent_state = max([checkstate_other_children, MIXED])
@@ -119,8 +124,9 @@ class Node:
     async def _load_children_async(self):
 
         try:
-            entries = await call_async_threaded_maestral(self.mdbx.config_name,
-                                                         'list_folder', self.path)
+            entries = await call_async_threaded_maestral(
+                self.mdbx.config_name, "list_folder", self.path
+            )
         except (NotAFolderError, NotFoundError):
             entries = []
         except ConnectionError:
@@ -129,24 +135,25 @@ class Node:
         # remove all placeholders
         for c in self._children:
             if isinstance(c, PlaceholderNode):
-                self.notify('remove', item=c)
+                self.notify("remove", item=c)
 
         # populate with new entries
         if entries is False:
             self.loading_failed()
         else:
-            entries.sort(key=lambda e: e['name'].lower())
+            entries.sort(key=lambda e: e["name"].lower())
             self._children = [
                 Node(
-                    path=e['path_display'],
+                    path=e["path_display"],
                     parent=self,
                     mdbx=self.mdbx,
-                    is_folder=e['type'] == 'FolderMetadata',
-                ) for e in entries
+                    is_folder=e["type"] == "FolderMetadata",
+                )
+                for e in entries
             ]
 
             for i, child in enumerate(self._children):
-                self.notify('insert', parent=self, index=i, item=child)
+                self.notify("insert", parent=self, index=i, item=child)
 
     def notify(self, notification, **kwargs):
         # pass notifications to parent
@@ -156,15 +163,14 @@ class Node:
         self.parent.loading_failed()
 
     def __repr__(self):
-        return f'<{self.__class__.__name__}({self.path})>'
+        return f"<{self.__class__.__name__}({self.path})>"
 
 
 class PlaceholderNode:
-
     def __init__(self, message, parent):
         self.parent = parent
         self.name = message
-        self.included = ''
+        self.included = ""
 
     @property
     def children(self):
@@ -186,16 +192,20 @@ class PlaceholderNode:
 
 
 class FileSystemSource(Node, Source):
-
-    def __init__(self, mdbx=None, path='/', on_fs_loading_failed=None,
-                 on_fs_selection_changed=None):
+    def __init__(
+        self,
+        mdbx=None,
+        path="/",
+        on_fs_loading_failed=None,
+        on_fs_selection_changed=None,
+    ):
         super().__init__(path, parent=self, mdbx=mdbx, is_folder=True)
         self.path = path
         self.parent = None
         self.on_fs_loading_failed = on_fs_loading_failed
         self.on_fs_selection_changed = on_fs_selection_changed
-        self._children = [PlaceholderNode('Loading...', self)]
-        self.included.label = 'Select all'
+        self._children = [PlaceholderNode("Loading...", self)]
+        self.included.label = "Select all"
 
     def propagate_selection_to_parent(self, state):
         if self.on_fs_selection_changed:
@@ -205,16 +215,15 @@ class FileSystemSource(Node, Source):
         self._notify(notification, **kwargs)
 
     def loading_failed(self):
-        self._children = [PlaceholderNode('Could not connect to Dropbox 😕', self)]
+        self._children = [PlaceholderNode("Could not connect to Dropbox 😕", self)]
         self.included.enabled = False
-        self.notify('change_source', source=self)
+        self.notify("change_source", source=self)
 
         if self.on_fs_loading_failed:
             self.on_fs_loading_failed()
 
 
 class SelectiveSyncDialog(SelectiveSyncGui):
-
     def __init__(self, mdbx, app=None):
         super().__init__(mdbx, app=app)
 
@@ -265,13 +274,13 @@ class SelectiveSyncDialog(SelectiveSyncGui):
             self.get_changed_items(child)
 
     def on_dialog_pressed(self, btn_name):
-        if btn_name == 'Update':
+        if btn_name == "Update":
             self.update_items()
 
         self.close()
 
     def on_fs_loading_failed(self):
-        self.dialog_button['Update'].enabled = False
+        self.dialog_button["Update"].enabled = False
 
     def on_fs_selection_changed(self):
-        self.dialog_button['Update'].enabled = self.fs_source.is_selection_modified()
+        self.dialog_button["Update"].enabled = self.fs_source.is_selection_modified()
