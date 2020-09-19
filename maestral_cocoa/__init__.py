@@ -27,5 +27,5 @@ util.find_library = _find_library
 
 
 __author__ = 'Sam Schott'
-__version__ = '1.2.0'
+__version__ = '1.2.1.dev'
 __url__ = 'https://github.com/SamSchott/maestral'
