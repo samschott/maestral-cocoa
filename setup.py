@@ -1,15 +1,14 @@
 # -*- coding: utf-8 -*-
 
 from setuptools import setup, find_packages
-from maestral_cocoa import __author__, __version__, __url__
 
 
 setup(
     name='maestral-cocoa',
-    version=__version__,
+    version='1.2.1.dev0',
     description='Open-source Dropbox client for macOS and Linux.',
-    url=__url__,
-    author=__author__,
+    url='https://github.com/SamSchott/maestral',
+    author='Sam Schott',
     author_email='ss2151@cam.ac.uk',
     license='MIT',
     long_description=open('README.md').read(),
