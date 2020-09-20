@@ -106,8 +106,8 @@ class ActivityWindow(Window):
         self.mdbx = mdbx
 
         self.table = toga.Table(
-            headings=["File", "Location", "Change", "Time", "User", "Locate"],
-            accessors=["filename", "location", "type", "time", "username", "reveal"],
+            headings=["File", "Location", "Change", "Time", "Locate"],
+            accessors=["filename", "location", "type", "time", "reveal"],
             missing_value="--",
             on_double_click=self.on_row_clicked,
             style=Pack(flex=1),
