@@ -58,6 +58,7 @@ class VibrantBox(Widget):
         self._impl.set_material(material)
 
 
+# TODO: Gtk implementation
 class ScrollContainer(toga.ScrollContainer):
     def __init__(
         self,
@@ -166,6 +167,7 @@ class DialogButtons(toga.Box):
             btn.enabled = yes
 
 
+# TODO: Gtk implementation
 class Switch(toga.Switch):
     """Reimplements toga.Switch to allow *programmatic* setting of
     an intermediate state."""
@@ -223,6 +225,7 @@ class Switch(toga.Switch):
         self._impl.set_on_toggle(self._on_toggle)
 
 
+# TODO: Gtk implementation
 class FreestandingIconButton(toga.Widget):
     """A freestanding button with an icon."""
 
@@ -298,6 +301,7 @@ class FreestandingIconButton(toga.Widget):
         self._impl.set_on_press(self._on_press)
 
 
+# TODO: Gtk implementation
 class FollowLinkButton(FreestandingIconButton):
     def __init__(
         self,
@@ -322,6 +326,7 @@ class FollowLinkButton(FreestandingIconButton):
         self._on_press = wrapped_handler(self, handler)
 
 
+# TODO: Gtk implementation
 class Selection(toga.Selection):
     """Reimplements toga.Selection to allow section breaks."""
 
@@ -340,6 +345,7 @@ class Selection(toga.Selection):
 # ==== labels ============================================================================
 
 
+# TODO: Gtk implementation
 class Label(toga.Label):
     """Reimplements toga.Label with text wrapping."""
 
@@ -365,6 +371,7 @@ class Label(toga.Label):
         self._impl.set_linebreak_mode(value)
 
 
+# TODO: Gtk implementation
 class RichMultilineTextInput(toga.MultilineTextInput):
     """A multiline text view with html support."""
 
@@ -403,6 +410,7 @@ class RichMultilineTextInput(toga.MultilineTextInput):
         self._impl.set_html(value)
 
 
+# TODO: Gtk implementation
 class RichLabel(Widget):
     """A label with html support."""
 
@@ -428,6 +436,7 @@ class RichLabel(Widget):
 # ==== icons =============================================================================
 
 
+# TODO: Gtk implementation
 class Icon(toga.Icon):
     """
     Reimplements toga.Icon to provide the icon for the file / folder type
@@ -456,6 +465,7 @@ class Icon(toga.Icon):
 # ==== menus and menu items ==============================================================
 
 
+# TODO: Gtk implementation
 class MenuItem:
     """
     A menu item to be used in a Menu.
@@ -563,6 +573,7 @@ class MenuItem:
             self._impl.set_checked(yes)
 
 
+# TODO: Gtk implementation
 class MenuItemSeparator:
     """A horizontal separator between menu items."""
 
@@ -571,6 +582,7 @@ class MenuItemSeparator:
         self._impl = self.factory.MenuItemSeparator(self)
 
 
+# TODO: Gtk implementation
 class Menu:
     """
     A menu, to be used as context menu, status bar menu or in the menu bar.
@@ -650,6 +662,7 @@ class Menu:
 # ==== StatusBarItem =====================================================================
 
 
+# TODO: Gtk implementation, this will be a lot of work
 class StatusBarItem:
     """A status bar item which can have an icon and a menu."""
 
@@ -687,6 +700,7 @@ class StatusBarItem:
 # ==== Custom Window =====================================================================
 
 
+# TODO: Gtk implementation
 class Window(toga.Window):
     def __init__(
         self,
@@ -831,6 +845,7 @@ class Window(toga.Window):
 # ==== Application =======================================================================
 
 
+# TODO: Gtk implementation
 class SystemTrayApp(toga.App):
     def __init__(
         self,
@@ -919,6 +934,7 @@ class SystemTrayApp(toga.App):
 # ==== helpers ===========================================================================
 
 
+# TODO: Gtk implementation
 def apply_round_clipping(image_view: toga.ImageView, factory=private_factory):
     """Clips an image in a given toga.ImageView to a circular mask."""
     return factory.apply_round_clipping(image_view._impl)
