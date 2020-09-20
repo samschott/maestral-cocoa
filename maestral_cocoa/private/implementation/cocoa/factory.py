@@ -9,16 +9,16 @@ from toga.constants import LEFT, TRANSPARENT
 from toga.platform import get_platform_factory
 from toga_cocoa.libs import (
     ObjCClass,
+    objc_method,
+    SEL,
+    at,
     NSColor,
     NSString,
-    at,
     NSTextView,
     NSRecessedBezelStyle,
     NSTextAlignment,
     NSViewMaxYMargin,
     NSMenuItem,
-    SEL,
-    objc_method,
     NSKeyDown,
     NSMenu,
     NSApplication,
@@ -231,9 +231,7 @@ class Label(Widget):
 
 
 class RichLabel(Widget):
-    """A multiline text view with html support. Rehint is only a hack for now.
-    Using the layout manager of NSTextView does not work well since it generally returns
-    a too small height for a given width."""
+    """A multiline text view with html support."""
 
     def create(self):
         self._color = None
@@ -294,7 +292,7 @@ class RichMultilineTextInput(TogaMultilineTextInput):
 
 
 class FreestandingIconButton(TogaButton):
-    """A styled button to follow a link (file or url)"""
+    """A styled button with an icon."""
 
     def create(self):
         super().create()
