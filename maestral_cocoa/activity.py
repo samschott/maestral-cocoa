@@ -106,12 +106,13 @@ class ActivityWindow(Window):
         self.mdbx = mdbx
 
         self.table = toga.Table(
-            headings=["File", "Location", "Change", "Time", "Locate"],
+            headings=["File", "Location", "Change", "Time", " "],
             accessors=["filename", "location", "type", "time", "reveal"],
             missing_value="--",
             on_double_click=self.on_row_clicked,
             style=Pack(flex=1),
         )
+        self.table._impl.columns[-1].maxWidth = 20  # TODO: don't use private API
         self.content = self.table
 
         self.center()
