@@ -4,6 +4,7 @@
 import os.path as osp
 
 # external imports
+from travertino.size import at_least
 from toga import SECTION_BREAK
 from toga.constants import LEFT, TRANSPARENT
 from toga.platform import get_platform_factory
@@ -33,12 +34,13 @@ from toga_cocoa.libs import (
     NSPoint,
     NSBezierPath,
     NSTextField,
+    NSMakeRect,
 )
 from toga_cocoa.colors import native_color
 from toga_cocoa.keys import toga_key, Key
 from toga_cocoa.app import App as TogaApp
 from toga_cocoa.widgets.base import Widget
-from toga_cocoa.widgets.switch import Switch as TogaSwitch, at_least
+from toga_cocoa.widgets.switch import Switch as TogaSwitch
 from toga_cocoa.widgets.button import Button as TogaButton
 from toga_cocoa.widgets.selection import Selection as TogaSelection
 from toga_cocoa.widgets.scrollcontainer import ScrollContainer as TogaScrollContainer
@@ -47,7 +49,7 @@ from toga_cocoa.widgets.multilinetextinput import (
     MultilineTextInput as TogaMultilineTextInput,
 )
 from toga_cocoa.factory import *  # noqa: F401,F406
-from rubicon.objc import NSMakeSize, NSMakeRect
+from rubicon.objc import NSMakeSize
 
 # local imports
 from . import dialogs
@@ -137,7 +139,7 @@ class Icon:
                 return NSWorkspace.sharedWorkspace.iconForFileType(extension)
 
         elif self.template:
-            cocoa_template = self._to_cocoa_template[self.template]
+            cocoa_template = Icon._to_cocoa_template[self.template]
             self._native = NSImage.imageNamed(cocoa_template)
             return self._native
 
@@ -205,7 +207,7 @@ class Label(Widget):
         self.native.stringValue = value
 
     def set_linebreak_mode(self, value):
-        self.native.cell.lineBreakMode = self._toga_to_cocoa_linebreakmode[value]
+        self.native.cell.lineBreakMode = Label._toga_to_cocoa_linebreakmode[value]
 
     def set_background_color(self, color):
         if color in (None, TRANSPARENT):
@@ -403,6 +405,8 @@ class VibrantBox(Widget):
 
 
 class ScrollContainer(TogaScrollContainer):
+    """Reimplments ScrollContainer to confine content in non-scrolling direction"""
+
     def set_bounds(self, x, y, width, height):
         super().set_bounds(x, y, width, height)
         if not self.interface.horizontal:
