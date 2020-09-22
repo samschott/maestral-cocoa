@@ -305,22 +305,6 @@ class FollowLinkButton(FreestandingIconButton):
         self._on_press = wrapped_handler(self, handler)
 
 
-# TODO: Gtk implementation
-class Selection(toga.Selection):
-    """Reimplements toga.Selection to allow section breaks."""
-
-    def __init__(
-        self,
-        id=None,
-        style=None,
-        items=None,
-        on_select=None,
-        enabled=True,
-        factory=private_factory,
-    ):
-        super().__init__(id, style, items, on_select, enabled, factory)
-
-
 class FileSelectionButton(toga.Widget):
 
     MIN_WIDTH = 100

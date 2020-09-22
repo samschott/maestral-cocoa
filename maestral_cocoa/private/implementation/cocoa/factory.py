@@ -344,42 +344,6 @@ class Switch(TogaSwitch):
         self.interface.intrinsic.width = at_least(content_size.width)
 
 
-class Selection(TogaSelection):
-    """Reimplements toga_cocoa.Selection to allow section breaks."""
-
-    def add_item(self, item):
-        if isinstance(item, tuple):
-            icon_iface, label = item
-        else:
-            icon_iface = None
-            label = item
-
-        if label == SECTION_BREAK:
-            self.native.menu.addItem(NSMenuItem.separatorItem())
-
-        else:
-            self.native.addItemWithTitle(label)
-
-            if icon_iface:
-                factory = get_platform_factory()
-                icon = icon_iface.bind(factory)
-                icon = icon.native.resizeTo(16)
-                self.native.lastItem.image = icon
-
-    def select_item(self, item):
-        if isinstance(item, tuple):
-            item = item[1]
-        self.native.selectItemWithTitle(item)
-
-    def rehint(self):
-        content_size = self.native.intrinsicContentSize()
-        # increase height by 1 px for better icon alignment
-        self.interface.intrinsic.height = content_size.height + 1
-        self.interface.intrinsic.width = at_least(
-            max(self.interface.MIN_WIDTH, content_size.width)
-        )
-
-
 class FileChooserTarget(NSObject):
     @objc_method
     def onSelect_(self, obj) -> None:
