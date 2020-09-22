@@ -19,5 +19,5 @@ def resource_path(name):
 
 
 APP_ICON_PATH = resource_path("maestral.icns")
-TRAY_ICON_PATH = resource_path("systray-{}.pdf")
+TRAY_ICON_PATH = resource_path("systray-{}")
 FACEHOLDER_PATH = resource_path("faceholder.pdf")

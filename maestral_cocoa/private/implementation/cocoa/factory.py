@@ -122,6 +122,9 @@ class Icon:
         ImageTemplate.StopProgress: NSImageNameStopProgressFreestandingTemplate,
     }
 
+    EXTENSIONS = ['.pdf', '.icns', '.png']
+    SIZES = None
+
     def __init__(self, interface, path=None, for_path=None, template=None):
         self.interface = interface
         self.interface._impl = self
@@ -138,17 +141,16 @@ class Icon:
             return self._native
 
         if self.path:
-            self._native = NSImage.alloc().initWithContentsOfFile(self.path)
+            self._native = NSImage.alloc().initWithContentsOfFile(str(self.path))
             return self._native
 
         elif self.for_path:
             # always return a new pointer since an old one may be invalidated
             # icons are cached by AppKit anyways
-            path = str(self.for_path)
-            if osp.exists(path):
-                return NSWorkspace.sharedWorkspace.iconForFile(path)
+            if osp.exists(self.for_path):
+                return NSWorkspace.sharedWorkspace.iconForFile(str(self.for_path))
             else:
-                _, extension = osp.splitext(path)
+                _, extension = osp.splitext(self.for_path)
                 return NSWorkspace.sharedWorkspace.iconForFileType(extension)
 
         elif self.template:

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 import asyncio
 
 # external imports
@@ -28,7 +29,9 @@ class Icon(toga.Icon):
     Reimplements toga.Icon to provide the icon for the file / folder type
     instead of loading an icon from the file content.
 
-    :param path: File to path.
+    :param path: Path to icon file.
+    :param for_path: Path for which an icon should be found.
+    :param template: Template name for built-in icons.
     """
 
     def __init__(self, path=None, for_path=None, template=None, system=False):
@@ -37,15 +40,62 @@ class Icon(toga.Icon):
         self.template = template
 
     def bind(self, factory):
+
+        if self.system:
+            resource_path = factory.paths.toga
+        else:
+            resource_path = factory.paths.app
+
         if self._impl is None:
+
+            if self.path:
+                # resolve extension for impl
+                full_path = self._full_path(
+                    None, private_factory.Icon.EXTENSIONS, resource_path
+                )
+            else:
+                full_path = None
+
             self._impl = private_factory.Icon(
                 interface=self,
-                path=self.path,
+                path=full_path,
                 for_path=self.for_path,
                 template=self.template,
             )
 
         return self._impl
+
+    def _full_path(self, size, extensions, resource_path):
+        basename, file_extension = os.path.splitext(self.path)
+
+        if not file_extension:
+            # If no extension is provided, look for one of the allowed
+            # icon types, in preferred format order.
+            for extension in extensions:
+                # look for an icon file with a size in the filename
+                icon_path = resource_path / (
+                    "{basename}-{size}{extension}".format(
+                        basename=basename, size=size, extension=extension
+                    )
+                )
+                if icon_path.exists():
+                    return icon_path
+
+                # look for a icon file without a size in the filename
+                icon_path = resource_path / (basename + extension)
+                if icon_path.exists():
+                    return icon_path
+
+        elif file_extension.lower() in extensions:
+            # If an icon *is* provided, it must be one of the acceptable types
+            icon_path = resource_path / self.path
+            if icon_path.exists():
+                return icon_path
+        else:
+            # An icon has been specified, but it's not a valid format.
+            raise FileNotFoundError("{self.path} is not a valid icon".format(self=self))
+
+        raise FileNotFoundError("Can't find icon {self.path}".format(self=self))
 
 
 # ==== layout widgets ====================================================================
@@ -899,6 +949,38 @@ class Tree(Widget):
         """
         self._on_double_click = wrapped_handler(self, handler)
         self._impl.set_on_double_click(self._on_double_click)
+
+    def _full_path(self, size, extensions, resource_path):
+        basename, file_extension = os.path.splitext(self.path)
+
+        if not file_extension:
+            # If no extension is provided, look for one of the allowed
+            # icon types, in preferred format order.
+            for extension in extensions:
+                # look for an icon file with a size in the filename
+                icon_path = resource_path / (
+                    "{basename}-{size}{extension}".format(
+                        basename=basename, size=size, extension=extension
+                    )
+                )
+                if icon_path.exists():
+                    return icon_path
+
+                # look for a icon file without a size in the filename
+                icon_path = resource_path / (basename + extension)
+                if icon_path.exists():
+                    return icon_path
+
+        elif file_extension.lower() in extensions:
+            # If an icon *is* provided, it must be one of the acceptable types
+            icon_path = resource_path / self.path
+            if icon_path.exists():
+                return icon_path
+        else:
+            # An icon has been specified, but it's not a valid format.
+            raise FileNotFoundError("{self.path} is not a valid icon".format(self=self))
+
+        raise FileNotFoundError("Can't find icon {self.path}".format(self=self))
 
 
 # ==== menus and menu items ==============================================================
