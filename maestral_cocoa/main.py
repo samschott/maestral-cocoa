@@ -88,7 +88,17 @@ class MaestralGui(SystemTrayApp):
         ERROR: Icon(TRAY_ICON_PATH.format("error")),
     }
 
-    config_name = "maestral"
+    def __init__(self, config_name="maestral"):
+        self.config_name = config_name
+        super().__init__(
+            formal_name=APP_NAME,
+            app_id=BUNDLE_ID,
+            app_name="maestral_cocoa",
+            icon=APP_ICON_PATH,
+            author=__author__,
+            version=__gui_version__,
+            home_page=__url__,
+        )
 
     def startup(self):
 
@@ -587,17 +597,5 @@ class MaestralGui(SystemTrayApp):
 
 
 def run(config_name="maestral"):
-
-    MaestralGui.config_name = config_name
-
-    app = MaestralGui(
-        formal_name=APP_NAME,
-        app_id=BUNDLE_ID,
-        app_name="maestral_cocoa",
-        icon=APP_ICON_PATH,
-        author=__author__,
-        version=__gui_version__,
-        home_page=__url__,
-    )
-
+    app = MaestralGui(config_name)
     return app.main_loop()
