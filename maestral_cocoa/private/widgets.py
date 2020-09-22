@@ -58,27 +58,6 @@ class VibrantBox(Widget):
         self._impl.set_material(material)
 
 
-# TODO: Gtk implementation
-class ScrollContainer(toga.ScrollContainer):
-    def __init__(
-        self,
-        id=None,
-        style=None,
-        horizontal=True,
-        vertical=True,
-        content=None,
-        factory=private_factory,
-    ):
-        super().__init__(
-            id=id,
-            style=style,
-            horizontal=horizontal,
-            vertical=vertical,
-            content=content,
-            factory=factory,
-        )
-
-
 # ==== buttons ===========================================================================
 
 
