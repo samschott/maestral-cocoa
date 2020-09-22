@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 
 # system imports
+import platform
 import asyncio
 import time
 from concurrent.futures import ThreadPoolExecutor
 from ctypes import c_char_p, c_void_p, byref, pointer, Structure, c_uint32, POINTER
 
 # external imports
-from rubicon.objc.runtime import load_library
 from maestral.daemon import MaestralProxy
 
 # local imports
@@ -25,7 +25,9 @@ from .private.implementation.cocoa.constants import (
 )
 
 
-sec = load_library("Security")
+if platform.platform() == "Darwin":
+    from rubicon.objc.runtime import load_library
+    sec = load_library("Security")
 
 
 # ==== async calls =======================================================================
@@ -152,8 +154,11 @@ def _osx_sudo_end(auth):
 
 
 def request_authorization_from_user_and_run(exe, auth_text=None):
-    auth = _osx_sudo_start()
-    try:
-        _osx_sudo_cmd(auth, exe, auth_text)
-    finally:
-        _osx_sudo_end(auth)
+    if platform.platform() == "Darwin":
+        auth = _osx_sudo_start()
+        try:
+            _osx_sudo_cmd(auth, exe, auth_text)
+        finally:
+            _osx_sudo_end(auth)
+    else:
+        raise RuntimeError(f"Not implemented for {platform.platform()}")
