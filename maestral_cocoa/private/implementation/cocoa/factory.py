@@ -367,9 +367,9 @@ class FileChooserTarget(NSObject):
 
                     item = self.impl.native.itemAtIndex(0)
                     item.title = osp.basename(path)
-                    item.image = NSWorkspace.sharedWorkspace.iconForFile(
-                        path
-                    ).resizeTo(16)
+                    item.image = NSWorkspace.sharedWorkspace.iconForFile(path).resizeTo(
+                        16
+                    )
 
                     self.impl._current_selection = path
 
@@ -403,9 +403,7 @@ class FileSelectionButton(Widget):
     def set_current_selection(self, path):
         item = self.native.itemAtIndex(0)
         item.title = osp.basename(path)
-        item.image = NSWorkspace.sharedWorkspace.iconForFile(
-            path
-        ).resizeTo(16)
+        item.image = NSWorkspace.sharedWorkspace.iconForFile(path).resizeTo(16)
         self._current_selection = path
 
     def set_on_select(self, handler):
@@ -726,21 +724,12 @@ class Window(TogaWindow):
 
     def set_dialog(self, value):
 
-        animation = (
-            NSWindowAnimationBehaviorAlertPanel
-            if value
-            else NSWindowAnimationBehaviorDefault
-        )
-        self.native.animationBehavior = animation
+        if value:
+            self.native.animationBehavior = NSWindowAnimationBehaviorAlertPanel
+        else:
+            self.native.animationBehavior = NSWindowAnimationBehaviorDefault
+
         self.native.level = 3
-
-    def start_modal(self):
-        self.show()
-        return self.interface.app._impl.native.runModalForWindow(self.native)
-
-    def stop_modal(self, res=0):
-        if self.interface.app._impl.native.modalWindow == self.native:
-            self.interface.app._impl.native.stopModalWithCode(res)
 
     # dialogs
 

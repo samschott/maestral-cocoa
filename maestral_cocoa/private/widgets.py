@@ -815,14 +815,6 @@ class Window(toga.Window):
         self._is_dialog = yes
         self._impl.set_dialog(True)
 
-    # application modal support
-
-    def start_modal(self):
-        self._impl.start_modal()
-
-    def stop_modal(self, res=0):
-        self._impl.start_modal(res)
-
     # memory management
 
     @property
