@@ -230,6 +230,7 @@ class SettingsGui(Window):
         ]
 
         if getattr(sys, "frozen", False):
+            # add UI to install command line interface
             children.append(
                 toga.Box(
                     children=[
