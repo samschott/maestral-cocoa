@@ -34,7 +34,9 @@ from toga_cocoa.libs import (
     NSPoint,
     NSBezierPath,
     NSTextField,
-    NSMakeRect,
+    NSPopUpButton,
+    NSOpenPanel,
+    NSFileHandlingPanelOKButton,
 )
 from toga_cocoa.colors import native_color
 from toga_cocoa.keys import toga_key, Key
@@ -43,7 +45,6 @@ from toga_cocoa.widgets.base import Widget
 from toga_cocoa.widgets.switch import Switch as TogaSwitch
 from toga_cocoa.widgets.button import Button as TogaButton
 from toga_cocoa.widgets.selection import Selection as TogaSelection
-from toga_cocoa.widgets.scrollcontainer import ScrollContainer as TogaScrollContainer
 from toga_cocoa.window import Window as TogaWindow
 from toga_cocoa.widgets.multilinetextinput import (
     MultilineTextInput as TogaMultilineTextInput,
@@ -373,6 +374,93 @@ class Selection(TogaSelection):
     def rehint(self):
         content_size = self.native.intrinsicContentSize()
         # increase height by 1 px for better icon alignment
+        self.interface.intrinsic.height = content_size.height + 1
+        self.interface.intrinsic.width = at_least(
+            max(self.interface.MIN_WIDTH, content_size.width)
+        )
+
+
+class FileChooserTarget(NSObject):
+    @objc_method
+    def onSelect_(self, obj) -> None:
+        if self.impl.native.indexOfSelectedItem == 2:
+
+            self.impl.native.selectItemAtIndex(0)
+
+            panel = NSOpenPanel.alloc().init()
+            panel.title = self.interface.dialog_title
+            panel.message = self.interface.dialog_message
+            panel.canChooseFiles = self.interface.select_files
+            panel.canChooseDirectories = self.interface.select_folders
+            panel.canCreateDirectories = True
+            panel.resolvesAliases = True
+            panel.allowsMultipleSelection = False
+
+            def completion_handler(r: int) -> None:
+
+                if r == NSFileHandlingPanelOKButton:
+                    path = str(panel.URL.path)
+
+                    item = self.impl.native.itemAtIndex(0)
+                    item.title = osp.basename(path)
+                    item.image = NSWorkspace.sharedWorkspace.iconForFile(
+                        path
+                    ).resizeTo(16)
+
+                    self.impl._current_selection = path
+
+                    if self.interface.on_select:
+                        self.interface.on_select(self.interface)
+
+            panel.beginSheetModalForWindow(
+                self.interface.window._impl.native, completionHandler=completion_handler
+            )
+
+
+class FileSelectionButton(Widget):
+    def create(self):
+        self.native = NSPopUpButton.alloc().init()
+        self.target = FileChooserTarget.alloc().init()
+        self.target.interface = self.interface
+        self.target.impl = self
+        self.native.target = self.target
+        self.native.action = SEL("onSelect:")
+
+        self._current_selection = None
+        self.native.addItemWithTitle("None")
+        self.native.menu.addItem(NSMenuItem.separatorItem())
+        self.native.addItemWithTitle("Choose...")
+
+        self.add_constraints()
+
+    def get_current_selection(self):
+        return self._current_selection
+
+    def set_current_selection(self, path):
+        item = self.native.itemAtIndex(0)
+        item.title = osp.basename(path)
+        item.image = NSWorkspace.sharedWorkspace.iconForFile(
+            path
+        ).resizeTo(16)
+        self._current_selection = path
+
+    def set_on_select(self, handler):
+        pass
+
+    def set_select_files(self, value):
+        pass
+
+    def set_select_folders(self, value):
+        pass
+
+    def set_dialog_title(self, value):
+        pass
+
+    def set_dialog_message(self, value):
+        pass
+
+    def rehint(self):
+        content_size = self.native.intrinsicContentSize()
         self.interface.intrinsic.height = content_size.height + 1
         self.interface.intrinsic.width = at_least(
             max(self.interface.MIN_WIDTH, content_size.width)

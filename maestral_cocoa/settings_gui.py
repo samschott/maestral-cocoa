@@ -9,6 +9,7 @@ import toga
 from toga.style.pack import Pack
 from toga.constants import ROW, COLUMN, TOP, RIGHT, CENTER, GRAY, TRANSPARENT
 from maestral import __version__ as __daemon_version__
+from maestral.utils.appdirs import get_home_dir
 
 # local imports
 from . import __url__, __author__, __version__
@@ -16,7 +17,7 @@ from .private.widgets import (
     Label,
     RichLabel,
     Switch,
-    Selection,
+    FileSelectionButton,
     Window,
     apply_round_clipping,
 )
@@ -37,8 +38,6 @@ class SettingsGui(Window):
     ELEMENT_PADDING = 10
     SUBELEMENT_PADDING = 3
     COLUMN_PADDING = 10
-
-    COMBOBOX_CHOOSE = "Choose..."
 
     faceholder = toga.Image(FACEHOLDER_PATH)
 
@@ -135,8 +134,10 @@ class SettingsGui(Window):
             "Dropbox Folder location:",
             style=Pack(text_align=RIGHT, width=SettingsGui.COLUMN_WIDTH_LEFT),
         )
-        self.combobox_dbx_location = Selection(
-            items=["DBX Location", toga.SECTION_BREAK, SettingsGui.COMBOBOX_CHOOSE],
+        self.combobox_dbx_location = FileSelectionButton(
+            initial=get_home_dir(),
+            select_files=False,
+            select_folders=True,
             style=Pack(
                 padding_left=SettingsGui.COLUMN_PADDING, width=SettingsGui.BUTTON_WIDTH
             ),
@@ -164,7 +165,7 @@ class SettingsGui(Window):
             "Check for updates:",
             style=Pack(text_align=RIGHT, width=SettingsGui.COLUMN_WIDTH_LEFT),
         )
-        self.combobox_update_interval = Selection(
+        self.combobox_update_interval = toga.Selection(
             items=["Daily", "Weekly", "Monthly", "Never"],
             style=Pack(
                 padding_left=SettingsGui.COLUMN_PADDING, width=SettingsGui.BUTTON_WIDTH

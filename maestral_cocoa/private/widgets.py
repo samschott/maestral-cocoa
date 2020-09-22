@@ -321,6 +321,90 @@ class Selection(toga.Selection):
         super().__init__(id, style, items, on_select, enabled, factory)
 
 
+class FileSelectionButton(toga.Widget):
+
+    MIN_WIDTH = 100
+
+    def __init__(
+        self,
+        initial=None,
+        select_files=True,
+        select_folders=False,
+        on_select=None,
+        dialog_title="",
+        dialog_message="",
+        id=None,
+        enabled=True,
+        style=None,
+        factory=private_factory,
+    ):
+        super().__init__(id, enabled, style, factory)
+
+        # Create a platform specific implementation
+        self._impl = self.factory.FileSelectionButton(interface=self)
+
+        # Set all the properties
+        self.current_selection = str(initial)
+        self.select_files = select_files
+        self.select_folders = select_folders
+        self.on_select = on_select
+        self.dialog_title = dialog_title
+        self.dialog_message = dialog_message
+
+    @property
+    def select_files(self):
+        return self._select_files
+
+    @select_files.setter
+    def select_files(self, value):
+        self._select_files = value
+        self._impl.set_select_files(value)
+
+    @property
+    def select_folders(self):
+        return self._select_folders
+
+    @select_folders.setter
+    def select_folders(self, value):
+        self._select_folders = value
+        self._impl.set_select_folders(value)
+
+    @property
+    def current_selection(self):
+        return self._impl.get_current_selection()
+
+    @current_selection.setter
+    def current_selection(self, value):
+        self._impl.set_current_selection(value)
+
+    @property
+    def dialog_title(self):
+        return self._dialog_title
+
+    @dialog_title.setter
+    def dialog_title(self, value):
+        self._dialog_title = value
+        self._impl.set_dialog_title(self._dialog_title)
+
+    @property
+    def dialog_message(self):
+        return self._dialog_message
+
+    @dialog_message.setter
+    def dialog_message(self, value):
+        self._dialog_message = value
+        self._impl.set_dialog_message(self._dialog_message)
+
+    @property
+    def on_select(self):
+        return self._on_select
+
+    @on_select.setter
+    def on_select(self, handler):
+        self._on_select = wrapped_handler(self, handler)
+        self._impl.set_on_select(self._on_select)
+
+
 # ==== labels ============================================================================
 
 

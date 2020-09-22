@@ -4,6 +4,7 @@
 import toga
 from toga.style.pack import Pack, FONT_SIZE_CHOICES
 from toga.constants import COLUMN, CENTER
+from maestral.utils.appdirs import get_home_dir
 
 # local imports
 from .private.widgets import (
@@ -11,7 +12,7 @@ from .private.widgets import (
     Spacer,
     DialogButtons,
     FollowLinkButton,
-    Selection,
+    FileSelectionButton,
     Window,
 )
 from .private.constants import WORD_WRAP
@@ -30,10 +31,7 @@ class SetupDialogGui(Window):
     CONTENT_WIDTH = WINDOW_WIDTH - 40
     CONTENT_HEIGHT = WINDOW_HEIGHT - 15 - 25
 
-    COMBOBOX_CHOOSE = "Choose..."
-
     current_page = 0
-    dbx_location_user_selected = "DBX LOCATION"
 
     page_style = Pack(
         width=WINDOW_WIDTH,
@@ -147,12 +145,10 @@ class SetupDialogGui(Window):
                 text_align=CENTER,
             ),
         )
-        self.combobox_dbx_location = Selection(
-            items=[
-                self.dbx_location_user_selected,
-                toga.SECTION_BREAK,
-                self.COMBOBOX_CHOOSE,
-            ],
+        self.combobox_dbx_location = FileSelectionButton(
+            initial=get_home_dir(),
+            select_files=False,
+            select_folders=True,
             style=Pack(width=self.CONTENT_WIDTH * 0.9, padding_bottom=20),
         )
 

@@ -13,7 +13,7 @@ from maestral.utils.autostart import AutoStart
 # local imports
 from .utils import request_authorization_from_user_and_run, create_task
 from .private.constants import ON, OFF
-from .private.widgets import Icon, apply_round_clipping
+from .private.widgets import apply_round_clipping
 from .settings_gui import SettingsGui
 from .selective_sync import SelectiveSyncDialog
 from .resources import FACEHOLDER_PATH
@@ -40,20 +40,30 @@ class SettingsWindow(SettingsGui):
 
         self.btn_unlink.on_press = self.on_unlink_pressed
         self.btn_select_folders.on_press = self.on_folder_selection_pressed
-        self.combobox_dbx_location.on_select = self._on_button_location_pressed
+        self.combobox_dbx_location.on_select = self.on_dbx_location_selected
         self.combobox_update_interval.on_select = self.on_update_interval_selected
         self.checkbox_autostart.on_toggle = self.on_autostart_clicked
         self.checkbox_notifications.on_toggle = self.on_notifications_clicked
         self.checkbox_analytics.on_toggle = self.on_analytics_clicked
         self.btn_cli_tool.on_press = self.on_cli_pressed
 
+        path_selection_message = (
+            "Choose a new place for your Dropbox folder. A folder named "
+            f'"Dropbox ({self.mdbx.config_name.title()})" will be '
+            "created in the selected location."
+        )
+
+        self.combobox_dbx_location.dialog_message = path_selection_message
+
         self._periodic_refresh_task = None
         self.refresh_gui()
 
     # ==== callback implementations ======================================================
 
-    async def on_dbx_location_selected(self, path):
-        new_path = osp.join(path, self.mdbx.get_conf("main", "default_dir_name"))
+    async def on_dbx_location_selected(self, widget):
+        new_path = osp.join(
+            widget.current_selection, self.mdbx.get_conf("main", "default_dir_name")
+        )
         try:
             self.mdbx.move_dropbox_directory(new_path)
         except OSError:
@@ -144,35 +154,6 @@ class SettingsWindow(SettingsGui):
                 "Install the 'maestral' command line tool to /usr/local/bin."
             )
 
-    async def _on_button_location_pressed(self, widget):
-
-        if widget.value == self.COMBOBOX_CHOOSE:
-            message = (
-                "Choose a new place for your Dropbox folder. A folder named "
-                f'"Dropbox ({self.mdbx.config_name.title()})" will be '
-                "created in the selected location."
-            )
-            paths = await self.select_folder_sheet(message=message)
-
-            if len(paths) > 0:
-                path = paths[0]
-
-                self._update_combobox_location(path)
-                await self.on_dbx_location_selected(path)
-            else:
-                self.combobox_dbx_location.value = self.combobox_dbx_location.items[0]
-
-    def _update_combobox_location(self, path):
-        if path != self._cached_dbx_location:
-            self._cached_dbx_location = path
-            icon = Icon(for_path=path)
-            short_path = osp.basename(path)
-            self.combobox_dbx_location.items = [
-                (icon, short_path),
-                toga.SECTION_BREAK,
-                self.COMBOBOX_CHOOSE,
-            ]
-
     def set_profile_pic(self, path):
         path = path if osp.isfile(path) else FACEHOLDER_PATH
         new_stat = os.stat(path)
@@ -200,7 +181,7 @@ class SettingsWindow(SettingsGui):
 
         # populate sync section
         parent_dir = osp.split(self.mdbx.dropbox_path)[0]
-        self._update_combobox_location(parent_dir)
+        self.combobox_dbx_location.current_selection = parent_dir
 
         # populate app section
         self.checkbox_autostart.state = ON if self.autostart.enabled else OFF

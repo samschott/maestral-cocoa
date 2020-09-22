@@ -4,13 +4,11 @@
 import os.path as osp
 
 # external imports
-import toga
 from maestral.utils.path import delete
 from maestral.utils.appdirs import get_home_dir
 
 # local imports
 from .private.constants import OFF
-from .private.widgets import Icon
 from .utils import call_async_threaded_maestral
 from .setup_gui import SetupDialogGui
 from .selective_sync import FileSystemSource
@@ -33,7 +31,7 @@ class SetupDialog(SetupDialogGui):
         # set up combobox
         default_location = self.mdbx.get_conf("main", "path")
         default_parent = osp.dirname(default_location) or get_home_dir()
-        self._update_comboxbox_location(default_parent)
+        self.combobox_dbx_location.current_selection = default_parent
 
         # connect buttons to callbacks
         self.btn_start.on_press = self.on_start
@@ -42,7 +40,6 @@ class SetupDialog(SetupDialogGui):
         self.dialog_buttons_selective_sync_page.on_press = self.on_items_selected
         self.close_button.on_press = self.on_finish
         self.text_field_auth_token.on_change = self._token_field_validator
-        self.combobox_dbx_location.on_select = self._on_button_location_pressed
 
         default_folder_name = self.mdbx.get_conf("main", "default_dir_name")
         location_label_text = self.dbx_location_label.text.format(default_folder_name)
@@ -120,7 +117,7 @@ class SetupDialog(SetupDialogGui):
 
             default_name = self.mdbx.get_conf("main", "default_dir_name")
             self._chosen_dropbox_folder = osp.join(
-                self.dbx_location_user_selected, default_name
+                self.combobox_dbx_location.current_selection, default_name
             )
 
             # if a file / folder exists, ask for conflict resolution
@@ -196,40 +193,11 @@ class SetupDialog(SetupDialogGui):
         self.exit_status = self.ACCEPTED
         self.close()
 
-    async def _on_button_location_pressed(self, widget):
-
-        if widget.value == self.COMBOBOX_CHOOSE:
-            paths = await self.select_folder_sheet()
-
-            if len(paths) > 0:
-                path = paths[0]
-                self._update_comboxbox_location(path)
-            else:
-                self.combobox_dbx_location.value = self.combobox_dbx_location.items[0]
-
-    def _update_comboxbox_location(self, path):
-        self.dbx_location_user_selected = path
-        icon = Icon(for_path=path)
-        short_path = self._relpath(path)
-        self.combobox_dbx_location.items = [
-            (icon, short_path),
-            toga.SECTION_BREAK,
-            self.COMBOBOX_CHOOSE,
-        ]
-
     def _token_field_validator(self, widget):
         self.dialog_buttons_link_page["Link"].enabled = len(widget.value) > 10
 
     def on_loading_failed(self):
         self.dialog_buttons_selective_sync_page["Select"].enabled = False
-
-    @staticmethod
-    def _relpath(path):
-        usr = osp.abspath(osp.join(get_home_dir(), osp.pardir))
-        if osp.commonprefix([path, usr]) == usr:
-            return osp.relpath(path, usr)
-        else:
-            return path
 
     # ====================================================================================
     # Helper functions

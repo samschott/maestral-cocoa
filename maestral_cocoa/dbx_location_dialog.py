@@ -4,13 +4,12 @@
 import os.path as osp
 
 # external imports
-import toga
 from toga.style.pack import Pack, FONT_SIZE_CHOICES
 from maestral.utils.appdirs import get_home_dir
 from maestral.utils.path import delete
 
 # local imports
-from .private.widgets import Icon, Selection
+from .private.widgets import FileSelectionButton
 from .dialogs import Dialog
 
 
@@ -30,8 +29,6 @@ class DbxLocationDialog(Dialog):
     )
 
     COMBOBOX_CHOOSE = "Choose..."
-
-    dbx_location_user_selected = "DBX LOCATION"
 
     ACCEPTED = 0
     REJECTED = 1
@@ -55,17 +52,12 @@ class DbxLocationDialog(Dialog):
             'click "Unlink" below.'
         ).format(old_path, self.mdbx.get_conf("main", "default_dir_name"))
 
-        self.combobox_dbx_location = Selection(
-            items=[
-                self.dbx_location_user_selected,
-                toga.SECTION_BREAK,
-                self.COMBOBOX_CHOOSE,
-            ],
+        self.combobox_dbx_location = FileSelectionButton(
+            initial=get_home_dir(),
+            select_files=False,
+            select_folders=True,
             style=Pack(width=self.CONTENT_WIDTH, padding=(10, 0, 30, 0)),
-            on_select=self._on_button_location_pressed,
         )
-
-        self._update_comboxbox_location(osp.dirname(old_path))
 
         # noinspection PyTypeChecker
         super().__init__(
@@ -99,7 +91,7 @@ class DbxLocationDialog(Dialog):
         elif btn_name == "Select":
             # apply dropbox path
             chosen_dropbox_folder = osp.join(
-                self.dbx_location_user_selected,
+                self.combobox_dbx_location.current_selection,
                 self.mdbx.get_conf("main", "default_dir_name"),
             )
 
@@ -140,32 +132,3 @@ class DbxLocationDialog(Dialog):
             self.mdbx.rebuild_index()
             self.exit_status = self.ACCEPTED
             self.close()
-
-    async def _on_button_location_pressed(self, widget):
-
-        if widget.value == self.COMBOBOX_CHOOSE:
-            paths = await self.select_folder_sheet()
-
-            if len(paths) > 0:
-                path = paths[0]
-                self._update_comboxbox_location(path)
-            else:
-                self.combobox_dbx_location.value = self.combobox_dbx_location.items[0]
-
-    def _update_comboxbox_location(self, path):
-        self.dbx_location_user_selected = path
-        icon = Icon(for_path=path)
-        short_path = self._relpath(path)
-        self.combobox_dbx_location.items = [
-            (icon, short_path),
-            toga.SECTION_BREAK,
-            self.COMBOBOX_CHOOSE,
-        ]
-
-    @staticmethod
-    def _relpath(path):
-        usr = osp.abspath(osp.join(get_home_dir(), osp.pardir))
-        if osp.commonprefix([path, usr]) == usr:
-            return osp.relpath(path, usr)
-        else:
-            return path
