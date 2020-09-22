@@ -260,10 +260,6 @@ class FreestandingIconButton(toga.Widget):
 
     @property
     def label(self):
-        """
-        Returns:
-            The button label as a ``str``
-        """
         return self._label
 
     @label.setter
@@ -277,10 +273,6 @@ class FreestandingIconButton(toga.Widget):
 
     @property
     def icon(self):
-        """
-        Returns:
-            The button icon
-        """
         return self._icon
 
     @icon.setter
@@ -291,20 +283,10 @@ class FreestandingIconButton(toga.Widget):
 
     @property
     def on_press(self):
-        """The handler to invoke when the button is pressed.
-
-        Returns:
-            The function ``callable`` that is called on button press.
-        """
         return self._on_press
 
     @on_press.setter
     def on_press(self, handler):
-        """Set the handler to invoke when the button is pressed.
-
-        Args:
-            handler (:obj:`callable`): The handler to invoke when the button is pressed.
-        """
         self._on_press = wrapped_handler(self, handler)
         self._impl.set_on_press(self._on_press)
 
