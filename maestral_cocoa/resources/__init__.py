@@ -18,6 +18,8 @@ def resource_path(name):
     return osp.join(folder, name)
 
 
+extension = "pdf" if sys.platform == "darwin" else "svg"
+
 APP_ICON_PATH = resource_path("maestral.icns")
 TRAY_ICON_PATH = resource_path("systray-{}")
-FACEHOLDER_PATH = resource_path("faceholder.pdf")
+FACEHOLDER_PATH = resource_path(f"faceholder.{extension}")
