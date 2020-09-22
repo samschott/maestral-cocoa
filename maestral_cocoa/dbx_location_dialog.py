@@ -11,6 +11,7 @@ from maestral.utils.path import delete
 # local imports
 from .private.widgets import FileSelectionButton
 from .dialogs import Dialog
+from .utils import call_async_threaded_maestral
 
 
 # set default font size to 13 pt, as in macOS
@@ -74,7 +75,7 @@ class DbxLocationDialog(Dialog):
         self.msg_content.style.width = 450
         self.msg_content.style.height = 170
 
-    def on_dialog_pressed(self, btn_name):
+    async def on_dialog_pressed(self, btn_name):
 
         self.dialog_buttons.enabled = False
 
@@ -128,7 +129,9 @@ class DbxLocationDialog(Dialog):
                 elif choice == 2:  # merge
                     pass
 
-            self.mdbx.create_dropbox_directory(chosen_dropbox_folder)
+            await call_async_threaded_maestral(
+                self.mdbx.config_name, "move_dropbox_directory", new_path
+            )
             self.mdbx.rebuild_index()
             self.exit_status = self.ACCEPTED
             self.close()

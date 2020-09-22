@@ -11,7 +11,11 @@ import toga
 from maestral.utils.autostart import AutoStart
 
 # local imports
-from .utils import request_authorization_from_user_and_run, create_task
+from .utils import (
+    request_authorization_from_user_and_run,
+    create_task,
+    call_async_threaded_maestral,
+)
 from .private.constants import ON, OFF
 from .private.widgets import apply_round_clipping
 from .settings_gui import SettingsGui
@@ -65,7 +69,9 @@ class SettingsWindow(SettingsGui):
             widget.current_selection, self.mdbx.get_conf("main", "default_dir_name")
         )
         try:
-            self.mdbx.move_dropbox_directory(new_path)
+            await call_async_threaded_maestral(
+                self.mdbx.config_name, "move_dropbox_directory", new_path
+            )
         except OSError:
             await self.alert_sheet(
                 title="Could not move folder",
