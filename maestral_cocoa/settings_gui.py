@@ -56,8 +56,8 @@ class SettingsGui(Window):
         self.profile_pic_view = toga.ImageView(
             self.faceholder,
             style=Pack(
-                width=self.IMAGE_WIDTH,
-                height=self.IMAGE_WIDTH,
+                width=SettingsGui.IMAGE_WIDTH,
+                height=SettingsGui.IMAGE_WIDTH,
                 background_color=TRANSPARENT,
             ),
         )
@@ -65,7 +65,7 @@ class SettingsGui(Window):
 
         self.profile_pic_view_spacer = toga.Box(
             style=Pack(
-                width=self.COLUMN_WIDTH_LEFT - self.IMAGE_WIDTH,
+                width=SettingsGui.COLUMN_WIDTH_LEFT - SettingsGui.IMAGE_WIDTH,
                 direction=ROW,
                 background_color=TRANSPARENT,
             )
@@ -75,28 +75,28 @@ class SettingsGui(Window):
             "Account Name (Company Name)",
             style=Pack(
                 font_size=17,
-                padding_bottom=self.ELEMENT_PADDING - 4,
-                width=self.COLUMN_WIDTH_RIGHT,
+                padding_bottom=SettingsGui.ELEMENT_PADDING - 4,
+                width=SettingsGui.COLUMN_WIDTH_RIGHT,
             ),
         )
         self.label_email = Label(
             "email@address.com, Business",
             style=Pack(
-                padding_bottom=self.SUBELEMENT_PADDING,
-                width=self.COLUMN_WIDTH_RIGHT,
+                padding_bottom=SettingsGui.SUBELEMENT_PADDING,
+                width=SettingsGui.COLUMN_WIDTH_RIGHT,
                 font_size=12,
             ),
         )
         self.label_usage = Label(
             "10.5 % from 1,005 TB used",
             style=Pack(
-                padding_bottom=self.ELEMENT_PADDING,
-                width=self.COLUMN_WIDTH_RIGHT,
+                padding_bottom=SettingsGui.ELEMENT_PADDING,
+                width=SettingsGui.COLUMN_WIDTH_RIGHT,
                 font_size=12,
             ),
         )
         self.btn_unlink = toga.Button(
-            "Unlink this Dropbox...", style=Pack(width=self.BUTTON_WIDTH)
+            "Unlink this Dropbox...", style=Pack(width=SettingsGui.BUTTON_WIDTH)
         )
 
         account_info_box = toga.Box(
@@ -110,7 +110,9 @@ class SettingsGui(Window):
                         self.label_usage,
                         self.btn_unlink,
                     ],
-                    style=Pack(direction=COLUMN, padding_left=self.COLUMN_PADDING),
+                    style=Pack(
+                        direction=COLUMN, padding_left=SettingsGui.COLUMN_PADDING
+                    ),
                 ),
             ],
             style=Pack(direction=ROW),
@@ -120,27 +122,33 @@ class SettingsGui(Window):
 
         self._label_select_folders = Label(
             "Selective sync:",
-            style=Pack(text_align=RIGHT, width=self.COLUMN_WIDTH_LEFT),
+            style=Pack(text_align=RIGHT, width=SettingsGui.COLUMN_WIDTH_LEFT),
         )
         self.btn_select_folders = toga.Button(
             label="Select files and folders...",
-            style=Pack(padding_left=self.COLUMN_PADDING, width=self.BUTTON_WIDTH),
+            style=Pack(
+                padding_left=SettingsGui.COLUMN_PADDING, width=SettingsGui.BUTTON_WIDTH
+            ),
         )
 
         self._label_dbx_location = Label(
             "Dropbox Folder location:",
-            style=Pack(text_align=RIGHT, width=self.COLUMN_WIDTH_LEFT),
+            style=Pack(text_align=RIGHT, width=SettingsGui.COLUMN_WIDTH_LEFT),
         )
         self.combobox_dbx_location = Selection(
-            items=["DBX Location", toga.SECTION_BREAK, self.COMBOBOX_CHOOSE],
-            style=Pack(padding_left=self.COLUMN_PADDING, width=self.BUTTON_WIDTH),
+            items=["DBX Location", toga.SECTION_BREAK, SettingsGui.COMBOBOX_CHOOSE],
+            style=Pack(
+                padding_left=SettingsGui.COLUMN_PADDING, width=SettingsGui.BUTTON_WIDTH
+            ),
         )
 
         dropbox_settings_box = toga.Box(
             children=[
                 toga.Box(
                     children=[self._label_select_folders, self.btn_select_folders],
-                    style=Pack(alignment=CENTER, padding_bottom=self.ELEMENT_PADDING),
+                    style=Pack(
+                        alignment=CENTER, padding_bottom=SettingsGui.ELEMENT_PADDING
+                    ),
                 ),
                 toga.Box(
                     children=[self._label_dbx_location, self.combobox_dbx_location],
@@ -154,36 +162,41 @@ class SettingsGui(Window):
 
         self._label_update_interval = Label(
             "Check for updates:",
-            style=Pack(text_align=RIGHT, width=self.COLUMN_WIDTH_LEFT),
+            style=Pack(text_align=RIGHT, width=SettingsGui.COLUMN_WIDTH_LEFT),
         )
         self.combobox_update_interval = Selection(
             items=["Daily", "Weekly", "Monthly", "Never"],
-            style=Pack(padding_left=self.COLUMN_PADDING, width=self.BUTTON_WIDTH),
+            style=Pack(
+                padding_left=SettingsGui.COLUMN_PADDING, width=SettingsGui.BUTTON_WIDTH
+            ),
         )
 
         self._label_system_settings = Label(
             "System Settings:",
-            style=Pack(text_align=RIGHT, width=self.COLUMN_WIDTH_LEFT),
+            style=Pack(text_align=RIGHT, width=SettingsGui.COLUMN_WIDTH_LEFT),
         )
         self.checkbox_autostart = Switch(
             label="Start Maestral on login",
             style=Pack(
-                padding_bottom=self.SUBELEMENT_PADDING, width=self.COLUMN_WIDTH_RIGHT
+                padding_bottom=SettingsGui.SUBELEMENT_PADDING,
+                width=SettingsGui.COLUMN_WIDTH_RIGHT,
             ),
         )
         self.checkbox_notifications = Switch(
             label="Enable notifications",
             style=Pack(
-                padding_bottom=self.SUBELEMENT_PADDING, width=self.COLUMN_WIDTH_RIGHT
+                padding_bottom=SettingsGui.SUBELEMENT_PADDING,
+                width=SettingsGui.COLUMN_WIDTH_RIGHT,
             ),
         )
         self.checkbox_analytics = Switch(
-            label="Share crash reports", style=Pack(width=self.COLUMN_WIDTH_RIGHT)
+            label="Share crash reports",
+            style=Pack(width=SettingsGui.COLUMN_WIDTH_RIGHT),
         )
 
         self._label_cli_tool = Label(
             "Command line tool:",
-            style=Pack(text_align=RIGHT, width=self.COLUMN_WIDTH_LEFT),
+            style=Pack(text_align=RIGHT, width=SettingsGui.COLUMN_WIDTH_LEFT),
         )
 
         self.label_cli_tool_info = Label(
@@ -191,24 +204,26 @@ class SettingsGui(Window):
             style=Pack(
                 color=GRAY,
                 font_size=12,
-                width=self.COLUMN_WIDTH_RIGHT,
-                padding_left=self.COLUMN_PADDING,
+                width=SettingsGui.COLUMN_WIDTH_RIGHT,
+                padding_left=SettingsGui.COLUMN_PADDING,
             ),
         )
 
         self.btn_cli_tool = toga.Button(
             "Install",
             style=Pack(
-                width=self.BUTTON_WIDTH / 2,
-                padding_bottom=self.SUBELEMENT_PADDING,
-                padding_left=self.COLUMN_PADDING,
+                width=SettingsGui.BUTTON_WIDTH / 2,
+                padding_bottom=SettingsGui.SUBELEMENT_PADDING,
+                padding_left=SettingsGui.COLUMN_PADDING,
             ),
         )
 
         children = [
             toga.Box(
                 children=[self._label_update_interval, self.combobox_update_interval],
-                style=Pack(alignment=CENTER, padding_bottom=self.ELEMENT_PADDING),
+                style=Pack(
+                    alignment=CENTER, padding_bottom=SettingsGui.ELEMENT_PADDING
+                ),
             ),
             toga.Box(
                 children=[
@@ -222,7 +237,7 @@ class SettingsGui(Window):
                         style=Pack(
                             alignment=TOP,
                             direction=COLUMN,
-                            padding_left=self.COLUMN_PADDING,
+                            padding_left=SettingsGui.COLUMN_PADDING,
                         ),
                     ),
                 ],
@@ -237,7 +252,9 @@ class SettingsGui(Window):
                         self._label_cli_tool,
                         self.btn_cli_tool,
                     ],
-                    style=Pack(alignment=CENTER, padding_top=self.ELEMENT_PADDING),
+                    style=Pack(
+                        alignment=CENTER, padding_top=SettingsGui.ELEMENT_PADDING
+                    ),
                 )
             )
             children.append(
@@ -245,11 +262,15 @@ class SettingsGui(Window):
                     children=[
                         Label(
                             " ",
-                            style=Pack(text_align=RIGHT, width=self.COLUMN_WIDTH_LEFT),
+                            style=Pack(
+                                text_align=RIGHT, width=SettingsGui.COLUMN_WIDTH_LEFT
+                            ),
                         ),
                         self.label_cli_tool_info,
                     ],
-                    style=Pack(alignment=CENTER, padding_top=self.SUBELEMENT_PADDING),
+                    style=Pack(
+                        alignment=CENTER, padding_top=SettingsGui.SUBELEMENT_PADDING
+                    ),
                 )
             )
 
@@ -264,30 +285,34 @@ class SettingsGui(Window):
             children=[
                 Label(
                     "About Maestral:",
-                    style=Pack(text_align=RIGHT, width=self.COLUMN_WIDTH_LEFT),
+                    style=Pack(text_align=RIGHT, width=SettingsGui.COLUMN_WIDTH_LEFT),
                 ),
                 toga.Box(
                     children=[
                         Label(
                             f"GUI v{__version__}, daemon v{__daemon_version__}",
                             style=Pack(
-                                padding_bottom=self.SUBELEMENT_PADDING,
-                                width=self.COLUMN_WIDTH_RIGHT,
+                                padding_bottom=SettingsGui.SUBELEMENT_PADDING,
+                                width=SettingsGui.COLUMN_WIDTH_RIGHT,
                             ),
                         ),
                         RichLabel(
                             html=f'<a href="{_wiki_url}">{__url__}</a>',
                             style=Pack(
-                                padding_bottom=self.SUBELEMENT_PADDING,
-                                width=self.COLUMN_WIDTH_RIGHT,
+                                padding_bottom=SettingsGui.SUBELEMENT_PADDING,
+                                width=SettingsGui.COLUMN_WIDTH_RIGHT,
                             ),
                         ),
                         Label(
                             f"(c) 2018 - {year}, {__author__}.",
-                            style=Pack(color=GRAY, width=self.COLUMN_WIDTH_RIGHT),
+                            style=Pack(
+                                color=GRAY, width=SettingsGui.COLUMN_WIDTH_RIGHT
+                            ),
                         ),
                     ],
-                    style=Pack(direction=COLUMN, padding_left=self.COLUMN_PADDING),
+                    style=Pack(
+                        direction=COLUMN, padding_left=SettingsGui.COLUMN_PADDING
+                    ),
                 ),
             ],
             style=Pack(direction=ROW),
@@ -296,17 +321,17 @@ class SettingsGui(Window):
         main_box = toga.Box(
             children=[
                 account_info_box,
-                toga.Divider(style=Pack(padding=self.SECTION_PADDING)),
+                toga.Divider(style=Pack(padding=SettingsGui.SECTION_PADDING)),
                 dropbox_settings_box,
-                toga.Divider(style=Pack(padding=self.SECTION_PADDING)),
+                toga.Divider(style=Pack(padding=SettingsGui.SECTION_PADDING)),
                 maestral_settings_box,
-                toga.Divider(style=Pack(padding=self.SECTION_PADDING)),
+                toga.Divider(style=Pack(padding=SettingsGui.SECTION_PADDING)),
                 about_box,
             ],
             style=Pack(
                 direction=COLUMN,
                 padding=30,
-                width=self.COLUMN_WIDTH_LEFT + self.COLUMN_WIDTH_RIGHT,
+                width=SettingsGui.COLUMN_WIDTH_LEFT + SettingsGui.COLUMN_WIDTH_RIGHT,
             ),
         )
 
