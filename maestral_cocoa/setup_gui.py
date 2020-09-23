@@ -54,11 +54,11 @@ class SetupDialogGui(Window):
         )
 
         # FIXME: remove private API access
-        self._impl.native.titlebarAppearsTransparent = True
-        self._impl.native.titleVisibility = 1
-        self._impl.native.styleMask |= NSFullSizeContentViewWindowMask
-        self._impl.native.movableByWindowBackground = True
-        self._impl.native.level = 3
+        # self._impl.native.titlebarAppearsTransparent = True
+        # self._impl.native.titleVisibility = 1
+        # self._impl.native.styleMask |= NSFullSizeContentViewWindowMask
+        # self._impl.native.movableByWindowBackground = True
+        # self._impl.native.level = 3
 
         # ==== welcome page ==============================================================
 
