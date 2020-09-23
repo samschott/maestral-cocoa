@@ -449,4 +449,5 @@ class Window(TogaWindow):
 
 def apply_round_clipping(image_view_impl):
     """Clips an image in a given toga_gtk.ImageView to a circular mask."""
+    # TODO: use cairo surface
     pass
