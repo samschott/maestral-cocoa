@@ -21,11 +21,11 @@ class SelectiveSyncGui(Window):
             multiple_select=True,
         )
 
-        self.dialog_button = DialogButtons(
+        self.dialog_buttons = DialogButtons(
             labels=["Update", "Cancel"],
             style=Pack(padding=(0, 20, 20, 20)),
         )
-        self.dialog_button["Update"].enabled = False
+        self.dialog_buttons["Update"].enabled = False
 
         # Outermost box
         self.outer_box = toga.Box(
@@ -35,7 +35,7 @@ class SelectiveSyncGui(Window):
                     style=Pack(padding=20),
                 ),
                 self.tree,
-                self.dialog_button,
+                self.dialog_buttons,
             ],
             style=Pack(direction=COLUMN, flex=1, alignment=RIGHT),
         )
