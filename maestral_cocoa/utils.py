@@ -27,6 +27,7 @@ from .private.implementation.cocoa.constants import (
 
 if platform.platform() == "Darwin":
     from rubicon.objc.runtime import load_library
+
     sec = load_library("Security")
 
 

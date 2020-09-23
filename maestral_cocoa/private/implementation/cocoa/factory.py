@@ -122,7 +122,7 @@ class Icon:
         ImageTemplate.StopProgress: NSImageNameStopProgressFreestandingTemplate,
     }
 
-    EXTENSIONS = ['.pdf', '.icns', '.png']
+    EXTENSIONS = [".pdf", ".icns", ".png"]
     SIZES = None
 
     def __init__(self, interface, path=None, for_path=None, template=None):

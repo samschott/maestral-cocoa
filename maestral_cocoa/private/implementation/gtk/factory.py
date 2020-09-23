@@ -49,7 +49,7 @@ class Icon:
         ImageTemplate.StopProgress: "process-stop",
     }
 
-    EXTENSIONS = ['.icns', '.ico', 'svg', '.png']
+    EXTENSIONS = [".icns", ".ico", "svg", ".png"]
     SIZES = None
 
     def __init__(self, interface, path=None, for_path=None, template=None):
