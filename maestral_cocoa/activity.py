@@ -112,7 +112,7 @@ class ActivityWindow(Window):
             on_double_click=self.on_row_clicked,
             style=Pack(flex=1),
         )
-        self.table._impl.columns[-1].maxWidth = 20  # TODO: don't use private API
+        self.table._impl.columns[-1].maxWidth = 25  # TODO: don't use private API
         self.content = self.table
 
         self.center()
