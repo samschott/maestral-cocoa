@@ -5,7 +5,6 @@ import os.path as osp
 
 # external imports
 from travertino.size import at_least
-from toga import SECTION_BREAK
 from toga.constants import LEFT, TRANSPARENT
 from toga.platform import get_platform_factory
 from toga_cocoa.libs import (
@@ -44,13 +43,11 @@ from toga_cocoa.app import App as TogaApp
 from toga_cocoa.widgets.base import Widget
 from toga_cocoa.widgets.switch import Switch as TogaSwitch
 from toga_cocoa.widgets.button import Button as TogaButton
-from toga_cocoa.widgets.selection import Selection as TogaSelection
 from toga_cocoa.window import Window as TogaWindow
 from toga_cocoa.widgets.multilinetextinput import (
     MultilineTextInput as TogaMultilineTextInput,
 )
 from toga_cocoa.factory import *  # noqa: F401,F406
-from rubicon.objc import NSMakeSize
 
 # local imports
 from . import dialogs
@@ -580,6 +577,7 @@ class StatusBarItem:
 class CocoaSystemTrayApp(NSApplication):
     @objc_method
     def sendEvent_(self, event) -> None:
+
         if event.type == NSKeyDown:
             toga_event = toga_key(event)
             if toga_event == {"key": Key.X, "modifiers": {Key.MOD_1}}:
