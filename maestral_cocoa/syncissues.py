@@ -103,13 +103,13 @@ class SyncIssuesWindow(Window):
 
         self.size = WINDOW_SIZE
 
-        self.placeholder_label = Label(
+        placeholder_label = Label(
             "No sync issues 😊",
             style=Pack(padding_bottom=PADDING),
         )
 
         self.sync_errors_box = toga.Box(
-            children=[self.placeholder_label],
+            children=[placeholder_label],
             style=Pack(
                 direction=COLUMN,
                 padding=2 * PADDING,
@@ -144,7 +144,11 @@ class SyncIssuesWindow(Window):
 
             # add new errors
             if len(new_errors) == 0:
-                self.sync_errors_box.add(self.placeholder_label)
+                placeholder_label = Label(
+                    "No sync issues 😊",
+                    style=Pack(padding_bottom=PADDING),
+                )
+                self.sync_errors_box.add(placeholder_label)
             else:
                 for e in new_errors:
                     self.sync_errors_box.add(SyncIssueView(e))
