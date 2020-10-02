@@ -5,6 +5,7 @@ import os.path as osp
 
 # external imports
 from travertino.size import at_least
+from rubicon.objc import NSMakeSize
 from toga.constants import LEFT, TRANSPARENT
 from toga.platform import get_platform_factory
 from toga_cocoa.libs import (
