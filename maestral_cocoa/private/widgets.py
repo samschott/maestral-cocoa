@@ -8,13 +8,44 @@ from toga.handlers import wrapped_handler
 from toga.widgets.base import Widget
 from toga.style.pack import Pack
 from toga.constants import ROW, RIGHT, TRANSPARENT
+from toga.sources import ListSource, TreeSource
+from toga.sources.accessors import to_accessor
 
 # local imports
 from .platform import get_platform_factory
 from .constants import ON, MIXED, TRUNCATE_TAIL, VisualEffectMaterial, ImageTemplate
+from .renderers import RendererText, RendererIconText
 
 
 private_factory = get_platform_factory()
+
+
+# ==== icons =============================================================================
+
+
+class Icon(toga.Icon):
+    """
+    Reimplements toga.Icon to provide the icon for the file / folder type
+    instead of loading an icon from the file content.
+
+    :param path: File to path.
+    """
+
+    def __init__(self, path=None, for_path=None, template=None, system=False):
+        super().__init__(path, system)
+        self.for_path = for_path
+        self.template = template
+
+    def bind(self, factory):
+        if self._impl is None:
+            self._impl = private_factory.Icon(
+                interface=self,
+                path=self.path,
+                for_path=self.for_path,
+                template=self.template,
+            )
+
+        return self._impl
 
 
 # ==== layout widgets ====================================================================
@@ -474,32 +505,418 @@ class RichLabel(Widget):
         self._impl.set_html(value)
 
 
-# ==== icons =============================================================================
+# ==== tree and table ====================================================================
 
 
-class Icon(toga.Icon):
+class Column:
+    def __init__(self, title, renderer, min_width=16, max_width=500):
+        self.title = title
+        self.renderer = renderer
+        self.min_width = min_width
+        self.max_width = max_width
+
+
+class Table(Widget):
+    """A Table Widget allows the display of data in the form of columns and rows.
+
+    :param columns: Can be a list of titles to generate columns, a list of tuples
+        ``(title, accessor)`` where the accessor defines which column of the data source
+        to access, or a list of :class:`Column` instances.
+    :param id: An identifier for this widget.
+    :param data: The data to display in the widget. Must be an instance of
+        :class:`toga.sources.ListSource` or a class instance which implements the
+        interface of :class:`toga.sources.ListSource`.
+    :param style: An optional style object. If no style is provided` then a new one will
+        be created for the widget.
+    :param on_select: A function to be invoked on selecting a row of the table.
+    :param on_double_click: A function to be invoked on double clicking a row of the table.
+    :param factory: A python module that is capable to return a implementation of this
+        class with the same name. (optional & normally not needed)
+
+    Examples:
+
+        Lets prepare a data source first.
+
+        >>> data = [{'head_1': 'value 1', 'head_2': 'value 2', 'head_3': 'value3'}),
+        >>>         {'head_1': 'value 1', 'head_2': 'value 2', 'head_3': 'value3'}]
+        >>> table_source = ListSource(data)
+
+        Columns can be provided in several forms.
+        As a list of column titles which will be matched against accessors in the data:
+
+        >>> columns = ['Head 1', 'Head 2', 'Head 3']
+
+        A list of tuples with column titles and accessors:
+
+        >>> columns = [('Head 1', 'head_1'), ('Head 2', 'head_2'), ('Head 3', 'head_3')]
+
+        As ``Column`` instances with a renderer. The renderer determines how a column is
+        displayed and how the data is mapped to column properties such as text and icon:
+
+        >>> columns = [
+        >>>     Column(title='Head 1', renderer=RendererIconText(text='head_1', icon='head_2')),
+        >>>     Column(title='Head 2', renderer=RendererText(text='head_1')),
+        >>> ]
+
+        Now we can create our Table:
+
+        >>> table = Table(columns=columns, data=table_source)
     """
-    Reimplements toga.Icon to provide the icon for the file / folder type
-    instead of loading an icon from the file content.
 
-    :param path: File to path.
+    MIN_WIDTH = 100
+    MIN_HEIGHT = 100
+
+    def __init__(
+        self,
+        columns,
+        id=None,
+        style=None,
+        data=None,
+        multiple_select=False,
+        on_select=None,
+        on_double_click=None,
+        factory=private_factory,
+    ):
+        super().__init__(id=id, style=style, factory=factory)
+
+        self._columns = []
+        for col_index, col in enumerate(columns):
+            if isinstance(col, Column):
+                self._columns.append(col)
+            elif isinstance(col, tuple):
+                title, accessor = col
+                self._columns.append(Column(title, RendererText(text=accessor)))
+            elif isinstance(col, str):
+                title = col
+                accessor = to_accessor(title)
+                self._columns.append(Column(title, RendererText(text=accessor)))
+            else:
+                raise ValueError("Column must be tuple (title, accessor) or Column")
+
+        self._multiple_select = multiple_select
+        self._on_select = None
+        self._on_double_click = None
+        self._data = ListSource([], [])
+
+        self._impl = self.factory.Table(interface=self)
+        if data is not None:
+            self.data = data
+        self.on_select = on_select
+        self.on_double_click = on_double_click
+
+    @property
+    def columns(self):
+        return self._columns
+
+    @property
+    def data(self):
+        """The data source of the widget. It accepts table data
+        in the form of :obj:`ListSource`
+
+        Returns:
+            Returns a (:obj:`ListSource`).
+        """
+        return self._data
+
+    @data.setter
+    def data(self, data):
+        self._data = data
+        self._data.add_listener(self._impl)
+        self._impl.change_source(source=self._data)
+
+    @property
+    def multiple_select(self):
+        """Does the table allow multiple rows to be selected?"""
+        return self._multiple_select
+
+    @property
+    def selection(self):
+        """The current selection of the table.
+
+        A value of None indicates no selection.
+        If the tree allows multiple selection, returns a list of
+        selected data nodes. Otherwise, returns a single data node.
+        """
+        return self._impl.get_selection()
+
+    def scroll_to_top(self):
+        """Scroll the view so that the top of the list (first row) is visible"""
+        self.scroll_to_row(0)
+
+    def scroll_to_row(self, row):
+        """Scroll the view so that the specified row index is visible.
+
+        Args:
+            row: The index of the row to make visible. Negative values refer
+                 to the nth last row (-1 is the last row, -2 second last,
+                 and so on)
+        """
+        if row >= 0:
+            self._impl.scroll_to_row(row)
+        else:
+            self._impl.scroll_to_row(len(self.data) + row)
+
+    def scroll_to_bottom(self):
+        """Scroll the view so that the bottom of the list (last row) is visible"""
+        self.scroll_to_row(-1)
+
+    @property
+    def on_select(self):
+        """The callback function that is invoked when a row of the table is selected.
+        The provided callback function has to accept two arguments table (:obj:`Table`)
+        and row (``Row`` or ``None``).
+
+        Returns:
+            (``callable``) The callback function.
+        """
+        return self._on_select
+
+    @on_select.setter
+    def on_select(self, handler):
+        """
+        Set the function to be executed on node selection
+
+        :param handler: callback function
+        :type handler: ``callable``
+        """
+        self._on_select = wrapped_handler(self, handler)
+        self._impl.set_on_select(self._on_select)
+
+    @property
+    def on_double_click(self):
+        """The callback function that is invoked when a row of the table is double clicked.
+        The provided callback function has to accept two arguments table (:obj:`Table`)
+        and row (``Row`` or ``None``).
+
+        Returns:
+            (``callable``) The callback function.
+        """
+        return self._on_double_click
+
+    @on_double_click.setter
+    def on_double_click(self, handler):
+        """
+        Set the function to be executed on node double click
+
+        :param handler: callback function
+        :type handler: ``callable``
+        """
+        self._on_double_click = wrapped_handler(self, handler)
+        self._impl.set_on_double_click(self._on_double_click)
+
+    def add_column(self, column, accessor=None):
+        """
+        Add a new column to the table
+
+        :param column: title of the column or Column instance
+        :param accessor: attribute name in data source
+        """
+
+        if isinstance(column, str):
+            accessor = accessor or to_accessor(column)
+            column = Column(title=column, renderer=RendererText(text=accessor))
+        elif isinstance(column, Column):
+            pass
+        else:
+            raise ValueError("Column must of type str or column")
+
+        self._columns.append(column)
+        self._impl.add_column(column)
+
+        return column
+
+    def remove_column(self, column):
+        """
+        Remove a table column.
+
+        :param column: Column instance
+        """
+
+        try:
+            # Remove column
+            self._columns.remove(column)
+            self._impl.remove_column(column)
+        except KeyError:
+            raise ValueError('Invalid column: "{}"'.format(column))
+
+
+class Tree(Widget):
+    """Tree Widget
+
+    :param columns: Can be a list of titles to generate columns, a list of tuples
+        ``(title, accessor)`` where the accessor defines which column of the data source
+        to access, or a list of :class:`Column` instances.
+    :param id:  An identifier for this widget.
+    :param style: An optional style object. If no style is provided then a new
+        one will be created for the widget.
+    :param data: The data to display in the widget. Can be an instance of
+        :class:`toga.sources.TreeSource`, a list, or tuple with data to
+        display in the tree widget, or a class instance which implements the
+        interface of :class:`toga.sources.TreeSource`.
+    :param multiple_select: Boolean; if ``True``, allows for the selection of
+        multiple rows. Defaults to ``False``.
+    :param on_select: A handler to be invoked when the user selects one or
+        multiple rows.
+    :param on_double_click: A handler to be invoked when the user double clicks a row.
+    :param factory:: A python module that is capable to return a implementation
+        of this class with the same name. (optional; used only for testing)
+
+    Examples:
+
+        Lets prepare a data source first.
+
+        >>> data = {
+        >>>    ('father', 38): [('child 1', 17), ('child 1', 15)],
+        >>>    ('mother', 42): [('child 1', 17)],
+        >>> }
+        >>> accessors = ['name', 'age']
+        >>> tree_source = TreeSource(data, accessors)
+
+        Columns can be provided in several forms.
+        As a list of column titles which will be matched against accessors in the data:
+
+        >>> columns = ['Name', 'Age']
+
+        A list of tuples with column titles and accessors:
+
+        >>> columns = [('Name', 'name'), ('Age', 'age')]
+
+        As ``Column`` instances with a renderer. The renderer determines how a column is
+        displayed and how the data is mapped to column properties such as text and icon:
+
+        >>> columns = [
+        >>>     Column(title='Name', renderer=RendererText(text='name')),
+        >>>     Column(title='Age', renderer=RendererText(text='age')),
+        >>> ]
+
+        Now we can create our Table:
+
+        >>> table = Tree(columns=columns, data=tree_source)
     """
 
-    def __init__(self, path=None, for_path=None, template=None, system=False):
-        super().__init__(path, system)
-        self.for_path = for_path
-        self.template = template
+    MIN_WIDTH = 100
+    MIN_HEIGHT = 100
 
-    def bind(self, factory):
-        if self._impl is None:
-            self._impl = private_factory.Icon(
-                interface=self,
-                path=self.path,
-                for_path=self.for_path,
-                template=self.template,
-            )
+    def __init__(
+        self,
+        columns,
+        id=None,
+        style=None,
+        data=None,
+        multiple_select=False,
+        on_select=None,
+        on_double_click=None,
+        factory=private_factory,
+    ):
+        super().__init__(id=id, style=style, factory=factory)
 
-        return self._impl
+        self._columns = []
+        for col_index, col in enumerate(columns):
+            if isinstance(col, Column):
+                self._columns.append(col)
+            elif isinstance(col, tuple):
+                title, accessor = col
+                self._columns.append(Column(title, RendererText(text=accessor)))
+            elif isinstance(col, str):
+                title = col
+                accessor = to_accessor(title)
+                self._columns.append(Column(title, RendererText(text=accessor)))
+            else:
+                raise ValueError("Column must be tuple (title, accessor) or Column")
+
+        self._multiple_select = multiple_select
+        self._data = TreeSource([], [])
+        self._on_select = None
+        self._on_double_click = None
+
+        self._impl = self.factory.Tree(interface=self)
+        if data is not None:
+            self.data = data
+        self.on_select = on_select
+        self.on_double_click = on_double_click
+
+    @property
+    def columns(self):
+        return self._columns
+
+    @property
+    def data(self):
+        """
+        :returns: The data source of the tree
+        :rtype: :class:`toga.sources.TreeSource`
+        """
+        return self._data
+
+    @data.setter
+    def data(self, data):
+        """
+        Set the data source of the data
+
+        :param data: Data source
+        :type data: :class:`toga.sources.TreeSource`
+        """
+        self._data = data
+        self._data.add_listener(self._impl)
+        self._impl.change_source(source=self._data)
+
+    @property
+    def multiple_select(self):
+        """Does the table allow multiple rows to be selected?"""
+        return self._multiple_select
+
+    @property
+    def selection(self):
+        """The current selection of the table.
+
+        A value of None indicates no selection.
+        If the tree allows multiple selection, returns a list of
+        selected data nodes. Otherwise, returns a single data node.
+        """
+        return self._impl.get_selection()
+
+    @property
+    def on_select(self):
+        """
+        The callable function for when a node on the Tree is selected. The provided
+        callback function has to accept two arguments tree (:obj:`Tree`) and node
+        (``Node`` or ``None``).
+
+        :rtype: ``callable``
+        """
+        return self._on_select
+
+    @on_select.setter
+    def on_select(self, handler):
+        """
+        Set the function to be executed on node select
+
+        :param handler:     callback function
+        :type handler:      ``callable``
+        """
+        self._on_select = wrapped_handler(self, handler)
+        self._impl.set_on_select(self._on_select)
+
+    @property
+    def on_double_click(self):
+        """
+        The callable function for when a node on the Tree is selected. The provided
+        callback function has to accept two arguments tree (:obj:`Tree`) and node
+        (``Node`` or ``None``).
+
+        :rtype: ``callable``
+        """
+        return self._on_double_click
+
+    @on_double_click.setter
+    def on_double_click(self, handler):
+        """
+        Set the function to be executed on node double click
+
+        :param handler:     callback function
+        :type handler:      ``callable``
+        """
+        self._on_double_click = wrapped_handler(self, handler)
+        self._impl.set_on_double_click(self._on_double_click)
 
 
 # ==== menus and menu items ==============================================================
@@ -733,7 +1150,7 @@ class StatusBarItem:
         self._impl.set_icon(self._icon)
 
 
-# ==== Custom Window =====================================================================
+# ==== Custom window =====================================================================
 
 
 class Window(toga.Window):
