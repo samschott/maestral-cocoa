@@ -4,6 +4,7 @@
 import toga
 from toga.style import Pack
 from toga.constants import RIGHT, COLUMN
+from rubicon.objc import NSMakeSize
 
 # local imports
 from .private.widgets import Window, DialogButtons

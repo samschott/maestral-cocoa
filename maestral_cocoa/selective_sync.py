@@ -21,7 +21,7 @@ class Node:
     def __init__(self, path, parent, mdbx, is_folder):
         super().__init__()
         self._mdbx = mdbx
-        self._path = path
+        self.path = path
         self._is_folder = is_folder
         if is_folder:
             self._icon = Icon(for_path="/usr")
@@ -47,11 +47,11 @@ class Node:
         excluded_items = getattr(self._mdbx, "excluded_items", [])
 
         # get included state from current list
-        if self._path.lower() in excluded_items:
+        if self.path.lower() in excluded_items:
             self._original_state = OFF  # item is excluded
-        elif any(is_child(self._path.lower(), f) for f in excluded_items):
+        elif any(is_child(self.path.lower(), f) for f in excluded_items):
             self._original_state = OFF  # item's parent is excluded
-        elif any(is_child(f, self._path.lower()) for f in excluded_items):
+        elif any(is_child(f, self.path.lower()) for f in excluded_items):
             self._original_state = MIXED  # some of item's children are excluded
         else:
             self._original_state = ON  # item is fully included
@@ -92,7 +92,7 @@ class Node:
 
     @property
     def name(self):
-        return self._icon, osp.basename(self._path)
+        return self._icon, osp.basename(self.path)
 
     @property
     def included(self):
@@ -119,7 +119,7 @@ class Node:
 
         try:
             entries = await call_async_threaded_maestral(
-                self._mdbx.config_name, "list_folder", self._path
+                self._mdbx.config_name, "list_folder", self.path
             )
         except (NotAFolderError, NotFoundError):
             entries = []
@@ -182,7 +182,7 @@ class Node:
         self.parent.notify(notification, **kwargs)
 
     def __repr__(self):
-        return f"<{self.__class__.__name__}({self._path})>"
+        return f"<{self.__class__.__name__}({self.path})>"
 
 
 class PlaceholderNode:
