@@ -230,7 +230,7 @@ class SetupDialogGui(Window):
             self.selective_sync_page,
             self.done_page,
         )
-        self.content = self.pages[0]
+        self.content = toga.Box(children=[self.pages[0]])
 
     def go_forward(self):
         self.goto_page(self.current_page + 1)
@@ -240,7 +240,8 @@ class SetupDialogGui(Window):
 
     def goto_page(self, i):
         self.current_page = i
-        self.content = self.pages[self.current_page]
+        self.content.remove(self.content.children[0])
+        self.content.add(self.pages[self.current_page])
         self.show()
 
     def current_index(self):
