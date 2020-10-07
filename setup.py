@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="maestral-cocoa",
-    version="1.2.1.dev0",
+    version="1.2.1",
     description="Open-source Dropbox client for macOS and Linux.",
     url="https://github.com/SamSchott/maestral",
     author="Sam Schott",
