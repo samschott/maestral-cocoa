@@ -26,7 +26,7 @@ from maestral.constants import (
 from maestral.daemon import (
     start_maestral_daemon_process,
     stop_maestral_daemon_process,
-    get_maestral_proxy,
+    MaestralProxy,
     Start,
     CommunicationError,
 )
@@ -209,7 +209,7 @@ class MaestralGui(SystemTrayApp):
         elif res == Start.Ok:
             self._started = True
 
-        return get_maestral_proxy(self.config_name)
+        return MaestralProxy(self.config_name)
 
     def setup_ui_unlinked(self):
 
