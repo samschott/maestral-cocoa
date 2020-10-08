@@ -31,6 +31,7 @@ setup(
     entry_points={
         "console_scripts": ["maestral_cocoa=maestral_cocoa.cli:main"],
         "maestral_gui": ["maestral_cocoa=maestral_cocoa.main:run"],
+        "pyinstaller40": ["hook-dirs=maestral_cocoa.__pyinstaller:get_hook_dirs"],
     },
     classifiers=[
         "License :: OSI Approved :: MIT License",
