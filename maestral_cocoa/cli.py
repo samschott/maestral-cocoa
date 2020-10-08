@@ -19,15 +19,17 @@ def main():
     freeze_support()
 
     parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument('--cli', action='store_true')
-    parser.add_argument('-c', '--config-name', default='maestral')
+    parser.add_argument("--cli", action="store_true")
+    parser.add_argument("-c", "--config-name", default="maestral")
     parsed_args, remaining = parser.parse_known_args()
 
     if parsed_args.cli:
         import maestral.cli
-        sys.argv[0] = 'maestral'
-        sys.argv.remove('--cli')
+
+        sys.argv[0] = "maestral"
+        sys.argv.remove("--cli")
         maestral.cli.main()
     else:
         from maestral_cocoa.main import run
+
         run(parsed_args.config_name)

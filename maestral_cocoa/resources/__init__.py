@@ -12,11 +12,12 @@ import pkg_resources
 
 
 def resource_path(name):
-    folder = getattr(sys, '_MEIPASS',
-                     pkg_resources.resource_filename('maestral_cocoa', 'resources'))
+    folder = getattr(
+        sys, "_MEIPASS", pkg_resources.resource_filename("maestral_cocoa", "resources")
+    )
     return osp.join(folder, name)
 
 
-APP_ICON_PATH = resource_path('maestral.icns')
-TRAY_ICON_PATH = resource_path('systray-{}.pdf')
-FACEHOLDER_PATH = resource_path('faceholder.pdf')
+APP_ICON_PATH = resource_path("maestral.icns")
+TRAY_ICON_PATH = resource_path("systray-{}.pdf")
+FACEHOLDER_PATH = resource_path("faceholder.pdf")
