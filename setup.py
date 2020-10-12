@@ -22,6 +22,7 @@ setup(
     install_requires=[
         "bugsnag",
         "click",
+        "importlib_resources;python_version<'3.9'",
         "maestral>=1.2.2.dev0",
         "markdown2",
         "toga==0.3.0.dev23",

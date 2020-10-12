@@ -8,13 +8,15 @@ Attribution-NonCommercial-NoDerivs 2.0 UK: England & Wales License.
 """
 import sys
 import os.path as osp
-import pkg_resources
+
+try:
+    from importlib.resources import files
+except ImportError:
+    from importlib_resources import files
 
 
 def resource_path(name):
-    folder = getattr(
-        sys, "_MEIPASS", pkg_resources.resource_filename("maestral_cocoa", "resources")
-    )
+    folder = getattr(sys, "_MEIPASS", files("maestral_cocoa") / "resources")
     return osp.join(folder, name)
 
 
