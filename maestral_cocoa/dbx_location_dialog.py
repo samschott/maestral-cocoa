@@ -113,8 +113,8 @@ class DbxLocationDialog(Dialog):
                     choice = self.alert_sheet(
                         title="File conflict",
                         message=(
-                            'There already is a file named "{}" at this location. Would '
-                            "you like to replace it?".format(
+                            'There already is a file named "{}" at this location. '
+                            "Would you like to replace it?".format(
                                 self.mdbx.get_conf("main", "default_dir_name")
                             )
                         ),
@@ -130,7 +130,7 @@ class DbxLocationDialog(Dialog):
                     pass
 
             await call_async_threaded_maestral(
-                self.mdbx.config_name, "move_dropbox_directory", new_path
+                self.mdbx.config_name, "create_dropbox_directory", chosen_dropbox_folder
             )
             self.mdbx.rebuild_index()
             self.exit_status = self.ACCEPTED
