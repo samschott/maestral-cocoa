@@ -30,6 +30,10 @@ def main():
         sys.argv.remove("--cli")
         maestral.cli.main()
     else:
-        from maestral_cocoa.main import run
+        from maestral_cocoa.app import run
 
         run(parsed_args.config_name)
+
+
+if __name__ == "__main__":
+    main()

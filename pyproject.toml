@@ -1,6 +1,45 @@
+[tool.briefcase]
+project_name = "Maestral"
+bundle = "com.samschott.maestral"
+version = "1.2.2.dev0"
+url = "https://github.com/samschott/maestral"
+license = "MIT license"
+author = "Sam Schott"
+author_email = "ss2151@cam.ac.uk"
+
+[tool.briefcase.app.maestral_cocoa]
+formal_name = "Maestral"
+description = "An open-source Dropbox client for macOS and Linux"
+icon = "src/maestral_cocoa/resources/maestral"
+sources = ["src/maestral_cocoa"]
+requires = [
+    "bugsnag",
+    "click",
+    "importlib_resources;python_version<'3.9'",
+    "maestral>=1.2.1",
+    "markdown2",
+]
+
+[tool.briefcase.app.maestral_cocoa.macOS]
+requires = [
+    "toga-cocoa>=0.3.0.dev20",
+]
+
+[tool.briefcase.app.maestral_cocoa.linux]
+requires = [
+    "toga-gtk>=0.3.0.dev20",
+]
+system_requires = [
+    "libgirepository1.0-dev",
+    "libcairo2-dev",
+    "libpango1.0-dev",
+    "libwebkitgtk-3.0-0",
+    "gir1.2-webkit-3.0",
+]
+
 [tool.black]
 line-length = 88
-target-version = ['py36', 'py37', 'py38']
+target-version = ["py36", "py37", "py38"]
 
 [build-system]
 requires = ["setuptools>=41.0", "wheel"]
