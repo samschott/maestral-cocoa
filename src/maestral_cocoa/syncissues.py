@@ -12,7 +12,7 @@ from toga.constants import ROW, COLUMN
 
 # local imports
 from .utils import create_task
-from .private.widgets import Label, FollowLinkButton, Icon, Window, ScrollContainer
+from .private.widgets import Label, FollowLinkButton, Icon, Window
 from .private.constants import WORD_WRAP
 
 
@@ -115,7 +115,7 @@ class SyncIssuesWindow(Window):
                 padding=2 * PADDING,
             ),
         )
-        self.scroll_container = ScrollContainer(
+        self.scroll_container = toga.ScrollContainer(
             content=self.sync_errors_box,
             horizontal=False,
         )

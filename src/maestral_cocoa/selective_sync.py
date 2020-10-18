@@ -129,7 +129,7 @@ class Node:
         # remove all placeholders
         for index, child in enumerate(self._children):
             if isinstance(child, PlaceholderNode):
-                self.notify("remove", item=child)
+                self.notify("remove", parent=self, index=index, item=child)
 
         # populate with new entries
         if entries is False:

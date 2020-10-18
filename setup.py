@@ -26,7 +26,7 @@ setup(
         "importlib_resources;python_version<'3.9'",
         "maestral>=1.2.1",
         "markdown2",
-        "toga==0.3.0.dev23",
+        "toga==0.3.0.dev24",
         "rubicon-objc>=0.4.0",
     ],
     zip_safe=False,
