@@ -28,7 +28,7 @@ from .private.implementation.cocoa.constants import (
 sec = load_library("Security")
 
 
-# ==== async calls =======================================================================
+# ==== async calls =====================================================================
 
 thread_pool_executor = ThreadPoolExecutor(10)
 
@@ -58,7 +58,7 @@ def call_async_threaded_maestral(config_name, func_name, *args):
     return loop.run_in_executor(thread_pool_executor, func, *args)
 
 
-# ==== system calls ======================================================================
+# ==== system calls ====================================================================
 
 
 class AuthorizationItem(Structure):

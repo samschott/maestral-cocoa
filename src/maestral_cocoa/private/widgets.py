@@ -17,7 +17,7 @@ from .constants import ON, MIXED, TRUNCATE_TAIL, VisualEffectMaterial, ImageTemp
 private_factory = get_platform_factory()
 
 
-# ==== layout widgets ====================================================================
+# ==== layout widgets ==================================================================
 
 
 class Spacer(toga.Box):
@@ -58,14 +58,14 @@ class VibrantBox(Widget):
         self._impl.set_material(material)
 
 
-# ==== buttons ===========================================================================
+# ==== buttons =========================================================================
 
 
 class DialogButtons(toga.Box):
     """
     A dialog button box. Buttons will be created from the given list of labels (defaults
-    to ['Ok', 'Cancel']). If a callback ``on_press`` is provided, will be executed if any
-    button is pressed, with the label of the respective button as an argument.
+    to ['Ok', 'Cancel']). If a callback ``on_press`` is provided, will be executed if
+    any button is pressed, with the label of the respective button as an argument.
 
     :param labels: An iterable of label strings.
     :param str default: A default button to select. Value must match one of the labels
@@ -386,7 +386,7 @@ class FileSelectionButton(toga.Widget):
         self._impl.set_on_select(self._on_select)
 
 
-# ==== labels ============================================================================
+# ==== labels ==========================================================================
 
 
 class Label(toga.Label):
@@ -474,7 +474,7 @@ class RichLabel(Widget):
         self._impl.set_html(value)
 
 
-# ==== icons =============================================================================
+# ==== icons ===========================================================================
 
 
 class Icon(toga.Icon):
@@ -502,7 +502,7 @@ class Icon(toga.Icon):
         return self._impl
 
 
-# ==== menus and menu items ==============================================================
+# ==== menus and menu items ============================================================
 
 
 class MenuItem:
@@ -515,8 +515,8 @@ class MenuItem:
         action: (optional) a function to invoke when the item is clicked.
         submenu: A Menu to use as a submenu. It will become visible when this item is
             clicked.
-        factory: A python module that is capable to return a implementation of this class
-            with the same name. (optional & normally not needed).
+        factory: A python module that is capable to return a implementation of this
+            class with the same name. (optional & normally not needed).
     """
 
     def __init__(
@@ -696,7 +696,7 @@ class Menu:
         self._on_close = wrapped_handler(self, callback)
 
 
-# ==== StatusBarItem =====================================================================
+# ==== StatusBarItem ===================================================================
 
 
 class StatusBarItem:
@@ -733,7 +733,7 @@ class StatusBarItem:
         self._impl.set_icon(self._icon)
 
 
-# ==== Custom Window =====================================================================
+# ==== Custom Window ===================================================================
 
 
 class Window(toga.Window):
@@ -869,7 +869,7 @@ class Window(toga.Window):
         )
 
 
-# ==== Application =======================================================================
+# ==== Application =====================================================================
 
 
 class SystemTrayApp(toga.App):
@@ -957,7 +957,7 @@ class SystemTrayApp(toga.App):
         )
 
 
-# ==== helpers ===========================================================================
+# ==== helpers =========================================================================
 
 
 def apply_round_clipping(image_view: toga.ImageView, factory=private_factory):

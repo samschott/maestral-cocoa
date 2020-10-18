@@ -331,7 +331,7 @@ class MaestralGui(SystemTrayApp):
         # --------------- switch to idle icon -------------------
         self.set_icon(IDLE)
 
-    # ==== callbacks menu items ==========================================================
+    # ==== callbacks menu items ========================================================
 
     @staticmethod
     def on_website_clicked(widget):
@@ -368,9 +368,9 @@ class MaestralGui(SystemTrayApp):
         choice = self.alert(
             title="Rebuilt Maestral's sync index?",
             message=(
-                "Rebuilding the index may take several minutes, depending on the size of "
-                "your Dropbox. Any changes to local files will be synced once rebuilding "
-                "has completed."
+                "Rebuilding the index may take several minutes, depending on the size "
+                "of your Dropbox. Any changes to local files will be synced once "
+                "rebuilding has completed."
             ),
             button_labels=("Rebuild", "Cancel"),
             icon=self.icon,
@@ -379,7 +379,7 @@ class MaestralGui(SystemTrayApp):
         if choice == 0:
             self.mdbx.rebuild_index()
 
-    # ==== other callbacks  ==============================================================
+    # ==== other callbacks  ============================================================
 
     async def auto_check_for_updates(self):
 
@@ -426,7 +426,7 @@ class MaestralGui(SystemTrayApp):
             version=latest_release, release_notes=release_notes, icon=self.icon
         ).raise_()
 
-    # ==== periodic updates ==============================================================
+    # ==== periodic updates ============================================================
 
     def update_status(self):
         """Change icon according to status."""

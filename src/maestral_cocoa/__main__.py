@@ -11,8 +11,8 @@ def main():
     This is the main entry point for frozen executables.
     If only the --config-name option is given, it starts the GUI with the given config.
     If the --cli option is given, all following arguments will be passed to the CLI.
-    If the --frozen-daemon option is given, an idle maestral daemon is started. This is to
-    support launching the daemon from frozen executables as produced for instance by
+    If the --frozen-daemon option is given, an idle maestral daemon is started. This is
+    to support launching the daemon from frozen executables as produced for instance by
     PyInstaller.
     """
 

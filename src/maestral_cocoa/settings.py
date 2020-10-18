@@ -62,7 +62,7 @@ class SettingsWindow(SettingsGui):
         self._periodic_refresh_task = None
         self.refresh_gui()
 
-    # ==== callback implementations ======================================================
+    # ==== callback implementations ====================================================
 
     async def on_dbx_location_selected(self, widget):
         new_path = osp.join(
@@ -171,7 +171,7 @@ class SettingsWindow(SettingsGui):
             apply_round_clipping(self.profile_pic_view)
             self._cached_pic_stat = new_stat
 
-    # ==== populate gui with data ========================================================
+    # ==== populate gui with data ======================================================
 
     async def periodic_refresh_gui(self, interval=2):
 

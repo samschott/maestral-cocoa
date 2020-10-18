@@ -60,8 +60,7 @@ class SetupDialogGui(Window):
         self._impl.native.movableByWindowBackground = True
         self._impl.native.level = 3
 
-        # ==== welcome page ==============================================================
-
+        # ==== welcome page ============================================================
         # noinspection PyTypeChecker
         image0 = toga.ImageView(
             self.app.icon,
@@ -78,7 +77,7 @@ class SetupDialogGui(Window):
             style=self.page_style,
         )
 
-        # ==== link page =================================================================
+        # ==== link page ===============================================================
 
         # noinspection PyTypeChecker
         image1 = toga.ImageView(
@@ -124,7 +123,7 @@ class SetupDialogGui(Window):
             style=self.page_style,
         )
 
-        # ==== dbx location page =========================================================
+        # ==== dbx location page =======================================================
 
         # noinspection PyTypeChecker
         image2 = toga.ImageView(
@@ -167,7 +166,7 @@ class SetupDialogGui(Window):
             style=self.page_style,
         )
 
-        # ==== selective sync page =======================================================
+        # ==== selective sync page =====================================================
 
         label3 = Label(
             text=(
@@ -198,7 +197,7 @@ class SetupDialogGui(Window):
             style=self.page_style,
         )
 
-        # ==== done page =================================================================
+        # ==== done page ===============================================================
 
         # noinspection PyTypeChecker
         image4 = toga.ImageView(

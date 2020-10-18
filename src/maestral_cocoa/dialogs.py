@@ -32,7 +32,9 @@ from .utils import call_async_threaded_maestral
 
 
 class Dialog(Window):
-    """A generic dialog following cocoa's NSAlert style from macOS Catalina and lower."""
+    """
+    A generic dialog following cocoa's NSAlert style from macOS Catalina and lower.
+    """
 
     WINDOW_WIDTH = 420
     WINDOW_MIN_HEIGHT = 150
@@ -316,8 +318,8 @@ class UpdateDialog(Dialog):
         )
 
         message = (
-            f"Maestral v{version} is available, you have v{__version__}. Please use your "
-            f"package manager to update or download the latest binary from GitHub."
+            f"Maestral v{version} is available, you have v{__version__}. Please use "
+            f"your package manager to update or download the latest binary from GitHub."
         )
 
         super().__init__(

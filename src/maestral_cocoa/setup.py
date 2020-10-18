@@ -45,9 +45,9 @@ class SetupDialog(SetupDialogGui):
         location_label_text = self.dbx_location_label.text.format(default_folder_name)
         self.dbx_location_label.text = location_label_text
 
-    # ====================================================================================
+    # ==================================================================================
     # User interaction callbacks
-    # ====================================================================================
+    # ==================================================================================
 
     async def on_start(self, widget):
         # start auth flow
@@ -199,9 +199,9 @@ class SetupDialog(SetupDialogGui):
     def on_loading_failed(self):
         self.dialog_buttons_selective_sync_page["Select"].enabled = False
 
-    # ====================================================================================
+    # ==================================================================================
     # Helper functions
-    # ====================================================================================
+    # ==================================================================================
 
     def _get_selected_items(self, parent):
 

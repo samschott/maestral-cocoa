@@ -50,7 +50,7 @@ class SettingsGui(Window):
             **kwargs,
         )
 
-        # ==== account info section ======================================================
+        # ==== account info section ====================================================
 
         self.profile_pic_view = toga.ImageView(
             self.faceholder,
@@ -117,7 +117,7 @@ class SettingsGui(Window):
             style=Pack(direction=ROW),
         )
 
-        # ==== sync settings section =====================================================
+        # ==== sync settings section ===================================================
 
         self._label_select_folders = Label(
             "Selective sync:",
@@ -159,7 +159,7 @@ class SettingsGui(Window):
             style=Pack(direction=COLUMN),
         )
 
-        # ==== system settings section ===================================================
+        # ==== system settings section =================================================
 
         self._label_update_interval = Label(
             "Check for updates:",
@@ -280,7 +280,7 @@ class SettingsGui(Window):
             style=Pack(direction=COLUMN),
         )
 
-        # ==== about section =============================================================
+        # ==== about section ===========================================================
 
         about_box = toga.Box(
             children=[

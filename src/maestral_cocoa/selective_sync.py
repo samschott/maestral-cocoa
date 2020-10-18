@@ -40,7 +40,7 @@ class Node:
 
         self._init_selected()
 
-    # ---- Methods to track user selection -----------------------------------------------
+    # ---- Methods to track user selection ---------------------------------------------
 
     def _init_selected(self):
 
@@ -73,7 +73,7 @@ class Node:
         )
         return own_selection_modified or child_selection_modified
 
-    # ---- Methods required for the data source interface --------------------------------
+    # ---- Methods required for the data source interface ------------------------------
 
     def __len__(self):
         return len(self.children)
@@ -88,7 +88,7 @@ class Node:
         else:
             return False
 
-    # ---- Properties for data access from GUI -------------------------------------------
+    # ---- Properties for data access from GUI -----------------------------------------
 
     @property
     def name(self):
@@ -102,7 +102,7 @@ class Node:
     def is_folder(self):
         return self._is_folder
 
-    # ---- Methods for dynamic loading of children ---------------------------------------
+    # ---- Methods for dynamic loading of children -------------------------------------
 
     @property
     def parent(self):
@@ -152,7 +152,7 @@ class Node:
     def on_loading_failed(self):
         self.parent.on_loading_failed()
 
-    # ---- GUI callbacks -----------------------------------------------------------------
+    # ---- GUI callbacks ---------------------------------------------------------------
 
     def on_selected_toggled(self, widget):
         self.propagate_selection_to_children(self.included.state)
@@ -191,13 +191,13 @@ class PlaceholderNode:
         self._name = message
         self._included = ""
 
-    # ---- Methods to track user selection -----------------------------------------------
+    # ---- Methods to track user selection ---------------------------------------------
 
     @staticmethod
     def is_selection_modified():
         return False
 
-    # ---- Methods required for the data source interface --------------------------------
+    # ---- Methods required for the data source interface ------------------------------
 
     def __len__(self):
         return 0
@@ -209,7 +209,7 @@ class PlaceholderNode:
     def can_have_children():
         return False
 
-    # ---- Properties for data access from GUI -------------------------------------------
+    # ---- Properties for data access from GUI -----------------------------------------
 
     @property
     def name(self):
@@ -219,7 +219,7 @@ class PlaceholderNode:
     def included(self):
         return self._included
 
-    # ---- Methods for dynamic loading of children ---------------------------------------
+    # ---- Methods for dynamic loading of children -------------------------------------
 
     @property
     def parent(self):
@@ -229,7 +229,7 @@ class PlaceholderNode:
     def children(self):
         return []
 
-    # ---- GUI callbacks -----------------------------------------------------------------
+    # ---- GUI callbacks ---------------------------------------------------------------
 
     def propagate_selection_to_children(self, state):
         pass
@@ -293,7 +293,7 @@ class SelectiveSyncDialog(SelectiveSyncGui):
 
         self.excluded_items = []
 
-    # ==== callbacks to implement ========================================================
+    # ==== callbacks to implement ======================================================
 
     def update_items(self):
         """
