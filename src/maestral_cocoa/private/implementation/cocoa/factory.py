@@ -48,9 +48,7 @@ from toga_cocoa.window import Window as TogaWindow
 from toga_cocoa.widgets.multilinetextinput import (
     MultilineTextInput as TogaMultilineTextInput,
 )
-from toga_cocoa.widgets.scrollcontainer import ScrollContainer as TogaScrollContainer
 from toga_cocoa.factory import *  # noqa: F401,F406
-from rubicon.objc import NSMakeRect
 
 # local imports
 from . import dialogs
