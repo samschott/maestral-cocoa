@@ -5,7 +5,7 @@ import os.path as osp
 
 # external imports
 from travertino.size import at_least
-from rubicon.objc import NSMakeSize
+from rubicon.objc import NSMakeSize, NSZeroPoint, CGRectMake
 from toga.constants import LEFT, TRANSPARENT
 from toga.platform import get_platform_factory
 from toga_cocoa.libs import (
@@ -37,6 +37,7 @@ from toga_cocoa.libs import (
     NSPopUpButton,
     NSOpenPanel,
     NSFileHandlingPanelOKButton,
+    NSCompositingOperationCopy,
 )
 from toga_cocoa.colors import native_color
 from toga_cocoa.keys import toga_key, Key
@@ -311,7 +312,7 @@ class FreestandingIconButton(TogaButton):
     def set_icon(self, icon_iface):
         factory = get_platform_factory()
         icon = icon_iface.bind(factory)
-        self.native.image = icon.native.resizeTo(11)
+        self.native.image = resizeImageTo(icon.native, 11)
 
 
 class Switch(TogaSwitch):
@@ -365,8 +366,8 @@ class FileChooserTarget(NSObject):
 
                     item = self.impl.native.itemAtIndex(0)
                     item.title = osp.basename(path)
-                    item.image = NSWorkspace.sharedWorkspace.iconForFile(path).resizeTo(
-                        16
+                    item.image = resizeImageTo(
+                        NSWorkspace.sharedWorkspace.iconForFile(path), 16
                     )
 
                     self.impl._current_selection = path
@@ -401,7 +402,7 @@ class FileSelectionButton(Widget):
     def set_current_selection(self, path):
         item = self.native.itemAtIndex(0)
         item.title = osp.basename(path)
-        item.image = NSWorkspace.sharedWorkspace.iconForFile(path).resizeTo(16)
+        item.image = resizeImageTo(NSWorkspace.sharedWorkspace.iconForFile(path), 16)
         self._current_selection = path
 
     def set_on_select(self, handler):
@@ -479,7 +480,7 @@ class MenuItem:
         if icon:
             factory = get_platform_factory()
             icon = icon.bind(factory)
-            nsimage = icon.native.resizeTo(16)
+            nsimage = resizeImageTo(icon.native, 16)
             self.native.image = nsimage
         else:
             self.native.image = None
@@ -564,9 +565,9 @@ class StatusBarItem:
     def set_icon(self, icon):
         factory = get_platform_factory()
         icon = icon.bind(factory)
-        nsimage = icon.native.resizeTo(self.size - 2 * self.MARGIN)
+        nsimage = resizeImageTo(icon.native, self.size - 2 * self.MARGIN)
         nsimage.template = True
-        self.native.button.image = icon.native
+        self.native.button.image = nsimage
 
     def set_menu(self, menu_impl):
         self.native.menu = menu_impl.native
@@ -776,7 +777,7 @@ class Window(TogaWindow):
 # ==== helpers =========================================================================
 
 
-def apply_round_clipping(image_view_impl: ImageView):
+def apply_round_clipping(image_view_impl: ImageView) -> None:
     """Clips an image in a given toga_cocoa.ImageView to a circular mask."""
 
     pool = NSAutoreleasePool.alloc().init()
@@ -807,3 +808,31 @@ def apply_round_clipping(image_view_impl: ImageView):
 
     pool.drain()
     del pool
+
+
+def resizeImageTo(image: NSImage, height: int) -> NSImage:
+    pool = NSAutoreleasePool.alloc().init()
+
+    new_size = NSMakeSize(height, height)
+    new_image = NSImage.alloc().initWithSize(new_size)
+    new_image.lockFocus()
+    image.size = new_size
+
+    ctx = NSGraphicsContext.currentContext
+    ctx.saveGraphicsState()
+    ctx.imageInterpolation = NSImageInterpolationHigh
+
+    image.drawAtPoint(
+        NSZeroPoint,
+        fromRect=CGRectMake(0, 0, new_size.width, new_size.height),
+        operation=NSCompositingOperationCopy,
+        fraction=1.0,
+    )
+
+    new_image.unlockFocus()
+    ctx.restoreGraphicsState()
+
+    pool.drain()
+    del pool
+
+    return new_image
