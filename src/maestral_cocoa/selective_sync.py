@@ -178,7 +178,12 @@ class Node:
 
             for index, child in enumerate(new_nodes):
                 self.notify("insert", parent=self, index=index + n_nodes, item=child)
-                await asyncio.sleep(0.1)
+
+                # give UI time to process updates
+                if index > 20:
+                    await asyncio.sleep(0.1)
+                elif index > 50:
+                    await asyncio.sleep(0.2)
 
     def _child_loading_worker(self, config_name, path, queue):
 
