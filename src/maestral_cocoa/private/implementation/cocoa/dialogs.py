@@ -252,9 +252,9 @@ async def alert_sheet(
     icon=None,
 ):
     """
-    Shows an alert sheet attached to `window`. If `details` are given, they will be shown
-    in a scroll view. If `checkbox_text` is given, an additional checkbox is shown.
-    Returns the index of the button pressed (right == 0).
+    Shows an alert sheet attached to `window`. If `details` are given, they will be
+    shown in a scroll view. If `checkbox_text` is given, an additional checkbox is
+    shown. Returns the index of the button pressed (right == 0).
     """
     icon = icon.bind(factory).native if icon else None
     a = _construct_alert(

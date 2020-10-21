@@ -92,7 +92,7 @@ NSColorSpace = ObjCClass("NSColorSpace")
 NSAutoreleasePool = ObjCClass("NSAutoreleasePool")
 
 
-# ==== icons =============================================================================
+# ==== icons ===========================================================================
 
 
 class Icon:
@@ -143,7 +143,7 @@ class Icon:
             return self._native
 
 
-# ==== labels ============================================================================
+# ==== labels ==========================================================================
 
 
 def attributed_str_from_html(raw_html, font=None, color=None):
@@ -289,7 +289,7 @@ class RichMultilineTextInput(TogaMultilineTextInput):
         self.text.textStorage.setAttributedString(attr_str)
 
 
-# ==== buttons ===========================================================================
+# ==== buttons =========================================================================
 
 
 class FreestandingIconButton(TogaButton):
@@ -427,7 +427,7 @@ class FileSelectionButton(Widget):
         )
 
 
-# ==== layout widgets ====================================================================
+# ==== layout widgets ==================================================================
 
 
 class VibrantBox(Widget):
@@ -452,7 +452,7 @@ class VibrantBox(Widget):
         self.interface.intrinsic.height = at_least(content_size.height)
 
 
-# ==== menus and status bar ==============================================================
+# ==== menus and status bar ============================================================
 
 
 class TogaMenuItem(NSMenuItem):
@@ -548,7 +548,7 @@ class Menu:
         return self._visible
 
 
-# ==== StatusBarItem =====================================================================
+# ==== StatusBarItem ===================================================================
 
 
 class StatusBarItem:
@@ -572,7 +572,7 @@ class StatusBarItem:
         self.native.menu = menu_impl.native
 
 
-# ==== Application =======================================================================
+# ==== Application =====================================================================
 
 
 class CocoaSystemTrayApp(NSApplication):
@@ -773,7 +773,7 @@ class Window(TogaWindow):
         )
 
 
-# ==== helpers ===========================================================================
+# ==== helpers =========================================================================
 
 
 def apply_round_clipping(image_view_impl: ImageView):
