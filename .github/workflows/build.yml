@@ -38,12 +38,29 @@ jobs:
       - name: Build app
         id: build
         run: |
-          briefcase build
+          # build app without signing
+          briefcase build --no-sign
+
+          # run post-build scripts:
+          # - add CLI executable
+          # - keep .pyc files only to save space
+          # - update plist entries
           ./scripts/post-build-macos.sh
-          DMG_PATH=$( briefcase package  -i "Developer ID Application: Sam Schott (G34LNR8C4Y)" | grep "Packaged" | cut -d' ' -f 3)
+
+          # code sign manually
+          codesign --sign "$DEV_ID" \
+                   --entitlements "macOS/Maestral/Entitlements.plist" \
+                   --options runtime \
+                   --force --deep "macOS/Maestral/Maestral.app"
+          codesign --verify --deep "macOS/Maestral/Maestral.app"
+
+          # create and sign dmg
+          DMG_PATH=$( briefcase package  -i "DEV_ID" | grep "Packaged" | cut -d' ' -f 3)
 
           echo "dmg created: $DMG_PATH"
           echo "::set-output name=dmg_path::${DMG_PATH}"
+        env:
+            DEV_ID: "Developer ID Application: Sam Schott (G34LNR8C4Y)"
 
       - name: Notarize app
         run: |
