@@ -48,7 +48,7 @@ jobs:
           ./scripts/post-build-macos.sh
 
           # create and sign dmg
-          briefcase package -i "DEV_ID"
+          briefcase package -i "$DEV_ID"
 
           DMG_PATH=$( find . -name "*.dmg" )
           echo "dmg created: $DMG_PATH"
