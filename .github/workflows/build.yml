@@ -55,7 +55,7 @@ jobs:
         run: |
           briefcase build
           ./scripts/post-build-macos.sh
-          DMG_PATH=$( briefcase package  -i "Developer ID Application: Sam Schott" | grep "Packaged" | cut -d' ' -f 3)
+          DMG_PATH=$( briefcase package  -i "Developer ID Application: Sam Schott (G34LNR8C4Y)" | grep "Packaged" | cut -d' ' -f 3)
 
           echo "dmg created: $DMG_PATH"
           echo "::set-output name=dmg_path::${DMG_PATH}"
