@@ -38,7 +38,7 @@ jobs:
       - name: Build app
         id: build
         run: |
-          # build app without signing
+          # build app
           briefcase build
 
           # run post-build scripts:
@@ -47,8 +47,11 @@ jobs:
           # - update plist entries
           ./scripts/post-build-macos.sh
 
-          # create and sign dmg
+          # package dmg
           briefcase package -i "$DEV_ID"
+
+          # verify code signature
+          codesign --verify --deep macOS/Maestral/Maestral.app
 
           DMG_PATH=$( find . -name "*.dmg" )
           echo "dmg created: $DMG_PATH"
