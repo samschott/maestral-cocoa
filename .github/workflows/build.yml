@@ -20,25 +20,10 @@ jobs:
           ref: ${{ github.event.pull_request.merged.sha }}
 
       - name: Import signing certificate into keychain
-        run: |
-          KEYCHAIN_FILE=default.keychain
-          KEYCHAIN_PASSWORD=myvoiceismypassport
-          security create-keychain -p $KEYCHAIN_PASSWORD $KEYCHAIN_FILE
-          security default-keychain -s $KEYCHAIN_FILE
-          security unlock-keychain -p $KEYCHAIN_PASSWORD $KEYCHAIN_FILE
-          security import <(echo $SIGNING_CERTIFICATE_P12_DATA | base64 --decode) \
-                          -f pkcs12 \
-                          -k $KEYCHAIN_FILE \
-                          -P $SIGNING_CERTIFICATE_PASSWORD \
-                          -T /usr/bin/codesign \
-                          -T /usr/bin/security
-          security set-key-partition-list \
-                   -S apple-tool:,apple: \
-                   -s -k $KEYCHAIN_PASSWORD $KEYCHAIN_FILE
-          security find-identity -v
-        env:
-          SIGNING_CERTIFICATE_P12_DATA: ${{ secrets.SIGNING_CERTIFICATE_P12_DATA }}
-          SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.SIGNING_CERTIFICATE_PASSWORD }}
+        uses: apple-actions/import-codesign-certs@v1
+        with:
+          p12-file-base64: ${{ secrets.SIGNING_CERTIFICATE_P12_DATA }}
+          p12-password: ${{ secrets.SIGNING_CERTIFICATE_PASSWORD }}
 
       - name: Install dependencies
         run: |
