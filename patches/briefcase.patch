@@ -1,0 +1,47 @@
+diff --git a/src/briefcase/platforms/macOS/dmg.py b/src/briefcase/platforms/macOS/dmg.py
+index 819bc2c0f9c0326ca0963d8ca70cf277d2b7e1c1..9c0374d32ae61833e8e17b0d388c77e81e21cf24 100644
+--- a/src/briefcase/platforms/macOS/dmg.py
++++ b/src/briefcase/platforms/macOS/dmg.py
+@@ -78,9 +78,12 @@ class macOSDmgPackageCommand(macOSDmgMixin, macOSAppPackageCommand):
+             'files': [str(self.binary_path(app))],
+             'symlinks': {'Applications': '/Applications'},
+             'icon_locations': {
+-                '{app.formal_name}.app'.format(app=app): (100, 100),
+-                'Applications': (300, 100),
++                '{app.formal_name}.app'.format(app=app): (75, 75),
++                'Applications': (225, 75),
+             },
++            'window_rect': ((600, 600), (350, 150)),
++            'icon_size': 64,
++            'text_size': 12,
+         }
+ 
+         try:
+diff --git a/src/briefcase/integrations/xcode.py b/src/briefcase/integrations/xcode.py
+index 7c123dc93b98b7c5e560503d35633eb66d5e4bcc..d23fb0ad709a3d40d95b7cd85b143cec92389d89 100644
+--- a/src/briefcase/integrations/xcode.py
++++ b/src/briefcase/integrations/xcode.py
+@@ -25,8 +25,8 @@ def verify_command_line_tools_install(command):
+ 
+     :param command: The command that needs to perform the verification check.
+     """
+-    ensure_command_line_tools_are_installed(command)
+-    confirm_xcode_license_accepted(command)
++    # ensure_command_line_tools_are_installed(command)
++    # confirm_xcode_license_accepted(command)
+ 
+ 
+ def verify_xcode_install(command, min_version=None):
+@@ -49,9 +49,9 @@ def verify_xcode_install(command, min_version=None):
+         tuple of integers (e.g., (11, 2, 1)). Default: ``None``, meaning there
+         is no minimum version.
+     """
+-    ensure_xcode_is_installed(command, min_version=min_version)
+-    ensure_command_line_tools_are_installed(command)
+-    confirm_xcode_license_accepted(command)
++    # ensure_xcode_is_installed(command, min_version=min_version)
++    # ensure_command_line_tools_are_installed(command)
++    # confirm_xcode_license_accepted(command)
+ 
+ 
+ def ensure_command_line_tools_are_installed(command):

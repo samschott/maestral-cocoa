@@ -25,6 +25,8 @@ requires = [
     "toga-cocoa>=0.3.0.dev20",
 ]
 
+[tool.briefcase.app.maestral_cocoa.macOS.dmg]
+
 [tool.briefcase.app.maestral_cocoa.linux]
 requires = [
     "toga-gtk>=0.3.0.dev20",
