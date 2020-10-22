@@ -16,7 +16,7 @@ requires = [
     "bugsnag",
     "click",
     "importlib_resources;python_version<'3.9'",
-    "maestral>=1.2.1",
+    "maestral@git+https://github.com/samschott/maestral",
     "markdown2",
 ]
 
