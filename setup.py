@@ -23,6 +23,7 @@ setup(
     install_requires=[
         "bugsnag",
         "click",
+        "importlib_metadata;python_version<'3.8'",
         "importlib_resources;python_version<'3.9'",
         "maestral>=1.2.1",
         "markdown2",

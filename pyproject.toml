@@ -15,6 +15,7 @@ sources = ["src/maestral_cocoa"]
 requires = [
     "bugsnag",
     "click",
+    "importlib_metadata;python_version<'3.8'",
     "importlib_resources;python_version<'3.9'",
     "maestral@git+https://github.com/samschott/maestral",
     "markdown2",
