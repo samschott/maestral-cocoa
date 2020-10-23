@@ -4,13 +4,14 @@
 import sys
 
 try:
-    from importlib import metadata as importlib_metadata
+    from importlib.metadata import metadata
 except ImportError:
-    # Backwards compatibility - importlib.metadata was added in Python 3.8
-    import importlib_metadata
+    # Backwards compatibility Python 3.7 and lower
+    from importlib_metadata import metadata
 
 
 app_module = sys.modules["__main__"].__package__
-metadata = importlib_metadata.metadata(app_module)
+md = metadata(app_module)
 
-FROZEN = "Briefcase-Version" in metadata or getattr(sys, "frozen", False)
+# detect if we have been built with briefcase or frozen with PyInstaller
+FROZEN = "Briefcase-Version" in md or getattr(sys, "frozen", False)
