@@ -22,6 +22,8 @@ from .private.widgets import (
     apply_round_clipping,
 )
 from .resources import FACEHOLDER_PATH
+from .constants import FROZEN
+
 
 year = time.localtime().tm_year
 _wiki_url = __url__ + "/wiki"
@@ -245,7 +247,7 @@ class SettingsGui(Window):
             ),
         ]
 
-        if getattr(sys, "frozen", False):
+        if FROZEN:
             # add UI to install command line interface
             children.append(
                 toga.Box(
