@@ -8,7 +8,6 @@ import asyncio
 
 # external imports
 import toga
-from maestral.utils.autostart import AutoStart
 
 # local imports
 from .utils import (
@@ -21,6 +20,7 @@ from .private.widgets import apply_round_clipping
 from .settings_gui import SettingsGui
 from .selective_sync import SelectiveSyncDialog
 from .resources import FACEHOLDER_PATH
+from .autostart import AutoStart
 
 
 class SettingsWindow(SettingsGui):
@@ -40,7 +40,7 @@ class SettingsWindow(SettingsGui):
         super().__init__(app=app)
 
         self.mdbx = mdbx
-        self.autostart = AutoStart(self.mdbx.config_name, gui=True)
+        self.autostart = AutoStart(self.mdbx.config_name)
 
         self.btn_unlink.on_press = self.on_unlink_pressed
         self.btn_select_folders.on_press = self.on_folder_selection_pressed
