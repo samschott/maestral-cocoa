@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 
+# system imports
 import sys
 import argparse
 
+# external imports
 from maestral.daemon import freeze_support
 
 
