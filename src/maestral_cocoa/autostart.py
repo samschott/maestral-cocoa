@@ -2,17 +2,8 @@
 
 # system imports
 import sys
-import os
-import os.path as osp
-import shutil
 import platform
-from pathlib import Path
 from typing import Optional
-
-try:
-    from importlib.metadata import files, PackageNotFoundError  # type: ignore
-except ImportError:  # Python 3.7 and lower
-    from importlib_metadata import files, PackageNotFoundError  # type: ignore
 
 # external imports
 from maestral.utils.autostart import (
@@ -23,23 +14,20 @@ from maestral.utils.autostart import (
 )
 from maestral.constants import BUNDLE_ID
 
-# local imports
-from .constants import FROZEN
-
 
 class AutoStart:
     """Creates auto-start files in the appropriate system location to automatically
-    start Maestral when the user logs in. Supports launchd on macOS and XDG dekstop
+    start Maestral when the user logs in. Supports launchd on macOS and XDG desktop
     entries on Linux."""
 
     _impl: AutoStartBase
 
     def __init__(self, config_name: str) -> None:
 
-        self.maestral_path = self.get_maestral_command_path()
         self.implementation = self._get_available_implementation()
 
-        start_cmd = f"{self.maestral_path} gui -c {config_name}"
+        start_cmd_list = [sys.executable, "-m", "maestral_cocoa", "-c", config_name]
+        start_cmd = " ".join(start_cmd_list)
         bundle_id = "{}.{}".format(BUNDLE_ID, config_name)
 
         if self.implementation == SupportedImplementations.launchd:
@@ -50,7 +38,6 @@ class AutoStart:
                 filename=f"maestral-{config_name}.desktop",
                 app_name="Maestral",
                 start_cmd=start_cmd,
-                TryExec=self.maestral_path,
                 Icon="maestral",
                 Terminal="false",
                 Categories="Network;FileTransfer;",
@@ -85,10 +72,7 @@ class AutoStart:
         if self.enabled:
             return
 
-        if self.maestral_path:
-            self._impl.enable()
-        else:
-            raise OSError("Could not find path of maestral executable")
+        self._impl.enable()
 
     def disable(self) -> None:
         """Setter: True if autostart is enabled."""
@@ -97,41 +81,6 @@ class AutoStart:
             return
 
         self._impl.disable()
-
-    def get_maestral_command_path(self) -> str:
-        """
-        :returns: The path to the maestral executable. May be an empty string if the
-            executable cannot be found.
-        """
-
-        if FROZEN:
-            return sys.executable
-
-        try:
-            dist_files = files("maestral")
-        except PackageNotFoundError:
-            # we may be in an app bundle or have installation issues
-            dist_files = []
-
-        path: Optional[os.PathLike]
-
-        if dist_files:
-            try:
-                rel_path = next(p for p in dist_files if p.match("**/bin/maestral"))
-                path = rel_path.locate()
-            except StopIteration:
-                path = None
-        else:
-            path = None
-
-        if isinstance(path, Path):
-            # resolve any symlinks and “..” components
-            path = path.resolve()
-
-        if path and osp.isfile(path):
-            return str(path)
-        else:
-            return shutil.which("maestral") or ""
 
     def _get_available_implementation(self) -> Optional[SupportedImplementations]:
         """Returns the supported implementation depending on the platform."""
