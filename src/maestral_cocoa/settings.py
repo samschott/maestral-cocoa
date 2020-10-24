@@ -138,7 +138,7 @@ class SettingsWindow(SettingsGui):
                 os.symlink(maestral_cli, self._macos_cli_install_path)
             except PermissionError:
                 request_authorization_from_user_and_run(
-                    ["/bin/ln", "-s", maestral_cli, self._macos_cli_install_path]
+                    ["/bin/ln", "-s", str(maestral_cli), self._macos_cli_install_path]
                 )
 
         self._udpdate_cli_tool_button()
