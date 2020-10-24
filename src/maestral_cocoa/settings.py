@@ -126,22 +126,42 @@ class SettingsWindow(SettingsGui):
     async def on_cli_pressed(self, widget):
 
         if osp.islink(self._macos_cli_install_path):
+
             try:
-                os.remove(self._macos_cli_install_path)
-            except PermissionError:
-                request_authorization_from_user_and_run(
-                    ["/bin/rm", "-f", self._macos_cli_install_path]
+                try:
+                    os.remove(self._macos_cli_install_path)
+                except PermissionError:
+                    request_authorization_from_user_and_run(
+                        ["/bin/rm", "-f", self._macos_cli_install_path]
+                    )
+            except FileNotFoundError:
+                pass
+            except Exception as e:
+                await self.alert_sheet(
+                    "Could not uninstall CLI", e.args[0], level="error"
                 )
+
         else:
 
             maestral_cli = (
                 Path(sys.executable).parents[2] / "app_packages" / "bin" / "maestral"
             )
+
             try:
-                os.symlink(maestral_cli, self._macos_cli_install_path)
-            except PermissionError:
-                request_authorization_from_user_and_run(
-                    ["/bin/ln", "-s", str(maestral_cli), self._macos_cli_install_path]
+                try:
+                    os.symlink(maestral_cli, self._macos_cli_install_path)
+                except PermissionError:
+                    request_authorization_from_user_and_run(
+                        [
+                            "/bin/ln",
+                            "-s",
+                            str(maestral_cli),
+                            self._macos_cli_install_path,
+                        ]
+                    )
+            except Exception as e:
+                await self.alert_sheet(
+                    "Could not install CLI", e.args[0], level="error"
                 )
 
         self._udpdate_cli_tool_button()
