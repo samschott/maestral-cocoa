@@ -2,7 +2,15 @@
 
 BUNDLE_PATH="macOS/Maestral/Maestral.app"
 
-echo "# ==== copy over entry-points metadata required by app =========================="
+echo "# ==== copy over custom executables =============================================="
+
+cp bin/Maestral "$BUNDLE_PATH/Contents/MacOS/Maestral"
+chmod +x "$BUNDLE_PATH/Contents/MacOS/Maestral"
+
+cp bin/maestral_cli "$BUNDLE_PATH/Contents/MacOS/maestral_cli"
+chmod +x "$BUNDLE_PATH/Contents/MacOS/maestral_cli"
+
+echo "# ==== copy over entry-points metadata required by maestral ====================="
 
 python3 -m pip install --upgrade --no-deps . --target dist
 DIST_INFO_PATH=$( find dist -name "maestral_cocoa-*.dist-info" )
