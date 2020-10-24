@@ -2,13 +2,7 @@
 
 BUNDLE_PATH="macOS/Maestral/Maestral.app"
 
-echo "# ==== copy over custom executables =============================================="
 
-cp bin/Maestral "$BUNDLE_PATH/Contents/MacOS/Maestral"
-chmod +x "$BUNDLE_PATH/Contents/MacOS/Maestral"
-
-cp bin/maestral_cli "$BUNDLE_PATH/Contents/MacOS/maestral_cli"
-chmod +x "$BUNDLE_PATH/Contents/MacOS/maestral_cli"
 
 echo "# ==== prune py files and replace with pyc ======================================"
 
