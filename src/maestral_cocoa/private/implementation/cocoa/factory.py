@@ -313,6 +313,7 @@ class FreestandingIconButton(TogaButton):
         factory = get_platform_factory()
         icon = icon_iface.bind(factory)
         self.native.image = resizeImageTo(icon.native, 11)
+        self.native.image.template = True
 
 
 class Switch(TogaSwitch):
