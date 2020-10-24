@@ -5,6 +5,7 @@ import sys
 import os
 import os.path as osp
 import asyncio
+from pathlib import Path
 
 # external imports
 import toga
@@ -32,7 +33,7 @@ class SettingsWindow(SettingsGui):
         "Never": 0,
     }
 
-    _macos_cli_tool_path = "/usr/local/bin/maestral"
+    _macos_cli_install_path = "/usr/local/bin/maestral"
     _cached_pic_stat = os.stat(FACEHOLDER_PATH)
     _cached_dbx_location = None
 
@@ -124,32 +125,32 @@ class SettingsWindow(SettingsGui):
 
     async def on_cli_pressed(self, widget):
 
-        if osp.islink(self._macos_cli_tool_path):
+        if osp.islink(self._macos_cli_install_path):
             try:
-                os.remove(self._macos_cli_tool_path)
+                os.remove(self._macos_cli_install_path)
             except PermissionError:
                 request_authorization_from_user_and_run(
-                    ["/bin/rm", "-f", self._macos_cli_tool_path]
+                    ["/bin/rm", "-f", self._macos_cli_install_path]
                 )
         else:
-            maestral_cli = os.path.join(getattr(sys, "_MEIPASS", ""), "maestral_cli")
+            maestral_cli = Path(sys.executable).parents[3] / "MacOS" / "maestral_cli"
             try:
-                os.symlink(maestral_cli, self._macos_cli_tool_path)
+                os.symlink(maestral_cli, self._macos_cli_install_path)
             except PermissionError:
                 request_authorization_from_user_and_run(
-                    ["/bin/ln", "-s", maestral_cli, self._macos_cli_tool_path]
+                    ["/bin/ln", "-s", maestral_cli, self._macos_cli_install_path]
                 )
 
         self._udpdate_cli_tool_button()
 
     def _udpdate_cli_tool_button(self):
-        if osp.islink(self._macos_cli_tool_path):
+        if osp.islink(self._macos_cli_install_path):
             self.btn_cli_tool.enabled = True
             self.btn_cli_tool.label = "Uninstall"
             self.label_cli_tool_info.text = (
                 "CLI installed. See 'maestral --help' for available commands."
             )
-        elif osp.exists(self._macos_cli_tool_path):
+        elif osp.exists(self._macos_cli_install_path):
             self.btn_cli_tool.enabled = False
             self.btn_cli_tool.label = "Install"
             self.label_cli_tool_info.text = "CLI already installed from Python package."
