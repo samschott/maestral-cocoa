@@ -29,9 +29,6 @@ jobs:
         run: |
           python3 -m pip install --upgrade pip
           git clone https://github.com/beeware/briefcase
-          cd briefcase
-          git apply ../patches/briefcase.patch
-          cd ..
           python3 -m pip install --upgrade ./briefcase
           chmod +x ./scripts/post-build-macos.sh
 
