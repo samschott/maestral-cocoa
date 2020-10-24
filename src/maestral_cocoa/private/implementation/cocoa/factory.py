@@ -312,7 +312,7 @@ class FreestandingIconButton(TogaButton):
     def set_icon(self, icon_iface):
         factory = get_platform_factory()
         icon = icon_iface.bind(factory)
-        self.native.image = resizeImageTo(icon.native, 11)
+        self.native.image = resize_image_to(icon.native, 11)
         self.native.image.template = True
 
 
@@ -367,7 +367,7 @@ class FileChooserTarget(NSObject):
 
                     item = self.impl.native.itemAtIndex(0)
                     item.title = osp.basename(path)
-                    item.image = resizeImageTo(
+                    item.image = resize_image_to(
                         NSWorkspace.sharedWorkspace.iconForFile(path), 16
                     )
 
@@ -403,7 +403,7 @@ class FileSelectionButton(Widget):
     def set_current_selection(self, path):
         item = self.native.itemAtIndex(0)
         item.title = osp.basename(path)
-        item.image = resizeImageTo(NSWorkspace.sharedWorkspace.iconForFile(path), 16)
+        item.image = resize_image_to(NSWorkspace.sharedWorkspace.iconForFile(path), 16)
         self._current_selection = path
 
     def set_on_select(self, handler):
@@ -481,7 +481,7 @@ class MenuItem:
         if icon:
             factory = get_platform_factory()
             icon = icon.bind(factory)
-            nsimage = resizeImageTo(icon.native, 16)
+            nsimage = resize_image_to(icon.native, 16)
             self.native.image = nsimage
         else:
             self.native.image = None
@@ -566,7 +566,7 @@ class StatusBarItem:
     def set_icon(self, icon):
         factory = get_platform_factory()
         icon = icon.bind(factory)
-        nsimage = resizeImageTo(icon.native, self.size - 2 * self.MARGIN)
+        nsimage = resize_image_to(icon.native, self.size - 2 * self.MARGIN)
         nsimage.template = True
         self.native.button.image = nsimage
 
@@ -811,7 +811,7 @@ def apply_round_clipping(image_view_impl: ImageView) -> None:
     del pool
 
 
-def resizeImageTo(image: NSImage, height: int) -> NSImage:
+def resize_image_to(image: NSImage, height: int) -> NSImage:
     pool = NSAutoreleasePool.alloc().init()
 
     new_size = NSMakeSize(height, height)
