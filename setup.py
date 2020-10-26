@@ -5,16 +5,16 @@ from setuptools import setup, find_packages
 
 setup(
     name="maestral-cocoa",
-    version="1.2.2.dev0",
-    description="Open-source Dropbox client for macOS and Linux.",
-    url="https://github.com/samschott/maestral",
     author="Sam Schott",
     author_email="ss2151@cam.ac.uk",
+    version="1.2.2.dev0",
+    url="https://github.com/samschott/maestral",
+    description="Open-source Dropbox client for macOS and Linux.",
     license="MIT",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     packages=find_packages("src"),
-    package_dir={"maestral_cocoa": "src/maestral_cocoa"},
+    package_dir={"": "src"},
     package_data={
         "maestral_cocoa": ["resources/*"],
     },
