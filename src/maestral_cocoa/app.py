@@ -11,7 +11,6 @@ from datetime import datetime, timedelta
 import click
 import toga
 from toga.style.pack import Pack, FONT_SIZE_CHOICES
-from maestral.utils.autostart import AutoStart
 from maestral.constants import (
     IDLE,
     SYNCING,
@@ -55,6 +54,7 @@ from maestral_cocoa.activity import ActivityWindow
 from maestral_cocoa.dbx_location_dialog import DbxLocationDialog
 from maestral_cocoa.dialogs import UpdateDialog, ProgressDialog, RelinkDialog
 from maestral_cocoa.resources import APP_ICON_PATH, TRAY_ICON_PATH
+from maestral_cocoa.autostart import AutoStart
 
 
 # increase default font size from 12 to 13 points
@@ -118,7 +118,7 @@ class MaestralGui(SystemTrayApp):
 
         self.refresh_interval = 2
 
-        self.autostart = AutoStart(self.config_name, gui=True)
+        self.autostart = AutoStart(self.config_name)
 
         self.menu = Menu()
         self._cached_status = DISCONNECTED
