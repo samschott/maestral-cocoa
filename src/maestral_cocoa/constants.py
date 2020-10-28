@@ -10,8 +10,8 @@ except ImportError:
     from importlib_metadata import metadata
 
 
-app_module = sys.modules["__main__"].__package__
-md = metadata(app_module)
+_app_module = sys.modules["__main__"].__package__
+_md = metadata(_app_module)
 
 # detect if we have been built with briefcase or frozen with PyInstaller
-FROZEN = "Briefcase-Version" in md or getattr(sys, "frozen", False)
+FROZEN = "Briefcase-Version" in _md or getattr(sys, "frozen", False)
