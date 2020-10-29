@@ -2,6 +2,8 @@
 
 # system imports
 import os.path as osp
+import platform
+from packaging.version import Version
 
 # external imports
 from travertino.size import at_least
@@ -91,6 +93,9 @@ NSMutableAttributedString = ObjCClass("NSMutableAttributedString")
 NSStatusBar = ObjCClass("NSStatusBar")
 NSColorSpace = ObjCClass("NSColorSpace")
 NSAutoreleasePool = ObjCClass("NSAutoreleasePool")
+
+
+macos_version, *_ = platform.mac_ver()
 
 
 # ==== icons ===========================================================================
@@ -432,26 +437,35 @@ class FileSelectionButton(Widget):
 # ==== layout widgets ==================================================================
 
 
-class VibrantBox(Widget):
-    """A box with macOS vibrancy."""
+if Version(macos_version) >= Version("10.14.0"):
 
-    def create(self):
-        self.native = NSVisualEffectView.new()
-        self.native.state = NSVisualEffectStateActive
-        self.native.blendingMode = NSVisualEffectBlendingModeBehindWindow
-        self.native.material = self.interface.material
-        self.native.wantsLayer = True
+    class VibrantBox(Widget):
+        """A box with macOS vibrancy."""
 
-        # Add the layout constraints
-        self.add_constraints()
+        def create(self):
+            self.native = NSVisualEffectView.new()
+            self.native.state = NSVisualEffectStateActive
+            self.native.blendingMode = NSVisualEffectBlendingModeBehindWindow
+            self.native.material = self.interface.material
+            self.native.wantsLayer = True
 
-    def set_material(self, material):
-        self.native.material = material
+            # Add the layout constraints
+            self.add_constraints()
 
-    def rehint(self):
-        content_size = self.native.intrinsicContentSize()
-        self.interface.intrinsic.width = at_least(content_size.width)
-        self.interface.intrinsic.height = at_least(content_size.height)
+        def set_material(self, value):
+            self.native.material = value
+
+        def rehint(self):
+            content_size = self.native.intrinsicContentSize()
+            self.interface.intrinsic.width = at_least(content_size.width)
+            self.interface.intrinsic.height = at_least(content_size.height)
+
+
+else:
+
+    class VibrantBox(Box):
+        def set_material(self, value):
+            pass
 
 
 # ==== menus and status bar ============================================================
