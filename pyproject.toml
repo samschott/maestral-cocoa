@@ -25,14 +25,14 @@ support_package="https://github.com/SamSchott/Python-Apple-support/releases/down
 
 [tool.briefcase.app.maestral_cocoa.macOS]
 requires = [
-    "toga-cocoa>=0.3.0.dev20",
+    "toga-cocoa>=0.3.0.dev25",
 ]
 
 [tool.briefcase.app.maestral_cocoa.macOS.dmg]
 
 [tool.briefcase.app.maestral_cocoa.linux]
 requires = [
-    "toga-gtk>=0.3.0.dev20",
+    "toga-gtk>=0.3.0.dev25",
 ]
 system_requires = [
     "libgirepository1.0-dev",
