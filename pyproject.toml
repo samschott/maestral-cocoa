@@ -20,6 +20,7 @@ requires = [
     "maestral@git+https://github.com/samschott/maestral",
     "markdown2",
     "rubicon-objc@git+https://github.com/beeware/rubicon-objc",
+    "toga@git+https://github.com/beeware/toga",
 ]
 support_package="https://github.com/SamSchott/Python-Apple-support/releases/download/3.8-b13/Python-3.8-macOS-support.b13.tar.gz"
 
