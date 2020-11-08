@@ -21,7 +21,7 @@ echo "# ==== prune py files and replace with pyc ===============================
 "$BUNDLE_PATH/Contents/MacOS/Maestral" --run-python -OO -m compileall -b "$BUNDLE_PATH" &> /dev/null
 
 # remove all py files
-find "$BUNDLE_PATH/Contents" -name "*.py" -delete
+find "$BUNDLE_PATH/Contents" -name "*.py" ! -name "nslog.py" -delete
 
 # remove all __pycache__ dirs
 find "$BUNDLE_PATH/Contents" -name "__pycache__" -prune -exec rm -rf {} \;
