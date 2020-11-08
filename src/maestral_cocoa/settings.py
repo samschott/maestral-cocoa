@@ -142,7 +142,7 @@ class SettingsWindow(SettingsGui):
                 )
 
         else:
-            maestral_cli = Path(sys.executable).parents[3] / "MacOS" / "maestral_cli"
+            maestral_cli = Path(sys.executable).parents[3] / "MacOS" / "maestral-cli"
             try:
                 try:
                     os.symlink(maestral_cli, self._macos_cli_install_path)
