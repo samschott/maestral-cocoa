@@ -28,8 +28,7 @@ jobs:
       - name: Install dependencies
         run: |
           python3 -m pip install --upgrade pip
-          git clone https://github.com/beeware/briefcase
-          python3 -m pip install --upgrade ./briefcase
+          python3 -m pip install --upgrade git+https://github.com/samschott/briefcase.git@macos-xcode
           chmod +x ./scripts/post-build-macos.sh
 
       - name: Build app
