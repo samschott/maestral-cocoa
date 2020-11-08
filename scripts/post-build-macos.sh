@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -e
-BUNDLE_PATH=$( ./scripts/get-binary-path.py )
+BUNDLE_PATH=$( ./scripts/get-dist-path.py )
 
 echo "# ==== copy over CLI executable ================================================="
 
