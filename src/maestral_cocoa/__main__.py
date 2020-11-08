@@ -15,7 +15,7 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--config-name", default="maestral")
-    parsed_args = parser.parse_args()
+    parsed_args, _ = parser.parse_known_args()
 
     run(parsed_args.config_name)
 

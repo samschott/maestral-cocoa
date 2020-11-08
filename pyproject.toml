@@ -1,16 +1,16 @@
 [tool.briefcase]
 project_name = "Maestral"
-bundle = "com.samschott.maestral"
+bundle = "com.samschott"
 version = "1.2.2.dev0"
 url = "https://github.com/samschott/maestral"
 license = "MIT license"
 author = "Sam Schott"
 author_email = "ss2151@cam.ac.uk"
 
-[tool.briefcase.app.maestral_cocoa]
+[tool.briefcase.app.maestral-cocoa]
 formal_name = "Maestral"
 description = "An open-source Dropbox client for macOS and Linux"
-icon = "src/maestral_cocoa/resources/maestral"
+icon = "icon/maestral"
 sources = ["src/maestral_cocoa"]
 requires = [
     "bugsnag",
@@ -22,16 +22,15 @@ requires = [
     "rubicon-objc@git+https://github.com/beeware/rubicon-objc",
     "toga@git+https://github.com/beeware/toga",
 ]
-support_package="https://github.com/SamSchott/Python-Apple-support/releases/download/3.8-b13/Python-3.8-macOS-support.b13.tar.gz"
+template="https://github.com/SamSchott/briefcase-macOS-Xcode-template"
+support_package="https://github.com/SamSchott/Python-Apple-support/releases/download/3.8-b14/Python-3.8-macOS-support.b14.tar.gz"
 
-[tool.briefcase.app.maestral_cocoa.macOS]
+[tool.briefcase.app.maestral-cocoa.macOS]
 requires = [
     "toga-cocoa>=0.3.0.dev25",
 ]
 
-[tool.briefcase.app.maestral_cocoa.macOS.dmg]
-
-[tool.briefcase.app.maestral_cocoa.linux]
+[tool.briefcase.app.maestral-cocoa.linux]
 requires = [
     "toga-gtk>=0.3.0.dev25",
 ]
