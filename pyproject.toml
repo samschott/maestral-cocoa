@@ -10,7 +10,7 @@ author_email = "ss2151@cam.ac.uk"
 [tool.briefcase.app.maestral-cocoa]
 formal_name = "Maestral"
 description = "An open-source Dropbox client for macOS and Linux"
-icon = "src/maestral_cocoa/resources/maestral"
+icon = "icon/maestral"
 sources = ["src/maestral_cocoa"]
 requires = [
     "bugsnag",
