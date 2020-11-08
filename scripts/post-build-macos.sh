@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+set -e
 BUNDLE_PATH=$( ./scripts/get-binary-path.py )
 
 echo "# ==== copy over CLI executable ================================================="
@@ -17,7 +18,7 @@ cp "$DIST_INFO_PATH/entry_points.txt" "$DIST_INFO_TARGET_PATH/entry_points.txt"
 echo "# ==== prune py files and replace with pyc ======================================"
 
 # compile all py files
-"$BUNDLE_PATH/Contents/Resources/Support/bin/Python3" -OO -m compileall -b "$BUNDLE_PATH" &> /dev/null
+"$BUNDLE_PATH/Contents/MacOS/Maestral" --run-python -OO -m compileall -b "$BUNDLE_PATH" &> /dev/null
 
 # remove all py files
 find "$BUNDLE_PATH/Contents" -name "*.py" -delete
