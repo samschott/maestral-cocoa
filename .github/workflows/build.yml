@@ -46,9 +46,6 @@ jobs:
           # package dmg
           briefcase package -i "$DEV_ID"
 
-          # verify code signature
-          codesign --verify --deep --strict --verbose=2 macOS/Maestral/Maestral.app
-
           DMG_PATH=$( find . -name "*.dmg" )
           echo "dmg created: $DMG_PATH"
           echo "::set-output name=dmg_path::${DMG_PATH}"
