@@ -9,5 +9,4 @@ done
 
 DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
 
-cd "$DIR"
-./Maestral --run-python -m maestral "$@"
+"$DIR/Maestral" --run-python -m maestral "$@"
