@@ -1,0 +1,68 @@
+name: Build and package
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+  workflow_dispatch:
+
+  schedule:
+    - cron: "19 3 * * *" # everyday at 03:19
+
+jobs:
+  build_macos:
+    runs-on: macos-11.0
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.merged.sha }}
+
+      - name: Import signing certificate into keychain
+        uses: apple-actions/import-codesign-certs@v1
+        with:
+          p12-file-base64: ${{ secrets.SIGNING_CERTIFICATE_P12_DATA }}
+          p12-password: ${{ secrets.SIGNING_CERTIFICATE_PASSWORD }}
+
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install --upgrade git+https://github.com/samschott/briefcase.git@macOS-Xcode
+          chmod +x ./scripts/post-build-macos.sh
+
+      - name: Build app
+        id: build
+        run: |
+          # build app
+          briefcase build
+
+          # run post-build scripts:
+          # - add CLI executable
+          # - keep .pyc files only to save space
+          # - update plist entries
+          ./scripts/post-build-macos.sh
+
+          # package dmg
+          briefcase package -i "$DEV_ID"
+
+          DMG_PATH=$( find . -name "*.dmg" )
+          echo "dmg created: $DMG_PATH"
+          echo "::set-output name=dmg_path::${DMG_PATH}"
+        env:
+            DEV_ID: "Developer ID Application: Sam Schott (G34LNR8C4Y)"
+
+      - name: Notarize app
+        run: |
+          echo "${{ steps.dmg.outputs.dmg_name }}"
+          npx notarize-cli --bundle-id "com.samschott.maestral" \
+                           --file ${{ steps.build.outputs.dmg_path }}
+        env:
+          NOTARIZE_USERNAME: ${{ secrets.NOTARIZE_USERNAME }}
+          NOTARIZE_PASSWORD: ${{ secrets.NOTARIZE_PASSWORD }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: dmg
+          path: ${{ steps.build.outputs.dmg_path }}
