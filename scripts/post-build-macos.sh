@@ -14,11 +14,11 @@ python3 -m pip install --upgrade --no-deps . --target dist 1> /dev/null
 DIST_INFO_PATH=$( find dist -name "maestral_cocoa-*.dist-info" )
 DIST_INFO_TARGET_PATH=$( find "$BUNDLE_PATH/Contents/Resources/app/" -name "maestral_cocoa-*.dist-info" )
 cp "$DIST_INFO_PATH/entry_points.txt" "$DIST_INFO_TARGET_PATH/entry_points.txt"
+rm -Rf dist
 
 echo "# ==== prune py files and replace with pyc ======================================"
 
 # compile all py files
-"$BUNDLE_PATH/Contents/MacOS/Maestral" --run-python -OO -m compileall -b "$BUNDLE_PATH" &> /dev/null
 "$BUNDLE_PATH/Contents/MacOS/Maestral" --run-python -OO -m compileall -b -d "" "$BUNDLE_PATH" 1> /dev/null
 
 # remove all py files
