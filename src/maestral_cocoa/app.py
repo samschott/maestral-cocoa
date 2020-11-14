@@ -152,12 +152,14 @@ class MaestralGui(SystemTrayApp):
             await self.auto_check_for_updates()
 
     def on_menu_open(self, sender):
-        self.update_snoozed()
+        # use higher refresh frequency
         self.refresh_interval = 0.5
+        self.update_snoozed()
         self.update_status()
 
     def on_menu_close(self, sender):
-        self.refresh_interval = 2
+        # use smaller refresh frequency to reduce CPU usage
+        self.refresh_interval = 4
 
     def load_maestral(self):
 
