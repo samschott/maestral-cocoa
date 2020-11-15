@@ -116,8 +116,6 @@ class MaestralGui(SystemTrayApp):
         self.item_sync_issues = None
         self.item_pause = None
 
-        self.refresh_interval = 2
-
         self.autostart = AutoStart(self.config_name)
 
         self.menu = Menu()
@@ -144,7 +142,9 @@ class MaestralGui(SystemTrayApp):
             except CommunicationError:
                 super().exit()
 
-            await asyncio.sleep(self.refresh_interval)
+            await call_async_threaded_maestral(
+                self.config_name, "status_change_longpoll"
+            )
 
     async def periodic_check_for_updates(self, interval=30 * 60):
         while True:
@@ -152,14 +152,8 @@ class MaestralGui(SystemTrayApp):
             await self.auto_check_for_updates()
 
     def on_menu_open(self, sender):
-        # use higher refresh frequency
-        self.refresh_interval = 0.5
         self.update_snoozed()
         self.update_status()
-
-    def on_menu_close(self, sender):
-        # use smaller refresh frequency to reduce CPU usage
-        self.refresh_interval = 4
 
     def load_maestral(self):
 
@@ -328,7 +322,6 @@ class MaestralGui(SystemTrayApp):
         )
 
         self.menu.on_open = self.on_menu_open
-        self.menu.on_close = self.on_menu_close
 
         # --------------- switch to idle icon -------------------
         self.set_icon(IDLE)
