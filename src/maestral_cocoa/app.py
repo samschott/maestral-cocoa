@@ -340,7 +340,7 @@ class MaestralGui(SystemTrayApp):
         self.settings_window.raise_()
 
     def on_sync_issues_clicked(self, widget):
-        SyncIssuesWindow(self.mdbx, app=self).raise_()
+        self.sync_issues_window.raise_()
 
     def on_activity_clicked(self, widget):
         self.activity_window.raise_()
@@ -396,16 +396,19 @@ class MaestralGui(SystemTrayApp):
         elif res["update_available"]:
             self.show_update_dialog(res["latest_release"], res["release_notes"])
         elif not res["update_available"]:
-            message = ("Maestral v{} is the newest version " "available.").format(
+            message = "Maestral v{} is the newest version available.".format(
                 res["latest_release"]
             )
             await self.alert_async(title="You’re up-to-date!", message=message)
 
     def show_update_dialog(self, latest_release, release_notes):
 
-        UpdateDialog(
-            version=latest_release, release_notes=release_notes, icon=self.icon
-        ).raise_()
+        self.update_dialog = UpdateDialog(
+            version=latest_release,
+            release_notes=release_notes,
+            icon=self.icon,
+        )
+        self.update_dialog.raise_()
 
     # ==== periodic updates ============================================================
 
