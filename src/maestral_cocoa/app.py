@@ -212,31 +212,31 @@ class MaestralGui(SystemTrayApp):
         self.menu.clear()
 
         # ------------- populate context menu -------------------
-        item_folder = MenuItem("Open Dropbox Folder")
-        item_website = MenuItem(
+        self.item_folder = MenuItem("Open Dropbox Folder")
+        self.item_website = MenuItem(
             "Launch Dropbox Website", action=self.on_website_clicked
         )
 
-        item_status = MenuItem("Setting up...")
+        self.item_status = MenuItem("Setting up...")
 
-        item_login = MenuItem(
+        self.item_login = MenuItem(
             "Start on login", checkable=True, action=lambda s: self.autostart.toggle()
         )
-        item_login.checked = self.autostart.enabled
-        item_help = MenuItem("Help Center", action=self.on_help_clicked)
+        self.item_login.checked = self.autostart.enabled
+        self.item_help = MenuItem("Help Center", action=self.on_help_clicked)
 
-        item_quit = MenuItem("Quit Maestral", action=self.exit)
+        self.item_quit = MenuItem("Quit Maestral", action=self.exit)
 
         self.menu.add(
-            item_folder,
-            item_website,
+            self.item_folder,
+            self.item_website,
             MenuItemSeparator(),
-            item_status,
+            self.item_status,
             MenuItemSeparator(),
-            item_login,
-            item_help,
+            self.item_login,
+            self.item_help,
             MenuItemSeparator(),
-            item_quit,
+            self.item_quit,
         )
 
     def setup_ui_linked(self):
@@ -246,22 +246,20 @@ class MaestralGui(SystemTrayApp):
 
         self.settings_window = SettingsWindow(self.mdbx, app=self)
         self.activity_window = ActivityWindow(self.mdbx, app=self)
+        self.sync_issues_window = SyncIssuesWindow(self.mdbx, app=self)
 
-        # ------------- populate context menu -------------------
+        # ------------- update context menu -------------------
 
-        self.menu.clear()
+        # remove unneeded items
+        self.menu.remove(self.item_login)
 
-        item_folder = MenuItem(
-            "Open Dropbox Folder", action=lambda s: click.launch(self.mdbx.dropbox_path)
-        )
-        item_website = MenuItem(
-            "Launch Dropbox Website", action=self.on_website_clicked
-        )
+        # update existing menu items
+        self.item_folder.action = lambda s: click.launch(self.mdbx.dropbox_path)
+        self.item_status.label = IDLE
 
+        # add new menu items
         self.item_email = MenuItem(self.mdbx.get_state("account", "email"))
         self.item_usage = MenuItem(self.mdbx.get_state("account", "usage"))
-
-        self.item_status = MenuItem(IDLE)
         self.item_pause = MenuItem(
             self.RESUME_TEXT if self.mdbx.paused else self.PAUSE_TEXT,
             action=self.on_start_stop_clicked,
@@ -280,46 +278,34 @@ class MaestralGui(SystemTrayApp):
         self.menu_snooze = Menu(
             items=[self.item_snooze30, self.item_snooze60, self.item_snooze480]
         )
-
         self.item_snooze = MenuItem("Snooze Notifications", submenu=self.menu_snooze)
 
         self.item_sync_issues = MenuItem(
             "Show Sync Issues...", action=self.on_sync_issues_clicked
         )
-        item_rebuild = MenuItem("Rebuild index...", action=self.on_rebuild_clicked)
+        self.item_rebuild = MenuItem("Rebuild index...", action=self.on_rebuild_clicked)
 
-        item_settings = MenuItem("Preferences...", action=self.on_settings_clicked)
+        self.item_settings = MenuItem("Preferences...", action=self.on_settings_clicked)
         self.item_updates = MenuItem(
             "Check for Updates...", action=self.on_check_for_updates_clicked
         )
-        item_help = MenuItem("Help Center", action=self.on_help_clicked)
 
         if self._started:
-            item_quit = MenuItem("Quit Maestral", action=self.exit)
+            self.item_quit.label = "Quit Maestral"
         else:
-            item_quit = MenuItem("Quit Maestral GUI", action=self.exit)
+            self.item_quit.label = "Quit Maestral GUI"
 
-        self.menu.add(
-            item_folder,
-            item_website,
-            MenuItemSeparator(),
-            self.item_email,
-            self.item_usage,
-            MenuItemSeparator(),
-            self.item_status,
-            self.item_pause,
-            self.item_activity,
-            MenuItemSeparator(),
-            self.item_snooze,
-            self.item_sync_issues,
-            item_rebuild,
-            MenuItemSeparator(),
-            item_settings,
-            self.item_updates,
-            item_help,
-            MenuItemSeparator(),
-            item_quit,
-        )
+        self.menu.insert(2, MenuItemSeparator())
+        self.menu.insert(3, self.item_email)
+        self.menu.insert(4, self.item_usage)
+        self.menu.insert(7, self.item_pause)
+        self.menu.insert(8, self.item_activity)
+        self.menu.insert(10, self.item_snooze)
+        self.menu.insert(11, self.item_sync_issues)
+        self.menu.insert(12, self.item_rebuild)
+        self.menu.insert(13, MenuItemSeparator())
+        self.menu.insert(14, self.item_settings)
+        self.menu.insert(15, self.item_updates)
 
         self.menu.on_open = self.on_menu_open
 
