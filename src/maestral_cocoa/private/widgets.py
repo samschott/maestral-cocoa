@@ -593,13 +593,17 @@ class MenuItem:
 
             def new_action(*args):
                 self.checked = not self.checked
-                action(args)
+                if action:
+                    action(args)
 
         else:
             new_action = action
 
         self._action = wrapped_handler(self, new_action)
         self._impl.set_action(self._action)
+
+        if self._action:
+            self.enabled = True
 
     @property
     def checked(self):
