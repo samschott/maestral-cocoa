@@ -139,12 +139,13 @@ class MaestralGui(SystemTrayApp):
             try:
                 self.update_status()
                 await self.update_error()
+
+                await call_async_threaded_maestral(
+                    self.config_name, "status_change_longpoll"
+                )
+
             except CommunicationError:
                 super().exit()
-
-            await call_async_threaded_maestral(
-                self.config_name, "status_change_longpoll"
-            )
 
     async def periodic_check_for_updates(self, interval=30 * 60):
         while True:
