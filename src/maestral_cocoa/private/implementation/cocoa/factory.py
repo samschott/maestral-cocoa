@@ -317,7 +317,11 @@ class FreestandingIconButton(TogaButton):
     def set_icon(self, icon_iface):
         factory = get_platform_factory()
         icon = icon_iface.bind(factory)
-        self.native.image = resize_image_to(icon.native, 11)
+        if self.interface.style.height > 0:
+            icon_size = self.interface.style.height
+        else:
+            icon_size = 16
+        self.native.image = resize_image_to(icon.native, icon_size)
         self.native.image.template = True
 
 
