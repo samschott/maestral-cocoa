@@ -327,15 +327,19 @@ class MaestralGui(SystemTrayApp):
 
     def on_start_stop_clicked(self, widget):
         """Pause / resume syncing on menu item clicked."""
-        if self.item_pause.label == self.PAUSE_TEXT:
-            self.mdbx.pause_sync()
-            self.item_pause.label = self.RESUME_TEXT
-        elif self.item_pause.label == self.RESUME_TEXT:
-            self.mdbx.resume_sync()
-            self.item_pause.label = self.PAUSE_TEXT
-        elif self.item_pause.label == self.START_TEXT:
-            self.mdbx.start_sync()
-            self.item_pause.label = self.PAUSE_TEXT
+
+        try:
+            if self.item_pause.label == self.PAUSE_TEXT:
+                self.mdbx.pause_sync()
+                self.item_pause.label = self.RESUME_TEXT
+            elif self.item_pause.label == self.RESUME_TEXT:
+                self.mdbx.resume_sync()
+                self.item_pause.label = self.PAUSE_TEXT
+            elif self.item_pause.label == self.START_TEXT:
+                self.mdbx.start_sync()
+                self.item_pause.label = self.PAUSE_TEXT
+        except NoDropboxDirError:
+            self._exec_dbx_location_dialog()
 
     def on_settings_clicked(self, widget):
         self.settings_window.raise_()
