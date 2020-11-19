@@ -30,6 +30,13 @@ from maestral.daemon import (
     CommunicationError,
 )
 from maestral import __version__ as __daemon_version__
+from maestral.errors import (
+    NoDropboxDirError,
+    TokenRevokedError,
+    TokenExpiredError,
+    MaestralApiError,
+    SyncError,
+)
 
 # local imports
 from maestral_cocoa import __version__ as __gui_version__
@@ -59,6 +66,10 @@ from maestral_cocoa.autostart import AutoStart
 
 # increase default font size from 12 to 13 points
 Pack.validated_property("font_size", choices=FONT_SIZE_CHOICES, initial=13)
+
+
+def name(cls):
+    return cls.__name__
 
 
 class MenuItemSnooze(MenuItem):
@@ -484,13 +495,16 @@ class MaestralGui(SystemTrayApp):
 
         err = errs[-1]
 
-        if err["type"] == "NoDropboxDirError":
+        if err["type"] == name(NoDropboxDirError):
             self._exec_dbx_location_dialog()
-        elif err["type"] == "TokenRevokedError":
+        elif err["type"] == name(TokenRevokedError):
             self._exec_relink_dialog(RelinkDialog.REVOKED)
-        elif err["type"] == "TokenExpiredError":
+        elif err["type"] == name(TokenExpiredError):
             self._exec_relink_dialog(RelinkDialog.EXPIRED)
-        elif "MaestralApiError" in err["inherits"] or "SyncError" in err["inherits"]:
+        elif (
+            name(MaestralApiError) in err["inherits"]
+            or name(SyncError) in err["inherits"]
+        ):
             await self.alert_async(err["title"], err["message"], level="error")
         else:
             await self._exec_error_dialog(err)
