@@ -4,6 +4,7 @@
 import os.path as osp
 import threading
 import asyncio
+import itertools
 
 # external imports
 from toga.sources import Source
@@ -80,6 +81,24 @@ class Node:
             c.is_selection_modified() for c in self._children
         )
         return own_selection_modified or child_selection_modified
+
+    def get_nodes_with_state(self, state):
+
+        nodes_with_state = []
+
+        for child in self._children:
+            if isinstance(child, Node):
+                if child.included.state == state:
+                    nodes_with_state.append(child)
+                    if state in (ON, OFF):
+                        # all children will have the same state
+                        nodes_with_state.extend(child._children)
+
+                if child.included.state == MIXED:
+                    # children may have different state
+                    nodes_with_state.extend(child.get_nodes_with_state(state))
+
+        return nodes_with_state
 
     # ---- Methods required for the data source interface ------------------------------
 
@@ -353,8 +372,6 @@ class SelectiveSyncDialog(SelectiveSyncGui):
         self.fs_source.included.style = Pack(padding=(20, 20, 0, 24), flex=1)
         self.outer_box.insert(-1, self.fs_source.included)
 
-        self.excluded_items = []
-
     # ==== callbacks ===================================================================
 
     def update_items(self):
@@ -362,29 +379,29 @@ class SelectiveSyncDialog(SelectiveSyncGui):
         Apply changes to local Dropbox folder.
         """
 
-        self.excluded_items.clear()
-        self.excluded_items.extend(self.mdbx.excluded_items)
-
         if not self.mdbx.connected:
             self.on_fs_loading_failed()
             return
 
-        self.get_changed_items(self.fs_source)
+        excluded_paths = set(self.mdbx.excluded_items)
 
-        self.mdbx.set_excluded_items(self.excluded_items)
+        # update the state of nodes which are listed in the tree
+        # preserve any exclusions which are not shown in the tree
 
-    def get_changed_items(self, parent):
+        included_shown = self.fs_source.get_nodes_with_state(ON)
+        excluded_shown = self.fs_source.get_nodes_with_state(OFF)
+        mixed_shown = self.fs_source.get_nodes_with_state(MIXED)
 
-        for child in parent.children:
-            if child.is_selection_modified():
-                child_path_lower = child.path.lower()
-                if child.included.state == OFF:
-                    self.excluded_items.append(child_path_lower)
-                elif child.included.state in (MIXED, ON):
-                    while child_path_lower in self.excluded_items:
-                        self.excluded_items.remove(child_path_lower)
+        for node in itertools.chain(included_shown, mixed_shown):
+            try:
+                excluded_paths.remove(node.path.lower())
+            except KeyError:
+                pass
 
-            self.get_changed_items(child)
+        for node in excluded_shown:
+            excluded_paths.add(node.path.lower())
+
+        self.mdbx.excluded_items = list(excluded_paths)
 
     def on_dialog_pressed(self, btn_name):
         if btn_name == "Update":
