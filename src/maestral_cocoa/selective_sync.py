@@ -11,7 +11,7 @@ from toga.sources import Source
 from toga.style import Pack
 from toga.constants import TRANSPARENT
 from maestral.utils.path import is_child
-from maestral.errors import NotAFolderError, NotFoundError
+from maestral.errors import NotAFolderError, NotFoundError, BusyError
 from maestral.daemon import MaestralProxy
 
 # local imports
@@ -403,11 +403,19 @@ class SelectiveSyncDialog(SelectiveSyncGui):
 
         self.mdbx.excluded_items = list(excluded_paths)
 
-    def on_dialog_pressed(self, btn_name):
-        if btn_name == "Update":
-            self.update_items()
+    async def on_dialog_pressed(self, btn_name):
 
-        self.close()
+        if btn_name == "Update":
+
+            try:
+                self.update_items()
+            except BusyError as err:
+                await self.alert_sheet(err.title, err.message, level="error")
+            else:
+                self.close()
+
+        elif btn_name == "Cancel":
+            self.close()
 
     def on_fs_loading_failed(self):
         self.dialog_buttons["Update"].enabled = False
