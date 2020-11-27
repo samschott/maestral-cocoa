@@ -491,8 +491,6 @@ class MaestralGui(SystemTrayApp):
         self.item_pause.enabled = False
         self.item_status.label = self.mdbx.status
 
-        self.mdbx.stop_sync()
-
         err = errs[-1]
 
         if err["type"] == name(NoDropboxDirError):
