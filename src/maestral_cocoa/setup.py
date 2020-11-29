@@ -170,6 +170,8 @@ class SetupDialog(SetupDialogGui):
 
     async def on_items_selected(self, btn_name):
 
+        self.fs_source.stop_loading()
+
         if btn_name == "Select":
 
             excluded_nodes = self.fs_source.get_nodes_with_state(OFF)
