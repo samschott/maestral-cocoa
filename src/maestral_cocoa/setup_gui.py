@@ -14,6 +14,7 @@ from .private.widgets import (
     FollowLinkButton,
     FileSelectionButton,
     Window,
+    TextInput,
 )
 from .private.constants import WORD_WRAP
 from .private.implementation.cocoa.constants import NSFullSizeContentViewWindowMask
@@ -96,7 +97,7 @@ class SetupDialogGui(Window):
         self.btn_auth_token = FollowLinkButton(
             "Retrieve Token", style=Pack(width=125, padding_bottom=35)
         )
-        self.text_field_auth_token = toga.TextInput(
+        self.text_field_auth_token = TextInput(
             placeholder="Authorization Token",
             style=Pack(
                 width=self.CONTENT_WIDTH * 0.9,

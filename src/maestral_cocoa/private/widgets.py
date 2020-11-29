@@ -474,6 +474,26 @@ class RichLabel(Widget):
         self._impl.set_html(value)
 
 
+# ==== input widgets ===================================================================
+
+
+class TextInput(toga.TextInput):
+    def __init__(
+        self,
+        id=None,
+        style=None,
+        factory=private_factory,
+        initial=None,
+        placeholder=None,
+        readonly=False,
+        on_change=None,
+        validator=None,
+    ):
+        super().__init__(
+            id, style, factory, initial, placeholder, readonly, on_change, validator
+        )
+
+
 # ==== icons ===========================================================================
 
 
