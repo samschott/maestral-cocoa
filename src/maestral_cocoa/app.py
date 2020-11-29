@@ -39,14 +39,14 @@ from maestral.errors import (
 )
 
 # local imports
-from maestral_cocoa import __version__ as __gui_version__
-from maestral_cocoa import __author__, __url__
-from maestral_cocoa.utils import (
-    call_async_threaded,
-    call_async_threaded_maestral,
+from . import __version__ as __gui_version__
+from . import __author__, __url__
+from .utils import (
+    call_async,
+    call_async_maestral,
     create_task,
 )
-from maestral_cocoa.private.widgets import (
+from .private.widgets import (
     MenuItem,
     MenuItemSeparator,
     Menu,
@@ -54,14 +54,14 @@ from maestral_cocoa.private.widgets import (
     SystemTrayApp,
     Icon,
 )
-from maestral_cocoa.setup import SetupDialog
-from maestral_cocoa.settings import SettingsWindow
-from maestral_cocoa.syncissues import SyncIssuesWindow
-from maestral_cocoa.activity import ActivityWindow
-from maestral_cocoa.dbx_location_dialog import DbxLocationDialog
-from maestral_cocoa.dialogs import UpdateDialog, ProgressDialog, RelinkDialog
-from maestral_cocoa.resources import APP_ICON_PATH, TRAY_ICON_PATH
-from maestral_cocoa.autostart import AutoStart
+from .setup import SetupDialog
+from .settings import SettingsWindow
+from .syncissues import SyncIssuesWindow
+from .activity import ActivityWindow
+from .dbx_location_dialog import DbxLocationDialog
+from .dialogs import UpdateDialog, ProgressDialog, RelinkDialog
+from .resources import APP_ICON_PATH, TRAY_ICON_PATH
+from .autostart import AutoStart
 
 
 # increase default font size from 12 to 13 points
@@ -151,9 +151,7 @@ class MaestralGui(SystemTrayApp):
                 self.update_status()
                 await self.update_error()
 
-                await call_async_threaded_maestral(
-                    self.config_name, "status_change_longpoll"
-                )
+                await call_async_maestral(self.config_name, "status_change_longpoll")
 
             except CommunicationError:
                 super().exit()
@@ -388,7 +386,7 @@ class MaestralGui(SystemTrayApp):
         ):  # checks disabled
             return
 
-        res = await call_async_threaded_maestral(self.config_name, "check_for_updates")
+        res = await call_async_maestral(self.config_name, "check_for_updates")
         if res["update_available"]:
             self.mdbx.set_state("app", "update_notification_last", time.time())
             self.show_update_dialog(res["latest_release"], res["release_notes"])
@@ -398,7 +396,7 @@ class MaestralGui(SystemTrayApp):
         progress = ProgressDialog("Checking for Updates", app=self)
         progress.raise_()
 
-        res = await call_async_threaded_maestral(self.config_name, "check_for_updates")
+        res = await call_async_maestral(self.config_name, "check_for_updates")
 
         if not progress.visible:
             return  # aborted by user
@@ -578,7 +576,7 @@ class MaestralGui(SystemTrayApp):
 
         # stop sync daemon if we started it or ``stop_daemon`` is ``True``
         if stop_daemon or self._started:
-            await call_async_threaded(stop_maestral_daemon_process, self.config_name)
+            await call_async(stop_maestral_daemon_process, self.config_name)
 
         super().exit()
 
