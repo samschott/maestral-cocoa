@@ -12,20 +12,15 @@ from toga.style import Pack
 from toga.constants import TRANSPARENT
 from maestral.utils.path import is_child
 from maestral.errors import NotAFolderError, NotFoundError, BusyError
-from maestral.daemon import MaestralProxy
 
 # local imports
 from .selective_sync_gui import SelectiveSyncGui
-from .utils import create_task
+from .utils import create_task, generate_async_maestral
 from .private.constants import ON, OFF, MIXED
 from .private.widgets import Icon, Switch
 
 
 class Node:
-
-    # do not list contents of more than 10 folders in parallel
-    _loading_semaphore = asyncio.Semaphore(10)
-
     def __init__(self, path, parent, mdbx, is_folder):
         super().__init__()
         self._mdbx = mdbx
@@ -144,80 +139,56 @@ class Node:
 
     async def _load_children_async(self):
 
-        # create background task to load children
-        queue = asyncio.Queue()
-        timer = threading.Timer(
-            interval=0,
-            function=self._child_loading_worker,
-            args=(self._mdbx.config_name, self.path, queue),
-        )
-        async with Node._loading_semaphore:
-            timer.start()
+        try:
 
-        # add children as they are loaded
+            did_remove_placeholder = False
 
-        while True:
+            async for res in generate_async_maestral(
+                self._mdbx.config_name, "list_folder_iterator", self.path
+            ):
 
-            res = await queue.get()
+                # remove placeholder nodes
+                if not did_remove_placeholder:
+                    for child in self._children.copy():
+                        if isinstance(child, PlaceholderNode):
+                            self._children.remove(child)
+                            self.notify("remove", parent=self, index=0, item=child)
 
-            # remove placeholder node
-            try:
-                c0 = self._children[0]
-            except IndexError:
-                pass
-            else:
-                if isinstance(c0, PlaceholderNode):
-                    del self._children[0]
-                    self.notify("remove", parent=self, index=0, item=c0)
+                    did_remove_placeholder = True
 
-            # error handling
-            if isinstance(res, ConnectionError):
-                self.on_loading_failed()
-                return
-            elif isinstance(res, (NotFoundError, NotAFolderError)):
-                self._children = []
-                return
-            elif isinstance(res, StopIteration):
-                return
+                res.sort(key=lambda e: e["name"].lower())
 
-            res.sort(key=lambda e: e["name"].lower())
+                new_nodes = [
+                    Node(
+                        path=e["path_display"],
+                        parent=self,
+                        mdbx=self._mdbx,
+                        is_folder=e["type"] == "FolderMetadata",
+                    )
+                    for e in res
+                ]
 
-            new_nodes = [
-                Node(
-                    path=e["path_display"],
-                    parent=self,
-                    mdbx=self._mdbx,
-                    is_folder=e["type"] == "FolderMetadata",
-                )
-                for e in res
-            ]
+                n_nodes = len(self._children)
+                self._children.extend(new_nodes)
 
-            n_nodes = len(self._children)
-            self._children.extend(new_nodes)
+                for index, child in enumerate(new_nodes):
+                    self.notify(
+                        "insert", parent=self, index=index + n_nodes, item=child
+                    )
 
-            for index, child in enumerate(new_nodes):
-                self.notify("insert", parent=self, index=index + n_nodes, item=child)
+                    # give UI time to process updates
+                    if index > 20:
+                        await asyncio.sleep(0.1)
+                    elif index > 50:
+                        await asyncio.sleep(0.2)
 
-                # give UI time to process updates
-                if index > 20:
-                    await asyncio.sleep(0.1)
-                elif index > 50:
-                    await asyncio.sleep(0.2)
-
-    def _child_loading_worker(self, config_name, path, queue):
-
-        # create a new proxy here to use in thread
-
-        with MaestralProxy(config_name) as m:
-            entries_iterator = m.list_folder_iterator(path)
-
-            while not self._stop_loading.is_set():
-                try:
-                    entries = next(entries_iterator)
-                    queue.put_nowait(entries)
-                except Exception as e:
-                    queue.put_nowait(e)
+                if self._stop_loading.is_set():
                     return
+
+        except ConnectionError:
+            self.on_loading_failed()
+        except (NotFoundError, NotAFolderError):
+            self._children = []
 
     def on_loading_failed(self):
         self.parent.on_loading_failed()
