@@ -19,7 +19,7 @@ requires = [
     "importlib_resources;python_version<'3.9'",
     "maestral@git+https://github.com/samschott/maestral",
     "markdown2",
-    "rubicon-objc@git+https://github.com/beeware/rubicon-objc",
+    "rubicon-objc",
     "toga>=0.3.0.dev25",
 ]
 template="https://github.com/SamSchott/briefcase-macOS-Xcode-template"
