@@ -11,7 +11,7 @@ from maestral.utils.path import delete
 # local imports
 from .private.widgets import FileSelectionButton
 from .dialogs import Dialog
-from .utils import call_async_threaded_maestral
+from .utils import call_async_maestral
 
 
 # set default font size to 13 pt, as in macOS
@@ -129,7 +129,7 @@ class DbxLocationDialog(Dialog):
                 elif choice == 2:  # merge
                     pass
 
-            await call_async_threaded_maestral(
+            await call_async_maestral(
                 self.mdbx.config_name, "create_dropbox_directory", chosen_dropbox_folder
             )
             self.mdbx.rebuild_index()
