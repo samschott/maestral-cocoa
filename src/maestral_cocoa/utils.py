@@ -58,6 +58,42 @@ def call_async_maestral(config_name, func_name, *args):
     return loop.run_in_executor(thread_pool_executor, func, *args)
 
 
+def generate_async_maestral(config_name, func_name, *args):
+    loop = asyncio.get_event_loop()
+    queue = asyncio.Queue(1)
+    exception = None
+    _END = object()
+
+    def func(*inner_args):
+        nonlocal exception
+        with MaestralProxy(config_name) as m:
+            m_func = m.__getattr__(func_name)
+            generator = m_func(*inner_args)
+
+            try:
+                for res in generator:
+                    asyncio.run_coroutine_threadsafe(queue.put(res), loop).result()
+            except Exception as e:
+                exception = e
+            finally:
+                asyncio.run_coroutine_threadsafe(queue.put(_END), loop).result()
+
+    async def yield_results():
+
+        while True:
+            next_item = await queue.get()
+            if next_item is _END:
+                break
+            yield next_item
+        if exception is not None:
+            # the iterator has raised, propagate the exception
+            raise exception
+
+    thread_pool_executor.submit(func, *args)
+
+    return yield_results()
+
+
 # ==== system calls ====================================================================
 
 
