@@ -2,14 +2,12 @@
 # system imports
 import os
 import asyncio
-import platform
 import time
 from subprocess import Popen
 from datetime import datetime, timedelta
 
 # external imports
 import click
-import toga
 from toga.style.pack import Pack, FONT_SIZE_CHOICES
 from maestral.constants import (
     IDLE,
@@ -29,7 +27,6 @@ from maestral.daemon import (
     Start,
     CommunicationError,
 )
-from maestral import __version__ as __daemon_version__
 from maestral.errors import (
     NoDropboxDirError,
     TokenRevokedError,
@@ -516,55 +513,19 @@ class MaestralGui(SystemTrayApp):
     async def _exec_error_dialog(self, err):
 
         title = "An unexpected error occurred"
+        message = (
+            "You can report this issue together with the traceback below on GitHub. "
+            "Please restart Maestral to continue syncing."
+        )
+        details = err["traceback"].replace("\n", "<br />")
 
-        if self.mdbx.analytics:
-            message = (
-                "A report has been sent to the developers. "
-                "Please restart Maestral to continue syncing."
-            )
-
-            html_traceback = err["traceback"].replace("\n", "<br />")
-            await self.alert_async(
-                title, message, details=html_traceback, level="error"
-            )
-
-        else:
-            message = (
-                "You can send a report to the developers or open an issue on "
-                "GitHub. Please restart Maestral to continue syncing."
-            )
-            btn_no, auto_share_checkbox = await self.alert_async(
-                title,
-                message,
-                details=err["traceback"],
-                button_labels=("Send to Developers", "Don't send"),
-                checkbox_text="Always send error reports",
-                level="error",
-            )
-
-            if btn_no == 0:
-                import bugsnag
-
-                bugsnag.configure(
-                    api_key="081c05e2bf9730d5f55bc35dea15c833",
-                    app_version=__daemon_version__,
-                    auto_notify=False,
-                    auto_capture_sessions=False,
-                )
-                bugsnag.notify(
-                    RuntimeError(err["type"]),
-                    meta_data={
-                        "system": {
-                            "platform": platform.platform(),
-                            "python": platform.python_version(),
-                            "gui": f"toga {toga.__version__}",
-                            "desktop": "Cocoa",
-                        },
-                        "original exception": err,
-                    },
-                )
-
-            self.mdbx.analytics = self.mdbx.analytics or auto_share_checkbox
+        await self.alert_async(
+            title,
+            message,
+            details=details,
+            button_labels=("Close",),
+            level="error",
+        )
 
     async def exit(self, *args, stop_daemon=False):
         """Quits Maestral.
