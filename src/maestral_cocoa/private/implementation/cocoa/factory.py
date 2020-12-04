@@ -3,6 +3,7 @@
 # system imports
 import os.path as osp
 import platform
+import weakref
 from packaging.version import Version
 
 # external imports
@@ -116,39 +117,54 @@ class Icon:
         ImageTemplate.StopProgress: NSImageNameStopProgressFreestandingTemplate,
     }
 
+    _path_cache = weakref.WeakValueDictionary()
+    _for_path_cache = weakref.WeakValueDictionary()
+    _template_cache = weakref.WeakValueDictionary()
+
     def __init__(self, interface, path=None, for_path=None, template=None):
         self.interface = interface
         self.interface._impl = self
         self.path = path
         self.for_path = for_path
         self.template = template
-
         self._native = None
 
     @property
     def native(self):
 
-        if self._native:
-            return self._native
-
         if self.path:
-            self._native = NSImage.alloc().initWithContentsOfFile(self.path)
-            return self._native
+            path = str(self.path)
+            try:
+                self._native = Icon._path_cache[path]
+            except KeyError:
+                self._native = NSImage.alloc().initWithContentsOfFile(path)
+                Icon._path_cache[path] = self._native
 
         elif self.for_path:
-            # always return a new pointer since an old one may be invalidated
-            # icons are cached by AppKit anyways
             path = str(self.for_path)
-            if osp.exists(path):
-                return NSWorkspace.sharedWorkspace.iconForFile(path)
-            else:
-                _, extension = osp.splitext(path)
-                return NSWorkspace.sharedWorkspace.iconForFileType(extension)
+            try:
+                self._native = Icon._for_path_cache[path]
+            except KeyError:
+
+                if osp.exists(path):
+                    self._native = NSWorkspace.sharedWorkspace.iconForFile(path)
+                else:
+                    _, extension = osp.splitext(path)
+                    self._native = NSWorkspace.sharedWorkspace.iconForFileType(
+                        extension
+                    )
+
+                Icon._for_path_cache[path] = self._native
 
         elif self.template:
             cocoa_template = Icon._to_cocoa_template[self.template]
-            self._native = NSImage.imageNamed(cocoa_template)
-            return self._native
+            try:
+                self._native = Icon._template_cache[cocoa_template]
+            except KeyError:
+                self._native = NSImage.imageNamed(cocoa_template)
+                Icon._template_cache[cocoa_template] = self._native
+
+        return self._native
 
 
 # ==== labels ==========================================================================
