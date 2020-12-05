@@ -30,16 +30,23 @@ from maestral.daemon import (
     CommunicationError,
 )
 from maestral import __version__ as __daemon_version__
+from maestral.errors import (
+    NoDropboxDirError,
+    TokenRevokedError,
+    TokenExpiredError,
+    MaestralApiError,
+    SyncError,
+)
 
 # local imports
-from maestral_cocoa import __version__ as __gui_version__
-from maestral_cocoa import __author__, __url__
-from maestral_cocoa.utils import (
-    call_async_threaded,
-    call_async_threaded_maestral,
+from . import __version__ as __gui_version__
+from . import __author__, __url__
+from .utils import (
+    call_async,
+    call_async_maestral,
     create_task,
 )
-from maestral_cocoa.private.widgets import (
+from .private.widgets import (
     MenuItem,
     MenuItemSeparator,
     Menu,
@@ -47,18 +54,22 @@ from maestral_cocoa.private.widgets import (
     SystemTrayApp,
     Icon,
 )
-from maestral_cocoa.setup import SetupDialog
-from maestral_cocoa.settings import SettingsWindow
-from maestral_cocoa.syncissues import SyncIssuesWindow
-from maestral_cocoa.activity import ActivityWindow
-from maestral_cocoa.dbx_location_dialog import DbxLocationDialog
-from maestral_cocoa.dialogs import UpdateDialog, ProgressDialog, RelinkDialog
-from maestral_cocoa.resources import APP_ICON_PATH, TRAY_ICON_PATH
-from maestral_cocoa.autostart import AutoStart
+from .setup import SetupDialog
+from .settings import SettingsWindow
+from .syncissues import SyncIssuesWindow
+from .activity import ActivityWindow
+from .dbx_location_dialog import DbxLocationDialog
+from .dialogs import UpdateDialog, ProgressDialog, RelinkDialog
+from .resources import APP_ICON_PATH, TRAY_ICON_PATH
+from .autostart import AutoStart
 
 
 # increase default font size from 12 to 13 points
 Pack.validated_property("font_size", choices=FONT_SIZE_CHOICES, initial=13)
+
+
+def name(cls):
+    return cls.__name__
 
 
 class MenuItemSnooze(MenuItem):
@@ -116,8 +127,6 @@ class MaestralGui(SystemTrayApp):
         self.item_sync_issues = None
         self.item_pause = None
 
-        self.refresh_interval = 2
-
         self.autostart = AutoStart(self.config_name)
 
         self.menu = Menu()
@@ -141,10 +150,11 @@ class MaestralGui(SystemTrayApp):
             try:
                 self.update_status()
                 await self.update_error()
+
+                await call_async_maestral(self.config_name, "status_change_longpoll")
+
             except CommunicationError:
                 super().exit()
-
-            await asyncio.sleep(self.refresh_interval)
 
     async def periodic_check_for_updates(self, interval=30 * 60):
         while True:
@@ -153,11 +163,7 @@ class MaestralGui(SystemTrayApp):
 
     def on_menu_open(self, sender):
         self.update_snoozed()
-        self.refresh_interval = 0.5
         self.update_status()
-
-    def on_menu_close(self, sender):
-        self.refresh_interval = 2
 
     def load_maestral(self):
 
@@ -216,31 +222,31 @@ class MaestralGui(SystemTrayApp):
         self.menu.clear()
 
         # ------------- populate context menu -------------------
-        item_folder = MenuItem("Open Dropbox Folder")
-        item_website = MenuItem(
+        self.item_folder = MenuItem("Open Dropbox Folder")
+        self.item_website = MenuItem(
             "Launch Dropbox Website", action=self.on_website_clicked
         )
 
-        item_status = MenuItem("Setting up...")
+        self.item_status = MenuItem("Setting up...")
 
-        item_login = MenuItem(
+        self.item_login = MenuItem(
             "Start on login", checkable=True, action=lambda s: self.autostart.toggle()
         )
-        item_login.checked = self.autostart.enabled
-        item_help = MenuItem("Help Center", action=self.on_help_clicked)
+        self.item_login.checked = self.autostart.enabled
+        self.item_help = MenuItem("Help Center", action=self.on_help_clicked)
 
-        item_quit = MenuItem("Quit Maestral", action=self.exit)
+        self.item_quit = MenuItem("Quit Maestral", action=self.exit)
 
         self.menu.add(
-            item_folder,
-            item_website,
+            self.item_folder,
+            self.item_website,
             MenuItemSeparator(),
-            item_status,
+            self.item_status,
             MenuItemSeparator(),
-            item_login,
-            item_help,
+            self.item_login,
+            self.item_help,
             MenuItemSeparator(),
-            item_quit,
+            self.item_quit,
         )
 
     def setup_ui_linked(self):
@@ -250,22 +256,20 @@ class MaestralGui(SystemTrayApp):
 
         self.settings_window = SettingsWindow(self.mdbx, app=self)
         self.activity_window = ActivityWindow(self.mdbx, app=self)
+        self.sync_issues_window = SyncIssuesWindow(self.mdbx, app=self)
 
-        # ------------- populate context menu -------------------
+        # ------------- update context menu -------------------
 
-        self.menu.clear()
+        # remove unneeded items
+        self.menu.remove(self.item_login)
 
-        item_folder = MenuItem(
-            "Open Dropbox Folder", action=lambda s: click.launch(self.mdbx.dropbox_path)
-        )
-        item_website = MenuItem(
-            "Launch Dropbox Website", action=self.on_website_clicked
-        )
+        # update existing menu items
+        self.item_folder.action = lambda s: click.launch(self.mdbx.dropbox_path)
+        self.item_status.label = IDLE
 
+        # add new menu items
         self.item_email = MenuItem(self.mdbx.get_state("account", "email"))
         self.item_usage = MenuItem(self.mdbx.get_state("account", "usage"))
-
-        self.item_status = MenuItem(IDLE)
         self.item_pause = MenuItem(
             self.RESUME_TEXT if self.mdbx.paused else self.PAUSE_TEXT,
             action=self.on_start_stop_clicked,
@@ -284,49 +288,36 @@ class MaestralGui(SystemTrayApp):
         self.menu_snooze = Menu(
             items=[self.item_snooze30, self.item_snooze60, self.item_snooze480]
         )
-
         self.item_snooze = MenuItem("Snooze Notifications", submenu=self.menu_snooze)
 
         self.item_sync_issues = MenuItem(
             "Show Sync Issues...", action=self.on_sync_issues_clicked
         )
-        item_rebuild = MenuItem("Rebuild index...", action=self.on_rebuild_clicked)
+        self.item_rebuild = MenuItem("Rebuild index...", action=self.on_rebuild_clicked)
 
-        item_settings = MenuItem("Preferences...", action=self.on_settings_clicked)
+        self.item_settings = MenuItem("Preferences...", action=self.on_settings_clicked)
         self.item_updates = MenuItem(
             "Check for Updates...", action=self.on_check_for_updates_clicked
         )
-        item_help = MenuItem("Help Center", action=self.on_help_clicked)
 
         if self._started:
-            item_quit = MenuItem("Quit Maestral", action=self.exit)
+            self.item_quit.label = "Quit Maestral"
         else:
-            item_quit = MenuItem("Quit Maestral GUI", action=self.exit)
+            self.item_quit.label = "Quit Maestral GUI"
 
-        self.menu.add(
-            item_folder,
-            item_website,
-            MenuItemSeparator(),
-            self.item_email,
-            self.item_usage,
-            MenuItemSeparator(),
-            self.item_status,
-            self.item_pause,
-            self.item_activity,
-            MenuItemSeparator(),
-            self.item_snooze,
-            self.item_sync_issues,
-            item_rebuild,
-            MenuItemSeparator(),
-            item_settings,
-            self.item_updates,
-            item_help,
-            MenuItemSeparator(),
-            item_quit,
-        )
+        self.menu.insert(2, MenuItemSeparator())
+        self.menu.insert(3, self.item_email)
+        self.menu.insert(4, self.item_usage)
+        self.menu.insert(7, self.item_pause)
+        self.menu.insert(8, self.item_activity)
+        self.menu.insert(10, self.item_snooze)
+        self.menu.insert(11, self.item_sync_issues)
+        self.menu.insert(12, self.item_rebuild)
+        self.menu.insert(13, MenuItemSeparator())
+        self.menu.insert(14, self.item_settings)
+        self.menu.insert(15, self.item_updates)
 
         self.menu.on_open = self.on_menu_open
-        self.menu.on_close = self.on_menu_close
 
         # --------------- switch to idle icon -------------------
         self.set_icon(IDLE)
@@ -345,21 +336,25 @@ class MaestralGui(SystemTrayApp):
 
     def on_start_stop_clicked(self, widget):
         """Pause / resume syncing on menu item clicked."""
-        if self.item_pause.label == self.PAUSE_TEXT:
-            self.mdbx.pause_sync()
-            self.item_pause.label = self.RESUME_TEXT
-        elif self.item_pause.label == self.RESUME_TEXT:
-            self.mdbx.resume_sync()
-            self.item_pause.label = self.PAUSE_TEXT
-        elif self.item_pause.label == self.START_TEXT:
-            self.mdbx.start_sync()
-            self.item_pause.label = self.PAUSE_TEXT
+
+        try:
+            if self.item_pause.label == self.PAUSE_TEXT:
+                self.mdbx.pause_sync()
+                self.item_pause.label = self.RESUME_TEXT
+            elif self.item_pause.label == self.RESUME_TEXT:
+                self.mdbx.resume_sync()
+                self.item_pause.label = self.PAUSE_TEXT
+            elif self.item_pause.label == self.START_TEXT:
+                self.mdbx.start_sync()
+                self.item_pause.label = self.PAUSE_TEXT
+        except NoDropboxDirError:
+            self._exec_dbx_location_dialog()
 
     def on_settings_clicked(self, widget):
         self.settings_window.raise_()
 
     def on_sync_issues_clicked(self, widget):
-        SyncIssuesWindow(self.mdbx, app=self).raise_()
+        self.sync_issues_window.raise_()
 
     def on_activity_clicked(self, widget):
         self.activity_window.raise_()
@@ -391,7 +386,7 @@ class MaestralGui(SystemTrayApp):
         ):  # checks disabled
             return
 
-        res = await call_async_threaded_maestral(self.config_name, "check_for_updates")
+        res = await call_async_maestral(self.config_name, "check_for_updates")
         if res["update_available"]:
             self.mdbx.set_state("app", "update_notification_last", time.time())
             self.show_update_dialog(res["latest_release"], res["release_notes"])
@@ -401,7 +396,7 @@ class MaestralGui(SystemTrayApp):
         progress = ProgressDialog("Checking for Updates", app=self)
         progress.raise_()
 
-        res = await call_async_threaded_maestral(self.config_name, "check_for_updates")
+        res = await call_async_maestral(self.config_name, "check_for_updates")
 
         if not progress.visible:
             return  # aborted by user
@@ -415,16 +410,19 @@ class MaestralGui(SystemTrayApp):
         elif res["update_available"]:
             self.show_update_dialog(res["latest_release"], res["release_notes"])
         elif not res["update_available"]:
-            message = ("Maestral v{} is the newest version " "available.").format(
+            message = "Maestral v{} is the newest version available.".format(
                 res["latest_release"]
             )
             await self.alert_async(title="You’re up-to-date!", message=message)
 
     def show_update_dialog(self, latest_release, release_notes):
 
-        UpdateDialog(
-            version=latest_release, release_notes=release_notes, icon=self.icon
-        ).raise_()
+        self.update_dialog = UpdateDialog(
+            version=latest_release,
+            release_notes=release_notes,
+            icon=self.icon,
+        )
+        self.update_dialog.raise_()
 
     # ==== periodic updates ============================================================
 
@@ -491,17 +489,18 @@ class MaestralGui(SystemTrayApp):
         self.item_pause.enabled = False
         self.item_status.label = self.mdbx.status
 
-        self.mdbx.stop_sync()
-
         err = errs[-1]
 
-        if err["type"] == "NoDropboxDirError":
+        if err["type"] == name(NoDropboxDirError):
             self._exec_dbx_location_dialog()
-        elif err["type"] == "TokenRevokedError":
+        elif err["type"] == name(TokenRevokedError):
             self._exec_relink_dialog(RelinkDialog.REVOKED)
-        elif err["type"] == "TokenExpiredError":
+        elif err["type"] == name(TokenExpiredError):
             self._exec_relink_dialog(RelinkDialog.EXPIRED)
-        elif "MaestralApiError" in err["inherits"] or "SyncError" in err["inherits"]:
+        elif (
+            name(MaestralApiError) in err["inherits"]
+            or name(SyncError) in err["inherits"]
+        ):
             await self.alert_async(err["title"], err["message"], level="error")
         else:
             await self._exec_error_dialog(err)
@@ -577,7 +576,7 @@ class MaestralGui(SystemTrayApp):
 
         # stop sync daemon if we started it or ``stop_daemon`` is ``True``
         if stop_daemon or self._started:
-            await call_async_threaded(stop_maestral_daemon_process, self.config_name)
+            await call_async(stop_maestral_daemon_process, self.config_name)
 
         super().exit()
 

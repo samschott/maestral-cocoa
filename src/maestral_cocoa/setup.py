@@ -9,7 +9,7 @@ from maestral.utils.appdirs import get_home_dir
 
 # local imports
 from .private.constants import OFF
-from .utils import call_async_threaded_maestral
+from .utils import call_async_maestral
 from .setup_gui import SetupDialogGui
 from .selective_sync import FileSystemSource
 
@@ -26,7 +26,6 @@ class SetupDialog(SetupDialogGui):
         self.mdbx = self.app.mdbx
 
         self._chosen_dropbox_folder = None
-        self.excluded_items = []
 
         # set up combobox
         default_location = self.mdbx.get_conf("main", "path")
@@ -67,9 +66,7 @@ class SetupDialog(SetupDialogGui):
             self.dialog_buttons_link_page.enabled = False
             self.text_field_auth_token.enabled = False
 
-            res = await call_async_threaded_maestral(
-                self.mdbx.config_name, "link", token
-            )
+            res = await call_async_maestral(self.mdbx.config_name, "link", token)
 
             if res == 0:
 
@@ -173,15 +170,18 @@ class SetupDialog(SetupDialogGui):
 
     async def on_items_selected(self, btn_name):
 
+        self.fs_source.stop_loading()
+
         if btn_name == "Select":
 
-            self._get_selected_items(self.fs_source)
-            self.mdbx.set_excluded_items(self.excluded_items)
+            excluded_nodes = self.fs_source.get_nodes_with_state(OFF)
+            excluded_paths = [node.path for node in excluded_nodes]
+            self.mdbx.excluded_items = excluded_paths
 
             # if any excluded folders are currently on the drive, delete them
-            for item in self.excluded_items:
-                local_item = self.mdbx.to_local_path(item)
-                delete(local_item)
+            for path in excluded_paths:
+                local_path = self.mdbx.to_local_path(path)
+                delete(local_path)
 
             # switch to next page
             self.go_forward()
@@ -198,16 +198,3 @@ class SetupDialog(SetupDialogGui):
 
     def on_loading_failed(self):
         self.dialog_buttons_selective_sync_page["Select"].enabled = False
-
-    # ==================================================================================
-    # Helper functions
-    # ==================================================================================
-
-    def _get_selected_items(self, parent):
-
-        for child in parent._children:
-            child_path_lower = child.path.lower()
-            if child.included.state == OFF:
-                self.excluded_items.append(child_path_lower)
-
-            self._get_selected_items(child)

@@ -6,7 +6,7 @@ import platform
 from typing import Optional
 
 # external imports
-from maestral.utils.autostart import (
+from maestral.autostart import (
     AutoStartBase,
     AutoStartLaunchd,
     AutoStartXDGDesktop,

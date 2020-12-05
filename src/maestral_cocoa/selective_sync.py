@@ -9,22 +9,17 @@ import asyncio
 from toga.sources import Source
 from toga.style import Pack
 from toga.constants import TRANSPARENT
-from maestral.utils.path import is_child
-from maestral.errors import NotAFolderError, NotFoundError
-from maestral.daemon import MaestralProxy
+from maestral.utils.path import is_child, is_equal_or_child
+from maestral.errors import NotAFolderError, NotFoundError, BusyError
 
 # local imports
 from .selective_sync_gui import SelectiveSyncGui
-from .utils import create_task
+from .utils import create_task, generate_async_maestral
 from .private.constants import ON, OFF, MIXED
 from .private.widgets import Icon, Switch
 
 
 class Node:
-
-    # do not list contents of more than 10 folders in parallel
-    _loading_semaphore = asyncio.Semaphore(10)
-
     def __init__(self, path, parent, mdbx, is_folder):
         super().__init__()
         self._mdbx = mdbx
@@ -81,6 +76,24 @@ class Node:
         )
         return own_selection_modified or child_selection_modified
 
+    def get_nodes_with_state(self, state):
+
+        nodes_with_state = []
+
+        for child in self._children:
+            if isinstance(child, Node):
+                if child.included.state == state:
+                    nodes_with_state.append(child)
+                    if state in (ON, OFF):
+                        # all children will have the same state
+                        nodes_with_state.extend(child._children)
+
+                if child.included.state == MIXED:
+                    # children may have different state
+                    nodes_with_state.extend(child.get_nodes_with_state(state))
+
+        return nodes_with_state
+
     # ---- Methods required for the data source interface ------------------------------
 
     def __len__(self):
@@ -125,80 +138,56 @@ class Node:
 
     async def _load_children_async(self):
 
-        # create background task to load children
-        queue = asyncio.Queue()
-        timer = threading.Timer(
-            interval=0,
-            function=self._child_loading_worker,
-            args=(self._mdbx.config_name, self.path, queue),
-        )
-        async with Node._loading_semaphore:
-            timer.start()
+        try:
 
-        # add children as they are loaded
+            did_remove_placeholder = False
 
-        while True:
+            async for res in generate_async_maestral(
+                self._mdbx.config_name, "list_folder_iterator", self.path
+            ):
 
-            res = await queue.get()
+                # remove placeholder nodes
+                if not did_remove_placeholder:
+                    for child in self._children.copy():
+                        if isinstance(child, PlaceholderNode):
+                            self._children.remove(child)
+                            self.notify("remove", parent=self, index=0, item=child)
 
-            # remove placeholder node
-            try:
-                c0 = self._children[0]
-            except IndexError:
-                pass
-            else:
-                if isinstance(c0, PlaceholderNode):
-                    del self._children[0]
-                    self.notify("remove", parent=self, index=0, item=c0)
+                    did_remove_placeholder = True
 
-            # error handling
-            if isinstance(res, ConnectionError):
-                self.on_loading_failed()
-                return
-            elif isinstance(res, (NotFoundError, NotAFolderError)):
-                self._children = []
-                return
-            elif isinstance(res, StopIteration):
-                return
+                res.sort(key=lambda e: e["name"].lower())
 
-            res.sort(key=lambda e: e["name"].lower())
+                new_nodes = [
+                    Node(
+                        path=e["path_display"],
+                        parent=self,
+                        mdbx=self._mdbx,
+                        is_folder=e["type"] == "FolderMetadata",
+                    )
+                    for e in res
+                ]
 
-            new_nodes = [
-                Node(
-                    path=e["path_display"],
-                    parent=self,
-                    mdbx=self._mdbx,
-                    is_folder=e["type"] == "FolderMetadata",
-                )
-                for e in res
-            ]
+                n_nodes = len(self._children)
+                self._children.extend(new_nodes)
 
-            n_nodes = len(self._children)
-            self._children.extend(new_nodes)
+                for index, child in enumerate(new_nodes):
+                    self.notify(
+                        "insert", parent=self, index=index + n_nodes, item=child
+                    )
 
-            for index, child in enumerate(new_nodes):
-                self.notify("insert", parent=self, index=index + n_nodes, item=child)
+                    # give UI time to process updates
+                    if index > 20:
+                        await asyncio.sleep(0.1)
+                    elif index > 50:
+                        await asyncio.sleep(0.2)
 
-                # give UI time to process updates
-                if index > 20:
-                    await asyncio.sleep(0.1)
-                elif index > 50:
-                    await asyncio.sleep(0.2)
-
-    def _child_loading_worker(self, config_name, path, queue):
-
-        # create a new proxy here to use in thread
-
-        with MaestralProxy(config_name) as m:
-            entries_iterator = m.list_folder_iterator(path)
-
-            while not self._stop_loading.is_set():
-                try:
-                    entries = next(entries_iterator)
-                    queue.put_nowait(entries)
-                except Exception as e:
-                    queue.put_nowait(e)
+                if self._stop_loading.is_set():
                     return
+
+        except ConnectionError:
+            self.on_loading_failed()
+        except (NotFoundError, NotAFolderError):
+            self._children = []
 
     def on_loading_failed(self):
         self.parent.on_loading_failed()
@@ -353,8 +342,6 @@ class SelectiveSyncDialog(SelectiveSyncGui):
         self.fs_source.included.style = Pack(padding=(20, 20, 0, 24), flex=1)
         self.outer_box.insert(-1, self.fs_source.included)
 
-        self.excluded_items = []
-
     # ==== callbacks ===================================================================
 
     def update_items(self):
@@ -362,35 +349,48 @@ class SelectiveSyncDialog(SelectiveSyncGui):
         Apply changes to local Dropbox folder.
         """
 
-        self.excluded_items.clear()
-        self.excluded_items.extend(self.mdbx.excluded_items)
-
         if not self.mdbx.connected:
             self.on_fs_loading_failed()
             return
 
-        self.get_changed_items(self.fs_source)
+        excluded_paths = set(self.mdbx.excluded_items)
 
-        self.mdbx.set_excluded_items(self.excluded_items)
+        # update the state of nodes which are listed in the tree
+        # preserve any exclusions which are not shown in the tree
 
-    def get_changed_items(self, parent):
+        included_shown = self.fs_source.get_nodes_with_state(ON)
+        excluded_shown = self.fs_source.get_nodes_with_state(OFF)
+        mixed_shown = self.fs_source.get_nodes_with_state(MIXED)
 
-        for child in parent.children:
-            if child.is_selection_modified():
-                child_path_lower = child.path.lower()
-                if child.included.state == OFF:
-                    self.excluded_items.append(child_path_lower)
-                elif child.included.state in (MIXED, ON):
-                    while child_path_lower in self.excluded_items:
-                        self.excluded_items.remove(child_path_lower)
+        for node in included_shown:
+            for path in excluded_paths.copy():
+                if is_equal_or_child(path, node.path.lower()):
+                    excluded_paths.remove(path)
 
-            self.get_changed_items(child)
+        for node in mixed_shown:
+            try:
+                excluded_paths.remove(node.path.lower())
+            except KeyError:
+                pass
 
-    def on_dialog_pressed(self, btn_name):
+        for node in excluded_shown:
+            excluded_paths.add(node.path.lower())
+
+        self.mdbx.excluded_items = list(excluded_paths)
+
+    async def on_dialog_pressed(self, btn_name):
+
         if btn_name == "Update":
-            self.update_items()
 
-        self.close()
+            try:
+                self.update_items()
+            except BusyError as err:
+                await self.alert_sheet(err.title, err.message, level="error")
+            else:
+                self.close()
+
+        elif btn_name == "Cancel":
+            self.close()
 
     def on_fs_loading_failed(self):
         self.dialog_buttons["Update"].enabled = False

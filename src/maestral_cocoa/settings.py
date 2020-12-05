@@ -14,7 +14,7 @@ import toga
 from .utils import (
     request_authorization_from_user_and_run,
     create_task,
-    call_async_threaded_maestral,
+    call_async_maestral,
 )
 from .private.constants import ON, OFF
 from .private.widgets import apply_round_clipping
@@ -70,7 +70,7 @@ class SettingsWindow(SettingsGui):
             widget.current_selection, self.mdbx.get_conf("main", "default_dir_name")
         )
         try:
-            await call_async_threaded_maestral(
+            await call_async_maestral(
                 self.mdbx.config_name, "move_dropbox_directory", new_path
             )
         except OSError:

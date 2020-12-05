@@ -474,6 +474,26 @@ class RichLabel(Widget):
         self._impl.set_html(value)
 
 
+# ==== input widgets ===================================================================
+
+
+class TextInput(toga.TextInput):
+    def __init__(
+        self,
+        id=None,
+        style=None,
+        factory=private_factory,
+        initial=None,
+        placeholder=None,
+        readonly=False,
+        on_change=None,
+        validator=None,
+    ):
+        super().__init__(
+            id, style, factory, initial, placeholder, readonly, on_change, validator
+        )
+
+
 # ==== icons ===========================================================================
 
 
@@ -593,13 +613,17 @@ class MenuItem:
 
             def new_action(*args):
                 self.checked = not self.checked
-                action(args)
+                if action:
+                    action(args)
 
         else:
             new_action = action
 
         self._action = wrapped_handler(self, new_action)
         self._impl.set_action(self._action)
+
+        if self._action:
+            self.enabled = True
 
     @property
     def checked(self):

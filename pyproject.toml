@@ -1,7 +1,7 @@
 [tool.briefcase]
 project_name = "Maestral"
 bundle = "com.samschott"
-version = "1.2.2"
+version = "1.3.0"
 url = "https://github.com/samschott/maestral"
 license = "MIT license"
 author = "Sam Schott"
@@ -19,7 +19,7 @@ requires = [
     "importlib_resources;python_version<'3.9'",
     "maestral@git+https://github.com/samschott/maestral",
     "markdown2",
-    "rubicon-objc@git+https://github.com/beeware/rubicon-objc",
+    "rubicon-objc",
     "toga>=0.3.0.dev25",
 ]
 template="https://github.com/SamSchott/briefcase-macOS-Xcode-template"

@@ -3,6 +3,7 @@
 # system imports
 import os.path as osp
 import platform
+import weakref
 from packaging.version import Version
 
 # external imports
@@ -19,6 +20,7 @@ from toga_cocoa.libs import (
     NSString,
     NSTextView,
     NSRecessedBezelStyle,
+    NSTextFieldSquareBezel,
     NSTextAlignment,
     NSViewMaxYMargin,
     NSMenuItem,
@@ -48,6 +50,7 @@ from toga_cocoa.widgets.base import Widget
 from toga_cocoa.widgets.switch import Switch as TogaSwitch
 from toga_cocoa.widgets.button import Button as TogaButton
 from toga_cocoa.window import Window as TogaWindow
+from toga_cocoa.widgets.textinput import TextInput as TogaTextInput
 from toga_cocoa.widgets.multilinetextinput import (
     MultilineTextInput as TogaMultilineTextInput,
 )
@@ -114,39 +117,54 @@ class Icon:
         ImageTemplate.StopProgress: NSImageNameStopProgressFreestandingTemplate,
     }
 
+    _path_cache = weakref.WeakValueDictionary()
+    _for_path_cache = weakref.WeakValueDictionary()
+    _template_cache = weakref.WeakValueDictionary()
+
     def __init__(self, interface, path=None, for_path=None, template=None):
         self.interface = interface
         self.interface._impl = self
         self.path = path
         self.for_path = for_path
         self.template = template
-
         self._native = None
 
     @property
     def native(self):
 
-        if self._native:
-            return self._native
-
         if self.path:
-            self._native = NSImage.alloc().initWithContentsOfFile(self.path)
-            return self._native
+            path = str(self.path)
+            try:
+                self._native = Icon._path_cache[path]
+            except KeyError:
+                self._native = NSImage.alloc().initWithContentsOfFile(path)
+                Icon._path_cache[path] = self._native
 
         elif self.for_path:
-            # always return a new pointer since an old one may be invalidated
-            # icons are cached by AppKit anyways
             path = str(self.for_path)
-            if osp.exists(path):
-                return NSWorkspace.sharedWorkspace.iconForFile(path)
-            else:
-                _, extension = osp.splitext(path)
-                return NSWorkspace.sharedWorkspace.iconForFileType(extension)
+            try:
+                self._native = Icon._for_path_cache[path]
+            except KeyError:
+
+                if osp.exists(path):
+                    self._native = NSWorkspace.sharedWorkspace.iconForFile(path)
+                else:
+                    _, extension = osp.splitext(path)
+                    self._native = NSWorkspace.sharedWorkspace.iconForFileType(
+                        extension
+                    )
+
+                Icon._for_path_cache[path] = self._native
 
         elif self.template:
             cocoa_template = Icon._to_cocoa_template[self.template]
-            self._native = NSImage.imageNamed(cocoa_template)
-            return self._native
+            try:
+                self._native = Icon._template_cache[cocoa_template]
+            except KeyError:
+                self._native = NSImage.imageNamed(cocoa_template)
+                Icon._template_cache[cocoa_template] = self._native
+
+        return self._native
 
 
 # ==== labels ==========================================================================
@@ -317,7 +335,11 @@ class FreestandingIconButton(TogaButton):
     def set_icon(self, icon_iface):
         factory = get_platform_factory()
         icon = icon_iface.bind(factory)
-        self.native.image = resize_image_to(icon.native, 11)
+        if self.interface.style.height > 0:
+            icon_size = self.interface.style.height
+        else:
+            icon_size = 16
+        self.native.image = resize_image_to(icon.native, icon_size)
         self.native.image.template = True
 
 
@@ -564,6 +586,62 @@ class Menu:
         return self._visible
 
 
+# ==== input widgets ===================================================================
+
+
+class KeyboardTextField(NSTextField):
+    @objc_method
+    def textDidChange_(self, notification) -> None:
+        if self.interface.on_change:
+            self.interface.on_change(self.interface)
+
+    @objc_method
+    def textShouldEndEditing_(self, textObject) -> bool:
+        return self.interface.validate()
+
+    @objc_method
+    def performKeyEquivalent_(self, event) -> bool:
+
+        app = NSApplication.sharedApplication
+
+        if event.type == NSKeyDown:
+            toga_event = toga_key(event)
+            if toga_event == {"key": Key.X, "modifiers": {Key.MOD_1}}:
+                app.sendAction_to_from_(SEL("cut:"), None, self)
+                return True
+            elif toga_event == {"key": Key.C, "modifiers": {Key.MOD_1}}:
+                app.sendAction_to_from_(SEL("copy:"), None, self)
+                return True
+            elif toga_event == {"key": Key.V, "modifiers": {Key.MOD_1}}:
+                app.sendAction_to_from_(SEL("paste:"), None, self)
+                return True
+            elif toga_event == {"key": Key.Z, "modifiers": {Key.MOD_1}}:
+                app.sendAction_to_from_(SEL("undo:"), None, self)
+                return True
+            elif toga_event == {"key": Key.Z, "modifiers": {Key.SHIFT, Key.MOD_1}}:
+                app.sendAction_to_from_(SEL("redo:"), None, self)
+                return True
+            elif toga_event == {"key": Key.A, "modifiers": {Key.MOD_1}}:
+                app.sendAction_to_from_(SEL("selectAll:"), None, self)
+                return True
+            else:
+                return send_super(__class__, self, "performKeyEquivalent:", event)
+        else:
+            return send_super(__class__, self, "performKeyEquivalent:", event)
+
+
+class TextInput(TogaTextInput):
+    def create(self):
+        self.native = KeyboardTextField.new()
+        self.native.interface = self.interface
+
+        self.native.bezeled = True
+        self.native.bezelStyle = NSTextFieldSquareBezel
+
+        # Add the layout constraints
+        self.add_constraints()
+
+
 # ==== StatusBarItem ===================================================================
 
 
@@ -591,30 +669,6 @@ class StatusBarItem:
 # ==== Application =====================================================================
 
 
-class CocoaSystemTrayApp(NSApplication):
-    @objc_method
-    def sendEvent_(self, event) -> None:
-
-        if event.type == NSKeyDown:
-            toga_event = toga_key(event)
-            if toga_event == {"key": Key.X, "modifiers": {Key.MOD_1}}:
-                self.sendAction_to_from_(SEL("cut:"), None, self)
-            elif toga_event == {"key": Key.C, "modifiers": {Key.MOD_1}}:
-                self.sendAction_to_from_(SEL("copy:"), None, self)
-            elif toga_event == {"key": Key.V, "modifiers": {Key.MOD_1}}:
-                self.sendAction_to_from_(SEL("paste:"), None, self)
-            elif toga_event == {"key": Key.Z, "modifiers": {Key.MOD_1}}:
-                self.sendAction_to_from_(SEL("undo:"), None, self)
-            elif toga_event == {"key": Key.Z, "modifiers": {Key.SHIFT, Key.MOD_1}}:
-                self.sendAction_to_from_(SEL("redo:"), None, self)
-            elif toga_event == {"key": Key.A, "modifiers": {Key.MOD_1}}:
-                self.sendAction_to_from_(SEL("selectAll:"), None, self)
-            else:
-                send_super(__class__, self, "sendEvent:", event)
-        else:
-            send_super(__class__, self, "sendEvent:", event)
-
-
 class SystemTrayAppDelegate(NSObject):
     @objc_method
     def applicationWillTerminate_(self, sender):
@@ -631,7 +685,7 @@ class SystemTrayApp(TogaApp):
     _MAIN_WINDOW_CLASS = None
 
     def create(self):
-        self.native = CocoaSystemTrayApp.sharedApplication
+        self.native = NSApplication.sharedApplication
         self.native.activationPolicy = NSApplicationActivationPolicyAccessory
 
         factory = get_platform_factory()

@@ -14,6 +14,7 @@ from .private.widgets import (
     FollowLinkButton,
     FileSelectionButton,
     Window,
+    TextInput,
 )
 from .private.constants import WORD_WRAP
 from .private.implementation.cocoa.constants import NSFullSizeContentViewWindowMask
@@ -62,28 +63,28 @@ class SetupDialogGui(Window):
 
         # ==== welcome page ============================================================
         # noinspection PyTypeChecker
-        image0 = toga.ImageView(
+        self.image0 = toga.ImageView(
             self.app.icon,
             style=Pack(width=128, height=128, alignment=CENTER, padding=(40, 0, 40, 0)),
         )
-        label0 = Label(
+        self.label0 = Label(
             text="Welcome to Maestral, an open source Dropbox client.",
             style=Pack(width=self.WINDOW_WIDTH, padding_bottom=40, text_align=CENTER),
         )
         self.btn_start = toga.Button("Link Dropbox Account", style=Pack(width=180))
 
         self.welcome_page = toga.Box(
-            children=[image0, label0, self.btn_start, Spacer(COLUMN)],
+            children=[self.image0, self.label0, self.btn_start, Spacer(COLUMN)],
             style=self.page_style,
         )
 
         # ==== link page ===============================================================
 
         # noinspection PyTypeChecker
-        image1 = toga.ImageView(
+        self.image1 = toga.ImageView(
             self.app.icon, style=Pack(width=64, height=64, padding=(40, 0, 40, 0))
         )
-        label1 = Label(
+        self.label1 = Label(
             text=(
                 "To link Maestral to your Dropbox account, please retrieve an "
                 "authorization token from Dropbox and enter it below."
@@ -96,7 +97,7 @@ class SetupDialogGui(Window):
         self.btn_auth_token = FollowLinkButton(
             "Retrieve Token", style=Pack(width=125, padding_bottom=35)
         )
-        self.text_field_auth_token = toga.TextInput(
+        self.text_field_auth_token = TextInput(
             placeholder="Authorization Token",
             style=Pack(
                 width=self.CONTENT_WIDTH * 0.9,
@@ -111,8 +112,8 @@ class SetupDialogGui(Window):
 
         self.link_page = toga.Box(
             children=[
-                image1,
-                label1,
+                self.image1,
+                self.label1,
                 self.btn_auth_token,
                 self.text_field_auth_token,
                 Spacer(COLUMN),
@@ -126,7 +127,7 @@ class SetupDialogGui(Window):
         # ==== dbx location page =======================================================
 
         # noinspection PyTypeChecker
-        image2 = toga.ImageView(
+        self.image2 = toga.ImageView(
             self.app.icon, style=Pack(width=64, height=64, padding=(40, 0, 40, 0))
         )
         self.dbx_location_label = Label(
@@ -157,7 +158,7 @@ class SetupDialogGui(Window):
 
         self.dbx_location_page = toga.Box(
             children=[
-                image2,
+                self.image2,
                 self.dbx_location_label,
                 self.combobox_dbx_location,
                 Spacer(COLUMN),
@@ -168,7 +169,7 @@ class SetupDialogGui(Window):
 
         # ==== selective sync page =====================================================
 
-        label3 = Label(
+        self.label3 = Label(
             text=(
                 "Please select which files and folders to sync below. The initial "
                 "download may take some time, depending on the size of your Dropbox."
@@ -191,7 +192,7 @@ class SetupDialogGui(Window):
 
         self.selective_sync_page = toga.Box(
             children=[
-                label3,
+                self.label3,
                 self.dropbox_tree,
             ],
             style=self.page_style,
@@ -200,11 +201,11 @@ class SetupDialogGui(Window):
         # ==== done page ===============================================================
 
         # noinspection PyTypeChecker
-        image4 = toga.ImageView(
+        self.image4 = toga.ImageView(
             self.app.icon,
             style=Pack(width=128, height=128, alignment=CENTER, padding=(40, 0, 40, 0)),
         )
-        label4 = Label(
+        self.label4 = Label(
             text=(
                 "You have successfully set up Maestral. Please allow some time for the "
                 "initial indexing and download of your Dropbox before Maestral will "
@@ -218,7 +219,7 @@ class SetupDialogGui(Window):
         )
 
         self.done_page = toga.Box(
-            children=[image4, label4, self.close_button, Spacer(COLUMN)],
+            children=[self.image4, self.label4, self.close_button, Spacer(COLUMN)],
             style=self.page_style,
         )
 
