@@ -4,13 +4,12 @@
 import os.path as osp
 import threading
 import asyncio
-import itertools
 
 # external imports
 from toga.sources import Source
 from toga.style import Pack
 from toga.constants import TRANSPARENT
-from maestral.utils.path import is_child
+from maestral.utils.path import is_child, is_equal_or_child
 from maestral.errors import NotAFolderError, NotFoundError, BusyError
 
 # local imports
@@ -363,7 +362,12 @@ class SelectiveSyncDialog(SelectiveSyncGui):
         excluded_shown = self.fs_source.get_nodes_with_state(OFF)
         mixed_shown = self.fs_source.get_nodes_with_state(MIXED)
 
-        for node in itertools.chain(included_shown, mixed_shown):
+        for node in included_shown:
+            for path in excluded_paths.copy():
+                if is_equal_or_child(path, node.path.lower()):
+                    excluded_paths.remove(path)
+
+        for node in mixed_shown:
             try:
                 excluded_paths.remove(node.path.lower())
             except KeyError:
