@@ -46,7 +46,8 @@ jobs:
           # - add CLI executable
           # - keep .pyc files only to save space
           # - update plist entries
-          ./scripts/post-build-macos.sh
+          APP_PATH=$( find . -name "*.app" )
+          ./scripts/post-build-macos.sh $APP_PATH
 
           # package dmg
           briefcase package -i "$DEV_ID"

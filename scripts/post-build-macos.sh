@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 
 set -e
-BUNDLE_PATH=$( ./scripts/get-dist-path.py )
+
+if [ -z "$1" ]; then
+    echo "Specify bundle path as first parameter"
+    exit 1
+fi
+BUNDLE_PATH="$1"
 
 echo "# ==== copy over CLI executable ================================================="
 
