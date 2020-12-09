@@ -32,6 +32,6 @@ echo "# ==== add custom Info.plist entries =====================================
 PLIST_PATH="$BUNDLE_PATH/Contents/Info.plist"
 
 /usr/libexec/PlistBuddy -c "Add :LSUIElement string 1" "$PLIST_PATH"
-/usr/libexec/PlistBuddy -c "Set :LSMinimumSystemVersion 10.13.0" "$PLIST_PATH"
+/usr/libexec/PlistBuddy -c "Set :LSMinimumSystemVersion 10.14.0" "$PLIST_PATH"
 /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier com.samschott.maestral" "$PLIST_PATH"
 /usr/libexec/PlistBuddy -c "Add :NSHumanReadableCopyright string 'Copyright © 2020 Sam Schott. All rights reserved.'" "$PLIST_PATH"
