@@ -191,10 +191,6 @@ class SettingsGui(Window):
                 width=SettingsGui.COLUMN_WIDTH_RIGHT,
             ),
         )
-        self.checkbox_analytics = Switch(
-            label="Share crash reports",
-            style=Pack(width=SettingsGui.COLUMN_WIDTH_RIGHT),
-        )
 
         self._label_cli_tool = Label(
             "Command line tool:",
@@ -234,7 +230,6 @@ class SettingsGui(Window):
                         children=[
                             self.checkbox_autostart,
                             self.checkbox_notifications,
-                            self.checkbox_analytics,
                         ],
                         style=Pack(
                             alignment=TOP,
