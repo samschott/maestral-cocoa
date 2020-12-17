@@ -53,14 +53,15 @@ jobs:
           briefcase package -i "$DEV_ID"
 
           DMG_PATH=$( find . -name "*.dmg" )
+          DMG_NAME=$( basename "$DMG_PATH" )
           echo "dmg created: $DMG_PATH"
+          echo "::set-output name=dmg_name::${DMG_NAME}"
           echo "::set-output name=dmg_path::${DMG_PATH}"
         env:
             DEV_ID: "Developer ID Application: Sam Schott (G34LNR8C4Y)"
 
       - name: Notarize app
         run: |
-          echo "${{ steps.dmg.outputs.dmg_name }}"
           npx notarize-cli --bundle-id "com.samschott.maestral" \
                            --file ${{ steps.build.outputs.dmg_path }}
         env:
@@ -70,5 +71,5 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: dmg
+          name: ${{ steps.build.outputs.dmg_name }}
           path: ${{ steps.build.outputs.dmg_path }}
