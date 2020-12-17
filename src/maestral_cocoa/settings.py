@@ -49,7 +49,6 @@ class SettingsWindow(SettingsGui):
         self.combobox_update_interval.on_select = self.on_update_interval_selected
         self.checkbox_autostart.on_toggle = self.on_autostart_clicked
         self.checkbox_notifications.on_toggle = self.on_notifications_clicked
-        self.checkbox_analytics.on_toggle = self.on_analytics_clicked
         self.btn_cli_tool.on_press = self.on_cli_pressed
 
         path_selection_message = (
@@ -119,9 +118,6 @@ class SettingsWindow(SettingsGui):
     async def on_notifications_clicked(self, widget):
         # 30 = SYNCISSUE, 15 = FILECHANGE
         self.mdbx.notification_level = 15 if widget.state == ON else 30
-
-    async def on_analytics_clicked(self, widget):
-        self.mdbx.analytics = widget.state == ON
 
     async def on_cli_pressed(self, widget):
 
@@ -214,7 +210,6 @@ class SettingsWindow(SettingsGui):
         self.checkbox_notifications.state = (
             ON if self.mdbx.notification_level <= 15 else OFF
         )
-        self.checkbox_analytics.state = ON if self.mdbx.analytics else OFF
         update_interval = self.mdbx.get_conf("app", "update_notification_interval")
         closest_key = min(
             self._update_interval_mapping,
