@@ -30,6 +30,7 @@ class SetupDialog(SetupDialogGui):
         # set up combobox
         default_location = self.mdbx.get_conf("main", "path")
         default_parent = osp.dirname(default_location) or get_home_dir()
+        self.default_dirname = f"Dropbox ({self.mdbx.config_name.capitalize()})"
         self.combobox_dbx_location.current_selection = default_parent
 
         # connect buttons to callbacks
@@ -40,8 +41,7 @@ class SetupDialog(SetupDialogGui):
         self.close_button.on_press = self.on_finish
         self.text_field_auth_token.on_change = self._token_field_validator
 
-        default_folder_name = self.mdbx.get_conf("main", "default_dir_name")
-        location_label_text = self.dbx_location_label.text.format(default_folder_name)
+        location_label_text = self.dbx_location_label.text.format(self.default_dirname)
         self.dbx_location_label.text = location_label_text
 
     # ==================================================================================
@@ -112,9 +112,8 @@ class SetupDialog(SetupDialogGui):
 
         if btn_name == "Select":
 
-            default_name = self.mdbx.get_conf("main", "default_dir_name")
             self._chosen_dropbox_folder = osp.join(
-                self.combobox_dbx_location.current_selection, default_name
+                self.combobox_dbx_location.current_selection, self.default_dirname
             )
 
             # if a file / folder exists, ask for conflict resolution
@@ -126,7 +125,7 @@ class SetupDialog(SetupDialogGui):
                     )
                     choice = await self.alert_sheet(
                         title="Folder already exists",
-                        message=msg.format(default_name),
+                        message=msg.format(self.default_dirname),
                         button_labels=("Replace", "Cancel", "Merge"),
                     )
 
@@ -137,7 +136,7 @@ class SetupDialog(SetupDialogGui):
                     )
                     choice = await self.alert_sheet(
                         title="File conflict",
-                        message=msg.format(default_name),
+                        message=msg.format(self.default_dirname),
                         button_labels=("Replace", "Cancel"),
                     )
 

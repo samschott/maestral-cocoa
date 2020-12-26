@@ -40,7 +40,8 @@ class DbxLocationDialog(Dialog):
         self.config_name = self.mdbx.config_name
         self.exit_status = self.REJECTED
 
-        old_path = self.mdbx.get_conf("main", "path")
+        self._old_path = self.mdbx.get_conf("main", "path")
+        self.default_dirname = f"Dropbox ({self.mdbx.config_name.capitalize()})"
 
         message = (
             "Your Dropbox folder has been moved or deleted from its original location. "
@@ -51,7 +52,7 @@ class DbxLocationDialog(Dialog):
             'folder below. Maestral will create a new folder named "{1}" in the '
             "selected location.\n\nTo unlink your Dropbox account from Maestral, "
             'click "Unlink" below.'
-        ).format(old_path, self.mdbx.get_conf("main", "default_dir_name"))
+        ).format(self._old_path, self.default_dirname)
 
         self.combobox_dbx_location = FileSelectionButton(
             initial=get_home_dir(),
@@ -93,7 +94,7 @@ class DbxLocationDialog(Dialog):
             # apply dropbox path
             chosen_dropbox_folder = osp.join(
                 self.combobox_dbx_location.current_selection,
-                self.mdbx.get_conf("main", "default_dir_name"),
+                self.default_dirname,
             )
 
             if osp.exists(chosen_dropbox_folder):
@@ -113,10 +114,8 @@ class DbxLocationDialog(Dialog):
                     choice = self.alert_sheet(
                         title="File conflict",
                         message=(
-                            'There already is a file named "{}" at this location. '
-                            "Would you like to replace it?".format(
-                                self.mdbx.get_conf("main", "default_dir_name")
-                            )
+                            f'There already is a file named "{self.default_dirname}" '
+                            f"at this location. Would you like to replace it?"
                         ),
                         button_labels=("Replace", "Cancel"),
                     )
