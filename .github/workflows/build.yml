@@ -40,7 +40,7 @@ jobs:
         id: build
         run: |
           # build app
-          briefcase build
+          briefcase build macOS xcode
 
           # run post-build scripts:
           # - add CLI executable
@@ -50,7 +50,7 @@ jobs:
           ./scripts/post-build-macos.sh $APP_PATH
 
           # package dmg
-          briefcase package -i "$DEV_ID"
+          briefcase package macOS xcode -i "$DEV_ID"
 
           DMG_PATH=$( find . -name "*.dmg" )
           DMG_NAME=$( basename "$DMG_PATH" )
