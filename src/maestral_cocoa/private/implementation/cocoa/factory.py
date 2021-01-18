@@ -94,7 +94,6 @@ NSVisualEffectView = ObjCClass("NSVisualEffectView")
 NSMutableAttributedString = ObjCClass("NSMutableAttributedString")
 NSStatusBar = ObjCClass("NSStatusBar")
 NSColorSpace = ObjCClass("NSColorSpace")
-NSAutoreleasePool = ObjCClass("NSAutoreleasePool")
 
 
 macos_version, *_ = platform.mac_ver()
@@ -833,8 +832,6 @@ class Window(TogaWindow):
 def apply_round_clipping(image_view_impl: ImageView) -> None:
     """Clips an image in a given toga_cocoa.ImageView to a circular mask."""
 
-    pool = NSAutoreleasePool.alloc().init()
-
     image = image_view_impl.native.image  # get native NSImage
 
     composed_image = NSImage.alloc().initWithSize(image.size)
@@ -859,12 +856,8 @@ def apply_round_clipping(image_view_impl: ImageView) -> None:
 
     image_view_impl.native.image = composed_image
 
-    pool.drain()
-    del pool
-
 
 def resize_image_to(image: NSImage, height: int) -> NSImage:
-    pool = NSAutoreleasePool.alloc().init()
 
     new_size = NSMakeSize(height, height)
     new_image = NSImage.alloc().initWithSize(new_size)
@@ -884,8 +877,5 @@ def resize_image_to(image: NSImage, height: int) -> NSImage:
 
     new_image.unlockFocus()
     ctx.restoreGraphicsState()
-
-    pool.drain()
-    del pool
 
     return new_image
