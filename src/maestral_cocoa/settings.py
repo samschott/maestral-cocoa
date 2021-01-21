@@ -51,10 +51,11 @@ class SettingsWindow(SettingsGui):
         self.checkbox_notifications.on_toggle = self.on_notifications_clicked
         self.btn_cli_tool.on_press = self.on_cli_pressed
 
+        self.default_dirname = f"Dropbox ({self.mdbx.config_name.capitalize()})"
+
         path_selection_message = (
             "Choose a new place for your Dropbox folder. A folder named "
-            f'"Dropbox ({self.mdbx.config_name.title()})" will be '
-            "created in the selected location."
+            f'"{self.default_dirname}" will be created in the selected location.'
         )
 
         self.combobox_dbx_location.dialog_message = path_selection_message
@@ -65,9 +66,8 @@ class SettingsWindow(SettingsGui):
     # ==== callback implementations ====================================================
 
     async def on_dbx_location_selected(self, widget):
-        new_path = osp.join(
-            widget.current_selection, self.mdbx.get_conf("main", "default_dir_name")
-        )
+        new_path = osp.join(widget.current_selection, self.default_dirname)
+
         try:
             await call_async_maestral(
                 self.mdbx.config_name, "move_dropbox_directory", new_path
