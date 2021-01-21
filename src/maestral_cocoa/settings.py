@@ -156,9 +156,9 @@ class SettingsWindow(SettingsGui):
                     "Could not install CLI", e.args[0], level="error"
                 )
 
-        self._udpdate_cli_tool_button()
+        self._update_cli_tool_button()
 
-    def _udpdate_cli_tool_button(self):
+    def _update_cli_tool_button(self):
         if osp.islink(self._macos_cli_install_path):
             self.btn_cli_tool.enabled = True
             self.btn_cli_tool.label = "Uninstall"
@@ -216,7 +216,7 @@ class SettingsWindow(SettingsGui):
             key=lambda x: abs(self._update_interval_mapping[x] - update_interval),
         )
         self.combobox_update_interval.value = closest_key
-        self._udpdate_cli_tool_button()
+        self._update_cli_tool_button()
 
     def set_account_info_from_cache(self):
 
