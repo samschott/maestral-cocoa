@@ -40,7 +40,6 @@ class AutoStart:
                 start_cmd=start_cmd,
                 Icon="maestral",
                 Terminal="false",
-                Categories="Network;FileTransfer;",
                 GenericName="File Synchronizer",
                 Comment="Sync your files with Dropbox",
             )
