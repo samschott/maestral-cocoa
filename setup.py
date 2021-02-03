@@ -24,7 +24,7 @@ setup(
         "click",
         "importlib_metadata;python_version<'3.8'",
         "importlib_resources;python_version<'3.9'",
-        "maestral>=1.3.0",
+        "maestral>=1.3.2.dev0",
         "markdown2",
         "toga==0.3.0.dev26",
         "rubicon-objc>=0.4.0",

@@ -12,9 +12,8 @@ from toga.style.pack import Pack, FONT_SIZE_CHOICES
 from maestral.constants import (
     IDLE,
     SYNCING,
-    PAUSED,
     STOPPED,
-    DISCONNECTED,
+    CONNECTING,
     SYNC_ERROR,
     ERROR,
     APP_NAME,
@@ -89,9 +88,8 @@ class MaestralGui(SystemTrayApp):
     icon_mapping = {
         IDLE: Icon(TRAY_ICON_PATH.format("idle")),
         SYNCING: Icon(TRAY_ICON_PATH.format("syncing")),
-        PAUSED: Icon(TRAY_ICON_PATH.format("paused")),
-        STOPPED: Icon(TRAY_ICON_PATH.format("error")),
-        DISCONNECTED: Icon(TRAY_ICON_PATH.format("disconnected")),
+        STOPPED: Icon(TRAY_ICON_PATH.format("paused")),
+        CONNECTING: Icon(TRAY_ICON_PATH.format("disconnected")),
         SYNC_ERROR: Icon(TRAY_ICON_PATH.format("info")),
         ERROR: Icon(TRAY_ICON_PATH.format("error")),
     }
@@ -127,10 +125,10 @@ class MaestralGui(SystemTrayApp):
         self.autostart = AutoStart(self.config_name)
 
         self.menu = Menu()
-        self._cached_status = DISCONNECTED
+        self._cached_status = CONNECTING
         self._cached_history = []
         self.tray = StatusBarItem(
-            icon=self.icon_mapping.get(DISCONNECTED), menu=self.menu
+            icon=self.icon_mapping.get(CONNECTING), menu=self.menu
         )
 
         self.setup_ui_unlinked()
@@ -336,10 +334,10 @@ class MaestralGui(SystemTrayApp):
 
         try:
             if self.item_pause.label == self.PAUSE_TEXT:
-                self.mdbx.pause_sync()
+                self.mdbx.stop_sync()
                 self.item_pause.label = self.RESUME_TEXT
             elif self.item_pause.label == self.RESUME_TEXT:
-                self.mdbx.resume_sync()
+                self.mdbx.start_sync()
                 self.item_pause.label = self.PAUSE_TEXT
             elif self.item_pause.label == self.START_TEXT:
                 self.mdbx.start_sync()
@@ -429,13 +427,10 @@ class MaestralGui(SystemTrayApp):
         n_sync_errors = len(self.mdbx.sync_errors)
         status = self.mdbx.status
         is_paused = self.mdbx.paused
-        is_stopped = not self.mdbx.running
 
         # update icon
         if is_paused:
-            new_icon = PAUSED
-        elif is_stopped:
-            new_icon = ERROR
+            new_icon = STOPPED
         elif n_sync_errors > 0 and status == IDLE:
             new_icon = SYNC_ERROR
         else:

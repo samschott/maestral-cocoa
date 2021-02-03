@@ -81,7 +81,7 @@ class SettingsWindow(SettingsGui):
                 ),
                 button_labels=("Ok",),
             )
-            self.mdbx.resume_sync()
+            self.mdbx.start_sync()
 
     def on_folder_selection_pressed(self, widget):
         SelectiveSyncDialog(self.mdbx, app=self.app).show_as_sheet(self)
