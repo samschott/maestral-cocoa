@@ -12,8 +12,9 @@ from toga.style.pack import Pack, FONT_SIZE_CHOICES
 from maestral.constants import (
     IDLE,
     SYNCING,
-    STOPPED,
+    PAUSED,
     CONNECTING,
+    CONNECTED,
     SYNC_ERROR,
     ERROR,
     APP_NAME,
@@ -87,8 +88,9 @@ class MaestralGui(SystemTrayApp):
 
     icon_mapping = {
         IDLE: Icon(TRAY_ICON_PATH.format("idle")),
+        CONNECTED: Icon(TRAY_ICON_PATH.format("idle")),
         SYNCING: Icon(TRAY_ICON_PATH.format("syncing")),
-        STOPPED: Icon(TRAY_ICON_PATH.format("paused")),
+        PAUSED: Icon(TRAY_ICON_PATH.format("paused")),
         CONNECTING: Icon(TRAY_ICON_PATH.format("disconnected")),
         SYNC_ERROR: Icon(TRAY_ICON_PATH.format("info")),
         ERROR: Icon(TRAY_ICON_PATH.format("error")),
@@ -429,9 +431,7 @@ class MaestralGui(SystemTrayApp):
         is_paused = self.mdbx.paused
 
         # update icon
-        if is_paused:
-            new_icon = STOPPED
-        elif n_sync_errors > 0 and status == IDLE:
+        if n_sync_errors > 0 and status == IDLE:
             new_icon = SYNC_ERROR
         else:
             new_icon = status
