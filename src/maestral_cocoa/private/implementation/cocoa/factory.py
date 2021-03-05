@@ -526,7 +526,6 @@ class MenuItemSeparator:
     def __init__(self, interface):
         self.interface = interface
         self.native = NSMenuItem.separatorItem()
-        self.native.autoenablesItems = False
 
 
 class TogaMenu(NSMenu):
@@ -677,11 +676,11 @@ class SystemTrayApp(TogaApp):
 
         self.resource_path = osp.dirname(osp.dirname(NSBundle.mainBundle.bundlePath))
 
-        self.appDelegate = SystemTrayAppDelegate.alloc().init()
-        self.appDelegate.impl = self
-        self.appDelegate.interface = self.interface
-        self.appDelegate.native = self.native
-        self.native.delegate = self.appDelegate
+        self.delegate = SystemTrayAppDelegate.alloc().init()
+        self.delegate.impl = self
+        self.delegate.interface = self.interface
+        self.delegate.native = self.native
+        self.native.delegate = self.delegate
 
         # Call user code to populate the main window
         self.interface.startup()
