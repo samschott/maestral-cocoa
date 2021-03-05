@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
 # system imports
-from asyncio import get_event_loop
+import asyncio
+from concurrent.futures import Future
 
 # external imports
 from toga.fonts import Font, SYSTEM, BOLD
@@ -76,8 +77,7 @@ async def save_file_sheet(
     panel.allowedFileTypes = arr
     panel.nameFieldStringValue = suggested_filename
 
-    loop = get_event_loop()
-    future = loop.create_future()
+    future = Future()
 
     def completion_handler(r: int) -> None:
         path = panel.URL.path if r == NSFileHandlingPanelOKButton else None
@@ -87,7 +87,7 @@ async def save_file_sheet(
         window._impl.native, completionHandler=completion_handler
     )
 
-    return await future
+    return await asyncio.wrap_future(future)
 
 
 async def open_file_sheet(
@@ -123,8 +123,7 @@ async def open_file_sheet(
     panel.canCreateDirectories = True
     panel.canChooseFiles = True
 
-    loop = get_event_loop()
-    future = loop.create_future()
+    future = Future()
 
     def completion_handler(r: int) -> None:
 
@@ -142,7 +141,7 @@ async def open_file_sheet(
         window._impl.native, completionHandler=completion_handler
     )
 
-    return await future
+    return await asyncio.wrap_future(future)
 
 
 async def select_folder_sheet(window, title="", message="", multiselect=False):
@@ -165,8 +164,7 @@ async def select_folder_sheet(window, title="", message="", multiselect=False):
     panel.resolvesAliases = True
     panel.allowsMultipleSelection = multiselect
 
-    loop = get_event_loop()
-    future = loop.create_future()
+    future = Future()
 
     def completion_handler(r: int) -> None:
 
@@ -184,7 +182,7 @@ async def select_folder_sheet(window, title="", message="", multiselect=False):
         window._impl.native, completionHandler=completion_handler
     )
 
-    return await future
+    return await asyncio.wrap_future(future)
 
 
 def _construct_alert(
@@ -268,8 +266,7 @@ async def alert_sheet(
         icon,
     )
 
-    loop = get_event_loop()
-    future = loop.create_future()
+    future = Future()
 
     def completion_handler(r: int) -> None:
         future.set_result(r - NSAlertFirstButtonReturn)
@@ -278,7 +275,7 @@ async def alert_sheet(
         window._impl.native, completionHandler=completion_handler
     )
 
-    return await future
+    return await asyncio.wrap_future(future)
 
 
 def alert(
@@ -363,8 +360,7 @@ async def alert_async(
 
     NSApplication.sharedApplication.activateIgnoringOtherApps(True)
 
-    loop = get_event_loop()
-    future = loop.create_future()
+    future = Future()
 
     target = AlertButtonTarget.alloc().init()
     target.alert = a
@@ -379,4 +375,4 @@ async def alert_async(
     a.window.center()
     a.window.makeKeyAndOrderFront(None)
 
-    return await future
+    return await asyncio.wrap_future(future)
