@@ -281,6 +281,7 @@ class MaestralGui(SystemTrayApp):
         self.item_resume_notifications = MenuItemSnooze(
             "Turn on notifications", 0, self.mdbx
         )
+        self.item_snooze_separator = MenuItemSeparator()
 
         self.menu_snooze = Menu(
             items=[self.item_snooze30, self.item_snooze60, self.item_snooze480]
@@ -461,12 +462,12 @@ class MaestralGui(SystemTrayApp):
             self.item_snooze.label = "Notifications snoozed until {}".format(
                 eta.strftime("%H:%M")
             )
-            self.menu_snooze.insert(0, MenuItemSeparator())
+            self.menu_snooze.insert(0, self.item_snooze_separator)
             self.menu_snooze.insert(0, self.item_resume_notifications)
         else:
             self.item_snooze.label = "Snooze Notifications"
             self.menu_snooze.remove(self.item_resume_notifications)
-            self.menu_snooze.remove(MenuItemSeparator())
+            self.menu_snooze.remove(self.item_snooze_separator)
 
     async def update_error(self):
         errs = self.mdbx.fatal_errors
