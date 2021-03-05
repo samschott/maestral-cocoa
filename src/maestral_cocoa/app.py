@@ -504,7 +504,7 @@ class MaestralGui(SystemTrayApp):
         self.setup_dialog.on_close = self._on_setup_completed
 
     def _exec_relink_dialog(self, reason):
-        RelinkDialog(self, reason).raise_()
+        self.rld = RelinkDialog(self, reason).raise_()
 
     async def _exec_error_dialog(self, err):
 
