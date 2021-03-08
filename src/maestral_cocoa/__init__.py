@@ -2,4 +2,4 @@
 
 __author__ = "Sam Schott"
 __version__ = "1.4.2"
-__url__ = "https://github.com/SamSchott/maestral"
+__url__ = "https://samschott.github.io/maestral"

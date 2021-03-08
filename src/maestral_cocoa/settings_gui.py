@@ -25,7 +25,6 @@ from .constants import FROZEN
 
 
 year = time.localtime().tm_year
-_wiki_url = __url__ + "/wiki"
 
 
 class SettingsGui(Window):
@@ -294,7 +293,7 @@ class SettingsGui(Window):
                             ),
                         ),
                         RichLabel(
-                            html=f'<a href="{_wiki_url}">{__url__}</a>',
+                            html=f'<a href="{__url__}">{__url__}</a>',
                             style=Pack(
                                 padding_bottom=SettingsGui.SUBELEMENT_PADDING,
                                 width=SettingsGui.COLUMN_WIDTH_RIGHT,
