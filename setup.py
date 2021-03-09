@@ -7,7 +7,7 @@ setup(
     name="maestral-cocoa",
     author="Sam Schott",
     author_email="ss2151@cam.ac.uk",
-    version="1.4.2",
+    version="1.4.3.dev0",
     url="https://github.com/samschott/maestral",
     description="Open-source Dropbox client for macOS and Linux.",
     license="MIT",
