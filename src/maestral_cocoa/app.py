@@ -31,6 +31,7 @@ from maestral.errors import (
     NoDropboxDirError,
     TokenRevokedError,
     TokenExpiredError,
+    KeyringAccessError,
     MaestralApiError,
     SyncError,
 )
@@ -166,7 +167,13 @@ class MaestralGui(SystemTrayApp):
 
         self.mdbx = self.get_or_start_maestral_daemon()
 
-        if self.mdbx.pending_link:
+        try:
+            pending_link = self.mdbx.pending_link
+        except KeyringAccessError:
+            create_task(self.update_error())
+            return
+
+        if pending_link:
             self.setup_dialog = SetupDialog(self)
             self.setup_dialog.raise_()
             self.setup_dialog.on_close = self._on_setup_completed
@@ -478,9 +485,11 @@ class MaestralGui(SystemTrayApp):
         self.mdbx.clear_fatal_errors()
 
         self.set_icon(ERROR)
-        self.item_pause.label = self.RESUME_TEXT
-        self.item_pause.enabled = False
-        self.item_status.label = self.mdbx.status
+
+        if self.item_pause:
+            self.item_pause.label = self.RESUME_TEXT
+        if self.item_status:
+            self.item_status.label = self.mdbx.status
 
         err = errs[-1]
 
