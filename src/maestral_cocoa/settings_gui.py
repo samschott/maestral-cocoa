@@ -191,30 +191,6 @@ class SettingsGui(Window):
             ),
         )
 
-        self._label_cli_tool = Label(
-            "Command line tool:",
-            style=Pack(text_align=RIGHT, width=SettingsGui.COLUMN_WIDTH_LEFT),
-        )
-
-        self.label_cli_tool_info = Label(
-            "Install the 'maestral' command line tool to /usr/local/bin.",
-            style=Pack(
-                color=GRAY,
-                font_size=12,
-                width=SettingsGui.COLUMN_WIDTH_RIGHT,
-                padding_left=SettingsGui.COLUMN_PADDING,
-            ),
-        )
-
-        self.btn_cli_tool = toga.Button(
-            "Install",
-            style=Pack(
-                width=SettingsGui.BUTTON_WIDTH / 2,
-                padding_bottom=SettingsGui.SUBELEMENT_PADDING,
-                padding_left=SettingsGui.COLUMN_PADDING,
-            ),
-        )
-
         children = [
             toga.Box(
                 children=[self._label_update_interval, self.combobox_update_interval],
@@ -242,6 +218,30 @@ class SettingsGui(Window):
 
         if FROZEN:
             # add UI to install command line interface
+            self._label_cli_tool = Label(
+                "Command line tool:",
+                style=Pack(text_align=RIGHT, width=SettingsGui.COLUMN_WIDTH_LEFT),
+            )
+
+            self.label_cli_tool_info = Label(
+                "Install the 'maestral' command line tool to /usr/local/bin.",
+                style=Pack(
+                    color=GRAY,
+                    font_size=12,
+                    width=SettingsGui.COLUMN_WIDTH_RIGHT,
+                    padding_left=SettingsGui.COLUMN_PADDING,
+                ),
+            )
+
+            self.btn_cli_tool = toga.Button(
+                "Install",
+                style=Pack(
+                    width=SettingsGui.BUTTON_WIDTH / 2,
+                    padding_bottom=SettingsGui.SUBELEMENT_PADDING,
+                    padding_left=SettingsGui.COLUMN_PADDING,
+                ),
+            )
+
             children.append(
                 toga.Box(
                     children=[

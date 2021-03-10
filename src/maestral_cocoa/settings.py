@@ -22,6 +22,7 @@ from .settings_gui import SettingsGui
 from .selective_sync import SelectiveSyncDialog
 from .resources import FACEHOLDER_PATH
 from .autostart import AutoStart
+from .constants import FROZEN
 
 
 class SettingsWindow(SettingsGui):
@@ -49,7 +50,9 @@ class SettingsWindow(SettingsGui):
         self.combobox_update_interval.on_select = self.on_update_interval_selected
         self.checkbox_autostart.on_toggle = self.on_autostart_clicked
         self.checkbox_notifications.on_toggle = self.on_notifications_clicked
-        self.btn_cli_tool.on_press = self.on_cli_pressed
+
+        if FROZEN:
+            self.btn_cli_tool.on_press = self.on_cli_pressed
 
         self.default_dirname = f"Dropbox ({self.mdbx.config_name.capitalize()})"
 
@@ -216,7 +219,9 @@ class SettingsWindow(SettingsGui):
             key=lambda x: abs(self._update_interval_mapping[x] - update_interval),
         )
         self.combobox_update_interval.value = closest_key
-        self._update_cli_tool_button()
+
+        if FROZEN:
+            self._update_cli_tool_button()
 
     def set_account_info_from_cache(self):
 
