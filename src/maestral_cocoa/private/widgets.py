@@ -810,9 +810,6 @@ class Window(toga.Window):
         self.show()
         self._impl.force_to_front()
 
-    def hide(self):
-        self._impl.hide()
-
     # sheet support
 
     def show_as_sheet(self, window):
@@ -825,7 +822,7 @@ class Window(toga.Window):
     @is_dialog.setter
     def is_dialog(self, yes):
         self._is_dialog = yes
-        self._impl.set_dialog(True)
+        self._impl.set_dialog(yes)
 
     # memory management
 

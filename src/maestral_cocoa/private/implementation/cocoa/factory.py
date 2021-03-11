@@ -29,6 +29,7 @@ from toga_cocoa.libs import (
     send_super,
     NSObject,
     NSApplicationActivationPolicyAccessory,
+    NSApplicationActivationPolicyRegular,
     NSBundle,
     NSImage,
     NSImageInterpolationHigh,
@@ -41,6 +42,7 @@ from toga_cocoa.libs import (
     NSOpenPanel,
     NSFileHandlingPanelOKButton,
     NSCompositingOperationCopy,
+    NSWindow,
 )
 from toga_cocoa.colors import native_color
 from toga_cocoa.keys import toga_key, Key
@@ -94,6 +96,9 @@ NSVisualEffectView = ObjCClass("NSVisualEffectView")
 NSMutableAttributedString = ObjCClass("NSMutableAttributedString")
 NSStatusBar = ObjCClass("NSStatusBar")
 NSColorSpace = ObjCClass("NSColorSpace")
+
+NSNormalWindowLevel = 0
+NSModalPanelWindowLevel = 8
 
 
 macos_version, *_ = platform.mac_ver()
@@ -657,10 +662,6 @@ class SystemTrayAppDelegate(NSObject):
         if self.interface.app.on_exit:
             self.interface.app.on_exit(self.interface.app)
 
-    @objc_method
-    def applicationDidFinishLaunching_(self, notification):
-        self.native.activateIgnoringOtherApps(True)
-
 
 class SystemTrayApp(TogaApp):
 
@@ -743,7 +744,35 @@ class SystemTrayApp(TogaApp):
         )
 
 
+class WindowDeletage(NSObject):
+    @objc_method
+    def windowWillClose_(self, notification) -> None:
+        self.interface.on_close()
+
+        # hide dock icon when last window is closed
+        app = NSApplication.sharedApplication
+
+        if len([w for w in app.windows if w.isVisible]) < 4:
+            app.activationPolicy = NSApplicationActivationPolicyAccessory
+
+    @objc_method
+    def windowDidResize_(self, notification) -> None:
+        if self.interface.content:
+            frame_width = notification.object.contentView.frame.size.width
+            frame_height = notification.object.contentView.frame.size.height
+            if frame_width > 0.0 and frame_height > 0.0:
+                # Set the window to the new size
+                self.interface.content.refresh()
+
+
 class Window(TogaWindow):
+    def create(self):
+        super().create()
+        self.delegate = WindowDeletage.alloc().init()
+        self.delegate.interface = self.interface
+        self.delegate._impl = self
+        self.native.delegate = self.delegate
+
     def is_visible(self):
         return bool(self.native.isVisible)
 
@@ -751,16 +780,17 @@ class Window(TogaWindow):
         self.native.center()
 
     def force_to_front(self):
-        self.native.makeKeyAndOrderFront(None)
-        self.native.orderFrontRegardless()
         if self.interface.app:
             self.interface.app._impl.native.activateIgnoringOtherApps(True)
+        self.native.makeKeyAndOrderFront(None)
 
     def show_as_sheet(self, window):
         window._impl.native.beginSheet(self.native, completionHandler=None)
 
-    def hide(self):
-        self.native.orderOut(None)
+    def show(self):
+        app = NSApplication.sharedApplication
+        app.activationPolicy = NSApplicationActivationPolicyRegular
+        super().show()
 
     def close(self):
 
@@ -777,10 +807,10 @@ class Window(TogaWindow):
 
         if value:
             self.native.animationBehavior = NSWindowAnimationBehaviorAlertPanel
+            self.native.level = NSModalPanelWindowLevel
         else:
             self.native.animationBehavior = NSWindowAnimationBehaviorDefault
-
-        self.native.level = 3
+            self.native.level = NSNormalWindowLevel
 
     # dialogs
 
