@@ -33,14 +33,14 @@ jobs:
       - name: Install dependencies
         run: |
           python3 -m pip install --upgrade pip
-          python3 -m pip install --upgrade git+https://github.com/samschott/briefcase.git@macOS-Xcode
+          python3 -m pip install --upgrade briefcase
           chmod +x ./scripts/post-build-macos.sh
 
       - name: Build app
         id: build
         run: |
           # build app
-          briefcase build macOS xcode
+          briefcase build macOS Xcode
 
           # run post-build scripts:
           # - add CLI executable
@@ -50,7 +50,7 @@ jobs:
           ./scripts/post-build-macos.sh $APP_PATH
 
           # package dmg
-          briefcase package macOS xcode -i "$DEV_ID"
+          briefcase package macOS Xcode -i "$DEV_ID"
 
           DMG_PATH=$( find . -name "*.dmg" )
           DMG_NAME=$( basename "$DMG_PATH" )
