@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
 
-from maestral.daemon import freeze_support
+import sys
+import argparse
+
+from maestral.daemon import freeze_support as freeze_support_daemon
 
 
 def main():
     """
-    This is the main entry point for frozen executables.
-    If only the --config-name option is given, it starts the GUI with the given config.
+    This is the main entry point. It starts the GUI with the given config.
     """
 
-    import argparse
     from .app import run
 
     parser = argparse.ArgumentParser()
@@ -19,6 +20,24 @@ def main():
     run(parsed_args.config_name)
 
 
+def freeze_support_cli():
+    """
+    Provides support to start the CLI from a frozen executable.
+    """
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--cli", action="store_true")
+    parsed_args, remaining = parser.parse_known_args()
+
+    if parsed_args.cli:
+        from maestral.cli import main
+
+        sys.argv = ["maestral"] + remaining
+        main()
+        sys.exit()
+
+
 if __name__ == "__main__":
-    freeze_support()
+    freeze_support_cli()
+    freeze_support_daemon()
     main()
