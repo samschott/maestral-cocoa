@@ -24,7 +24,7 @@ rm -Rf dist
 echo "# ==== prune py files and replace with pyc ======================================"
 
 # compile all py files
-"$BUNDLE_PATH/Contents/MacOS/Maestral" --run-python -OO -m compileall -b -d "" "$BUNDLE_PATH" 1> /dev/null
+python3 -OO -m compileall -b -d "" "$BUNDLE_PATH" 1> /dev/null
 
 # remove all py files
 find "$BUNDLE_PATH/Contents" -name "*.py" ! -name "nslog.py" -delete
