@@ -2,7 +2,7 @@
 project_name = "Maestral"
 bundle = "com.samschott"
 version = "1.4.3"
-url = "https://github.com/samschott/maestral"
+url = "https://samschott.github.io/maestral"
 license = "MIT license"
 author = "Sam Schott"
 author_email = "ss2151@cam.ac.uk"
