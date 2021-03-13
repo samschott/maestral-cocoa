@@ -327,7 +327,7 @@ class FileSystemSource(Node, Source):
 
 class SelectiveSyncDialog(SelectiveSyncGui):
     def __init__(self, mdbx, app=None):
-        super().__init__(mdbx, app=app)
+        super().__init__(mdbx, app=app, is_dialog=True)
 
         self.dialog_buttons.on_press = self.on_dialog_pressed
 
