@@ -337,7 +337,7 @@ class MaestralGui(SystemTrayApp):
     @staticmethod
     def on_help_clicked(widget):
         """Open the Dropbox help website."""
-        click.launch("https://dropbox.com/help")
+        click.launch(f"{__url__}/docs")
 
     def on_start_stop_clicked(self, widget):
         """Pause / resume syncing on menu item clicked."""
