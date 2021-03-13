@@ -749,11 +749,13 @@ class WindowDeletage(NSObject):
     def windowWillClose_(self, notification) -> None:
         self.interface.on_close()
 
-        # hide dock icon when last window is closed
-        app = NSApplication.sharedApplication
+        if not self.interface.is_dialog:
 
-        if len([w for w in app.windows if w.isVisible]) < 4:
-            app.activationPolicy = NSApplicationActivationPolicyAccessory
+            # hide dock icon when last window is closed
+            app = NSApplication.sharedApplication
+
+            if len([w for w in app.windows if w.isVisible]) < 4:
+                app.activationPolicy = NSApplicationActivationPolicyAccessory
 
     @objc_method
     def windowDidResize_(self, notification) -> None:
@@ -772,6 +774,7 @@ class Window(TogaWindow):
         self.delegate.interface = self.interface
         self.delegate._impl = self
         self.native.delegate = self.delegate
+        self.app = NSApplication.sharedApplication
 
     def is_visible(self):
         return bool(self.native.isVisible)
@@ -780,16 +783,15 @@ class Window(TogaWindow):
         self.native.center()
 
     def force_to_front(self):
-        if self.interface.app:
-            self.interface.app._impl.native.activateIgnoringOtherApps(True)
+        self.app.activateIgnoringOtherApps(True)
         self.native.makeKeyAndOrderFront(None)
 
     def show_as_sheet(self, window):
         window._impl.native.beginSheet(self.native, completionHandler=None)
 
     def show(self):
-        app = NSApplication.sharedApplication
-        app.activationPolicy = NSApplicationActivationPolicyRegular
+        if not self.interface.is_dialog:
+            self.app.activationPolicy = NSApplicationActivationPolicyRegular
         super().show()
 
     def close(self):
