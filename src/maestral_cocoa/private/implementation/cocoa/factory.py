@@ -751,10 +751,16 @@ class WindowDeletage(NSObject):
 
         if not self.interface.is_dialog:
 
-            # hide dock icon when last window is closed
+            # hide dock icon when last window is about to close
             app = NSApplication.sharedApplication
 
-            if len([w for w in app.windows if w.isVisible]) < 4:
+            visible_windows = [
+                w
+                for w in app.windows
+                if w.isVisible and w.objc_class.name != "NSStatusBarWindow"
+            ]
+
+            if len(visible_windows) <= 1:
                 app.activationPolicy = NSApplicationActivationPolicyAccessory
 
     @objc_method
