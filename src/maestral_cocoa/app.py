@@ -8,7 +8,6 @@ from datetime import datetime, timedelta
 
 # external imports
 import click
-from toga.style.pack import Pack, FONT_SIZE_CHOICES
 from maestral.constants import (
     IDLE,
     SYNCING,
@@ -60,10 +59,6 @@ from .dbx_location_dialog import DbxLocationDialog
 from .dialogs import UpdateDialog, ProgressDialog, RelinkDialog
 from .resources import APP_ICON_PATH, TRAY_ICON_PATH
 from .autostart import AutoStart
-
-
-# increase default font size from 12 to 13 points
-Pack.validated_property("font_size", choices=FONT_SIZE_CHOICES, initial=13)
 
 
 def name(cls):
