@@ -21,18 +21,6 @@ NSUserInterfaceLayoutOrientationVertical = 1
 NSWindowAnimationBehaviorDefault = 0
 NSWindowAnimationBehaviorAlertPanel = 5
 
-errAuthorizationSuccess = 0
-errAuthorizationToolExecuteFailure = -60031
-errAuthorizationCanceled = -60006
-errAuthorizationInternal = -60008
-kAuthorizationFlagDefaults = 0
-kAuthorizationFlagInteractionAllowed = 1
-kAuthorizationFlagExtendRights = 2
-kAuthorizationFlagPreAuthorize = 16
-kAuthorizationRightExecute = b"system.privilege.admin"
-kAuthorizationEnvironmentPrompt = b"prompt"
-kAuthorizationEmptyEnvironment = None
-
 
 def NSControlState(boolean):
     return {False: 0, True: 1}[boolean]
