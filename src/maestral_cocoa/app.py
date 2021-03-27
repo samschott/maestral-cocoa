@@ -495,11 +495,17 @@ class MaestralGui(SystemTrayApp):
         elif err["type"] == name(TokenExpiredError):
             self._exec_relink_dialog(RelinkDialog.EXPIRED)
         elif (
-            name(MaestralApiError) in err["inherits"]
-            or name(SyncError) in err["inherits"]
+            name(SyncError) in err["inherits"]
+            or name(MaestralApiError) in err["inherits"]
         ):
-            await self.alert_async(err["title"], err["message"], level="error")
+            filename = err["dbx_path"] or err["local_path"]
+            if filename:
+                message = f"Path: {filename}\n" + err["message"]
+            else:
+                message = err["message"]
+            await self.alert_async(err["title"], message, level="error")
         else:
+            # We don't know this error yet. Show a full stacktrace dialog.
             await self._exec_error_dialog(err)
 
     def _exec_dbx_location_dialog(self):
