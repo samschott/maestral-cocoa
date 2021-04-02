@@ -27,11 +27,12 @@ class Node:
         self._is_folder = is_folder
         if is_folder:
             self._icon = Icon(for_path="/usr")
+            self._children = [PlaceholderNode("Loading...", self)]
         else:
             # use icon for file extension
             self._icon = Icon(for_path=path)
+            self._children = []
         self._parent = parent
-        self._children = []
         self._did_start_loading = False
         self._stop_loading = threading.Event()
 
@@ -103,11 +104,7 @@ class Node:
         return self.children[index]
 
     def can_have_children(self):
-        if self._is_folder:
-            # this will trigger loading of children, if not yet done
-            return len(self.children) > 0
-        else:
-            return False
+        return self._is_folder
 
     # ---- Properties for data access from GUI -----------------------------------------
 
