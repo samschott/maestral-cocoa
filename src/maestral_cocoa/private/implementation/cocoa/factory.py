@@ -7,14 +7,18 @@ from packaging.version import Version
 
 # external imports
 from travertino.size import at_least
-from rubicon.objc import NSMakeSize, NSZeroPoint, CGRectMake
-from toga.constants import LEFT, TRANSPARENT
-from toga.platform import get_platform_factory
-from toga_cocoa.libs import (
+from rubicon.objc import (
+    NSMakeSize,
+    NSZeroPoint,
+    CGRectMake,
     ObjCClass,
     objc_method,
     SEL,
     at,
+)
+from toga.constants import LEFT, TRANSPARENT
+from toga.platform import get_platform_factory
+from toga_cocoa.libs import (
     NSColor,
     NSString,
     NSTextView,
@@ -42,7 +46,6 @@ from toga_cocoa.libs import (
     NSOpenPanel,
     NSFileHandlingPanelOKButton,
     NSCompositingOperationCopy,
-    NSWindow,
 )
 from toga_cocoa.colors import native_color
 from toga_cocoa.keys import toga_key, Key
