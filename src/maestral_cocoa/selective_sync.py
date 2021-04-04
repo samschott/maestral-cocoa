@@ -86,8 +86,9 @@ class Node:
                 if child.included.state == state:
                     nodes_with_state.append(child)
                     if state in (ON, OFF):
-                        # all children will have the same state
-                        nodes_with_state.extend(child._children)
+                        # all grandchildren will have the same state
+                        siblings = [c for c in child._children if isinstance(c, Node)]
+                        nodes_with_state.extend(siblings)
 
                 if child.included.state == MIXED:
                     # children may have different state
@@ -208,8 +209,9 @@ class Node:
     def propagate_selection_to_children(self, state):
         if state is not MIXED and len(self._children) > 0:
             for child in self._children:
-                child.included.state = state
-                child.propagate_selection_to_children(state)
+                if isinstance(child, Node):
+                    child.included.state = state
+                    child.propagate_selection_to_children(state)
 
     def propagate_selection_to_parent(self, state):
         if self.parent:
