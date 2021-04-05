@@ -3,7 +3,7 @@ name: Build and package
 on:
   push:
     tags:
-      - 'v*.*.*'
+      - "v*.*.*"
 
   workflow_dispatch:
 
@@ -26,9 +26,11 @@ jobs:
           p12-password: ${{ secrets.SIGNING_CERTIFICATE_PASSWORD }}
 
       - name: Set up Python
-        uses: actions/setup-python@v1
-        with:
-          python-version: '3.8'
+        run: |
+          wget -q https://www.python.org/ftp/python/3.9.4/python-3.9.4-macos11.pkg
+          sudo installer -pkg python-3.9.4-macos11.pkg -target /
+          python3 -c "import sys; print(sys.version)"
+          echo "/Library/Frameworks/Python.framework/Versions/3.9/bin" >> $GITHUB_PATH
 
       - name: Install dependencies
         run: |
@@ -59,6 +61,7 @@ jobs:
           echo "::set-output name=dmg_path::${DMG_PATH}"
         env:
             DEV_ID: "Developer ID Application: Sam Schott (G34LNR8C4Y)"
+            PIP_NO_BINARY: ":all:"
 
       - name: Notarize app
         run: |
