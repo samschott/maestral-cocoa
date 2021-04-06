@@ -57,7 +57,7 @@ from .syncissues import SyncIssuesWindow
 from .activity import ActivityWindow
 from .dbx_location_dialog import DbxLocationDialog
 from .dialogs import UpdateDialog, ProgressDialog, RelinkDialog
-from .resources import APP_ICON_PATH, TRAY_ICON_PATH
+from .resources import APP_ICON_PATH, resource_path
 from .autostart import AutoStart
 
 
@@ -83,13 +83,13 @@ class MaestralGui(SystemTrayApp):
     START_TEXT = "Start Syncing"
 
     icon_mapping = {
-        IDLE: Icon(TRAY_ICON_PATH.format("idle")),
-        CONNECTED: Icon(TRAY_ICON_PATH.format("idle")),
-        SYNCING: Icon(TRAY_ICON_PATH.format("syncing")),
-        PAUSED: Icon(TRAY_ICON_PATH.format("paused")),
-        CONNECTING: Icon(TRAY_ICON_PATH.format("disconnected")),
-        SYNC_ERROR: Icon(TRAY_ICON_PATH.format("info")),
-        ERROR: Icon(TRAY_ICON_PATH.format("error")),
+        IDLE: Icon(resource_path("systray-idle.pdf")),
+        CONNECTED: Icon(resource_path("systray-idle.pdf")),
+        SYNCING: Icon(resource_path("systray-syncing.pdf")),
+        PAUSED: Icon(resource_path("systray-paused.pdf")),
+        CONNECTING: Icon(resource_path("systray-disconnected.pdf")),
+        SYNC_ERROR: Icon(resource_path("systray-info.pdf")),
+        ERROR: Icon(resource_path("systray-error.pdf")),
     }
 
     def __init__(self, config_name="maestral"):
