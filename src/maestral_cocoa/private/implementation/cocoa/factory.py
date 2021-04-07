@@ -46,6 +46,7 @@ from toga_cocoa.libs import (
     NSOpenPanel,
     NSFileHandlingPanelOKButton,
     NSCompositingOperationCopy,
+    NSURL,
 )
 from toga_cocoa.colors import native_color
 from toga_cocoa.keys import toga_key, Key
@@ -377,6 +378,9 @@ class FileChooserTarget(NSObject):
             panel.canCreateDirectories = True
             panel.resolvesAliases = True
             panel.allowsMultipleSelection = False
+            panel.directoryURL = NSURL.fileURLWithPath(
+                osp.dirname(self.interface.current_selection)
+            )
             panel.prompt = "Select"
 
             def completion_handler(r: int) -> None:
