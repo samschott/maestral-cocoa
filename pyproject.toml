@@ -24,6 +24,8 @@ requires = [
     "toga-cocoa@git+https://github.com/beeware/toga/#subdirectory=src/cocoa",
     "toga@git+https://github.com/beeware/toga",
 ]
+template = "https://github.com/samschott/briefcase-macOS-Xcode-template"
+template_branch = "maestral"
 
 [tool.briefcase.app.maestral-cocoa.macOS]
 requires = [
