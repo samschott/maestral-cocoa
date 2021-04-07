@@ -408,8 +408,8 @@ class FileSelectionButton(Widget):
         self.native.target = self.target
         self.native.action = SEL("onSelect:")
 
-        self._current_selection = None
-        self.native.addItemWithTitle("None")
+        self._current_selection = ""
+        self.native.addItemWithTitle("")
         self.native.menu.addItem(NSMenuItem.separatorItem())
         self.native.addItemWithTitle("Choose...")
 
@@ -419,9 +419,17 @@ class FileSelectionButton(Widget):
         return self._current_selection
 
     def set_current_selection(self, path):
+
+        if not osp.exists(path) and not self.interface.select_files:
+            # use generic folder icon
+            image = NSWorkspace.sharedWorkspace.iconForFile("/usr")
+        else:
+            # use actual icon for file / folder, falls back to generic file icon
+            image = NSWorkspace.sharedWorkspace.iconForFile(path)
+
         item = self.native.itemAtIndex(0)
-        item.title = osp.basename(path)
-        item.image = resize_image_to(NSWorkspace.sharedWorkspace.iconForFile(path), 16)
+        item.title = path if self.interface.show_full_path else osp.basename(path)
+        item.image = resize_image_to(image, 16)
         self._current_selection = path
 
     def set_on_select(self, handler):
@@ -435,6 +443,11 @@ class FileSelectionButton(Widget):
 
     def set_dialog_title(self, value):
         pass
+
+    def set_show_full_path(self, value):
+        item = self.native.itemAtIndex(0)
+        path = self.interface.current_selection
+        item.title = path if value else osp.basename(path)
 
     def set_dialog_message(self, value):
         pass
