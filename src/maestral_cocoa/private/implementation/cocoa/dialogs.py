@@ -163,6 +163,7 @@ async def select_folder_sheet(window, title="", message="", multiselect=False):
     panel.canCreateDirectories = True
     panel.resolvesAliases = True
     panel.allowsMultipleSelection = multiselect
+    panel.prompt = "Select"
 
     future = Future()
 

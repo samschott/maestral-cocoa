@@ -377,6 +377,7 @@ class FileChooserTarget(NSObject):
             panel.canCreateDirectories = True
             panel.resolvesAliases = True
             panel.allowsMultipleSelection = False
+            panel.prompt = "Select"
 
             def completion_handler(r: int) -> None:
 
