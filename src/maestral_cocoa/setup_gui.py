@@ -132,9 +132,10 @@ class SetupDialogGui(Window):
         self.dbx_location_label = Label(
             text=(
                 "Maestral has been successfully linked with your Dropbox account.\n\n"
-                "Please select the location of your Dropbox folder below. Maestral "
-                'will create a new folder named "{}" in the selected location. In the '
-                "next step, you will be asked to choose which folders to sync."
+                "Please select a local folder for your Dropbox. If the folder is not "
+                "empty, you will be given the option to delete its contents or merge "
+                "it with your Dropbox. In the next step, you will be asked to choose "
+                "which folders to sync."
             ),
             linebreak_mode=WORD_WRAP,
             style=Pack(
@@ -148,6 +149,7 @@ class SetupDialogGui(Window):
             initial=get_home_dir(),
             select_files=False,
             select_folders=True,
+            show_full_path=True,
             style=Pack(width=self.CONTENT_WIDTH * 0.9, padding_bottom=20),
         )
 

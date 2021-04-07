@@ -131,7 +131,7 @@ class SettingsGui(Window):
         )
 
         self._label_dbx_location = Label(
-            "Dropbox Folder location:",
+            "Local Dropbox folder:",
             style=Pack(text_align=RIGHT, width=SettingsGui.COLUMN_WIDTH_LEFT),
         )
         self.combobox_dbx_location = FileSelectionButton(
@@ -173,7 +173,7 @@ class SettingsGui(Window):
         )
 
         self._label_system_settings = Label(
-            "System Settings:",
+            "System settings:",
             style=Pack(text_align=RIGHT, width=SettingsGui.COLUMN_WIDTH_LEFT),
         )
         self.checkbox_autostart = Switch(

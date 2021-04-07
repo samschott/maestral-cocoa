@@ -9,7 +9,7 @@ from maestral.utils.appdirs import get_home_dir
 
 # local imports
 from .private.constants import OFF
-from .utils import call_async_maestral
+from .utils import call_async_maestral, is_empty
 from .setup_gui import SetupDialogGui
 from .selective_sync import FileSystemSource
 
@@ -24,14 +24,11 @@ class SetupDialog(SetupDialogGui):
         self.exit_status = self.REJECTED
 
         self.mdbx = self.app.mdbx
-
-        self._chosen_dropbox_folder = None
+        self.config_name = self.mdbx.config_name
 
         # set up combobox
-        default_location = self.mdbx.get_conf("main", "path")
-        default_parent = osp.dirname(default_location) or get_home_dir()
-        self.default_dirname = f"Dropbox ({self.mdbx.config_name.capitalize()})"
-        self.combobox_dbx_location.current_selection = default_parent
+        dropbox_path = f"{get_home_dir()}/Dropbox ({self.config_name.capitalize()})"
+        self.combobox_dbx_location.current_selection = dropbox_path
 
         # connect buttons to callbacks
         self.btn_start.on_press = self.on_start
@@ -40,9 +37,6 @@ class SetupDialog(SetupDialogGui):
         self.dialog_buttons_selective_sync_page.on_press = self.on_items_selected
         self.close_button.on_press = self.on_finish
         self.text_field_auth_token.on_change = self._token_field_validator
-
-        location_label_text = self.dbx_location_label.text.format(self.default_dirname)
-        self.dbx_location_label.text = location_label_text
 
     # ==================================================================================
     # User interaction callbacks
@@ -66,7 +60,7 @@ class SetupDialog(SetupDialogGui):
             self.dialog_buttons_link_page.enabled = False
             self.text_field_auth_token.enabled = False
 
-            res = await call_async_maestral(self.mdbx.config_name, "link", token)
+            res = await call_async_maestral(self.config_name, "link", token)
 
             if res == 0:
 
@@ -112,48 +106,39 @@ class SetupDialog(SetupDialogGui):
 
         if btn_name == "Select":
 
-            self._chosen_dropbox_folder = osp.join(
-                self.combobox_dbx_location.current_selection, self.default_dirname
-            )
-
-            # if a file / folder exists, ask for conflict resolution
-            if osp.exists(self._chosen_dropbox_folder):
-                if osp.isdir(self._chosen_dropbox_folder):
-                    msg = (
-                        'A folder "{}" already exists at this location. Would you like '
-                        "to replace it or merge its contents with Dropbox?"
-                    )
-                    choice = await self.alert_sheet(
-                        title="Folder already exists",
-                        message=msg.format(self.default_dirname),
-                        button_labels=("Replace", "Cancel", "Merge"),
-                    )
-
-                else:
-                    msg = (
-                        'A file named "{}" already exists at this location. '
-                        "Would you like to replace it?"
-                    )
-                    choice = await self.alert_sheet(
-                        title="File conflict",
-                        message=msg.format(self.default_dirname),
-                        button_labels=("Replace", "Cancel"),
-                    )
-
-                if choice == 0:  # replace
-                    delete(self._chosen_dropbox_folder)
-                elif choice == 1:  # cancel
-                    return
-                elif choice == 2:  # merge
-                    pass
+            dropbox_path = self.combobox_dbx_location.current_selection
 
             # try to create the directory
             # continue to next page if success or alert user if failed
             try:
-                self.mdbx.create_dropbox_directory(path=self._chosen_dropbox_folder)
+
+                # If a file / folder exists, ask for conflict resolution.
+                if osp.exists(dropbox_path):
+
+                    if is_empty(dropbox_path):
+                        delete(dropbox_path, raise_error=True)
+                    else:
+                        choice = await self.alert_sheet(
+                            title="Folder is not empty",
+                            message=(
+                                f'The folder "{osp.basename(dropbox_path)}" is not '
+                                "empty. Would you like to delete its content or merge "
+                                "it with your Dropbox?"
+                            ),
+                            button_labels=("Delete", "Cancel", "Merge"),
+                        )
+
+                        if choice == 0:  # replace
+                            delete(dropbox_path, raise_error=True)
+                        elif choice == 1:  # cancel
+                            return
+                        elif choice == 2:  # merge
+                            pass
+
+                self.mdbx.create_dropbox_directory(dropbox_path)
             except OSError:
                 await self.alert_sheet(
-                    title="Could not create folder",
+                    title="Could not set folder",
                     message=(
                         "Please make sure that you have permissions "
                         "to write to the selected location."
