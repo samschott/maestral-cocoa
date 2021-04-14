@@ -72,6 +72,9 @@ class SettingsWindow(SettingsGui):
 
         new_path = widget.current_selection
 
+        if new_path == self.mdbx.dropbox_path:
+            return
+
         try:
 
             # The folder will always exist (cannot chose a non-existing folder).
