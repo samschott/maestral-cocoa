@@ -11,7 +11,7 @@ from maestral.utils.path import delete
 # local imports
 from .private.widgets import FileSelectionButton
 from .dialogs import Dialog
-from .utils import call_async_maestral
+from .utils import call_async_maestral, is_empty
 
 
 # set default font size to 13 pt, as in macOS
@@ -40,24 +40,25 @@ class DbxLocationDialog(Dialog):
         self.config_name = self.mdbx.config_name
         self.exit_status = self.REJECTED
 
-        self._old_path = self.mdbx.get_conf("main", "path")
-        self.default_dirname = f"Dropbox ({self.mdbx.config_name.capitalize()})"
+        dropbox_path = self.mdbx.get_conf("main", "path")
+
+        if dropbox_path == "":
+            dropbox_path = f"{get_home_dir()}/Dropbox ({self.config_name.capitalize()})"
 
         message = (
             "Your Dropbox folder has been moved or deleted from its original location. "
-            "Maestral will not work properly until you move it back. It used to be "
-            'located at:\n\n{0}\n\nTo move it back, click "Quit" below, move the '
-            "Dropbox folder back to its original location, and launch Maestral again. "
-            "To re-download your Dropbox, please select a location for your Dropbox "
-            'folder below. Maestral will create a new folder named "{1}" in the '
-            "selected location.\n\nTo unlink your Dropbox account from Maestral, "
-            'click "Unlink" below.'
-        ).format(self._old_path, self.default_dirname)
+            "Syncing will not work until you move it back.\n\n"
+            'To move it back, click "Quit" below, move the Dropbox folder back to its '
+            "original location, and launch Maestral again. "
+            "To re-download your Dropbox, please select a new folder below.\n\n"
+            'Select "Unlink" to unlink your Dropbox account from Maestral.'
+        )
 
         self.combobox_dbx_location = FileSelectionButton(
-            initial=get_home_dir(),
+            initial=dropbox_path,
             select_files=False,
             select_folders=True,
+            show_full_path=True,
             style=Pack(width=self.CONTENT_WIDTH, padding=(10, 0, 30, 0)),
         )
 
@@ -74,7 +75,7 @@ class DbxLocationDialog(Dialog):
 
         self.msg_content.style.font_size = 12
         self.msg_content.style.width = 450
-        self.msg_content.style.height = 170
+        self.msg_content.style.height = 150
 
     async def on_dialog_pressed(self, btn_name):
 
@@ -92,44 +93,33 @@ class DbxLocationDialog(Dialog):
 
         elif btn_name == "Select":
             # apply dropbox path
-            chosen_dropbox_folder = osp.join(
-                self.combobox_dbx_location.current_selection,
-                self.default_dirname,
-            )
+            dropbox_path = self.combobox_dbx_location.current_selection
 
-            if osp.exists(chosen_dropbox_folder):
+            if osp.exists(dropbox_path):
 
-                if osp.isdir(chosen_dropbox_folder):
-                    choice = self.alert_sheet(
-                        title="Folder already exists",
-                        message=(
-                            f'The folder "{chosen_dropbox_folder}" already '
-                            "exists. Would you like to replace it or merge its "
-                            "contents with Dropbox?"
-                        ),
-                        button_labels=("Replace", "Cancel", "Merge"),
-                    )
-
+                if is_empty(dropbox_path):
+                    delete(dropbox_path, raise_error=True)
                 else:
-                    choice = self.alert_sheet(
-                        title="File conflict",
+                    choice = await self.alert_sheet(
+                        title="Folder is not empty",
                         message=(
-                            f'There already is a file named "{self.default_dirname}" '
-                            f"at this location. Would you like to replace it?"
+                            f'The folder "{osp.basename(dropbox_path)}" is not empty. '
+                            "Would you like to delete its content or merge it with "
+                            "your Dropbox?"
                         ),
-                        button_labels=("Replace", "Cancel"),
+                        button_labels=("Delete", "Cancel", "Merge"),
                     )
 
-                if choice == 0:  # replace
-                    delete(chosen_dropbox_folder)
-                elif choice == 1:  # cancel
-                    self.dialog_buttons.enabled = True
-                    return
-                elif choice == 2:  # merge
-                    pass
+                    if choice == 0:  # replace
+                        delete(dropbox_path, raise_error=True)
+                    elif choice == 1:  # cancel
+                        self.dialog_buttons.enabled = True
+                        return
+                    elif choice == 2:  # merge
+                        pass
 
             await call_async_maestral(
-                self.mdbx.config_name, "create_dropbox_directory", chosen_dropbox_folder
+                self.config_name, "create_dropbox_directory", dropbox_path
             )
             self.mdbx.rebuild_index()
             self.exit_status = self.ACCEPTED

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # system imports
+import os
 import asyncio
 import shlex
 from concurrent.futures import ThreadPoolExecutor
@@ -92,3 +93,15 @@ def request_authorization_from_user_and_run(exe):
 
     if res is None:
         raise RuntimeError("Could install CLI")
+
+
+def is_empty(dirname):
+    """Checks if a directory is empty."""
+
+    try:
+        with os.scandir(dirname) as sciter:
+            next(sciter)
+    except StopIteration:
+        return True
+
+    return False

@@ -46,6 +46,7 @@ from toga_cocoa.libs import (
     NSOpenPanel,
     NSFileHandlingPanelOKButton,
     NSCompositingOperationCopy,
+    NSURL,
 )
 from toga_cocoa.colors import native_color
 from toga_cocoa.keys import toga_key, Key
@@ -377,19 +378,15 @@ class FileChooserTarget(NSObject):
             panel.canCreateDirectories = True
             panel.resolvesAliases = True
             panel.allowsMultipleSelection = False
+            panel.directoryURL = NSURL.fileURLWithPath(
+                osp.dirname(self.interface.current_selection)
+            )
+            panel.prompt = "Select"
 
             def completion_handler(r: int) -> None:
 
                 if r == NSFileHandlingPanelOKButton:
-                    path = str(panel.URL.path)
-
-                    item = self.impl.native.itemAtIndex(0)
-                    item.title = osp.basename(path)
-                    item.image = resize_image_to(
-                        NSWorkspace.sharedWorkspace.iconForFile(path), 16
-                    )
-
-                    self.impl._current_selection = path
+                    self.impl.set_current_selection(str(panel.URL.path))
 
                     if self.interface.on_select:
                         self.interface.on_select(self.interface)
@@ -408,8 +405,8 @@ class FileSelectionButton(Widget):
         self.native.target = self.target
         self.native.action = SEL("onSelect:")
 
-        self._current_selection = None
-        self.native.addItemWithTitle("None")
+        self._current_selection = ""
+        self.native.addItemWithTitle("")
         self.native.menu.addItem(NSMenuItem.separatorItem())
         self.native.addItemWithTitle("Choose...")
 
@@ -419,9 +416,17 @@ class FileSelectionButton(Widget):
         return self._current_selection
 
     def set_current_selection(self, path):
+
+        if not osp.exists(path) and not self.interface.select_files:
+            # use generic folder icon
+            image = NSWorkspace.sharedWorkspace.iconForFile("/usr")
+        else:
+            # use actual icon for file / folder, falls back to generic file icon
+            image = NSWorkspace.sharedWorkspace.iconForFile(path)
+
         item = self.native.itemAtIndex(0)
-        item.title = osp.basename(path)
-        item.image = resize_image_to(NSWorkspace.sharedWorkspace.iconForFile(path), 16)
+        item.title = path if self.interface.show_full_path else osp.basename(path)
+        item.image = resize_image_to(image, 16)
         self._current_selection = path
 
     def set_on_select(self, handler):
@@ -435,6 +440,11 @@ class FileSelectionButton(Widget):
 
     def set_dialog_title(self, value):
         pass
+
+    def set_show_full_path(self, value):
+        item = self.native.itemAtIndex(0)
+        path = self.interface.current_selection
+        item.title = path if value else osp.basename(path)
 
     def set_dialog_message(self, value):
         pass

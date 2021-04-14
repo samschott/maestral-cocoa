@@ -9,12 +9,14 @@ from pathlib import Path
 
 # external imports
 import toga
+from maestral.utils.path import delete
 
 # local imports
 from .utils import (
     request_authorization_from_user_and_run,
     create_task,
     call_async_maestral,
+    is_empty,
 )
 from .private.constants import ON, OFF
 from .private.widgets import apply_round_clipping
@@ -54,11 +56,9 @@ class SettingsWindow(SettingsGui):
         if FROZEN:
             self.btn_cli_tool.on_press = self.on_cli_pressed
 
-        self.default_dirname = f"Dropbox ({self.mdbx.config_name.capitalize()})"
-
         path_selection_message = (
-            "Choose a new place for your Dropbox folder. A folder named "
-            f'"{self.default_dirname}" will be created in the selected location.'
+            "Choose a new local Dropbox folder. If the new folder is not empty, you "
+            "can either delete its content or merge it with your Dropbox."
         )
 
         self.combobox_dbx_location.dialog_message = path_selection_message
@@ -69,19 +69,39 @@ class SettingsWindow(SettingsGui):
     # ==== callback implementations ====================================================
 
     async def on_dbx_location_selected(self, widget):
-        new_path = osp.join(widget.current_selection, self.default_dirname)
+
+        new_path = widget.current_selection
+
+        if new_path == self.mdbx.dropbox_path:
+            return
 
         try:
+
+            # The folder will always exist (cannot chose a non-existing folder).
+            # Ask if we can delete it / its contents if it isn't empty.
+
+            if not is_empty(new_path):
+                choice = await self.alert_sheet(
+                    title="Folder is not empty",
+                    message=(
+                        f'The folder "{osp.basename(new_path)}" is not empty. '
+                        "Would you like to delete its contents?"
+                    ),
+                    button_labels=("Delete", "Cancel"),
+                )
+
+                if choice == 1:
+                    return
+
+            delete(new_path, raise_error=True)
+
             await call_async_maestral(
                 self.mdbx.config_name, "move_dropbox_directory", new_path
             )
-        except OSError:
+        except Exception as exc:
             await self.alert_sheet(
                 title="Could not move folder",
-                message=(
-                    "Please make sure that you have permissions "
-                    "to write to the selected location."
-                ),
+                message=str(exc.args[0]),
                 button_labels=("Ok",),
             )
             self.mdbx.start_sync()
@@ -205,8 +225,7 @@ class SettingsWindow(SettingsGui):
         self.set_account_info_from_cache()
 
         # populate sync section
-        parent_dir = osp.split(self.mdbx.dropbox_path)[0]
-        self.combobox_dbx_location.current_selection = parent_dir
+        self.combobox_dbx_location.current_selection = self.mdbx.dropbox_path
 
         # populate app section
         self.checkbox_autostart.state = ON if self.autostart.enabled else OFF

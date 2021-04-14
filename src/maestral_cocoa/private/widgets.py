@@ -308,12 +308,13 @@ class FileSelectionButton(toga.Widget):
 
     def __init__(
         self,
-        initial=None,
+        initial="",
         select_files=True,
         select_folders=False,
         on_select=None,
         dialog_title="",
         dialog_message="",
+        show_full_path=False,
         id=None,
         enabled=True,
         style=None,
@@ -321,10 +322,14 @@ class FileSelectionButton(toga.Widget):
     ):
         super().__init__(id, enabled, style, factory)
 
+        self._select_files = select_files
+        self._select_folders = select_folders
+
         # Create a platform specific implementation
         self._impl = self.factory.FileSelectionButton(interface=self)
 
         # Set all the properties
+        self.show_full_path = show_full_path
         self.current_selection = str(initial)
         self.select_files = select_files
         self.select_folders = select_folders
@@ -356,7 +361,7 @@ class FileSelectionButton(toga.Widget):
 
     @current_selection.setter
     def current_selection(self, value):
-        self._impl.set_current_selection(value)
+        self._impl.set_current_selection(str(value))
 
     @property
     def dialog_title(self):
@@ -375,6 +380,15 @@ class FileSelectionButton(toga.Widget):
     def dialog_message(self, value):
         self._dialog_message = value
         self._impl.set_dialog_message(self._dialog_message)
+
+    @property
+    def show_full_path(self):
+        return self._show_full_path
+
+    @show_full_path.setter
+    def show_full_path(self, value):
+        self._show_full_path = value
+        self._impl.set_show_full_path(self._show_full_path)
 
     @property
     def on_select(self):
