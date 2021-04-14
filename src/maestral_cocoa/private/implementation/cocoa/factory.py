@@ -386,15 +386,7 @@ class FileChooserTarget(NSObject):
             def completion_handler(r: int) -> None:
 
                 if r == NSFileHandlingPanelOKButton:
-                    path = str(panel.URL.path)
-
-                    item = self.impl.native.itemAtIndex(0)
-                    item.title = osp.basename(path)
-                    item.image = resize_image_to(
-                        NSWorkspace.sharedWorkspace.iconForFile(path), 16
-                    )
-
-                    self.impl._current_selection = path
+                    self.impl.set_current_selection(str(panel.URL.path))
 
                     if self.interface.on_select:
                         self.interface.on_select(self.interface)
