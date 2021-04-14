@@ -75,7 +75,7 @@ class DbxLocationDialog(Dialog):
 
         self.msg_content.style.font_size = 12
         self.msg_content.style.width = 450
-        self.msg_content.style.height = 150
+        self.msg_content.style.height = 130
 
     async def on_dialog_pressed(self, btn_name):
 
