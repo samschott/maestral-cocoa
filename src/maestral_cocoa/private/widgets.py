@@ -428,44 +428,6 @@ class Label(toga.Label):
         self._impl.set_linebreak_mode(value)
 
 
-class RichMultilineTextInput(toga.MultilineTextInput):
-    """A multiline text view with html support."""
-
-    MIN_HEIGHT = 100
-    MIN_WIDTH = 100
-
-    def __init__(
-        self,
-        id=None,
-        style=None,
-        factory=private_factory,
-        html="",
-        readonly=False,
-        placeholder=None,
-    ):
-        super().__init__(
-            id=id,
-            style=style,
-            readonly=readonly,
-            placeholder=placeholder,
-            factory=factory,
-        )
-
-        # Create a platform specific implementation of a Label
-        self._impl = self.factory.RichMultilineTextInput(interface=self)
-        self.html = html
-        self.readonly = readonly
-
-    @property
-    def html(self):
-        return self._html
-
-    @html.setter
-    def html(self, value):
-        self._html = value
-        self._impl.set_html(value)
-
-
 class RichLabel(Widget):
     """A label with html support."""
 
@@ -506,6 +468,44 @@ class TextInput(toga.TextInput):
         super().__init__(
             id, style, factory, initial, placeholder, readonly, on_change, validator
         )
+
+
+class RichMultilineTextInput(toga.MultilineTextInput):
+    """A multiline text view with html support."""
+
+    MIN_HEIGHT = 100
+    MIN_WIDTH = 100
+
+    def __init__(
+        self,
+        id=None,
+        style=None,
+        factory=private_factory,
+        html="",
+        readonly=False,
+        placeholder=None,
+    ):
+        super().__init__(
+            id=id,
+            style=style,
+            readonly=readonly,
+            placeholder=placeholder,
+            factory=factory,
+        )
+
+        # Create a platform specific implementation of a Label
+        self._impl = self.factory.RichMultilineTextInput(interface=self)
+        self.html = html
+        self.readonly = readonly
+
+    @property
+    def html(self):
+        return self._html
+
+    @html.setter
+    def html(self, value):
+        self._html = value
+        self._impl.set_html(value)
 
 
 # ==== icons ===========================================================================
