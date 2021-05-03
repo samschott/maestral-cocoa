@@ -98,10 +98,16 @@ def request_authorization_from_user_and_run(exe):
 def is_empty(dirname):
     """Checks if a directory is empty."""
 
-    try:
-        with os.scandir(dirname) as sciter:
-            next(sciter)
-    except StopIteration:
-        return True
+    exceptions = (".DS_Store",)
+    n_exceptions = len(exceptions)
 
-    return False
+    children = []
+
+    try:
+        with os.scandir(dirname) as sd_iter:
+            while len(children) < n_exceptions:
+                children.append(next(sd_iter))
+    except StopIteration:
+        pass
+
+    return all(child.name in exceptions for child in children)
