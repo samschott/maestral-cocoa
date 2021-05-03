@@ -92,7 +92,7 @@ def request_authorization_from_user_and_run(exe):
     res = script.executeAndReturnError(None)
 
     if res is None:
-        raise RuntimeError("Could install CLI")
+        raise RuntimeError("Could not privileged command")
 
 
 def is_empty(dirname):
