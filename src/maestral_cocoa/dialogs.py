@@ -284,7 +284,7 @@ class UpdateDialog(Dialog):
 
         link_button = FollowLinkButton(
             label="GitHub Releases",
-            url=__url__ + "/releases",
+            url=f"{__url__}/download",
             style=Pack(padding_bottom=10),
         )
 
