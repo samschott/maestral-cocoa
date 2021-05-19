@@ -104,18 +104,15 @@ class DbxLocationDialog(Dialog):
                         title="Folder is not empty",
                         message=(
                             f'The folder "{osp.basename(dropbox_path)}" is not empty. '
-                            "Would you like to delete its content or merge it with "
-                            "your Dropbox?"
+                            "Would you like to merge its content with your Dropbox?"
                         ),
-                        button_labels=("Delete", "Cancel", "Merge"),
+                        button_labels=("Cancel", "Merge"),
                     )
 
-                    if choice == 0:  # replace
-                        delete(dropbox_path, raise_error=True)
-                    elif choice == 1:  # cancel
+                    if choice == 0:  # cancel
                         self.dialog_buttons.enabled = True
                         return
-                    elif choice == 2:  # merge
+                    elif choice == 1:  # merge
                         pass
 
             await call_async_maestral(

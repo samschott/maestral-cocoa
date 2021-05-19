@@ -122,17 +122,15 @@ class SetupDialog(SetupDialogGui):
                             title="Folder is not empty",
                             message=(
                                 f'The folder "{osp.basename(dropbox_path)}" is not '
-                                "empty. Would you like to delete its content or merge "
-                                "it with your Dropbox?"
+                                "empty. Would you like merge its content with "
+                                "your Dropbox?"
                             ),
-                            button_labels=("Delete", "Cancel", "Merge"),
+                            button_labels=("Cancel", "Merge"),
                         )
 
-                        if choice == 0:  # replace
-                            delete(dropbox_path, raise_error=True)
-                        elif choice == 1:  # cancel
+                        if choice == 0:  # cancel
                             return
-                        elif choice == 2:  # merge
+                        elif choice == 1:  # merge
                             pass
 
                 self.mdbx.create_dropbox_directory(dropbox_path)

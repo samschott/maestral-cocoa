@@ -81,17 +81,14 @@ class SettingsWindow(SettingsGui):
             # Ask if we can delete it / its contents if it isn't empty.
 
             if not is_empty(new_path):
-                choice = await self.alert_sheet(
+                await self.alert_sheet(
                     title="Folder is not empty",
                     message=(
                         f'The folder "{osp.basename(new_path)}" is not empty. '
-                        "Would you like to delete its contents?"
+                        "Please select an empty folder."
                     ),
-                    button_labels=("Delete", "Cancel"),
                 )
-
-                if choice == 1:
-                    return
+                return
 
             delete(new_path, raise_error=True)
 
