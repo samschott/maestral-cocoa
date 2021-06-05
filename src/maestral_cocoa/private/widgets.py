@@ -924,18 +924,18 @@ class SystemTrayApp(toga.App):
         factory=private_factory,
     ):
         super().__init__(
-            formal_name,
-            app_id,
-            app_name,
-            id,
-            icon,
-            author,
-            version,
-            home_page,
-            description,
-            startup,
-            on_exit,
-            factory,
+            formal_name=formal_name,
+            app_id=app_id,
+            app_name=app_name,
+            id=id,
+            icon=icon,
+            author=author,
+            version=version,
+            home_page=home_page,
+            description=description,
+            startup=startup,
+            on_exit=on_exit,
+            factory=factory,
         )
 
     def _create_impl(self):
