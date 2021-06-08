@@ -19,7 +19,7 @@ requires = [
     "importlib_resources;python_version<'3.9'",
     "maestral@git+https://github.com/samschott/maestral",
     "markdown2",
-    "rubicon-objc@git+https://github.com/beeware/rubicon-objc",
+    "rubicon-objc",
     "toga-core@git+https://github.com/beeware/toga/#subdirectory=src/core",
     "toga-cocoa@git+https://github.com/beeware/toga/#subdirectory=src/cocoa",
     "toga@git+https://github.com/beeware/toga",
