@@ -25,7 +25,7 @@ def freeze_support_cli():
     Provides support to start the CLI from a frozen executable.
     """
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--cli", action="store_true")
     parsed_args, remaining = parser.parse_known_args()
 
