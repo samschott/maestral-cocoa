@@ -760,7 +760,8 @@ class SystemTrayApp(TogaApp):
 class WindowDeletage(NSObject):
     @objc_method
     def windowWillClose_(self, notification) -> None:
-        self.interface.on_close()
+        if self.interface.on_close:
+            self.interface.on_close()
 
         if not self.interface.is_dialog:
 
