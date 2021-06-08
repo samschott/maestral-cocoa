@@ -33,7 +33,7 @@ def freeze_support_cli():
         from maestral.cli import main
 
         sys.argv = ["maestral"] + remaining
-        main()
+        main(prog_name="maestral")
         sys.exit()
 
 
