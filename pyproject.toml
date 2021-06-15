@@ -20,9 +20,7 @@ requires = [
     "maestral@git+https://github.com/samschott/maestral",
     "markdown2",
     "rubicon-objc",
-    "toga-core@git+https://github.com/beeware/toga/#subdirectory=src/core",
-    "toga-cocoa@git+https://github.com/beeware/toga/#subdirectory=src/cocoa",
-    "toga@git+https://github.com/beeware/toga",
+    "toga==0.3.0.dev27",
 ]
 template = "https://github.com/samschott/briefcase-macOS-Xcode-template"
 template_branch = "maestral"
