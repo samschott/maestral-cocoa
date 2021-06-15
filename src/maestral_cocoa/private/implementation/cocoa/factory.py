@@ -761,7 +761,7 @@ class WindowDeletage(NSObject):
     @objc_method
     def windowWillClose_(self, notification) -> None:
         if self.interface.on_close:
-            self.interface.on_close()
+            self.interface.on_close(self.interface)
 
         if not self.interface.is_dialog:
 

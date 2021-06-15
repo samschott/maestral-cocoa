@@ -186,7 +186,7 @@ class MaestralGui(SystemTrayApp):
             create_task(self.periodic_refresh_gui())
             create_task(self.periodic_check_for_updates())
 
-    def _on_setup_completed(self):
+    def _on_setup_completed(self, sender):
 
         if self.setup_dialog.exit_status == self.setup_dialog.ACCEPTED:
             self.mdbx.start_sync()
