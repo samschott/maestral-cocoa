@@ -49,7 +49,7 @@ from toga_cocoa.libs import (
     NSURL,
 )
 from toga_cocoa.colors import native_color
-from toga_cocoa.keys import toga_key, Key
+from toga_cocoa.keys import toga_key, cocoa_key, Key
 from toga_cocoa.app import App as TogaApp
 from toga_cocoa.widgets.base import Widget
 from toga_cocoa.widgets.switch import Switch as TogaSwitch
@@ -538,6 +538,14 @@ class MenuItem:
 
     def set_checked(self, yes):
         self.native.state = NSControlState(yes)
+
+    def set_shortcut(self, shortcut):
+        if shortcut:
+            key, modifier = cocoa_key(shortcut)
+
+            self.native.keyEquivalent = key
+            if modifier:
+                self.native.keyEquivalentModifierMask = modifier
 
 
 class MenuItemSeparator:

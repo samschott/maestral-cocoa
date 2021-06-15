@@ -559,6 +559,7 @@ class MenuItem:
         icon=None,
         checkable=False,
         action=None,
+        shortcut=None,
         submenu=None,
         factory=private_factory,
     ):
@@ -569,6 +570,7 @@ class MenuItem:
         self.action = action
         self.label = label
         self.icon = icon
+        self.shortcut = shortcut
         self.enabled = self.action is not None
         self.submenu = submenu
 
@@ -603,6 +605,16 @@ class MenuItem:
     def label(self, label):
         self._label = label
         self._impl.set_label(label)
+
+    @property
+    def shortcut(self):
+        return self._shortcut
+
+    @shortcut.setter
+    def shortcut(self, value):
+        self._shortcut = value
+        if self._impl is not None:
+            self._impl.set_shortcut(value)
 
     @property
     def submenu(self):
