@@ -34,6 +34,7 @@ from maestral.errors import (
     MaestralApiError,
     SyncError,
 )
+from toga import Key
 
 # local imports
 from . import __version__ as __gui_version__
@@ -234,7 +235,9 @@ class MaestralGui(SystemTrayApp):
         self.item_login.checked = self.autostart.enabled
         self.item_help = MenuItem("Help Center", action=self.on_help_clicked)
 
-        self.item_quit = MenuItem("Quit Maestral", action=self.exit)
+        self.item_quit = MenuItem(
+            "Quit Maestral", action=self.exit, shortcut=Key.MOD_1 + "q"
+        )
 
         self.menu.add(
             self.item_folder,
