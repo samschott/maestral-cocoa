@@ -133,9 +133,10 @@ class SetupDialogGui(Window):
             text=(
                 "Maestral has been successfully linked with your Dropbox account.\n\n"
                 "Please select a local folder for your Dropbox. If the folder is not "
-                "empty, you will be given the option to delete its contents or merge "
-                "it with your Dropbox. In the next step, you will be asked to choose "
-                "which folders to sync."
+                "empty, you will be given the option to merge its content with your "
+                "remote Dropbox. Merging will not transfer or duplicate any identical "
+                "files.\n\n"
+                "In the next step, you will be asked to choose which folders to sync."
             ),
             linebreak_mode=WORD_WRAP,
             style=Pack(
