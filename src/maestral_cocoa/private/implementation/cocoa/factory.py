@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 
 # system imports
+import sys
 import os.path as osp
 import platform
 from packaging.version import Version
 
 # external imports
+import toga
 from travertino.size import at_least
 from rubicon.objc import (
     NSMakeSize,
@@ -682,6 +684,12 @@ class SystemTrayAppDelegate(NSObject):
     def applicationWillTerminate_(self, sender):
         if self.interface.app.on_exit:
             self.interface.app.on_exit(self.interface.app)
+
+    @objc_method
+    def selectMenuItem_(self, sender) -> None:
+        cmd = self.interface._impl._menu_items[sender]
+        if cmd.action:
+            cmd.action(None)
 
 
 class SystemTrayApp(TogaApp):
