@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # system imports
+import sys
 import os
 import asyncio
 import time
@@ -8,6 +9,7 @@ from datetime import datetime, timedelta
 
 # external imports
 import click
+import toga
 from maestral.constants import (
     IDLE,
     SYNCING,
@@ -130,6 +132,30 @@ class MaestralGui(SystemTrayApp):
         )
 
         self.setup_ui_unlinked()
+
+        # Populate menu bar
+
+        self.commands.add(
+            toga.Command(
+                lambda _: self.about(),
+                "About " + self.formal_name,
+                group=toga.Group.APP,
+            ),
+            # Quit should always be the last item, in a section on it's own
+            toga.Command(
+                lambda _: create_task(self.exit()),
+                "Quit " + self.formal_name,
+                shortcut=toga.Key.MOD_1 + "q",
+                group=toga.Group.APP,
+                section=sys.maxsize,
+            ),
+            toga.Command(
+                lambda _: self.visit_homepage(),
+                "Visit homepage",
+                enabled=self.home_page is not None,
+                group=toga.Group.HELP,
+            ),
+        )
         self.load_maestral()
 
     def set_icon(self, status):
@@ -234,7 +260,9 @@ class MaestralGui(SystemTrayApp):
         self.item_login.checked = self.autostart.enabled
         self.item_help = MenuItem("Help Center", action=self.on_help_clicked)
 
-        self.item_quit = MenuItem("Quit Maestral", action=self.exit)
+        self.item_quit = MenuItem(
+            "Quit Maestral", action=self.exit, shortcut=toga.Key.MOD_1 + "q"
+        )
 
         self.menu.add(
             self.item_folder,
