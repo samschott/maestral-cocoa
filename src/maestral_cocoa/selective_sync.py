@@ -4,6 +4,7 @@
 import os.path as osp
 import threading
 import asyncio
+from queue import Queue
 
 # external imports
 from toga.sources import Source
@@ -20,17 +21,18 @@ from .private.widgets import Icon, Switch
 
 
 class Node:
-    def __init__(self, path, parent, mdbx, is_folder):
+    def __init__(self, path_display, path_lower, parent, mdbx, is_folder):
         super().__init__()
         self._mdbx = mdbx
-        self.path = path
+        self.path_display = path_display
+        self.path_lower = path_lower
         self._is_folder = is_folder
         if is_folder:
             self._icon = Icon(for_path="/usr")
             self._children = [PlaceholderNode("Loading...", self)]
         else:
             # use icon for file extension
-            self._icon = Icon(for_path=path)
+            self._icon = Icon(for_path=path_display)
             self._children = []
         self._parent = parent
         self._did_start_loading = False
@@ -50,19 +52,22 @@ class Node:
 
         excluded_items = getattr(self._mdbx, "excluded_items", [])
 
-        # get included state from current list
-        if self.path.lower() in excluded_items:
-            self._original_state = OFF  # item is excluded
-        elif any(is_child(self.path.lower(), f) for f in excluded_items):
-            self._original_state = OFF  # item's parent is excluded
-        elif any(is_child(f, self.path.lower()) for f in excluded_items):
-            self._original_state = MIXED  # some of item's children are excluded
+        # Get included state from current list.
+        if self.path_lower in excluded_items:
+            # Item is excluded.
+            self._original_state = OFF
+        elif self._parent is not None and self._parent._original_state == OFF:
+            # Item's parent is excluded.
+            self._original_state = OFF
+        elif any(is_child(e, self.path_lower) for e in excluded_items):
+            # Some of item's children are excluded.
+            self._original_state = MIXED
         else:
-            self._original_state = ON  # item is fully included
+            self._original_state = ON
 
-        # get included state from parent if it has been user modified
+        # Get included state from parent if it has been user modified.
         if (
-            self.parent
+            self.parent is not None
             and self.parent.is_selection_modified()
             and self.parent.included.state is not MIXED
         ):
@@ -79,22 +84,24 @@ class Node:
 
     def get_nodes_with_state(self, state):
 
-        nodes_with_state = []
+        result = []
+        queue = Queue()
+        queue.put(self)
 
-        for child in self._children:
-            if isinstance(child, Node):
-                if child.included.state == state:
-                    nodes_with_state.append(child)
-                    if state in (ON, OFF):
-                        # all grandchildren will have the same state
-                        siblings = [c for c in child._children if isinstance(c, Node)]
-                        nodes_with_state.extend(siblings)
+        while not queue.empty():
 
-                if child.included.state == MIXED:
-                    # children may have different state
-                    nodes_with_state.extend(child.get_nodes_with_state(state))
+            node = queue.get()
 
-        return nodes_with_state
+            for child in node._children:
+                if isinstance(child, Node):
+                    if child.included.state == state:
+                        result.append(child)
+
+                    if child.included.state == MIXED:
+                        # Children may have different state, traverse individually.
+                        queue.put(child)
+
+        return result
 
     # ---- Methods required for the data source interface ------------------------------
 
@@ -111,7 +118,7 @@ class Node:
 
     @property
     def name(self):
-        return self._icon, osp.basename(self.path)
+        return self._icon, osp.basename(self.path_display)
 
     @property
     def included(self):
@@ -141,7 +148,7 @@ class Node:
             did_remove_placeholder = False
 
             async for res in generate_async_maestral(
-                self._mdbx.config_name, "list_folder_iterator", self.path
+                self._mdbx.config_name, "list_folder_iterator", self.path_lower
             ):
 
                 # remove placeholder nodes
@@ -157,7 +164,8 @@ class Node:
 
                 new_nodes = [
                     Node(
-                        path=e["path_display"],
+                        path_display=e["path_display"],
+                        path_lower=e["path_lower"],
                         parent=self,
                         mdbx=self._mdbx,
                         is_folder=e["type"] == "FolderMetadata",
@@ -231,7 +239,7 @@ class Node:
         self.parent.notify(notification, **kwargs)
 
     def __repr__(self):
-        return f"<{self.__class__.__name__}({self.path})>"
+        return f"<{self.__class__.__name__}({self.path_display})>"
 
 
 class PlaceholderNode:
@@ -292,11 +300,14 @@ class FileSystemSource(Node, Source):
     def __init__(
         self,
         mdbx=None,
-        path="/",
+        path_display="/",
+        path_lower="/",
         on_fs_loading_failed=None,
         on_fs_selection_changed=None,
     ):
-        super().__init__(path, parent=None, mdbx=mdbx, is_folder=True)
+        super().__init__(
+            path_display, path_lower, parent=None, mdbx=mdbx, is_folder=True
+        )
         self.on_fs_loading_failed = on_fs_loading_failed
         self.on_fs_selection_changed = on_fs_selection_changed
         self._children = [PlaceholderNode("Loading...", self)]
@@ -363,17 +374,14 @@ class SelectiveSyncDialog(SelectiveSyncGui):
 
         for node in included_shown:
             for path in excluded_paths.copy():
-                if is_equal_or_child(path, node.path.lower()):
-                    excluded_paths.remove(path)
+                if is_equal_or_child(path, node.path_lower):
+                    excluded_paths.discard(path)
 
         for node in mixed_shown:
-            try:
-                excluded_paths.remove(node.path.lower())
-            except KeyError:
-                pass
+            excluded_paths.discard(node.path_lower)
 
         for node in excluded_shown:
-            excluded_paths.add(node.path.lower())
+            excluded_paths.add(node.path_lower)
 
         self.mdbx.excluded_items = list(excluded_paths)
 
