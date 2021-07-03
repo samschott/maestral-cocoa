@@ -157,7 +157,7 @@ class SetupDialog(SetupDialogGui):
         if btn_name == "Select":
 
             excluded_nodes = self.fs_source.get_nodes_with_state(OFF)
-            excluded_paths = [node.path for node in excluded_nodes]
+            excluded_paths = [node.path_lower for node in excluded_nodes]
             self.mdbx.excluded_items = excluded_paths
 
             # if any excluded folders are currently on the drive, delete them
