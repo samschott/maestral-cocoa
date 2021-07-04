@@ -2,10 +2,13 @@
 
 # system imports
 import os.path as osp
+from typing import Any
 
 # external imports
+import toga
 from maestral.utils.path import delete
 from maestral.utils.appdirs import get_home_dir
+from maestral.daemon import MaestralProxy
 
 # local imports
 from .private.constants import OFF
@@ -19,11 +22,11 @@ class SetupDialog(SetupDialogGui):
     ACCEPTED = 0
     REJECTED = 1
 
-    def __init__(self, app):
+    def __init__(self, mdbx: MaestralProxy, app: toga.App) -> None:
         super().__init__(app=app)
         self.exit_status = self.REJECTED
 
-        self.mdbx = self.app.mdbx
+        self.mdbx = mdbx
         self.config_name = self.mdbx.config_name
 
         # set up combobox
@@ -42,12 +45,12 @@ class SetupDialog(SetupDialogGui):
     # User interaction callbacks
     # ==================================================================================
 
-    async def on_start(self, widget):
+    async def on_start(self, widget: Any) -> None:
         # start auth flow
         self.btn_auth_token.url = self.mdbx.get_auth_url()
         self.go_forward()
 
-    async def on_link_dialog(self, btn_name):
+    async def on_link_dialog(self, btn_name: str) -> None:
 
         if btn_name == "Cancel":
             self.close()
@@ -102,7 +105,7 @@ class SetupDialog(SetupDialogGui):
             self.text_field_auth_token.enabled = True
             self.dialog_buttons_link_page.enabled = True
 
-    async def on_dbx_location(self, btn_name):
+    async def on_dbx_location(self, btn_name: str) -> None:
 
         if btn_name == "Select":
 
@@ -150,7 +153,7 @@ class SetupDialog(SetupDialogGui):
             self.mdbx.unlink()
             self.close()
 
-    async def on_items_selected(self, btn_name):
+    async def on_items_selected(self, btn_name: str) -> None:
 
         self.fs_source.stop_loading()
 
@@ -171,12 +174,12 @@ class SetupDialog(SetupDialogGui):
         elif btn_name == "Back":
             self.go_back()
 
-    async def on_finish(self, widget):
+    async def on_finish(self, widget: Any) -> None:
         self.exit_status = self.ACCEPTED
         self.close()
 
-    def _token_field_validator(self, widget):
+    def _token_field_validator(self, widget: toga.TextInput) -> None:
         self.dialog_buttons_link_page["Link"].enabled = len(widget.value) > 10
 
-    def on_loading_failed(self):
+    def on_loading_failed(self) -> None:
         self.dialog_buttons_selective_sync_page["Select"].enabled = False

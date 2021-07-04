@@ -4,9 +4,11 @@
 import os.path as osp
 
 # external imports
+import toga
 from toga.style.pack import Pack, FONT_SIZE_CHOICES
 from maestral.utils.appdirs import get_home_dir
 from maestral.utils.path import delete
+from maestral.daemon import MaestralProxy
 
 # local imports
 from .private.widgets import FileSelectionButton
@@ -34,9 +36,9 @@ class DbxLocationDialog(Dialog):
     ACCEPTED = 0
     REJECTED = 1
 
-    def __init__(self, app):
+    def __init__(self, mdbx: MaestralProxy, app: toga.App) -> None:
 
-        self.mdbx = app.mdbx
+        self.mdbx = mdbx
         self.config_name = self.mdbx.config_name
         self.exit_status = self.REJECTED
 
@@ -77,7 +79,7 @@ class DbxLocationDialog(Dialog):
         self.msg_content.style.width = 450
         self.msg_content.style.height = 130
 
-    async def on_dialog_pressed(self, btn_name):
+    async def on_dialog_pressed(self, btn_name: str) -> None:
 
         self.dialog_buttons.enabled = False
 

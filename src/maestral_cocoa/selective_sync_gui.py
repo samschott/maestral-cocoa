@@ -10,9 +10,8 @@ from .private.widgets import Window, DialogButtons
 
 
 class SelectiveSyncGui(Window):
-    def __init__(self, mdbx, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__(title="Folder Selection", **kwargs)
-        self.mdbx = mdbx
 
         self.tree = toga.Tree(
             headings=["Name", "Included"],

@@ -14,7 +14,6 @@ from .private.widgets import (
     FollowLinkButton,
     FileSelectionButton,
     Window,
-    TextInput,
 )
 from .private.constants import WORD_WRAP
 from .private.implementation.cocoa.constants import NSFullSizeContentViewWindowMask
@@ -44,7 +43,7 @@ class SetupDialogGui(Window):
     )
     btn_box_style = Pack(width=CONTENT_WIDTH, padding_bottom=20)
 
-    def __init__(self, app):
+    def __init__(self, app: toga.App) -> None:
         # noinspection PyTypeChecker
         super().__init__(
             title="Maestral Setup",
@@ -96,7 +95,7 @@ class SetupDialogGui(Window):
         self.btn_auth_token = FollowLinkButton(
             "Retrieve Token", style=Pack(width=125, padding_bottom=35)
         )
-        self.text_field_auth_token = TextInput(
+        self.text_field_auth_token = toga.TextInput(
             placeholder="Authorization Token",
             style=Pack(
                 width=self.CONTENT_WIDTH * 0.9,
@@ -234,17 +233,17 @@ class SetupDialogGui(Window):
         )
         self.content = toga.Box(children=[self.pages[0]])
 
-    def go_forward(self):
+    def go_forward(self) -> None:
         self.goto_page(self.current_page + 1)
 
-    def go_back(self):
+    def go_back(self) -> None:
         self.goto_page(self.current_page - 1)
 
-    def goto_page(self, i):
+    def goto_page(self, i: int) -> None:
         self.current_page = i
         self.content.remove(self.content.children[0])
         self.content.add(self.pages[self.current_page])
         self.show()
 
-    def current_index(self):
+    def current_index(self) -> int:
         return self.current_page

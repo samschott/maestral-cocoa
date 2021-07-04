@@ -4,11 +4,13 @@
 import os.path as osp
 import asyncio
 import urllib.parse
+from typing import List, Union
 
 # external imports
 import toga
 from toga.style.pack import Pack
 from toga.constants import ROW, COLUMN
+from maestral.daemon import MaestralProxy
 
 # local imports
 from .utils import create_task
@@ -25,7 +27,7 @@ class SyncIssueView(toga.Box):
 
     dbx_address = "https://www.dropbox.com/preview"
 
-    def __init__(self, sync_err):
+    def __init__(self, sync_err: dict) -> None:
         style = Pack(direction=COLUMN)
         super().__init__(style=style)
 
@@ -95,11 +97,11 @@ class SyncIssueView(toga.Box):
 
 
 class SyncIssuesWindow(Window):
-    def __init__(self, mdbx, app=None):
+    def __init__(self, mdbx: MaestralProxy, app: toga.App) -> None:
         super().__init__(title="Maestral Sync Issues", release_on_close=False, app=app)
 
         self.mdbx = mdbx
-        self._cached_errors = []
+        self._cached_errors: List[dict] = []
 
         self.size = WINDOW_SIZE
 
@@ -124,15 +126,15 @@ class SyncIssuesWindow(Window):
         self.center()
 
         self.refresh_gui()
-        self._periodic_refresh_task = None
+        self._periodic_refresh_task: Union[asyncio.Future, asyncio.Task, None] = None
 
-    async def periodic_refresh_gui(self, interval=1):
+    async def periodic_refresh_gui(self, interval: int = 1):
 
         while True:
             self.refresh_gui()
             await asyncio.sleep(interval)
 
-    def refresh_gui(self):
+    def refresh_gui(self) -> None:
 
         new_errors = self.mdbx.sync_errors
 
@@ -155,10 +157,10 @@ class SyncIssuesWindow(Window):
 
             self._cached_errors = new_errors
 
-    def on_close(self):
+    def on_close(self) -> None:
         if self._periodic_refresh_task:
             self._periodic_refresh_task.cancel()
 
-    def show(self):
+    def show(self) -> None:
         self._periodic_refresh_task = create_task(self.periodic_refresh_gui())
         super().show()

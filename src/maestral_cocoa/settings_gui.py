@@ -41,7 +41,7 @@ class SettingsGui(Window):
 
     faceholder = toga.Image(FACEHOLDER_PATH)
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__(
             title="Maestral Settings",
             resizeable=False,

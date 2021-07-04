@@ -6,10 +6,12 @@ import os
 import os.path as osp
 import asyncio
 from pathlib import Path
+from typing import Any, Union
 
 # external imports
 import toga
 from maestral.utils.path import delete
+from maestral.daemon import MaestralProxy
 
 # local imports
 from .utils import (
@@ -19,7 +21,7 @@ from .utils import (
     is_empty,
 )
 from .private.constants import ON, OFF
-from .private.widgets import apply_round_clipping
+from .private.widgets import FileSelectionButton, Switch, apply_round_clipping
 from .settings_gui import SettingsGui
 from .selective_sync import SelectiveSyncDialog
 from .resources import FACEHOLDER_PATH
@@ -40,7 +42,7 @@ class SettingsWindow(SettingsGui):
     _cached_pic_stat = os.stat(FACEHOLDER_PATH)
     _cached_dbx_location = None
 
-    def __init__(self, mdbx, app):
+    def __init__(self, mdbx: MaestralProxy, app: toga.App) -> None:
         super().__init__(app=app)
 
         self.mdbx = mdbx
@@ -63,12 +65,12 @@ class SettingsWindow(SettingsGui):
 
         self.combobox_dbx_location.dialog_message = path_selection_message
 
-        self._periodic_refresh_task = None
+        self._periodic_refresh_task: Union[asyncio.Task, asyncio.Future, None] = None
         self.refresh_gui()
 
     # ==== callback implementations ====================================================
 
-    async def on_dbx_location_selected(self, widget):
+    async def on_dbx_location_selected(self, widget: FileSelectionButton) -> None:
 
         new_path = widget.current_selection
 
@@ -103,10 +105,10 @@ class SettingsWindow(SettingsGui):
             )
             self.mdbx.start_sync()
 
-    def on_folder_selection_pressed(self, widget):
-        SelectiveSyncDialog(self.mdbx, app=self.app).show_as_sheet(self)
+    def on_folder_selection_pressed(self, widget: Any) -> None:
+        SelectiveSyncDialog(mdbx=self.mdbx, app=self.app).show_as_sheet(self)
 
-    async def on_unlink_pressed(self, widget):
+    async def on_unlink_pressed(self, widget: Any) -> None:
         choice = await self.alert_sheet(
             title="Unlink your Dropbox account?",
             message=(
@@ -117,7 +119,8 @@ class SettingsWindow(SettingsGui):
         )
 
         if choice == 0:
-            self._periodic_refresh_task.cancel()
+            if self._periodic_refresh_task is not None:
+                self._periodic_refresh_task.cancel()
             self.mdbx.unlink()
             await self.alert_sheet(
                 title="Successfully unlinked",
@@ -126,20 +129,20 @@ class SettingsWindow(SettingsGui):
             )
             await self.app.exit(stop_daemon=True)
 
-    async def on_update_interval_selected(self, widget):
+    async def on_update_interval_selected(self, widget: toga.Selection) -> None:
         value = str(widget.value)
         self.mdbx.set_conf(
             "app", "update_notification_interval", self._update_interval_mapping[value]
         )
 
-    async def on_autostart_clicked(self, widget):
+    async def on_autostart_clicked(self, widget: Switch) -> None:
         self.autostart.enabled = widget.state == ON
 
     async def on_notifications_clicked(self, widget):
         # 30 = SYNCISSUE, 15 = FILECHANGE
         self.mdbx.notification_level = 15 if widget.state == ON else 30
 
-    async def on_cli_pressed(self, widget):
+    async def on_cli_pressed(self, widget: Any) -> None:
 
         if osp.islink(self._macos_cli_install_path):
 
@@ -178,7 +181,7 @@ class SettingsWindow(SettingsGui):
 
         self._update_cli_tool_button()
 
-    def _update_cli_tool_button(self):
+    def _update_cli_tool_button(self) -> None:
         if osp.islink(self._macos_cli_install_path):
             self.btn_cli_tool.enabled = True
             self.btn_cli_tool.label = "Uninstall"
@@ -196,8 +199,9 @@ class SettingsWindow(SettingsGui):
                 "Install the 'maestral' command line tool to /usr/local/bin."
             )
 
-    def set_profile_pic(self, path):
-        path = path if osp.isfile(path) else FACEHOLDER_PATH
+    def set_profile_pic(self, path: Union[bytes, str, os.PathLike]) -> None:
+        if not osp.isfile(path):
+            path = FACEHOLDER_PATH
         new_stat = os.stat(path)
         if new_stat != self._cached_pic_stat:
             try:
@@ -209,13 +213,13 @@ class SettingsWindow(SettingsGui):
 
     # ==== populate gui with data ======================================================
 
-    async def periodic_refresh_gui(self, interval=2):
+    async def periodic_refresh_gui(self, interval: int = 2):
 
         while True:
             self.refresh_gui()
             await asyncio.sleep(interval)
 
-    def refresh_gui(self):
+    def refresh_gui(self) -> None:
 
         # populate account info
         self.set_profile_pic(self.mdbx.account_profile_pic_path)
@@ -239,7 +243,7 @@ class SettingsWindow(SettingsGui):
         if FROZEN:
             self._update_cli_tool_button()
 
-    def set_account_info_from_cache(self):
+    def set_account_info_from_cache(self) -> None:
 
         acc_display_name = self.mdbx.get_state("account", "display_name")
         acc_mail = self.mdbx.get_state("account", "email")
@@ -259,10 +263,10 @@ class SettingsWindow(SettingsGui):
         self.label_email.text = acc_mail + acc_type_text
         self.label_usage.text = acc_space_usage
 
-    def on_close(self):
+    def on_close(self) -> None:
         if self._periodic_refresh_task:
             self._periodic_refresh_task.cancel()
 
-    def show(self):
+    def show(self) -> None:
         self._periodic_refresh_task = create_task(self.periodic_refresh_gui())
         super().show()

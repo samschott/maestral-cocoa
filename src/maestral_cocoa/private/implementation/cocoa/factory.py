@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 
 # system imports
-import sys
 import os.path as osp
 import platform
 from packaging.version import Version
 
 # external imports
-import toga
 from travertino.size import at_least
 from rubicon.objc import (
     NSMakeSize,
@@ -25,13 +23,10 @@ from toga_cocoa.libs import (
     NSString,
     NSTextView,
     NSRecessedBezelStyle,
-    NSTextFieldSquareBezel,
     NSViewMaxYMargin,
     NSMenuItem,
-    NSKeyDown,
     NSMenu,
     NSApplication,
-    send_super,
     NSObject,
     NSApplicationActivationPolicyAccessory,
     NSApplicationActivationPolicyRegular,
@@ -50,16 +45,16 @@ from toga_cocoa.libs import (
     NSURL,
 )
 from toga_cocoa.colors import native_color
-from toga_cocoa.keys import toga_key, cocoa_key, Key
+from toga_cocoa.keys import cocoa_key
 from toga_cocoa.app import App as TogaApp
 from toga_cocoa.widgets.base import Widget
 from toga_cocoa.widgets.switch import Switch as TogaSwitch
 from toga_cocoa.widgets.button import Button as TogaButton
 from toga_cocoa.window import Window as TogaWindow
-from toga_cocoa.widgets.textinput import TextInput as TogaTextInput
 from toga_cocoa.widgets.multilinetextinput import (
     MultilineTextInput as TogaMultilineTextInput,
 )
+from toga_cocoa.factory import ImageView, Box
 from toga_cocoa.factory import *  # noqa: F401,F406
 
 # local imports
@@ -320,6 +315,9 @@ class RichLabel(Widget):
         self.interface.intrinsic.height = rect.size.height
 
 
+# ==== text input ======================================================================
+
+
 class RichMultilineTextInput(TogaMultilineTextInput):
     """A scrollable text view with html support."""
 
@@ -509,7 +507,7 @@ if Version(macos_version) >= Version("10.14.0"):
 
 else:
 
-    class VibrantBox(Box):
+    class VibrantBox(Box):  # type: ignore
         def set_material(self, value):
             pass
 
@@ -615,62 +613,6 @@ class Menu:
     @property
     def visible(self):
         return self._visible
-
-
-# ==== input widgets ===================================================================
-
-
-class KeyboardTextField(NSTextField):
-    @objc_method
-    def textDidChange_(self, notification) -> None:
-        if self.interface.on_change:
-            self.interface.on_change(self.interface)
-
-    @objc_method
-    def textShouldEndEditing_(self, textObject) -> bool:
-        return self.interface.validate()
-
-    @objc_method
-    def performKeyEquivalent_(self, event) -> bool:
-
-        app = NSApplication.sharedApplication
-
-        if event.type == NSKeyDown:
-            toga_event = toga_key(event)
-            if toga_event == {"key": Key.X, "modifiers": {Key.MOD_1}}:
-                app.sendAction_to_from_(SEL("cut:"), None, self)
-                return True
-            elif toga_event == {"key": Key.C, "modifiers": {Key.MOD_1}}:
-                app.sendAction_to_from_(SEL("copy:"), None, self)
-                return True
-            elif toga_event == {"key": Key.V, "modifiers": {Key.MOD_1}}:
-                app.sendAction_to_from_(SEL("paste:"), None, self)
-                return True
-            elif toga_event == {"key": Key.Z, "modifiers": {Key.MOD_1}}:
-                app.sendAction_to_from_(SEL("undo:"), None, self)
-                return True
-            elif toga_event == {"key": Key.Z, "modifiers": {Key.SHIFT, Key.MOD_1}}:
-                app.sendAction_to_from_(SEL("redo:"), None, self)
-                return True
-            elif toga_event == {"key": Key.A, "modifiers": {Key.MOD_1}}:
-                app.sendAction_to_from_(SEL("selectAll:"), None, self)
-                return True
-            else:
-                return send_super(__class__, self, "performKeyEquivalent:", event)
-        else:
-            return send_super(__class__, self, "performKeyEquivalent:", event)
-
-
-class TextInput(TogaTextInput):
-    def create(self):
-        self.native = KeyboardTextField.new()
-        self.native.interface = self.interface
-
-        self.native.bezeled = True
-        self.native.bezelStyle = NSTextFieldSquareBezel
-
-        # Add the layout constraints
-        self.add_constraints()
 
 
 # ==== StatusBarItem ===================================================================

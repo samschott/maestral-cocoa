@@ -5,10 +5,23 @@ import os
 import asyncio
 import shlex
 from concurrent.futures import ThreadPoolExecutor
+from typing import (
+    Union,
+    Awaitable,
+    TypeVar,
+    AsyncGenerator,
+    AnyStr,
+    List,
+    Any,
+    Callable,
+)
 
 # external imports
 from rubicon.objc import ObjCClass
 from maestral.daemon import MaestralProxy
+
+
+_T = TypeVar("_T")
 
 
 NSAppleScript = ObjCClass("NSAppleScript")
@@ -19,7 +32,7 @@ NSAppleScript = ObjCClass("NSAppleScript")
 thread_pool_executor = ThreadPoolExecutor(10)
 
 
-def create_task(coro):
+def create_task(coro: Awaitable[_T]) -> Union[asyncio.Task[_T], asyncio.Future[_T]]:
 
     loop = asyncio.get_event_loop()
 
@@ -29,12 +42,12 @@ def create_task(coro):
         return asyncio.ensure_future(coro, loop=loop)
 
 
-def call_async(func, *args):
+def call_async(func: Callable, *args) -> Awaitable:
     loop = asyncio.get_event_loop()
     return loop.run_in_executor(thread_pool_executor, func, *args)
 
 
-def call_async_maestral(config_name, func_name, *args):
+def call_async_maestral(config_name: str, func_name: str, *args) -> Awaitable:
     def func(*inner_args):
         with MaestralProxy(config_name) as m:
             m_func = m.__getattr__(func_name)
@@ -44,9 +57,9 @@ def call_async_maestral(config_name, func_name, *args):
     return loop.run_in_executor(thread_pool_executor, func, *args)
 
 
-def generate_async_maestral(config_name, func_name, *args):
+def generate_async_maestral(config_name: str, func_name: str, *args) -> AsyncGenerator:
     loop = asyncio.get_event_loop()
-    queue = asyncio.Queue(1)
+    queue: "asyncio.Queue[Any]" = asyncio.Queue(1)
     exception = None
     _END = object()
 
@@ -83,7 +96,7 @@ def generate_async_maestral(config_name, func_name, *args):
 # ==== system calls ====================================================================
 
 
-def request_authorization_from_user_and_run(exe):
+def request_authorization_from_user_and_run(exe: List[str]) -> None:
     # shlex.join requires Python 3.8 and later.
 
     source = f'do shell script "{shlex.join(exe)}" with administrator privileges'
@@ -95,13 +108,13 @@ def request_authorization_from_user_and_run(exe):
         raise RuntimeError("Could not privileged command")
 
 
-def is_empty(dirname):
+def is_empty(dirname: Union[AnyStr, os.PathLike]) -> bool:
     """Checks if a directory is empty."""
 
     exceptions = {".DS_Store"}
     n_exceptions = len(exceptions)
 
-    children = []
+    children: List[os.DirEntry] = []
 
     try:
         with os.scandir(dirname) as sd_iter:

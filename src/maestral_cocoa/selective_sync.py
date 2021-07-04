@@ -5,13 +5,16 @@ import os.path as osp
 import threading
 import asyncio
 from queue import Queue
+from typing import Union, List, Tuple, Optional, Any, Callable
 
 # external imports
+import toga
 from toga.sources import Source
 from toga.style import Pack
 from toga.constants import TRANSPARENT
 from maestral.utils.path import is_child, is_equal_or_child
 from maestral.errors import NotAFolderError, NotFoundError, BusyError
+from maestral.daemon import MaestralProxy
 
 # local imports
 from .selective_sync_gui import SelectiveSyncGui
@@ -21,7 +24,16 @@ from .private.widgets import Icon, Switch
 
 
 class Node:
-    def __init__(self, path_display, path_lower, parent, mdbx, is_folder):
+    _children: List[Union["Node", "PlaceholderNode"]]
+
+    def __init__(
+        self,
+        path_display: str,
+        path_lower: str,
+        parent: Optional["Node"],
+        mdbx: MaestralProxy,
+        is_folder: bool,
+    ) -> None:
         super().__init__()
         self._mdbx = mdbx
         self.path_display = path_display
@@ -48,7 +60,7 @@ class Node:
 
     # ---- Methods to track user selection ---------------------------------------------
 
-    def _init_selected(self):
+    def _init_selected(self) -> None:
 
         excluded_items = getattr(self._mdbx, "excluded_items", [])
 
@@ -75,17 +87,17 @@ class Node:
         else:
             self.included.state = self._original_state
 
-    def is_selection_modified(self):
+    def is_selection_modified(self) -> bool:
         own_selection_modified = self.included.state != self._original_state
         child_selection_modified = any(
             c.is_selection_modified() for c in self._children
         )
         return own_selection_modified or child_selection_modified
 
-    def get_nodes_with_state(self, state):
+    def get_nodes_with_state(self, state: int) -> List["Node"]:
 
         result = []
-        queue = Queue()
+        queue: "Queue[Node]" = Queue()
         queue.put(self)
 
         while not queue.empty():
@@ -105,43 +117,43 @@ class Node:
 
     # ---- Methods required for the data source interface ------------------------------
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.children)
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> Union["Node", "PlaceholderNode"]:
         return self.children[index]
 
-    def can_have_children(self):
+    def can_have_children(self) -> bool:
         return self._is_folder
 
     # ---- Properties for data access from GUI -----------------------------------------
 
     @property
-    def name(self):
+    def name(self) -> Tuple[Icon, str]:
         return self._icon, osp.basename(self.path_display)
 
     @property
-    def included(self):
+    def included(self) -> Switch:
         return self._included
 
     @property
-    def is_folder(self):
+    def is_folder(self) -> bool:
         return self._is_folder
 
     # ---- Methods for dynamic loading of children -------------------------------------
 
     @property
-    def parent(self):
+    def parent(self) -> Optional["Node"]:
         return self._parent
 
     @property
-    def children(self):
+    def children(self) -> List[Union["Node", "PlaceholderNode"]]:
         if self._is_folder and not self._did_start_loading:
             self._did_start_loading = True
             create_task(self._load_children_async())
         return self._children
 
-    async def _load_children_async(self):
+    async def _load_children_async(self) -> None:
 
         try:
 
@@ -195,37 +207,38 @@ class Node:
         except (NotFoundError, NotAFolderError):
             self._children = []
 
-    def on_loading_failed(self):
-        self.parent.on_loading_failed()
+    def on_loading_failed(self) -> None:
+        if self.parent:
+            self.parent.on_loading_failed()
 
-    def stop_loading(self):
+    def stop_loading(self) -> None:
         self._stop_loading.set()
         for child in self._children:
             child._stop_loading.set()
 
-    def clear_stop_loading(self):
+    def clear_stop_loading(self) -> None:
         self._stop_loading.clear()
         for child in self._children:
             child._stop_loading.clear()
 
     # ---- GUI callbacks ---------------------------------------------------------------
 
-    def on_selected_toggled(self, widget):
+    def on_selected_toggled(self, widget: Any) -> None:
         self.propagate_selection_to_children(self.included.state)
         self.propagate_selection_to_parent(self.included.state)
 
-    def propagate_selection_to_children(self, state):
+    def propagate_selection_to_children(self, state: int) -> None:
         if state is not MIXED and len(self._children) > 0:
             for child in self._children:
                 if isinstance(child, Node):
                     child.included.state = state
                     child.propagate_selection_to_children(state)
 
-    def propagate_selection_to_parent(self, state):
+    def propagate_selection_to_parent(self, state: int) -> None:
         if self.parent:
             # get minimum of all other children's check state
             checkstate_other_children = min(
-                c.included.state for c in self.parent.children
+                c.included.state for c in self.parent.children if isinstance(c, Node)
             )
             # set parent's state to that minimum, if it is >= 1
             # (there always could be included files)
@@ -234,16 +247,17 @@ class Node:
             # tell the parent to propagate its own state upwards
             self.parent.propagate_selection_to_parent(state)
 
-    def notify(self, notification, **kwargs):
+    def notify(self, notification: str, **kwargs) -> None:
         # pass notifications to parent
-        self.parent.notify(notification, **kwargs)
+        if self.parent:
+            self.parent.notify(notification, **kwargs)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<{self.__class__.__name__}({self.path_display})>"
 
 
 class PlaceholderNode:
-    def __init__(self, message, parent):
+    def __init__(self, message: str, parent: Node) -> None:
         self._parent = parent
         self._name = message
         self._included = ""
@@ -252,75 +266,75 @@ class PlaceholderNode:
     # ---- Methods to track user selection ---------------------------------------------
 
     @staticmethod
-    def is_selection_modified():
+    def is_selection_modified() -> bool:
         return False
 
     # ---- Methods required for the data source interface ------------------------------
 
-    def __len__(self):
+    def __len__(self) -> int:
         return 0
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> "Node":
         raise StopIteration()
 
     @staticmethod
-    def can_have_children():
+    def can_have_children() -> bool:
         return False
 
     # ---- Properties for data access from GUI -----------------------------------------
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     @property
-    def included(self):
+    def included(self) -> str:
         return self._included
 
     # ---- Methods for dynamic loading of children -------------------------------------
 
     @property
-    def parent(self):
+    def parent(self) -> Node:
         return self._parent
 
     @property
-    def children(self):
+    def children(self) -> List[Node]:
         return []
 
     # ---- GUI callbacks ---------------------------------------------------------------
 
-    def propagate_selection_to_children(self, state):
+    def propagate_selection_to_children(self, state: int) -> None:
         pass
 
-    def propagate_selection_to_parent(self, state):
+    def propagate_selection_to_parent(self, state: int) -> None:
         pass
 
 
 class FileSystemSource(Node, Source):
     def __init__(
         self,
-        mdbx=None,
-        path_display="/",
-        path_lower="/",
-        on_fs_loading_failed=None,
-        on_fs_selection_changed=None,
+        mdbx: MaestralProxy,
+        path_display: str = "/",
+        path_lower: str = "/",
+        on_fs_loading_failed: Optional[Callable] = None,
+        on_fs_selection_changed: Optional[Callable] = None,
     ):
         super().__init__(
-            path_display, path_lower, parent=None, mdbx=mdbx, is_folder=True
+            path_display, path_lower, parent=None, is_folder=True, mdbx=mdbx
         )
         self.on_fs_loading_failed = on_fs_loading_failed
         self.on_fs_selection_changed = on_fs_selection_changed
         self._children = [PlaceholderNode("Loading...", self)]
         self._included.label = "Select all"
 
-    def propagate_selection_to_parent(self, state):
+    def propagate_selection_to_parent(self, state: int) -> None:
         if self.on_fs_selection_changed:
             self.on_fs_selection_changed()
 
-    def notify(self, notification, **kwargs):
+    def notify(self, notification: str, **kwargs) -> None:
         self._notify(notification, **kwargs)
 
-    def on_loading_failed(self):
+    def on_loading_failed(self) -> None:
         self.included.enabled = False
         self._children = [PlaceholderNode("Could not connect to Dropbox 😕", self)]
         self.notify("change_source", source=self)
@@ -328,7 +342,7 @@ class FileSystemSource(Node, Source):
         if self.on_fs_loading_failed:
             self.on_fs_loading_failed()
 
-    def index(self, node):
+    def index(self, node: Node) -> int:
         if node.parent:
             return node.parent.children.index(node)
         else:
@@ -336,8 +350,10 @@ class FileSystemSource(Node, Source):
 
 
 class SelectiveSyncDialog(SelectiveSyncGui):
-    def __init__(self, mdbx, app=None):
-        super().__init__(mdbx, app=app, is_dialog=True)
+    def __init__(self, mdbx: MaestralProxy, app: toga.App):
+        super().__init__(app=app, is_dialog=True)
+
+        self.mdbx = mdbx
 
         self.dialog_buttons.on_press = self.on_dialog_pressed
 
@@ -354,7 +370,7 @@ class SelectiveSyncDialog(SelectiveSyncGui):
 
     # ==== callbacks ===================================================================
 
-    def update_items(self):
+    def update_items(self) -> None:
         """
         Apply changes to local Dropbox folder.
         """
@@ -385,7 +401,7 @@ class SelectiveSyncDialog(SelectiveSyncGui):
 
         self.mdbx.excluded_items = list(excluded_paths)
 
-    async def on_dialog_pressed(self, btn_name):
+    async def on_dialog_pressed(self, btn_name: str) -> None:
 
         if btn_name == "Update":
 
@@ -399,12 +415,12 @@ class SelectiveSyncDialog(SelectiveSyncGui):
         elif btn_name == "Cancel":
             self.close()
 
-    def on_fs_loading_failed(self):
+    def on_fs_loading_failed(self) -> None:
         self.dialog_buttons["Update"].enabled = False
 
-    def on_fs_selection_changed(self):
+    def on_fs_selection_changed(self) -> None:
         self.dialog_buttons["Update"].enabled = self.fs_source.is_selection_modified()
 
-    def on_close(self):
+    def on_close(self) -> None:
         super().on_close()
         self.fs_source.stop_loading()

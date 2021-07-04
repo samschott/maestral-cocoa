@@ -6,6 +6,7 @@ import asyncio
 import time
 from subprocess import Popen
 from datetime import datetime, timedelta
+from typing import Any
 
 # external imports
 import click
@@ -68,12 +69,12 @@ def name(cls):
 
 
 class MenuItemSnooze(MenuItem):
-    def __init__(self, label, snooze_time, mdbx):
+    def __init__(self, label: str, snooze_time: float, mdbx: MaestralProxy) -> None:
         super().__init__(label, action=self.snooze)
         self.mdbx = mdbx
         self.snooze_time = snooze_time
 
-    def snooze(self, widget):
+    def snooze(self, widget: Any) -> None:
         self.mdbx.notification_snooze = self.snooze_time
 
 
@@ -94,7 +95,7 @@ class MaestralGui(SystemTrayApp):
         ERROR: Icon(resource_path("systray-error.pdf")),
     }
 
-    def __init__(self, config_name="maestral"):
+    def __init__(self, config_name: str = "maestral") -> None:
         self.config_name = config_name
         super().__init__(
             formal_name=APP_NAME,
@@ -106,27 +107,14 @@ class MaestralGui(SystemTrayApp):
             home_page=__url__,
         )
 
-    def startup(self):
+    def startup(self) -> None:
 
         self._started = False
-        self.mdbx = None
-
-        self.setup_dialog = None
-        self.settings_window = None
-        self.sync_issues_window = None
-        self.activity_window = None
-
-        self.item_status = None
-        self.item_email = None
-        self.item_usage = None
-        self.item_sync_issues = None
-        self.item_pause = None
 
         self.autostart = AutoStart(self.config_name)
 
         self.menu = Menu()
         self._cached_status = CONNECTING
-        self._cached_history = []
         self.tray = StatusBarItem(
             icon=self.icon_mapping.get(CONNECTING), menu=self.menu
         )
@@ -158,7 +146,7 @@ class MaestralGui(SystemTrayApp):
         )
         self.load_maestral()
 
-    def set_icon(self, status):
+    def set_icon(self, status: str) -> None:
         if status != self._cached_status:
             self.tray.icon = self.icon_mapping.get(status, self.icon_mapping[SYNCING])
             self._cached_status = status
@@ -175,16 +163,16 @@ class MaestralGui(SystemTrayApp):
             except CommunicationError:
                 super().exit()
 
-    async def periodic_check_for_updates(self, interval=30 * 60):
+    async def periodic_check_for_updates(self, interval: int = 30 * 60):
         while True:
             await asyncio.sleep(interval)
             await self.auto_check_for_updates()
 
-    def on_menu_open(self, sender):
+    def on_menu_open(self, sender: Any) -> None:
         self.update_snoozed()
         self.update_status()
 
-    def load_maestral(self):
+    def load_maestral(self) -> None:
 
         self.mdbx = self.get_or_start_maestral_daemon()
 
@@ -195,13 +183,13 @@ class MaestralGui(SystemTrayApp):
             return
 
         if pending_link:
-            self.setup_dialog = SetupDialog(self)
+            self.setup_dialog = SetupDialog(mdbx=self.mdbx, app=self)
             self.setup_dialog.raise_()
             self.setup_dialog.on_close = self._on_setup_completed
 
         elif self.mdbx.pending_dropbox_folder:
             self.set_icon(ERROR)
-            self.setup_dialog = DbxLocationDialog(self)
+            self.setup_dialog = DbxLocationDialog(mdbx=self.mdbx, app=self)
             self.setup_dialog.raise_()
             self.setup_dialog.on_close = self._on_setup_completed
 
@@ -212,7 +200,7 @@ class MaestralGui(SystemTrayApp):
             create_task(self.periodic_refresh_gui())
             create_task(self.periodic_check_for_updates())
 
-    def _on_setup_completed(self):
+    def _on_setup_completed(self) -> None:
 
         if self.setup_dialog.exit_status == self.setup_dialog.ACCEPTED:
             self.mdbx.start_sync()
@@ -223,7 +211,7 @@ class MaestralGui(SystemTrayApp):
         else:
             create_task(self.exit(stop_daemon=True))
 
-    def get_or_start_maestral_daemon(self):
+    def get_or_start_maestral_daemon(self) -> MaestralProxy:
 
         res = start_maestral_daemon_process(self.config_name)
 
@@ -242,7 +230,7 @@ class MaestralGui(SystemTrayApp):
 
         return MaestralProxy(self.config_name)
 
-    def setup_ui_unlinked(self):
+    def setup_ui_unlinked(self) -> None:
 
         self.menu.clear()
 
@@ -276,14 +264,11 @@ class MaestralGui(SystemTrayApp):
             self.item_quit,
         )
 
-    def setup_ui_linked(self):
+    def setup_ui_linked(self) -> None:
 
-        if not self.mdbx:
-            return
-
-        self.settings_window = SettingsWindow(self.mdbx, app=self)
-        self.activity_window = ActivityWindow(self.mdbx, app=self)
-        self.sync_issues_window = SyncIssuesWindow(self.mdbx, app=self)
+        self.settings_window = SettingsWindow(mdbx=self.mdbx, app=self)
+        self.activity_window = ActivityWindow(mdbx=self.mdbx, app=self)
+        self.sync_issues_window = SyncIssuesWindow(mdbx=self.mdbx, app=self)
 
         # ------------- update context menu -------------------
 
@@ -353,16 +338,16 @@ class MaestralGui(SystemTrayApp):
     # ==== callbacks menu items ========================================================
 
     @staticmethod
-    def on_website_clicked(widget):
+    def on_website_clicked(widget: Any) -> None:
         """Open the Dropbox website."""
         click.launch("https://www.dropbox.com/")
 
     @staticmethod
-    def on_help_clicked(widget):
+    def on_help_clicked(widget: Any) -> None:
         """Open the Dropbox help website."""
         click.launch(f"{__url__}/docs")
 
-    def on_start_stop_clicked(self, widget):
+    def on_start_stop_clicked(self, widget: Any) -> None:
         """Pause / resume syncing on menu item clicked."""
 
         try:
@@ -378,16 +363,16 @@ class MaestralGui(SystemTrayApp):
         except NoDropboxDirError:
             self._exec_dbx_location_dialog()
 
-    def on_settings_clicked(self, widget):
+    def on_settings_clicked(self, widget: Any) -> None:
         self.settings_window.raise_()
 
-    def on_sync_issues_clicked(self, widget):
+    def on_sync_issues_clicked(self, widget: Any) -> None:
         self.sync_issues_window.raise_()
 
-    def on_activity_clicked(self, widget):
+    def on_activity_clicked(self, widget: Any) -> None:
         self.activity_window.raise_()
 
-    def on_rebuild_clicked(self, widget):
+    def on_rebuild_clicked(self, widget: Any) -> None:
         choice = self.alert(
             title="Rebuilt Maestral's sync index?",
             message=(
@@ -419,7 +404,7 @@ class MaestralGui(SystemTrayApp):
             self.mdbx.set_state("app", "update_notification_last", time.time())
             self.show_update_dialog(res["latest_release"], res["release_notes"])
 
-    async def on_check_for_updates_clicked(self, widget):
+    async def on_check_for_updates_clicked(self, widget: Any):
 
         progress = ProgressDialog("Checking for Updates", app=self)
         progress.raise_()
@@ -443,7 +428,7 @@ class MaestralGui(SystemTrayApp):
             )
             await self.alert_async(title="You’re up-to-date!", message=message)
 
-    def show_update_dialog(self, latest_release, release_notes):
+    def show_update_dialog(self, latest_release: str, release_notes: str) -> None:
 
         self.update_dialog = UpdateDialog(
             version=latest_release,
@@ -454,7 +439,7 @@ class MaestralGui(SystemTrayApp):
 
     # ==== periodic updates ============================================================
 
-    def update_status(self):
+    def update_status(self) -> None:
         """Change icon according to status."""
 
         n_sync_errors = len(self.mdbx.sync_errors)
@@ -482,7 +467,7 @@ class MaestralGui(SystemTrayApp):
 
             self.item_status.label = status
 
-    def update_snoozed(self):
+    def update_snoozed(self) -> None:
 
         minutes = self.mdbx.notification_snooze
 
@@ -536,15 +521,15 @@ class MaestralGui(SystemTrayApp):
             # We don't know this error yet. Show a full stacktrace dialog.
             await self._exec_error_dialog(err)
 
-    def _exec_dbx_location_dialog(self):
-        self.setup_dialog = DbxLocationDialog(self)
+    def _exec_dbx_location_dialog(self) -> None:
+        self.setup_dialog = DbxLocationDialog(mdbx=self.mdbx, app=self)
         self.setup_dialog.raise_()
         self.setup_dialog.on_close = self._on_setup_completed
 
-    def _exec_relink_dialog(self, reason):
-        self.rld = RelinkDialog(self, reason).raise_()
+    def _exec_relink_dialog(self, reason: int) -> None:
+        self.rld = RelinkDialog(self.mdbx, self, reason).raise_()
 
-    async def _exec_error_dialog(self, err):
+    async def _exec_error_dialog(self, err: dict):
 
         title = "An unexpected error occurred"
         message = (
@@ -561,7 +546,7 @@ class MaestralGui(SystemTrayApp):
             level="error",
         )
 
-    async def exit(self, *args, stop_daemon=False):
+    async def exit(self, *args, stop_daemon: bool = False):
         """Quits Maestral.
 
         :param bool stop_daemon: If ``True``, the sync daemon will be stopped when
@@ -575,7 +560,7 @@ class MaestralGui(SystemTrayApp):
 
         super().exit()
 
-    def restart(self, *args):
+    def restart(self, *args) -> None:
         """Restarts the Maestral GUI and sync daemon."""
 
         # schedule restart after current process has quit
@@ -590,6 +575,6 @@ class MaestralGui(SystemTrayApp):
         create_task(self.exit(stop_daemon=True))
 
 
-def run(config_name="maestral"):
+def run(config_name: str = "maestral") -> None:
     app = MaestralGui(config_name)
     return app.main_loop()

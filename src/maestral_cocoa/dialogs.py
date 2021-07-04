@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
 
+# system imports
+from typing import Optional, Callable, Iterable
+
 # external imports
 import toga
 from toga.style import Pack
 from toga.constants import COLUMN, ROW, BOLD, CENTER, TRANSPARENT
 import markdown2
 from maestral import __version__
+from maestral.daemon import MaestralProxy
 
 # local imports
 from . import __url__
@@ -54,14 +58,14 @@ class Dialog(Window):
 
     def __init__(
         self,
-        title="Alert",
-        message="",
-        button_labels=("Ok",),
-        default="Ok",
+        title: str = "Alert",
+        message: str = "",
+        button_labels: Iterable[str] = ("Ok",),
+        default: str = "Ok",
         accessory_view=None,
-        icon=None,
-        callback=None,
-        app=None,
+        icon: Optional[toga.Icon] = None,
+        callback: Optional[Callable] = None,
+        app: Optional[toga.App] = None,
     ):
         super().__init__(
             resizeable=False,
@@ -166,11 +170,11 @@ class Dialog(Window):
         )
         self.center()
 
-    def show_as_sheet(self, window):
+    def show_as_sheet(self, window: Window) -> None:
         self.content.material = VisualEffectMaterial.Sheet
         super().show_as_sheet(window)
 
-    def show(self):
+    def show(self) -> None:
         self.content.material = VisualEffectMaterial.WindowBackground
         super().show()
 
@@ -178,7 +182,13 @@ class Dialog(Window):
 class ProgressDialog(Dialog):
     """A dialog to show progress."""
 
-    def __init__(self, msg_title="Progress", icon=None, callback=None, app=None):
+    def __init__(
+        self,
+        msg_title: str = "Progress",
+        icon: toga.Icon = None,
+        callback: Optional[Callable] = None,
+        app: Optional[toga.App] = None,
+    ) -> None:
 
         self.progress_bar = toga.ProgressBar(
             max=0,
@@ -280,7 +290,13 @@ class UpdateDialog(Dialog):
         - Dialog.ICON_SIZE[0]
     )
 
-    def __init__(self, version="", release_notes="", icon=None, app=None):
+    def __init__(
+        self,
+        version: str = "",
+        release_notes: str = "",
+        icon: Optional[toga.Icon] = None,
+        app: Optional[toga.App] = None,
+    ) -> None:
 
         link_button = FollowLinkButton(
             label="GitHub Releases",
@@ -351,18 +367,18 @@ class RelinkDialog(Dialog):
 
     CONTENT_WIDTH = 325
 
-    def __init__(self, app, reason):
+    def __init__(self, mdbx: MaestralProxy, app: toga.App, reason: int) -> None:
 
-        self.mdbx = app.mdbx
+        self.mdbx = mdbx
         self.reason = reason
 
         url = self.mdbx.get_auth_url()
 
         if self.reason == self.EXPIRED:
-            reason = "expired"
+            reason_str = "expired"
             title = "Dropbox Access Expired"
         elif self.reason == self.REVOKED:
-            reason = "been revoked"
+            reason_str = "been revoked"
             title = "Dropbox Access Revoked"
         else:
             raise ValueError(f"Invalid reason {self.reason}")
@@ -370,7 +386,7 @@ class RelinkDialog(Dialog):
         msg = (
             "Your Dropbox access has {0}. To continue syncing, please retrieve a new "
             "authorization token from Dropbox and enter it below."
-        ).format(reason)
+        ).format(reason_str)
 
         self.website_button = FollowLinkButton(
             label="Retrieve Token", url=url, style=Pack(padding_bottom=10)
@@ -402,7 +418,7 @@ class RelinkDialog(Dialog):
 
         self.dialog_buttons[self.LINK_BTN].enabled = False
 
-    def on_dialog_press(self, btn_name):
+    def on_dialog_press(self, btn_name: str) -> None:
 
         self.dialog_buttons.enabled = False
         self.token_field.enabled = False
@@ -415,11 +431,11 @@ class RelinkDialog(Dialog):
         elif btn_name == self.LINK_BTN:
             self.do_relink()
 
-    async def do_unlink(self):
+    async def do_unlink(self) -> None:
         await call_async_maestral(self.mdbx.config_name, "unlink")
         self.app.exit(stop_daemon=True)
 
-    async def do_relink(self):
+    async def do_relink(self) -> None:
 
         token = self.token_field.value
         res = await call_async_maestral(self.mdbx.config_name, "link", token)
@@ -447,5 +463,5 @@ class RelinkDialog(Dialog):
         self.dialog_buttons[self.UNLINK_BTN].enabled = True
         self.token_field.enabled = True
 
-    def token_field_validator(self, widget):
+    def token_field_validator(self, widget: toga.TextInput) -> None:
         self.dialog_buttons[self.LINK_BTN].enabled = len(widget.value) > 10
