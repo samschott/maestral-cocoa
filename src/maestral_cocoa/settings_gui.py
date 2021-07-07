@@ -300,7 +300,7 @@ class SettingsGui(Window):
                             ),
                         ),
                         Label(
-                            f"(c) 2018 - {year}, {__author__}.",
+                            f"© 2018 - {year}, {__author__}.",
                             style=Pack(
                                 color=GRAY, width=SettingsGui.COLUMN_WIDTH_RIGHT
                             ),
