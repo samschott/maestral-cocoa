@@ -34,6 +34,7 @@ jobs:
 
       - name: Install dependencies
         run: |
+          python3 -m pip install --upgrade setuptools wheel
           python3 -m pip install --upgrade pip
           python3 -m pip install --upgrade briefcase
           chmod +x ./scripts/post-build-macos.sh
