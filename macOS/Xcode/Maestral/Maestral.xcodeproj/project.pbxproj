@@ -25,7 +25,7 @@
 		0D7B44DA2556C84100CBC44B /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 0D354FD72551BFBD009178D1 /* main.m */; };
 		0D8AFE752698785D002D904C /* Sparkle.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0D8AFE742698785D002D904C /* Sparkle.framework */; };
 		0D8AFE762698785D002D904C /* Sparkle.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 0D8AFE742698785D002D904C /* Sparkle.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		0D8F347C26986E130092BE76 /* maestral-cli in CopyFiles */ = {isa = PBXBuildFile; fileRef = 0D8F347B26986E060092BE76 /* maestral-cli */; };
+		0D8AFE7726987B6E002D904C /* maestral-cli in CopyFiles */ = {isa = PBXBuildFile; fileRef = 0D8F347B26986E060092BE76 /* maestral-cli */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		6093520D25E9D15D00C549F3 /* libffi.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 6093520C25E9D14B00C549F3 /* libffi.tbd */; };
 /* End PBXBuildFile section */
 
@@ -57,7 +57,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 6;
 			files = (
-				0D8F347C26986E130092BE76 /* maestral-cli in CopyFiles */,
+				0D8AFE7726987B6E002D904C /* maestral-cli in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -174,13 +174,13 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 0D354FDC2551BFBD009178D1 /* Build configuration list for PBXNativeTarget "Maestral" */;
 			buildPhases = (
+				0D8F347726986D0F0092BE76 /* CopyFiles */,
 				0D7B44A12555901E00CBC44B /* Refresh Python Source */,
 				0D354FC42551BFBA009178D1 /* Sources */,
 				0D354FC52551BFBA009178D1 /* Frameworks */,
 				0D354FC62551BFBA009178D1 /* Resources */,
 				0D7B44BC2556177100CBC44B /* Embed Frameworks */,
 				0D7B44EB2556C8B800CBC44B /* Embed App Extensions */,
-				0D8F347726986D0F0092BE76 /* CopyFiles */,
 			);
 			buildRules = (
 			);
@@ -197,7 +197,7 @@
 		0D354FC02551BFBA009178D1 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 1220;
+				LastUpgradeCheck = 1250;
 				ORGANIZATIONNAME = "Sam Schott";
 				TargetAttributes = {
 					0D354FC72551BFBA009178D1 = {
@@ -273,7 +273,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = x86_64;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
@@ -320,6 +319,7 @@
 					"DEBUG=1",
 					"$(inherited)",
 				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
@@ -352,7 +352,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = x86_64;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
@@ -393,6 +392,7 @@
 				);
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
@@ -428,11 +428,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
-				CODE_SIGN_ENTITLEMENTS = "Maestral/maestral-cocoa.entitlements";
-				CODE_SIGN_IDENTITY = "";
-				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -470,10 +466,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
-				CODE_SIGN_ENTITLEMENTS = "Maestral/maestral-cocoa.entitlements";
-				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_TESTABILITY = YES;
 				FRAMEWORK_SEARCH_PATHS = (
