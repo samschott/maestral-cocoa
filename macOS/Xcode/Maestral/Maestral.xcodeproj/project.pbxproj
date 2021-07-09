@@ -25,7 +25,7 @@
 		0D7B44DA2556C84100CBC44B /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 0D354FD72551BFBD009178D1 /* main.m */; };
 		0D8AFE752698785D002D904C /* Sparkle.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0D8AFE742698785D002D904C /* Sparkle.framework */; };
 		0D8AFE762698785D002D904C /* Sparkle.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 0D8AFE742698785D002D904C /* Sparkle.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		0D8AFE7726987B6E002D904C /* maestral-cli in CopyFiles */ = {isa = PBXBuildFile; fileRef = 0D8F347B26986E060092BE76 /* maestral-cli */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		0D8AFE7726987B6E002D904C /* maestral-cli in Copy CLI executable */ = {isa = PBXBuildFile; fileRef = 0D8F347B26986E060092BE76 /* maestral-cli */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		6093520D25E9D15D00C549F3 /* libffi.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 6093520C25E9D14B00C549F3 /* libffi.tbd */; };
 /* End PBXBuildFile section */
 
@@ -51,14 +51,15 @@
 			name = "Embed App Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		0D8F347726986D0F0092BE76 /* CopyFiles */ = {
+		0D8F347726986D0F0092BE76 /* Copy CLI executable */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 12;
 			dstPath = "";
 			dstSubfolderSpec = 6;
 			files = (
-				0D8AFE7726987B6E002D904C /* maestral-cli in CopyFiles */,
+				0D8AFE7726987B6E002D904C /* maestral-cli in Copy CLI executable */,
 			);
+			name = "Copy CLI executable";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -174,13 +175,14 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 0D354FDC2551BFBD009178D1 /* Build configuration list for PBXNativeTarget "Maestral" */;
 			buildPhases = (
-				0D8F347726986D0F0092BE76 /* CopyFiles */,
+				0D8F347726986D0F0092BE76 /* Copy CLI executable */,
 				0D7B44A12555901E00CBC44B /* Refresh Python Source */,
 				0D354FC42551BFBA009178D1 /* Sources */,
 				0D354FC52551BFBA009178D1 /* Frameworks */,
 				0D354FC62551BFBA009178D1 /* Resources */,
 				0D7B44BC2556177100CBC44B /* Embed Frameworks */,
 				0D7B44EB2556C8B800CBC44B /* Embed App Extensions */,
+				0DDA7BD3269912010065DF9B /* Increment build number */,
 			);
 			buildRules = (
 			);
@@ -254,6 +256,24 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "mkdir -p \"$BUILT_PRODUCTS_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Support/Python/Resources\"\nrsync -pvtrL --exclude .hg --exclude .svn --exclude .git \"$PROJECT_DIR/Support/Python/Resources/lib\" \"$BUILT_PRODUCTS_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Support/Python/Resources\"\n";
+		};
+		0DDA7BD3269912010065DF9B /* Increment build number */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Increment build number";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "buildNumber=$(/usr/libexec/PlistBuddy -c \"Print CFBundleVersion\" \"${PROJECT_DIR}/${INFOPLIST_FILE}\")\nbuildNumber=$(($buildNumber + 1))\n/usr/libexec/PlistBuddy -c \"Set :CFBundleVersion $buildNumber\" \"${PROJECT_DIR}/${INFOPLIST_FILE}\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
