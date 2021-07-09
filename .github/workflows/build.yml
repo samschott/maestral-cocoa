@@ -43,13 +43,14 @@ jobs:
         id: build
         run: |
           # build app
+          briefcase update macOS Xcode -d -r
           briefcase build macOS Xcode
 
           # run post-build scripts:
           # - add CLI executable
           # - keep .pyc files only to save space
           # - update plist entries
-          APP_PATH=$( find . -name "*.app" )
+          APP_PATH=$( find . -name "*.app" | head -n 1)
           ./scripts/post-build-macos.sh $APP_PATH
 
           # package dmg
