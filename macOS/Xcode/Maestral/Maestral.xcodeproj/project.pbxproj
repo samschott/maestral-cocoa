@@ -453,6 +453,7 @@
 					"$(PROJECT_DIR)/Support/XZ",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.4.8;
 				PRODUCT_BUNDLE_IDENTIFIER = com.samschott.maestral;
 				STRIP_INSTALLED_PRODUCT = NO;
 			};
@@ -492,6 +493,7 @@
 					"$(PROJECT_DIR)/Support/XZ",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.4.8;
 				PRODUCT_BUNDLE_IDENTIFIER = com.samschott.maestral;
 				STRIP_INSTALLED_PRODUCT = NO;
 			};
