@@ -78,3 +78,7 @@ jobs:
         with:
           name: ${{ steps.build.outputs.dmg_name }}
           path: ${{ steps.build.outputs.dmg_path }}
+
+      - uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: Auto-commit build updates
