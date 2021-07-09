@@ -3,6 +3,28 @@
 from setuptools import setup, find_packages
 
 
+install_requires = [
+    "click",
+    "importlib_metadata;python_version<'3.8'",
+    "importlib_resources;python_version<'3.9'",
+    "maestral>=1.4.6",
+    "markdown2",
+    "toga==0.3.0.dev27",
+    "rubicon-objc==0.4.0",
+]
+
+dev_requires = [
+    "black",
+    "bump2version",
+    "flake8",
+    "mypy",
+    "pre-commit",
+    "pytest",
+    "pytest-cov",
+    "types-pkg_resources",
+    "types-requests",
+]
+
 setup(
     name="maestral-cocoa",
     author="Sam Schott",
@@ -20,15 +42,8 @@ setup(
     },
     python_requires=">=3.6",
     setup_requires=["wheel"],
-    install_requires=[
-        "click",
-        "importlib_metadata;python_version<'3.8'",
-        "importlib_resources;python_version<'3.9'",
-        "maestral>=1.4.6",
-        "markdown2",
-        "toga==0.3.0.dev27",
-        "rubicon-objc==0.4.0",
-    ],
+    install_requires=install_requires,
+    extras_require={"dev": dev_requires},
     zip_safe=False,
     entry_points={
         "console_scripts": ["maestral_cocoa=maestral_cocoa.__main__:main"],
