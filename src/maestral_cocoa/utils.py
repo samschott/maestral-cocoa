@@ -10,7 +10,6 @@ from typing import (
     Awaitable,
     TypeVar,
     AsyncGenerator,
-    AnyStr,
     List,
     Any,
     Callable,
@@ -99,16 +98,18 @@ def generate_async_maestral(config_name: str, func_name: str, *args) -> AsyncGen
 def request_authorization_from_user_and_run(exe: List[str]) -> None:
     # shlex.join requires Python 3.8 and later.
 
-    source = f'do shell script "{shlex.join(exe)}" with administrator privileges'
+    cmd = shlex.join(exe)
+
+    source = f'do shell script "{cmd}" with administrator privileges'
 
     script = NSAppleScript.alloc().initWithSource(source)
     res = script.executeAndReturnError(None)
 
     if res is None:
-        raise RuntimeError("Could not privileged command")
+        raise RuntimeError(f"Could not run privileged command {cmd!r}")
 
 
-def is_empty(dirname: Union[AnyStr, os.PathLike]) -> bool:
+def is_empty(dirname: Union[str, bytes, os.PathLike]) -> bool:
     """Checks if a directory is empty."""
 
     exceptions = {".DS_Store"}
