@@ -1,0 +1,42 @@
+Metadata-Version: 2.1
+Name: survey
+Version: 3.4.3
+Summary: A simple library for creating beautiful interactive prompts.
+Home-page: https://github.com/Exahilosys/survey
+License: MIT
+Platform: UNKNOWN
+Requires-Python: >=3.5
+Requires-Dist: wrapio (>=1.0.0)
+Provides-Extra: docs
+Requires-Dist: sphinx ; extra == 'docs'
+Requires-Dist: sphinx-rtd-theme ; extra == 'docs'
+
+✨ A simple library for creating beautiful interactive prompts.
+
+.. image:: https://github.com/Exahilosys/survey/raw/master/images/showcase.gif
+
+Features
+--------
+
+- **Pythonic**: Friendly interface wrapped around simple functions.
+- **Lightweight**: Independent of any other prompt or visual libraries.
+- **Adaptable**: Works with any string formatting and window size.
+- **Extensive**: Packed with tweaks and features for any situation.
+- **Complete**: Supports Windows 10 (Anniversary Update and up).
+
+Installing
+----------
+
+.. code-block::
+
+    pip3 install survey
+
+Links
+-----
+
+- Check out the `Quickstart <https://survey.readthedocs.io/quickstart.html>`_ guide for more.
+- Greatly inspired by `AlecAivazis's GoLang <https://github.com/AlecAivazis/survey>`_ library.
+
+Suggestions and contributions are greatly appreciated!
+
+

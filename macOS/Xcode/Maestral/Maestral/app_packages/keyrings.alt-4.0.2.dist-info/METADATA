@@ -1,0 +1,67 @@
+Metadata-Version: 2.1
+Name: keyrings.alt
+Version: 4.0.2
+Summary: Alternate keyring implementations
+Home-page: https://github.com/jaraco/keyrings.alt
+Author: Jason R. Coombs
+Author-email: jaraco@jaraco.com
+License: UNKNOWN
+Platform: UNKNOWN
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3 :: Only
+Requires-Python: >=3.6
+Provides-Extra: docs
+Requires-Dist: sphinx ; extra == 'docs'
+Requires-Dist: jaraco.packaging (>=3.2) ; extra == 'docs'
+Requires-Dist: rst.linker (>=1.9) ; extra == 'docs'
+Provides-Extra: testing
+Requires-Dist: pytest (!=3.7.3,>=3.5) ; extra == 'testing'
+Requires-Dist: pytest-checkdocs (>=1.2.3) ; extra == 'testing'
+Requires-Dist: pytest-flake8 ; extra == 'testing'
+Requires-Dist: pytest-cov ; extra == 'testing'
+Requires-Dist: jaraco.test (>=3.2.0) ; extra == 'testing'
+Requires-Dist: backports.unittest-mock ; extra == 'testing'
+Requires-Dist: keyring (>=20) ; extra == 'testing'
+Requires-Dist: fs (<2,>=0.5) ; extra == 'testing'
+Requires-Dist: pycryptodomex ; extra == 'testing'
+Requires-Dist: pytest-black (>=0.3.7) ; (platform_python_implementation != "PyPy") and extra == 'testing'
+Requires-Dist: pytest-mypy ; (platform_python_implementation != "PyPy") and extra == 'testing'
+Requires-Dist: gdata ; (python_version == "2.7") and extra == 'testing'
+Requires-Dist: python-keyczar ; (python_version == "2.7") and extra == 'testing'
+
+.. image:: https://img.shields.io/pypi/v/keyrings.alt.svg
+   :target: `PyPI link`_
+
+.. image:: https://img.shields.io/pypi/pyversions/keyrings.alt.svg
+   :target: `PyPI link`_
+
+.. _PyPI link: https://pypi.org/project/keyrings.alt
+
+.. image:: https://github.com/jaraco/keyrings.alt/workflows/Automated%20Tests/badge.svg
+   :target: https://github.com/jaraco/keyrings.alt/actions?query=workflow%3A%22Automated+Tests%22
+   :alt: Automated Tests
+
+.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
+   :target: https://github.com/psf/black
+   :alt: Code style: Black
+
+.. .. image:: https://readthedocs.org/projects/keyringsalt/badge/?version=latest
+..    :target: https://keyringsalt.readthedocs.io/en/latest/?badge=latest
+
+Alternate keyring backend implementations for use with the
+`keyring package <https://pypi.python.org/pypi/keyring>`_.
+
+Keyrings in this package may have security risks or other implications. These
+backends were extracted from the main keyring project to
+make them available for those who wish to employ them, but are
+discouraged for general production use. Include this module and use its
+backends at your own risk.
+
+For example, the PlaintextKeyring stores passwords in plain text on the file
+system, defeating the intended purpose of this library to encourage best
+practices for security.
+
+

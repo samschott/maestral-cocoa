@@ -1,0 +1,12 @@
+wrapio-1.0.0.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
+wrapio-1.0.0.dist-info/LICENCE,sha256=nc2u5Ll9ZSVE7wcwVOenq4RyQTkTwMSbhdAZqKIEkto,1078
+wrapio-1.0.0.dist-info/METADATA,sha256=O3ay_l4jJx-ZMOvx5aphWiRPGy6qw-X-944Kpe7W8L8,406
+wrapio-1.0.0.dist-info/RECORD,,
+wrapio-1.0.0.dist-info/WHEEL,sha256=OqRkF0eY5GHssMorFjlbTIq072vpHpF60fIQA6lS9xA,92
+wrapio-1.0.0.dist-info/top_level.txt,sha256=YB3SpF-OigpDosUYm8XtAasAl4rtrawXfKkHwcTQse4,7
+wrapio/__init__.py,sha256=4bUSThZTgMNjSxRqdqF5R1xYPHb5gQL4ZXQY5uQZipI,7967
+wrapio/__pycache__/__init__.cpython-39.pyc,,
+wrapio/__pycache__/helpers.cpython-39.pyc,,
+wrapio/__pycache__/waits.cpython-39.pyc,,
+wrapio/helpers.py,sha256=-XhzsNgfebX27YwkQ4qecmydhURuOV5CGMYkD3JPsd0,758
+wrapio/waits.py,sha256=0_r5iRjT6H1_ZcfBnsMiWoL5qhDE0O0wIkCxs74K0eE,1079
