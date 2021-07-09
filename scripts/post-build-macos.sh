@@ -8,11 +8,6 @@ if [ -z "$1" ]; then
 fi
 BUNDLE_PATH="$1"
 
-echo "# ==== copy over CLI executable ================================================="
-
-cp "bin/maestral-cli" "$BUNDLE_PATH/Contents/MacOS/maestral-cli"
-chmod +x "$BUNDLE_PATH/Contents/MacOS/maestral-cli"
-
 echo "# ==== copy over entry-points metadata required by maestral ====================="
 
 python3 -m pip install --upgrade --no-deps . --target dist 1> /dev/null

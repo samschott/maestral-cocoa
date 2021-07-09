@@ -17,13 +17,14 @@
 		0D7B44A62555E00500CBC44B /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0D3550012551C447009178D1 /* CoreFoundation.framework */; };
 		0D7B44A82555E01500CBC44B /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0D7B44A72555E01500CBC44B /* Foundation.framework */; };
 		0D7B44BD25561C1800CBC44B /* libbzip2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 0D267B632554B99D00AC3E85 /* libbzip2.a */; };
-		6093520D25E9D15D00C549F3 /* libffi.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 6093520C25E9D14B00C549F3 /* libffi.tbd */; };
 		0D7B44BE25561C1800CBC44B /* libOpenSSL.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 0D267B652554B99D00AC3E85 /* libOpenSSL.a */; };
 		0D7B44BF25561C1800CBC44B /* libPython.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 0D267B5F255427F200AC3E85 /* libPython.a */; };
 		0D7B44C025561C1800CBC44B /* libxz.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 0D267B642554B99D00AC3E85 /* libxz.a */; };
 		0D7B44C125561C2000CBC44B /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 0D267B6F2555650500AC3E85 /* libsqlite3.tbd */; };
 		0D7B44C225561C2800CBC44B /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 0D267B6D255564F100AC3E85 /* libz.tbd */; };
 		0D7B44DA2556C84100CBC44B /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 0D354FD72551BFBD009178D1 /* main.m */; };
+		0D8F347C26986E130092BE76 /* maestral-cli in CopyFiles */ = {isa = PBXBuildFile; fileRef = 0D8F347B26986E060092BE76 /* maestral-cli */; };
+		6093520D25E9D15D00C549F3 /* libffi.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 6093520C25E9D14B00C549F3 /* libffi.tbd */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -47,6 +48,16 @@
 			name = "Embed App Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		0D8F347726986D0F0092BE76 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 12;
+			dstPath = "";
+			dstSubfolderSpec = 6;
+			files = (
+				0D8F347C26986E130092BE76 /* maestral-cli in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
@@ -58,11 +69,11 @@
 		0D267B6A2554BB1800AC3E85 /* app */ = {isa = PBXFileReference; lastKnownFileType = folder; path = app; sourceTree = "<group>"; };
 		0D267B6D255564F100AC3E85 /* libz.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = usr/lib/libz.tbd; sourceTree = SDKROOT; };
 		0D267B6F2555650500AC3E85 /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
-		0D354FC82551BFBA009178D1 /* Maestral.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Maestral.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		0D354FC82551BFBA009178D1 /* Maestral.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Maestral.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0D354FD12551BFBD009178D1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		0D354FD62551BFBD009178D1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		0D354FD72551BFBD009178D1 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
-		0D354FD92551BFBD009178D1 /* maestral-cocoa.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = maestral-cocoa.entitlements; sourceTree = "<group>"; };
+		0D354FD92551BFBD009178D1 /* maestral-cocoa.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "maestral-cocoa.entitlements"; sourceTree = "<group>"; };
 		0D354FE52551C1E1009178D1 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
 		0D354FEE2551C249009178D1 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		0D354FFF2551C43F009178D1 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
@@ -70,6 +81,7 @@
 		0D7B44A32555DFE300CBC44B /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
 		0D7B44A72555E01500CBC44B /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		0D7B44A925560B2400CBC44B /* Support */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Support; sourceTree = "<group>"; };
+		0D8F347B26986E060092BE76 /* maestral-cli */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "maestral-cli"; sourceTree = "<group>"; };
 		6093520C25E9D14B00C549F3 /* libffi.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libffi.tbd; path = usr/lib/libffi.tbd; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -118,6 +130,7 @@
 		0D354FCA2551BFBA009178D1 /* Maestral */ = {
 			isa = PBXGroup;
 			children = (
+				0D8F347B26986E060092BE76 /* maestral-cli */,
 				0D267B6A2554BB1800AC3E85 /* app */,
 				0D267B692554BB1800AC3E85 /* app_packages */,
 				0D354FD12551BFBD009178D1 /* Assets.xcassets */,
@@ -125,7 +138,7 @@
 				0D354FD72551BFBD009178D1 /* main.m */,
 				0D354FD92551BFBD009178D1 /* maestral-cocoa.entitlements */,
 			);
-			path = "Maestral";
+			path = Maestral;
 			sourceTree = "<group>";
 		};
 		0D354FE42551C1E1009178D1 /* Frameworks */ = {
@@ -161,13 +174,14 @@
 				0D354FC62551BFBA009178D1 /* Resources */,
 				0D7B44BC2556177100CBC44B /* Embed Frameworks */,
 				0D7B44EB2556C8B800CBC44B /* Embed App Extensions */,
+				0D8F347726986D0F0092BE76 /* CopyFiles */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
-			name = "Maestral";
-			productName = "Maestral";
+			name = Maestral;
+			productName = Maestral;
 			productReference = 0D354FC82551BFBA009178D1 /* Maestral.app */;
 			productType = "com.apple.product-type.application";
 		};
@@ -323,7 +337,7 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				PRODUCT_NAME = "Maestral";
+				PRODUCT_NAME = Maestral;
 				SDKROOT = macosx;
 			};
 			name = Debug;
@@ -395,7 +409,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
-				PRODUCT_NAME = "Maestral";
+				PRODUCT_NAME = Maestral;
 				SDKROOT = macosx;
 			};
 			name = Release;
@@ -404,7 +418,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD)";
-				ASSETCATALOG_COMPILER_APPICON_NAME = "Maestral";
+				ASSETCATALOG_COMPILER_APPICON_NAME = Maestral;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
@@ -419,7 +433,7 @@
 					"$(PROJECT_DIR)",
 				);
 				GCC_C_LANGUAGE_STANDARD = gnu99;
-				INFOPLIST_FILE = "Maestral/Info.plist";
+				INFOPLIST_FILE = Maestral/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -445,7 +459,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD)";
-				ASSETCATALOG_COMPILER_APPICON_NAME = "Maestral";
+				ASSETCATALOG_COMPILER_APPICON_NAME = Maestral;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
@@ -460,7 +474,7 @@
 					"$(PROJECT_DIR)",
 				);
 				GCC_C_LANGUAGE_STANDARD = gnu99;
-				INFOPLIST_FILE = "Maestral/Info.plist";
+				INFOPLIST_FILE = Maestral/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
