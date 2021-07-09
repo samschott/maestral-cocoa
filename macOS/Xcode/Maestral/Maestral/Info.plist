@@ -11,7 +11,7 @@
 	<key>CFBundleIconName</key>
 	<string>Maestral</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.samschott.maestral-cocoa</string>
+	<string>com.samschott.maestral</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
@@ -34,11 +34,10 @@
 	<string>NSApplication</string>
 	<key>MainModule</key>
 	<string>maestral_cocoa</string>
-	
-    <key>LSEnvironment</key>
-    <dict>
-        <key>LC_CTYPE</key>
-        <string>UTF-8</string>
-    </dict>
+	<key>LSEnvironment</key>
+	<dict>
+		<key>LC_CTYPE</key>
+		<string>UTF-8</string>
+	</dict>
 </dict>
 </plist>
