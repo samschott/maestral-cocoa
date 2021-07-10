@@ -48,6 +48,7 @@ Temporary Items
 
 # Distribution and packaging
 *.dmg
+*.pkg
 
 ### PyCharm ###
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio, WebStorm and Rider
