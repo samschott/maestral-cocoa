@@ -6,7 +6,7 @@ import os
 import os.path as osp
 import asyncio
 from pathlib import Path
-from typing import Any, Union
+from typing import Any, Union, TYPE_CHECKING
 
 # external imports
 import toga
@@ -28,6 +28,9 @@ from .resources import FACEHOLDER_PATH
 from .autostart import AutoStart
 from .constants import FROZEN
 
+if TYPE_CHECKING:
+    from .app import MaestralGui
+
 
 class SettingsWindow(SettingsGui):
 
@@ -42,7 +45,7 @@ class SettingsWindow(SettingsGui):
     _cached_pic_stat = os.stat(FACEHOLDER_PATH)
     _cached_dbx_location = None
 
-    def __init__(self, mdbx: MaestralProxy, app: toga.App) -> None:
+    def __init__(self, mdbx: MaestralProxy, app: "MaestralGui") -> None:
         super().__init__(app=app)
 
         self.mdbx = mdbx
@@ -130,10 +133,8 @@ class SettingsWindow(SettingsGui):
             await self.app.exit(stop_daemon=True)
 
     async def on_update_interval_selected(self, widget: toga.Selection) -> None:
-        value = str(widget.value)
-        self.mdbx.set_conf(
-            "app", "update_notification_interval", self._update_interval_mapping[value]
-        )
+        interval = self._update_interval_mapping[str(widget.value)]
+        self.app.updator.update_check_interval = interval
 
     async def on_autostart_clicked(self, widget: Switch) -> None:
         self.autostart.enabled = widget.state == ON
