@@ -3,8 +3,6 @@
 # system imports
 import sys
 import os
-import asyncio
-import time
 from subprocess import Popen
 from datetime import datetime, timedelta
 from typing import Any
@@ -60,9 +58,10 @@ from .settings import SettingsWindow
 from .syncissues import SyncIssuesWindow
 from .activity import ActivityWindow
 from .dbx_location_dialog import DbxLocationDialog
-from .dialogs import UpdateDialog, ProgressDialog, RelinkDialog
+from .dialogs import RelinkDialog
 from .resources import APP_ICON_PATH, resource_path
 from .autostart import AutoStart
+from .updater import AutoUpdater
 
 
 def name(cls):
@@ -111,11 +110,14 @@ class MaestralGui(SystemTrayApp):
     def startup(self) -> None:
 
         self._started = False
+        self._cached_status = CONNECTING
+
+        self.mdbx = self.get_or_start_maestral_daemon()
 
         self.autostart = AutoStart(self.config_name)
+        self.updater = AutoUpdater(self.mdbx, self)
 
         self.menu = Menu()
-        self._cached_status = CONNECTING
         self.tray = StatusBarItem(
             icon=self.icon_mapping.get(CONNECTING), menu=self.menu
         )
@@ -145,7 +147,8 @@ class MaestralGui(SystemTrayApp):
                 group=toga.Group.HELP,
             ),
         )
-        self.load_maestral()
+
+        self.ensure_linked()
 
     def set_icon(self, status: str) -> None:
         if status != self._cached_status:
@@ -156,26 +159,17 @@ class MaestralGui(SystemTrayApp):
 
         while True:
             try:
-                self.update_status()
+                await self.update_status()
                 await self.update_error()
-
                 await call_async_maestral(self.config_name, "status_change_longpoll")
-
             except CommunicationError:
                 super().exit()
 
-    async def periodic_check_for_updates(self, interval: int = 30 * 60):
-        while True:
-            await asyncio.sleep(interval)
-            await self.auto_check_for_updates()
+    async def on_menu_open(self, sender: Any) -> None:
+        await self.update_snoozed()
+        await self.update_status()
 
-    def on_menu_open(self, sender: Any) -> None:
-        self.update_snoozed()
-        self.update_status()
-
-    def load_maestral(self) -> None:
-
-        self.mdbx = self.get_or_start_maestral_daemon()
+    def ensure_linked(self) -> None:
 
         try:
             pending_link = self.mdbx.pending_link
@@ -197,20 +191,18 @@ class MaestralGui(SystemTrayApp):
         else:
             self.mdbx.start_sync()
             self.setup_ui_linked()
-
+            self.updater.start_updater()
             create_task(self.periodic_refresh_gui())
-            create_task(self.periodic_check_for_updates())
 
     def _on_setup_completed(self) -> None:
 
-        if self.setup_dialog.exit_status == self.setup_dialog.ACCEPTED:
-            self.mdbx.start_sync()
-
-            self.setup_ui_linked()
-            create_task(self.periodic_refresh_gui())
-            create_task(self.periodic_check_for_updates())
-        else:
+        if self.setup_dialog.exit_status == SetupDialog.ACCEPTED:
             create_task(self.exit(stop_daemon=True))
+        else:
+            self.mdbx.start_sync()
+            self.setup_ui_linked()
+            self.updater.start_updater()
+            create_task(self.periodic_refresh_gui())
 
     def get_or_start_maestral_daemon(self) -> MaestralProxy:
 
@@ -311,7 +303,7 @@ class MaestralGui(SystemTrayApp):
 
         self.item_settings = MenuItem("Preferences...", action=self.on_settings_clicked)
         self.item_updates = MenuItem(
-            "Check for Updates...", action=self.on_check_for_updates_clicked
+            "Check for Updates...", action=self.updater.check_for_updates
         )
 
         if self._started:
@@ -388,59 +380,9 @@ class MaestralGui(SystemTrayApp):
         if choice == 0:
             self.mdbx.rebuild_index()
 
-    # ==== other callbacks  ============================================================
+    # ==== periodic refresh of gui =====================================================
 
-    async def auto_check_for_updates(self):
-
-        last_update_check = self.mdbx.get_state("app", "update_notification_last")
-        interval = self.mdbx.get_conf("app", "update_notification_interval")
-
-        if (
-            interval == 0 or time.time() - last_update_check < interval
-        ):  # checks disabled
-            return
-
-        res = await call_async_maestral(self.config_name, "check_for_updates")
-        if res["update_available"]:
-            self.mdbx.set_state("app", "update_notification_last", time.time())
-            self.show_update_dialog(res["latest_release"], res["release_notes"])
-
-    async def on_check_for_updates_clicked(self, widget: Any):
-
-        progress = ProgressDialog("Checking for Updates", app=self)
-        progress.raise_()
-
-        res = await call_async_maestral(self.config_name, "check_for_updates")
-
-        if not progress.visible:
-            return  # aborted by user
-        else:
-            progress.close()
-
-        if res["error"]:
-            await self.alert_async(
-                title="Could not check for updates", message=res["error"], level="error"
-            )
-        elif res["update_available"]:
-            self.show_update_dialog(res["latest_release"], res["release_notes"])
-        elif not res["update_available"]:
-            message = "Maestral v{} is the newest version available.".format(
-                res["latest_release"]
-            )
-            await self.alert_async(title="You’re up-to-date!", message=message)
-
-    def show_update_dialog(self, latest_release: str, release_notes: str) -> None:
-
-        self.update_dialog = UpdateDialog(
-            version=latest_release,
-            release_notes=release_notes,
-            icon=self.icon,
-        )
-        self.update_dialog.raise_()
-
-    # ==== periodic updates ============================================================
-
-    def update_status(self) -> None:
+    async def update_status(self) -> None:
         """Change icon according to status."""
 
         n_sync_errors = len(self.mdbx.sync_errors)
@@ -468,7 +410,7 @@ class MaestralGui(SystemTrayApp):
 
             self.item_status.label = status
 
-    def update_snoozed(self) -> None:
+    async def update_snoozed(self) -> None:
 
         minutes = self.mdbx.notification_snooze
 
@@ -503,11 +445,11 @@ class MaestralGui(SystemTrayApp):
         err = errs[-1]
 
         if err["type"] == name(NoDropboxDirError):
-            self._exec_dbx_location_dialog()
+            await self._exec_dbx_location_dialog()
         elif err["type"] == name(TokenRevokedError):
-            self._exec_relink_dialog(RelinkDialog.REVOKED)
+            await self._exec_relink_dialog(RelinkDialog.REVOKED)
         elif err["type"] == name(TokenExpiredError):
-            self._exec_relink_dialog(RelinkDialog.EXPIRED)
+            await self._exec_relink_dialog(RelinkDialog.EXPIRED)
         elif (
             name(SyncError) in err["inherits"]
             or name(MaestralApiError) in err["inherits"]
@@ -522,12 +464,12 @@ class MaestralGui(SystemTrayApp):
             # We don't know this error yet. Show a full stacktrace dialog.
             await self._exec_error_dialog(err)
 
-    def _exec_dbx_location_dialog(self) -> None:
+    async def _exec_dbx_location_dialog(self) -> None:
         self.setup_dialog = DbxLocationDialog(mdbx=self.mdbx, app=self)
         self.setup_dialog.raise_()
         self.setup_dialog.on_close = self._on_setup_completed
 
-    def _exec_relink_dialog(self, reason: int) -> None:
+    async def _exec_relink_dialog(self, reason: int) -> None:
         self.rld = RelinkDialog(self.mdbx, self, reason).raise_()
 
     async def _exec_error_dialog(self, err: dict):
