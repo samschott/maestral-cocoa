@@ -65,6 +65,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0D12CB4C26992355008EB3B8 /* Maestral.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Maestral.entitlements; sourceTree = "<group>"; };
 		0D267B5F255427F200AC3E85 /* libPython.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libPython.a; path = Support/Python/libPython.a; sourceTree = "<group>"; };
 		0D267B632554B99D00AC3E85 /* libbzip2.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libbzip2.a; path = Support/BZip2/libbzip2.a; sourceTree = "<group>"; };
 		0D267B642554B99D00AC3E85 /* libxz.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libxz.a; path = Support/XZ/libxz.a; sourceTree = "<group>"; };
@@ -77,7 +78,6 @@
 		0D354FD12551BFBD009178D1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		0D354FD62551BFBD009178D1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		0D354FD72551BFBD009178D1 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
-		0D354FD92551BFBD009178D1 /* maestral-cocoa.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "maestral-cocoa.entitlements"; sourceTree = "<group>"; };
 		0D354FE52551C1E1009178D1 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
 		0D354FEE2551C249009178D1 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		0D354FFF2551C43F009178D1 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
@@ -136,13 +136,13 @@
 		0D354FCA2551BFBA009178D1 /* Maestral */ = {
 			isa = PBXGroup;
 			children = (
+				0D12CB4C26992355008EB3B8 /* Maestral.entitlements */,
 				0D8F347B26986E060092BE76 /* maestral-cli */,
 				0D267B6A2554BB1800AC3E85 /* app */,
 				0D267B692554BB1800AC3E85 /* app_packages */,
 				0D354FD12551BFBD009178D1 /* Assets.xcassets */,
 				0D354FD62551BFBD009178D1 /* Info.plist */,
 				0D354FD72551BFBD009178D1 /* main.m */,
-				0D354FD92551BFBD009178D1 /* maestral-cocoa.entitlements */,
 			);
 			path = Maestral;
 			sourceTree = "<group>";
@@ -448,6 +448,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
+				CODE_SIGN_ENTITLEMENTS = Maestral/Maestral.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -487,6 +488,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
+				CODE_SIGN_ENTITLEMENTS = Maestral/Maestral.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_TESTABILITY = YES;
