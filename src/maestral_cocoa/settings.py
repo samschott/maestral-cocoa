@@ -134,7 +134,7 @@ class SettingsWindow(SettingsGui):
 
     async def on_update_interval_selected(self, widget: toga.Selection) -> None:
         interval = self._update_interval_mapping[str(widget.value)]
-        self.app.updator.update_check_interval = interval
+        self.app.updater.update_check_interval = interval
 
     async def on_autostart_clicked(self, widget: Switch) -> None:
         self.autostart.enabled = widget.state == ON
