@@ -19,9 +19,14 @@ from .private.widgets import SystemTrayApp
 class AutoUpdaterBackend(ABC):
     def __init__(self, mdbx: MaestralProxy):
         self.mdbx = mdbx
+        self.started = False
+
+    def start_updater(self) -> None:
+        self._start_updater()
+        self.started = True
 
     @abstractmethod
-    def start_updater(self) -> None:
+    def _start_updater(self) -> None:
         ...
 
     @abstractmethod
@@ -81,13 +86,17 @@ class AutoUpdaterSparkle(AutoUpdaterBackend):
         update_interval = self.mdbx.get_conf("app", "update_notification_interval")
         self.set_update_check_interval(update_interval)
 
-    def set_update_check_interval(self, value: int) -> None:
+    def set_update_check_interval(self, value: float) -> None:
         if value > 0:
             self.spu_controller.updater.updateCheckInterval = value
 
         self.spu_controller.updater.automaticallyChecksForUpdates = value != 0
 
-    def start_updater(self) -> None:
+        if self.started:
+            # reset countdown / timer to next update check to reflect new interval
+            self.spu_controller.updater.resetUpdateCycle()
+
+    def _start_updater(self) -> None:
         self.spu_controller.updater.startUpdater(None)
 
     async def check_for_updates(self):
@@ -113,7 +122,7 @@ class AutoUpdaterFallback(AutoUpdaterBackend):
         self.app = app
         self.config_name = self.mdbx.config_name
 
-    def start_updater(self) -> None:
+    def _start_updater(self) -> None:
         create_task(self._periodic_check_for_updates())
 
     def set_update_check_interval(self, value: int) -> None:
