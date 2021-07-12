@@ -11,7 +11,7 @@ on:
     - cron: "19 3 * * *" # everyday at 03:19
 
 jobs:
-  check-date:
+  check_date:
     runs-on: ubuntu-latest
     name: Check latest commit
     outputs:
@@ -31,8 +31,9 @@ jobs:
         run: |
           test -z $(git rev-list  --after="23 hours"  ${{ github.sha }}) && echo "::set-output name=should_run::false"
 
-  build-macos:
+  build_macos:
     runs-on: macos-11.0
+    name: Build app bundle
     needs: check_date
     if: ${{ needs.check_date.outputs.should_run != 'false' }}
     steps:
