@@ -65,7 +65,7 @@ jobs:
         id: build
         run: |
           # build app
-          briefcase update macOS Xcode -r
+          briefcase update macOS Xcode -r -d
           briefcase build macOS Xcode
 
           # run post-build scripts:
