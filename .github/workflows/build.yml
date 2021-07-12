@@ -32,7 +32,7 @@ jobs:
           test -z $(git rev-list  --after="23 hours"  ${{ github.sha }}) && echo "::set-output name=should_run::false"
 
   build_macos:
-    runs-on: macos-11.0
+    runs-on: macos-11
     name: Build app bundle
     needs: check_date
     if: ${{ needs.check_date.outputs.should_run != 'false' }}
@@ -57,7 +57,6 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python3 -m pip install --upgrade setuptools wheel
           python3 -m pip install --upgrade pip
           python3 -m pip install --upgrade briefcase
           chmod +x ./scripts/post-build-macos.sh
