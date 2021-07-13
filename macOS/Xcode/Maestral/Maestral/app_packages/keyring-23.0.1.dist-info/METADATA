@@ -16,6 +16,7 @@ Classifier: License :: OSI Approved :: MIT License
 Classifier: Programming Language :: Python :: 3
 Classifier: Programming Language :: Python :: 3 :: Only
 Requires-Python: >=3.6
+License-File: LICENSE
 Requires-Dist: importlib-metadata (>=3.6)
 Requires-Dist: SecretStorage (>=3.2) ; sys_platform == "linux"
 Requires-Dist: jeepney (>=0.4.2) ; sys_platform == "linux"
