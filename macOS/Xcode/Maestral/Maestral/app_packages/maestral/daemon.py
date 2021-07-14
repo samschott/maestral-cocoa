@@ -161,13 +161,12 @@ def _flock_struct() -> Tuple[bytes, str, int]:
 
     if IS_MACOS:
         # struct flock {
-        #     off_t       l_start;    /* starting offset */
-        #     off_t       l_len;      /* len = 0 means until end of file */
-        #     pid_t       l_pid;      /* lock owner */
-        #     short       l_type;     /* lock type: read/write, etc. */
-        #     short       l_whence;   /* type of l_start */
+        #     off_t       l_start;    /* long long */
+        #     off_t       l_len;      /* long long */
+        #     pid_t       l_pid;      /* int */
+        #     short       l_type;
+        #     short       l_whence;
         # };
-        # off_t = long long, pid_t = int
 
         fmt = "qqihh"
         pid_index = 2
@@ -175,14 +174,13 @@ def _flock_struct() -> Tuple[bytes, str, int]:
     elif sys.platform.startswith("linux"):
 
         # struct flock {
-        #     short       l_type;    /* lock type: read/write, etc. */
-        #     short       l_whence;  /* type of l_start */
-        #     off_t       l_start;   /* starting offset */
-        #     off_t       l_len;     /* len = 0 means until end of file */
-        #     pid_t       l_pid;     /* lock owner */
-        #     __ARCH_FLOCK_PAD;
+        #     short       l_type;
+        #     short       l_whence;
+        #     off_t       l_start;   /* long int or long long */
+        #     off_t       l_len;     /* long int or long long */
+        #     pid_t       l_pid;     /* int */
+        #     __ARCH_FLOCK_PAD;      /* long int */
         # };
-        # off_t = long int, pid_t = int
 
         fmt = "hh" + start_len + "ih"
         pid_index = 4

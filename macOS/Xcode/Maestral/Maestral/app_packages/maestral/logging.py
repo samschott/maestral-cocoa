@@ -160,7 +160,7 @@ class SdNotificationHandler(logging.Handler):
 
         :param record: Log record.
         """
-        self.notifier.notify(f"STATUS={record.message}")
+        self.notifier.notify(f"STATUS={record.getMessage()}")
 
 
 def scoped_logger_name(module_name: str, config_name: str = "maestral") -> str:
@@ -227,7 +227,7 @@ def setup_logging(
     root_logger = scoped_logger("maestral", config_name)
     root_logger.setLevel(min(log_level, logging.INFO))
 
-    root_logger.handlers = []  # clean up any previous handlers
+    root_logger.handlers.clear()  # clean up any previous handlers
 
     log_fmt_long = logging.Formatter(
         fmt="%(asctime)s %(module)s %(levelname)s: %(message)s",
@@ -266,7 +266,6 @@ def setup_logging(
     root_logger.addHandler(log_handler_sd)
 
     # Log to stderr if requested.
-
     log_handler_stream: Union[logging.StreamHandler, logging.NullHandler]
 
     if log_to_stderr:
