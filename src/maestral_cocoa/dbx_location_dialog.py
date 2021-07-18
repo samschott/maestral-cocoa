@@ -42,7 +42,7 @@ class DbxLocationDialog(Dialog):
         self.config_name = self.mdbx.config_name
         self.exit_status = self.REJECTED
 
-        dropbox_path = self.mdbx.get_conf("main", "path")
+        dropbox_path = self.mdbx.get_conf("sync", "path")
 
         if dropbox_path == "":
             dropbox_path = f"{get_home_dir()}/Dropbox ({self.config_name.capitalize()})"
