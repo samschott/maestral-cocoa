@@ -213,7 +213,7 @@ class SettingsWindow(SettingsGui):
 
     # ==== populate gui with data ======================================================
 
-    async def periodic_refresh_gui(self, sender: Any = None):
+    async def periodic_refresh_gui(self, sender: Any = None) -> None:
 
         while self._refresh:
             self.refresh_gui()

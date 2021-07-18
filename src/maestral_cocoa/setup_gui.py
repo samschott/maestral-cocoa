@@ -31,8 +31,6 @@ class SetupDialogGui(Window):
     CONTENT_WIDTH = WINDOW_WIDTH - 40
     CONTENT_HEIGHT = WINDOW_HEIGHT - 15 - 25
 
-    current_page = 0
-
     page_style = Pack(
         width=WINDOW_WIDTH,
         height=WINDOW_HEIGHT,
@@ -58,6 +56,8 @@ class SetupDialogGui(Window):
         self._impl.native.titleVisibility = 1
         self._impl.native.styleMask |= NSFullSizeContentViewWindowMask
         self._impl.native.movableByWindowBackground = True
+
+        self.current_page = 0
 
         # ==== welcome page ============================================================
         # noinspection PyTypeChecker
@@ -244,6 +244,3 @@ class SetupDialogGui(Window):
         self.content.remove(self.content.children[0])
         self.content.add(self.pages[self.current_page])
         self.show()
-
-    def current_index(self) -> int:
-        return self.current_page

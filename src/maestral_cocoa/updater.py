@@ -4,6 +4,7 @@
 import time
 import asyncio
 from abc import ABC, abstractmethod
+from typing import Any
 
 # external imports
 from maestral.constants import IS_MACOS
@@ -11,7 +12,7 @@ from maestral.daemon import MaestralProxy, stop_maestral_daemon_process
 
 # local imports
 from .constants import FROZEN
-from .utils import create_task, call_async_maestral
+from .utils import call_async_maestral
 from .dialogs import UpdateDialog, ProgressDialog
 from .private.widgets import SystemTrayApp
 
@@ -34,11 +35,11 @@ class AutoUpdaterBackend(ABC):
         ...
 
     @abstractmethod
-    async def check_for_updates(self):
+    async def check_for_updates(self) -> None:
         ...
 
     @abstractmethod
-    async def check_for_updates_in_background(self):
+    async def check_for_updates_in_background(self) -> None:
         ...
 
 
@@ -99,10 +100,10 @@ class AutoUpdaterSparkle(AutoUpdaterBackend):
     def _start_updater(self) -> None:
         self.spu_controller.updater.startUpdater(None)
 
-    async def check_for_updates(self):
+    async def check_for_updates(self) -> None:
         self.spu_controller.checkForUpdates(None)
 
-    async def check_for_updates_in_background(self):
+    async def check_for_updates_in_background(self) -> None:
         self.spu_controller.updater.checkForUpdatesInBackground()
 
 
@@ -123,12 +124,12 @@ class AutoUpdaterFallback(AutoUpdaterBackend):
         self.config_name = self.mdbx.config_name
 
     def _start_updater(self) -> None:
-        create_task(self._periodic_check_for_updates())
+        self.app.add_background_task(self._periodic_check_for_updates)
 
     def set_update_check_interval(self, value: int) -> None:
         pass
 
-    async def check_for_updates(self):
+    async def check_for_updates(self) -> None:
         progress = ProgressDialog("Checking for Updates", app=self.app)
         progress.raise_()
 
@@ -160,7 +161,7 @@ class AutoUpdaterFallback(AutoUpdaterBackend):
         )
         self.update_dialog.raise_()
 
-    async def check_for_updates_in_background(self):
+    async def check_for_updates_in_background(self) -> None:
 
         last_update_check = self.mdbx.get_state("app", "update_notification_last")
         interval = self.mdbx.get_conf("app", "update_notification_interval")
@@ -176,9 +177,9 @@ class AutoUpdaterFallback(AutoUpdaterBackend):
             self.mdbx.set_state("app", "update_notification_last", time.time())
             self._show_update_dialog(res["latest_release"], res["release_notes"])
 
-    async def _periodic_check_for_updates(self, interval: int = 30 * 60):
+    async def _periodic_check_for_updates(self, sender: Any = None) -> None:
         while True:
-            await asyncio.sleep(interval)
+            await asyncio.sleep(30 * 60)
             await self.check_for_updates_in_background()
 
 
