@@ -17,7 +17,6 @@ from rubicon.objc import (
     at,
 )
 from toga.constants import LEFT, RIGHT, CENTER, JUSTIFY, TRANSPARENT
-from toga.platform import get_platform_factory
 from toga_cocoa.libs import (
     NSColor,
     NSString,
@@ -30,7 +29,6 @@ from toga_cocoa.libs import (
     NSObject,
     NSApplicationActivationPolicyAccessory,
     NSApplicationActivationPolicyRegular,
-    NSBundle,
     NSImage,
     NSImageInterpolationHigh,
     NSGraphicsContext,
@@ -145,7 +143,7 @@ class Icon:
     def __init__(self, interface, path=None, for_path=None, template=None):
         self.interface = interface
         self.interface._impl = self
-        self.path = path
+        self.path = str(path) if path else None
         self.for_path = for_path
         self.template = template
 
@@ -346,8 +344,7 @@ class FreestandingIconButton(TogaButton):
         self.native.title = " {}".format(self.interface.label)
 
     def set_icon(self, icon_iface):
-        factory = get_platform_factory()
-        icon = icon_iface.bind(factory)
+        icon = icon_iface.bind(self.interface.factory)
         if self.interface.style.height > 0:
             icon_size = self.interface.style.height
         else:
@@ -537,8 +534,7 @@ class MenuItem:
 
     def set_icon(self, icon):
         if icon:
-            factory = get_platform_factory()
-            icon = icon.bind(factory)
+            icon = icon.bind(self.interface.factory)
             nsimage = resize_image_to(icon.native, 16)
             self.native.image = nsimage
         else:
@@ -629,8 +625,7 @@ class StatusBarItem:
         self.size = NSStatusBar.systemStatusBar.thickness
 
     def set_icon(self, icon):
-        factory = get_platform_factory()
-        icon = icon.bind(factory)
+        icon = icon.bind(self.interface.factory)
         nsimage = resize_image_to(icon.native, self.size - 2 * self.MARGIN)
         nsimage.template = True
         self.native.button.image = nsimage
@@ -660,28 +655,14 @@ class SystemTrayApp(TogaApp):
     _MAIN_WINDOW_CLASS = None
 
     def create(self):
-        self.native = NSApplication.sharedApplication
-        self.native.activationPolicy = NSApplicationActivationPolicyAccessory
-
-        factory = get_platform_factory()
-        self.interface.icon.bind(factory)
-        self.native.applicationIconImage = self.interface.icon._impl.native
-
-        self.resource_path = osp.dirname(osp.dirname(NSBundle.mainBundle.bundlePath))
+        super().create()
+        # self.native.activationPolicy = NSApplicationActivationPolicyAccessory
 
         self.delegate = SystemTrayAppDelegate.alloc().init()
         self.delegate.impl = self
         self.delegate.interface = self.interface
         self.delegate.native = self.native
         self.native.delegate = self.delegate
-
-        # Call user code to populate the main window
-        self.interface.startup()
-
-        # Create the lookup table of menu items,
-        # then force the creation of the menus.
-        self._menu_items = {}
-        self.create_menus()
 
     def select_file(self):
         pass
