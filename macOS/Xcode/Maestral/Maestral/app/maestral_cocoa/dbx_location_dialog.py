@@ -2,9 +2,11 @@
 
 # system imports
 import os.path as osp
+from typing import Optional, Callable
 
 # external imports
 import toga
+from toga.handlers import wrapped_handler
 from toga.style.pack import Pack, FONT_SIZE_CHOICES
 from maestral.utils.appdirs import get_home_dir
 from maestral.utils.path import delete
@@ -40,9 +42,11 @@ class DbxLocationDialog(Dialog):
 
         self.mdbx = mdbx
         self.config_name = self.mdbx.config_name
-        self.exit_status = self.REJECTED
 
-        dropbox_path = self.mdbx.get_conf("main", "path")
+        self._on_success: Optional[Callable] = None
+        self._on_failure: Optional[Callable] = None
+
+        dropbox_path = self.mdbx.get_conf("sync", "path")
 
         if dropbox_path == "":
             dropbox_path = f"{get_home_dir()}/Dropbox ({self.config_name.capitalize()})"
@@ -79,18 +83,40 @@ class DbxLocationDialog(Dialog):
         self.msg_content.style.width = 450
         self.msg_content.style.height = 130
 
+    @property
+    def on_success(self):
+        return self._on_success
+
+    @on_success.setter
+    def on_success(self, value):
+        self._on_success = wrapped_handler(self, value)
+
+    @property
+    def on_failure(self):
+        return self._on_failure
+
+    @on_failure.setter
+    def on_failure(self, value):
+        self._on_failure = wrapped_handler(self, value)
+
     async def on_dialog_pressed(self, btn_name: str) -> None:
 
         self.dialog_buttons.enabled = False
 
         if btn_name == "Quit":
-            self.exit_status = self.REJECTED
+
+            if self.on_failure:
+                self.on_failure(self)
+
             self.close()
 
         elif btn_name == "Unlink":
             self.spinner.start()
             self.mdbx.unlink()
-            self.exit_status = self.REJECTED
+
+            if self.on_failure:
+                self.on_failure(self)
+
             self.close()
 
         elif btn_name == "Select":
@@ -121,5 +147,8 @@ class DbxLocationDialog(Dialog):
                 self.config_name, "create_dropbox_directory", dropbox_path
             )
             self.mdbx.rebuild_index()
-            self.exit_status = self.ACCEPTED
+
+            if self.on_success:
+                self.on_success(self)
+
             self.close()

@@ -16,7 +16,6 @@ from maestral.daemon import MaestralProxy
 # local imports
 from .utils import (
     request_authorization_from_user_and_run,
-    create_task,
     call_async_maestral,
     is_empty,
 )
@@ -48,6 +47,9 @@ class SettingsWindow(SettingsGui):
     def __init__(self, mdbx: MaestralProxy, app: "MaestralGui") -> None:
         super().__init__(app=app)
 
+        self._refresh = False
+        self._refresh_interval = 2
+
         self.mdbx = mdbx
         self.autostart = AutoStart(self.mdbx.config_name)
 
@@ -67,8 +69,6 @@ class SettingsWindow(SettingsGui):
         )
 
         self.combobox_dbx_location.dialog_message = path_selection_message
-
-        self._periodic_refresh_task: Union[asyncio.Task, asyncio.Future, None] = None
         self.refresh_gui()
 
     # ==== callback implementations ====================================================
@@ -122,15 +122,14 @@ class SettingsWindow(SettingsGui):
         )
 
         if choice == 0:
-            if self._periodic_refresh_task is not None:
-                self._periodic_refresh_task.cancel()
+            self._refresh = False
             self.mdbx.unlink()
             await self.alert_sheet(
                 title="Successfully unlinked",
                 message="Maestral will now quit.",
                 button_labels=("Ok",),
             )
-            await self.app.exit(stop_daemon=True)
+            await self.app.exit_and_stop_daemon()
 
     async def on_update_interval_selected(self, widget: toga.Selection) -> None:
         interval = self._update_interval_mapping[str(widget.value)]
@@ -214,11 +213,11 @@ class SettingsWindow(SettingsGui):
 
     # ==== populate gui with data ======================================================
 
-    async def periodic_refresh_gui(self, interval: int = 2):
+    async def periodic_refresh_gui(self, sender: Any = None) -> None:
 
-        while True:
+        while self._refresh:
             self.refresh_gui()
-            await asyncio.sleep(interval)
+            await asyncio.sleep(self._refresh_interval)
 
     def refresh_gui(self) -> None:
 
@@ -264,10 +263,10 @@ class SettingsWindow(SettingsGui):
         self.label_email.text = acc_mail + acc_type_text
         self.label_usage.text = acc_space_usage
 
-    def on_close(self) -> None:
-        if self._periodic_refresh_task:
-            self._periodic_refresh_task.cancel()
+    def on_close(self, sender: Any = None) -> None:
+        self._refresh = False
 
     def show(self) -> None:
-        self._periodic_refresh_task = create_task(self.periodic_refresh_gui())
+        self._refresh = True
+        self.app.add_background_task(self.periodic_refresh_gui)
         super().show()

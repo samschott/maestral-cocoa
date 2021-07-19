@@ -6,7 +6,7 @@ maestral-1.4.8.dev0.dist-info/METADATA,sha256=CJe4YB1ZK-jGMUtCoiyHWmrbrLsQCe5Cu6
 maestral-1.4.8.dev0.dist-info/RECORD,,
 maestral-1.4.8.dev0.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
 maestral-1.4.8.dev0.dist-info/WHEEL,sha256=OqRkF0eY5GHssMorFjlbTIq072vpHpF60fIQA6lS9xA,92
-maestral-1.4.8.dev0.dist-info/direct_url.json,sha256=YEXmqd1JfozvEgqKZsQOOKajol-CMYHs9J-6QXWqveU,133
+maestral-1.4.8.dev0.dist-info/direct_url.json,sha256=EbkMEndGQgwIBEQ06zEGo6y6KZIGesbORBrPG0HjPK8,133
 maestral-1.4.8.dev0.dist-info/entry_points.txt,sha256=BdtBbdAp0gdxVxTTV2B5_Lxg-pVtdDUMVLKgEW81h6k,114
 maestral-1.4.8.dev0.dist-info/top_level.txt,sha256=cpmYVmNqTW_njKrQSwWbMvDUR09mvKFSBYcYCQKpHAM,9
 maestral/__init__.py,sha256=DCNIYT4LFTO4Z-gOGRsCjXDsXxCRbonwv0UEbKAwVhs,618
@@ -33,13 +33,11 @@ maestral/__pyinstaller/hook-maestral.py,sha256=RDI7xeJlFTiqloRa0m6ZQEcK9W3Co1dR9
 maestral/autostart.py,sha256=uQAd35U4cO89aHqICmJxWp0ZEgRhYLtvU4sCnetXHJw,11901
 maestral/cli.py,sha256=fqCYFVPr8NqVbrvbStAdHnSWXbeFzZdJaawwGD5RovM,60296
 maestral/client.py,sha256=jgf0S6HBhF4wffu69d1Wl4nGuGgWlFFC7N8d01O8vy8,64709
-maestral/config/__init__.py,sha256=XQidejLIYDKbD0wVBoi3Tynqj5t3H67WlGn1ZQMy_IQ,1708
+maestral/config/__init__.py,sha256=6ujpDWzIEu0PbD3ZVRmMmmkxJdiEkiRC9fl1MTNr0dE,1676
 maestral/config/__pycache__/__init__.cpython-39.pyc,,
-maestral/config/__pycache__/base.cpython-39.pyc,,
 maestral/config/__pycache__/main.cpython-39.pyc,,
 maestral/config/__pycache__/user.cpython-39.pyc,,
-maestral/config/base.py,sha256=Ss3o3iy-myRn8mAoBWXe7odvvpHuTb61TJ56RkXnig8,3808
-maestral/config/main.py,sha256=JHDK0XmdN8kD2D0f95IJ1lP7Ra_f8KVra7jL7qor9Ww,5668
+maestral/config/main.py,sha256=r9myF83ywWaAFRdi8h3h5cmFhgZiVVoSB-nm3RPpLLo,5678
 maestral/config/user.py,sha256=zh014sk0q77b3JWixcs2M1DjbVbVy5tuZRcMP4Cj-OE,15216
 maestral/constants.py,sha256=EvSRrZGQgwPeLolvsGDmJfzCeIYOxoFyGx7xB8QXD3E,1692
 maestral/daemon.py,sha256=QSGjneIKZeUNCmX53SoHFgfS0ukn6lD7xPx7aqKltbU,23034
@@ -69,7 +67,7 @@ maestral/utils/__pycache__/integration.cpython-39.pyc,,
 maestral/utils/__pycache__/orm.cpython-39.pyc,,
 maestral/utils/__pycache__/path.cpython-39.pyc,,
 maestral/utils/__pycache__/serializer.cpython-39.pyc,,
-maestral/utils/appdirs.py,sha256=kSFGWm6bOFP1o3IWl8cgVn3kLNYnRixFdQfd2lOrKUk,4184
+maestral/utils/appdirs.py,sha256=Ld-g1UcMT7bp1FscYcfdVSLPPEncJ5_cvtj49pqH-W0,7557
 maestral/utils/caches.py,sha256=C_pR2IaIZ5ybH_3JaAWLiNnYOlgIh6T5xrSlAyyQ0KU,1414
 maestral/utils/cli.py,sha256=dc1avZ1xyBbJxLIVGQ3iP9IDPtCSYsTOy8Hq98Rn_7M,18461
 maestral/utils/content_hasher.py,sha256=GFKeQXPV5Ml2mgoyBEMCqWp2TGWDJHn55A6IuuFOaPo,4355

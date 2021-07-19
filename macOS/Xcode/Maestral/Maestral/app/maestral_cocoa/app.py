@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 # system imports
-import sys
 import os
 from subprocess import Popen
 from datetime import datetime, timedelta
@@ -40,11 +39,7 @@ from maestral.errors import (
 # local imports
 from . import __version__ as __gui_version__
 from . import __author__, __url__
-from .utils import (
-    call_async,
-    call_async_maestral,
-    create_task,
-)
+from .utils import call_async, call_async_maestral
 from .private.widgets import (
     MenuItem,
     MenuItemSeparator,
@@ -101,7 +96,7 @@ class MaestralGui(SystemTrayApp):
             formal_name=APP_NAME,
             app_id=BUNDLE_ID,
             app_name="maestral_cocoa",
-            icon=APP_ICON_PATH,
+            icon=Icon(APP_ICON_PATH),
             author=__author__,
             version=__gui_version__,
             home_page=__url__,
@@ -118,91 +113,45 @@ class MaestralGui(SystemTrayApp):
         self.updater = AutoUpdater(self.mdbx, self)
 
         self.menu = Menu()
-        self.tray = StatusBarItem(
-            icon=self.icon_mapping.get(CONNECTING), menu=self.menu
-        )
+        self.tray = StatusBarItem(icon=self.icon_mapping[CONNECTING], menu=self.menu)
 
         self.setup_ui_unlinked()
 
-        # Populate menu bar
+        # Check if we are linked. Run setup if required.
 
-        self.commands.add(
-            toga.Command(
-                lambda _: self.about(),
-                "About " + self.formal_name,
-                group=toga.Group.APP,
-            ),
-            # Quit should always be the last item, in a section on it's own
-            toga.Command(
-                lambda _: create_task(self.exit()),
-                "Quit " + self.formal_name,
-                shortcut=toga.Key.MOD_1 + "q",
-                group=toga.Group.APP,
-                section=sys.maxsize,
-            ),
-            toga.Command(
-                lambda _: self.visit_homepage(),
-                "Visit homepage",
-                enabled=self.home_page is not None,
-                group=toga.Group.HELP,
-            ),
-        )
+        try:
+            pending_link = self.mdbx.pending_link
+        except KeyringAccessError:
+            self.add_background_task(self.update_error)
+            return
 
-        self.ensure_linked()
+        if pending_link:
+            self.setup_dialog = SetupDialog(mdbx=self.mdbx, app=self)
+            self.setup_dialog.raise_()
+            self.setup_dialog.on_success = self.on_setup_completed
+            self.setup_dialog.on_failure = self.exit_and_stop_daemon
+
+        elif self.mdbx.pending_dropbox_folder:
+            self.set_icon(ERROR)
+            self.add_background_task(self._exec_dbx_location_dialog)
+
+        else:
+            self.add_background_task(self.on_setup_completed)
 
     def set_icon(self, status: str) -> None:
         if status != self._cached_status:
             self.tray.icon = self.icon_mapping.get(status, self.icon_mapping[SYNCING])
             self._cached_status = status
 
-    async def periodic_refresh_gui(self):
-
-        while True:
-            try:
-                await self.update_status()
-                await self.update_error()
-                await call_async_maestral(self.config_name, "status_change_longpoll")
-            except CommunicationError:
-                super().exit()
-
-    async def on_menu_open(self, sender: Any) -> None:
+    async def on_menu_open(self, sender: Any = None) -> None:
         await self.update_snoozed()
         await self.update_status()
 
-    def ensure_linked(self) -> None:
-
-        try:
-            pending_link = self.mdbx.pending_link
-        except KeyringAccessError:
-            create_task(self.update_error())
-            return
-
-        if pending_link:
-            self.setup_dialog = SetupDialog(mdbx=self.mdbx, app=self)
-            self.setup_dialog.raise_()
-            self.setup_dialog.on_close = self._on_setup_completed
-
-        elif self.mdbx.pending_dropbox_folder:
-            self.set_icon(ERROR)
-            self.setup_dialog = DbxLocationDialog(mdbx=self.mdbx, app=self)
-            self.setup_dialog.raise_()
-            self.setup_dialog.on_close = self._on_setup_completed
-
-        else:
-            self.mdbx.start_sync()
-            self.setup_ui_linked()
-            self.updater.start_updater()
-            create_task(self.periodic_refresh_gui())
-
-    def _on_setup_completed(self) -> None:
-
-        if self.setup_dialog.exit_status == SetupDialog.ACCEPTED:
-            create_task(self.exit(stop_daemon=True))
-        else:
-            self.mdbx.start_sync()
-            self.setup_ui_linked()
-            self.updater.start_updater()
-            create_task(self.periodic_refresh_gui())
+    async def on_setup_completed(self, sender: Any = None) -> None:
+        self.mdbx.start_sync()
+        self.setup_ui_linked()
+        self.updater.start_updater()
+        await self.periodic_refresh_gui()
 
     def get_or_start_maestral_daemon(self) -> MaestralProxy:
 
@@ -215,7 +164,8 @@ class MaestralGui(SystemTrayApp):
                 "and contact the developer if this issue persists."
             )
             self.alert(title, message, level="error")
-            create_task(self.exit(stop_daemon=True))
+            stop_maestral_daemon_process(self.config_name)
+            super().exit()
         elif res == Start.AlreadyRunning:
             self._started = False
         elif res == Start.Ok:
@@ -354,7 +304,7 @@ class MaestralGui(SystemTrayApp):
                 self.mdbx.start_sync()
                 self.item_pause.label = self.PAUSE_TEXT
         except NoDropboxDirError:
-            self._exec_dbx_location_dialog()
+            self.add_background_task(self._exec_dbx_location_dialog)
 
     def on_settings_clicked(self, widget: Any) -> None:
         self.settings_window.raise_()
@@ -382,7 +332,17 @@ class MaestralGui(SystemTrayApp):
 
     # ==== periodic refresh of gui =====================================================
 
-    async def update_status(self) -> None:
+    async def periodic_refresh_gui(self, sender: Any = None) -> None:
+
+        while True:
+            try:
+                await self.update_status()
+                await self.update_error()
+                await call_async_maestral(self.config_name, "status_change_longpoll")
+            except CommunicationError:
+                super().exit()
+
+    async def update_status(self, sender: Any = None) -> None:
         """Change icon according to status."""
 
         n_sync_errors = len(self.mdbx.sync_errors)
@@ -410,7 +370,7 @@ class MaestralGui(SystemTrayApp):
 
             self.item_status.label = status
 
-    async def update_snoozed(self) -> None:
+    async def update_snoozed(self, sender: Any = None) -> None:
 
         minutes = self.mdbx.notification_snooze
 
@@ -427,7 +387,7 @@ class MaestralGui(SystemTrayApp):
             self.menu_snooze.remove(self.item_resume_notifications)
             self.menu_snooze.remove(self.item_snooze_separator)
 
-    async def update_error(self):
+    async def update_error(self, sender: Any = None) -> None:
         errs = self.mdbx.fatal_errors
 
         if not errs:
@@ -464,15 +424,16 @@ class MaestralGui(SystemTrayApp):
             # We don't know this error yet. Show a full stacktrace dialog.
             await self._exec_error_dialog(err)
 
-    async def _exec_dbx_location_dialog(self) -> None:
-        self.setup_dialog = DbxLocationDialog(mdbx=self.mdbx, app=self)
-        self.setup_dialog.raise_()
-        self.setup_dialog.on_close = self._on_setup_completed
+    async def _exec_dbx_location_dialog(self, sender: Any = None) -> None:
+        self.location_dialog = DbxLocationDialog(mdbx=self.mdbx, app=self)
+        self.location_dialog.raise_()
+        self.location_dialog.on_success = self.on_setup_completed
+        self.location_dialog.on_failure = self.exit_and_stop_daemon
 
     async def _exec_relink_dialog(self, reason: int) -> None:
         self.rld = RelinkDialog(self.mdbx, self, reason).raise_()
 
-    async def _exec_error_dialog(self, err: dict):
+    async def _exec_error_dialog(self, err: dict) -> None:
 
         title = "An unexpected error occurred"
         message = (
@@ -489,24 +450,25 @@ class MaestralGui(SystemTrayApp):
             level="error",
         )
 
-    async def exit(self, *args, stop_daemon: bool = False):
-        """Quits Maestral.
+    # ==== quit functions ==============================================================
 
-        :param bool stop_daemon: If ``True``, the sync daemon will be stopped when
-            quitting the GUI, if ``False``, it will be kept alive. If ``None``, the
-            daemon will only be stopped if it was started by the GUI.
-        """
+    async def exit_and_stop_daemon(self, sender: Any = None) -> None:
+        """Stops the sync daemon and quits Maestral."""
+        await call_async(stop_maestral_daemon_process, self.config_name)
+        super().exit()
 
-        # stop sync daemon if we started it or ``stop_daemon`` is ``True``
-        if stop_daemon or self._started:
+    async def exit(self, sender: Any = None) -> None:
+        """Quits Maestral. Stops the sync daemon only if we started it ourselves."""
+
+        if self._started:
             await call_async(stop_maestral_daemon_process, self.config_name)
 
         super().exit()
 
-    def restart(self, *args) -> None:
+    async def restart(self, sender: Any = None) -> None:
         """Restarts the Maestral GUI and sync daemon."""
 
-        # schedule restart after current process has quit
+        # Schedule restart after current process has quit
         pid = os.getpid()  # get ID of current process
         Popen(
             f"lsof -p {pid} +r 1 &>/dev/null; "
@@ -514,8 +476,8 @@ class MaestralGui(SystemTrayApp):
             shell=True,
         )
 
-        # quit Maestral
-        create_task(self.exit(stop_daemon=True))
+        # Quit Maestral.
+        await self.exit_and_stop_daemon()
 
 
 def run(config_name: str = "maestral") -> None:

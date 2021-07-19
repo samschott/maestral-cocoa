@@ -802,9 +802,18 @@ class Window(toga.Window):
 
         self.release_on_close = release_on_close
         self.is_dialog = is_dialog
+        self._on_close = None
 
         if not position:
             self.center()
+
+    @property
+    def on_close(self):
+        return self._on_close
+
+    @on_close.setter
+    def on_close(self, callback):
+        self._on_close = wrapped_handler(self, callback)
 
     # visibility and positioning
 

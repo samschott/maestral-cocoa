@@ -2,10 +2,11 @@
 
 # system imports
 import os.path as osp
-from typing import Any
+from typing import Any, Callable, Optional
 
 # external imports
 import toga
+from toga.handlers import wrapped_handler
 from maestral.utils.path import delete
 from maestral.utils.appdirs import get_home_dir
 from maestral.daemon import MaestralProxy
@@ -18,16 +19,14 @@ from .selective_sync import FileSystemSource
 
 
 class SetupDialog(SetupDialogGui):
-
-    ACCEPTED = 0
-    REJECTED = 1
-
     def __init__(self, mdbx: MaestralProxy, app: toga.App) -> None:
         super().__init__(app=app)
-        self.exit_status = self.REJECTED
 
         self.mdbx = mdbx
         self.config_name = self.mdbx.config_name
+
+        self._on_success: Optional[Callable] = None
+        self._on_failure: Optional[Callable] = None
 
         # set up combobox
         dropbox_path = f"{get_home_dir()}/Dropbox ({self.config_name.capitalize()})"
@@ -38,8 +37,24 @@ class SetupDialog(SetupDialogGui):
         self.dialog_buttons_link_page.on_press = self.on_link_dialog
         self.dialog_buttons_location_page.on_press = self.on_dbx_location
         self.dialog_buttons_selective_sync_page.on_press = self.on_items_selected
-        self.close_button.on_press = self.on_finish
+        self.close_button.on_press = self.on_close_button_pressed
         self.text_field_auth_token.on_change = self._token_field_validator
+
+    @property
+    def on_success(self):
+        return self._on_success
+
+    @on_success.setter
+    def on_success(self, value):
+        self._on_success = wrapped_handler(self, value)
+
+    @property
+    def on_failure(self):
+        return self._on_failure
+
+    @on_failure.setter
+    def on_failure(self, value):
+        self._on_failure = wrapped_handler(self, value)
 
     # ==================================================================================
     # User interaction callbacks
@@ -174,8 +189,15 @@ class SetupDialog(SetupDialogGui):
         elif btn_name == "Back":
             self.go_back()
 
-    async def on_finish(self, widget: Any) -> None:
-        self.exit_status = self.ACCEPTED
+    def on_close(self, sender: Any = None):
+
+        if self.current_page == 4 and self.on_success:
+            self.on_success(self)
+
+        elif self.on_failure:
+            self.on_failure(self)
+
+    def on_close_button_pressed(self, sender: Any = None) -> None:
         self.close()
 
     def _token_field_validator(self, widget: toga.TextInput) -> None:

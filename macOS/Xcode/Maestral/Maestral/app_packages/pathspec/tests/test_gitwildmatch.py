@@ -10,7 +10,7 @@ import unittest
 
 import pathspec.patterns.gitwildmatch
 import pathspec.util
-from pathspec.patterns.gitwildmatch import GitWildMatchPattern
+from pathspec.patterns.gitwildmatch import GitWildMatchPattern, GitWildMatchPatternError
 
 if sys.version_info[0] >= 3:
 	unichr = chr
@@ -184,6 +184,7 @@ class GitWildMatchTest(unittest.TestCase):
 
 		This should match:
 
+			left/right
 			left/bar/right
 			left/foo/bar/right
 			left/bar/right/foo
@@ -198,12 +199,14 @@ class GitWildMatchTest(unittest.TestCase):
 
 		pattern = GitWildMatchPattern(re.compile(regex), include)
 		results = set(pattern.match([
+			'left/right',
 			'left/bar/right',
 			'left/foo/bar/right',
 			'left/bar/right/foo',
 			'foo/left/bar/right',
 		]))
 		self.assertEqual(results, {
+			'left/right',
 			'left/bar/right',
 			'left/foo/bar/right',
 			'left/bar/right/foo',
@@ -223,6 +226,7 @@ class GitWildMatchTest(unittest.TestCase):
 
 		This should match:
 
+			spam
 			foo/spam
 			foo/spam/bar
 		"""
@@ -232,13 +236,65 @@ class GitWildMatchTest(unittest.TestCase):
 
 		pattern = GitWildMatchPattern(re.compile(regex), include)
 		results = set(pattern.match([
+			'spam',
 			'foo/spam',
 			'foo/spam/bar',
 		]))
 		self.assertEqual(results, {
+			'spam',
 			'foo/spam',
 			'foo/spam/bar',
 		})
+
+	def test_03_duplicate_leading_double_asterisk_edge_case(self):
+		"""
+		Regression test for duplicate leading **/ bug.
+		"""
+		regex, include = GitWildMatchPattern.pattern_to_regex('**')
+		self.assertTrue(include)
+		self.assertEqual(regex, '^.+$')
+
+		equivalent_regex, include = GitWildMatchPattern.pattern_to_regex('**/**')
+		self.assertTrue(include)
+		self.assertEqual(equivalent_regex, regex)
+
+		equivalent_regex, include = GitWildMatchPattern.pattern_to_regex('**/**/**')
+		self.assertTrue(include)
+		self.assertEqual(equivalent_regex, regex)
+
+		regex, include = GitWildMatchPattern.pattern_to_regex('**/api')
+		self.assertTrue(include)
+		self.assertEqual(regex, '^(?:.+/)?api(?:/.*)?$')
+
+		equivalent_regex, include = GitWildMatchPattern.pattern_to_regex('**/**/api')
+		self.assertTrue(include)
+		self.assertEqual(equivalent_regex, regex)
+
+		regex, include = GitWildMatchPattern.pattern_to_regex('**/api/')
+		self.assertTrue(include)
+		self.assertEqual(regex, '^(?:.+/)?api/.*$')
+
+		equivalent_regex, include = GitWildMatchPattern.pattern_to_regex('**/api/**')
+		self.assertTrue(include)
+		self.assertEqual(equivalent_regex, regex)
+
+		equivalent_regex, include = GitWildMatchPattern.pattern_to_regex('**/**/api/**/**')
+		self.assertTrue(include)
+		self.assertEqual(equivalent_regex, regex)
+
+	def test_03_double_asterisk_trailing_slash_edge_case(self):
+		"""
+		Tests the edge-case **/ pattern.
+
+		This should match everything except individual files in the root directory.
+		"""
+		regex, include = GitWildMatchPattern.pattern_to_regex('**/')
+		self.assertTrue(include)
+		self.assertEqual(regex, '^.+/.*$')
+
+		equivalent_regex, include = GitWildMatchPattern.pattern_to_regex('**/**/')
+		self.assertTrue(include)
+		self.assertEqual(equivalent_regex, regex)
 
 	def test_04_infix_wildcard(self):
 		"""
@@ -472,3 +528,21 @@ class GitWildMatchTest(unittest.TestCase):
 		escaped = r"file\!with\*weird\#naming_\[1\].t\?t"
 		result = GitWildMatchPattern.escape(fname)
 		self.assertEqual(result, escaped)
+
+	def test_09_single_escape_fail(self):
+		"""
+		Test an escape on a line by itself.
+		"""
+		self._check_invalid_pattern("\\")
+
+	def test_09_single_exclamation_mark_fail(self):
+		"""
+		Test an escape on a line by itself.
+		"""
+		self._check_invalid_pattern("!")
+
+	def _check_invalid_pattern(self, git_ignore_pattern):
+		expected_message_pattern = re.escape(repr(git_ignore_pattern))
+		with self.assertRaisesRegexp(GitWildMatchPatternError, expected_message_pattern):
+			GitWildMatchPattern(git_ignore_pattern)
+

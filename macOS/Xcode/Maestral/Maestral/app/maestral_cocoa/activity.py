@@ -4,7 +4,7 @@
 import os.path as osp
 import asyncio
 from datetime import datetime
-from typing import Tuple, Optional, Iterable, Any, Union
+from typing import Tuple, Optional, Iterable, Any
 
 # external imports
 import click
@@ -14,7 +14,6 @@ from toga.style.pack import Pack
 from maestral.daemon import MaestralProxy
 
 # local imports
-from .utils import create_task
 from .private.widgets import FreestandingIconButton, Icon, Window
 from .private.constants import ImageTemplate
 
@@ -108,6 +107,9 @@ class ActivityWindow(Window):
         super().__init__(title="Maestral Activity", release_on_close=False, app=app)
         self.size = WINDOW_SIZE
 
+        self._refresh = False
+        self._refresh_interval = 1
+
         self.mdbx = mdbx
 
         self.table = toga.Table(
@@ -121,7 +123,6 @@ class ActivityWindow(Window):
         self.content = self.table
 
         self.center()
-        self._periodic_refresh_task: Union[asyncio.Future, asyncio.Task, None] = None
         self._initial_load = False
 
     def on_row_clicked(self, sender: Any, row: SyncEventRow) -> None:
@@ -133,13 +134,13 @@ class ActivityWindow(Window):
                 message="The file or folder no longer exists.",
             )
 
-    async def periodic_refresh_gui(self, interval: int = 1):
+    async def periodic_refresh_gui(self, sender: Any = None) -> None:
 
-        while True:
+        while self._refresh:
             await self.refresh_gui()
-            await asyncio.sleep(interval)
+            await asyncio.sleep(self._refresh_interval)
 
-    async def refresh_gui(self):
+    async def refresh_gui(self) -> None:
 
         needs_refresh = False
 
@@ -154,9 +155,8 @@ class ActivityWindow(Window):
             for row in self.table.data:
                 row.refresh()
 
-    def on_close(self) -> None:
-        if self._periodic_refresh_task:
-            self._periodic_refresh_task.cancel()
+    def on_close(self, sender: Any = None) -> None:
+        self._refresh = False
 
     def show(self) -> None:
         if not self._initial_load:
@@ -166,5 +166,6 @@ class ActivityWindow(Window):
             self.table.data = data_source
             self._initial_load = True
 
-        self._periodic_refresh_task = create_task(self.periodic_refresh_gui())
+        self._refresh = True
+        self.app.add_background_task(self.periodic_refresh_gui)
         super().show()
