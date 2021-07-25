@@ -50,6 +50,8 @@ class SettingsWindow(SettingsGui):
         self._refresh = False
         self._refresh_interval = 2
 
+        self.on_close = self.on_close_pressed
+
         self.mdbx = mdbx
         self.autostart = AutoStart(self.mdbx.config_name)
 
@@ -263,8 +265,9 @@ class SettingsWindow(SettingsGui):
         self.label_email.text = acc_mail + acc_type_text
         self.label_usage.text = acc_space_usage
 
-    def on_close(self, sender: Any = None) -> None:
+    def on_close_pressed(self, sender: Any = None) -> bool:
         self._refresh = False
+        return True
 
     def show(self) -> None:
         self._refresh = True

@@ -28,6 +28,8 @@ class SetupDialog(SetupDialogGui):
         self._on_success: Optional[Callable] = None
         self._on_failure: Optional[Callable] = None
 
+        self.on_close = self.callback_on_close
+
         # set up combobox
         dropbox_path = f"{get_home_dir()}/Dropbox ({self.config_name.capitalize()})"
         self.combobox_dbx_location.current_selection = dropbox_path
@@ -189,13 +191,15 @@ class SetupDialog(SetupDialogGui):
         elif btn_name == "Back":
             self.go_back()
 
-    def on_close(self, sender: Any = None):
+    def callback_on_close(self, sender: Any = None) -> bool:
 
         if self.current_page == 4 and self.on_success:
             self.on_success(self)
 
         elif self.on_failure:
             self.on_failure(self)
+
+        return True
 
     def on_close_button_pressed(self, sender: Any = None) -> None:
         self.close()

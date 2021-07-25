@@ -27,8 +27,7 @@ class SyncIssueView(toga.Box):
     dbx_address = "https://www.dropbox.com/preview"
 
     def __init__(self, sync_err: dict) -> None:
-        style = Pack(direction=COLUMN)
-        super().__init__(style=style)
+        super().__init__(style=Pack(direction=COLUMN))
 
         self.sync_err = sync_err
         dbx_address = self.dbx_address + urllib.parse.quote(self.sync_err["dbx_path"])
@@ -98,6 +97,7 @@ class SyncIssueView(toga.Box):
 class SyncIssuesWindow(Window):
     def __init__(self, mdbx: MaestralProxy, app: toga.App) -> None:
         super().__init__(title="Maestral Sync Issues", release_on_close=False, app=app)
+        self.on_close = self.on_close_pressed
 
         self.mdbx = mdbx
         self._cached_errors: List[dict] = []
@@ -158,8 +158,9 @@ class SyncIssuesWindow(Window):
 
             self._cached_errors = new_errors
 
-    def on_close(self, sender: Any = None) -> None:
+    def on_close_pressed(self, sender: Any = None) -> bool:
         self._refresh = False
+        return True
 
     def show(self) -> None:
         self._refresh = True
