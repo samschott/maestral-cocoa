@@ -49,6 +49,7 @@ from toga_cocoa.widgets.base import Widget
 from toga_cocoa.widgets.switch import Switch as TogaSwitch
 from toga_cocoa.widgets.button import Button as TogaButton
 from toga_cocoa.window import Window as TogaWindow
+from toga_cocoa.window import WindowDelegate as TogaWindowDeletage
 from toga_cocoa.widgets.multilinetextinput import (
     MultilineTextInput as TogaMultilineTextInput,
 )
@@ -523,9 +524,8 @@ class MenuItem:
     def __init__(self, interface):
         self.interface = interface
         self.native = TogaMenuItem.alloc().init()
-
-        self.native._impl = self
         self.native.interface = self.interface
+        self.native.impl = self
         self.native.target = self.native
         self.native.action = SEL("onPress:")
 
@@ -574,13 +574,13 @@ class MenuItemSeparator:
 class TogaMenu(NSMenu):
     @objc_method
     def menuWillOpen_(self, obj) -> None:
-        self._impl._visible = True
+        self.impl._visible = True
         if self.interface.on_open:
             self.interface.on_open(self.interface)
 
     @objc_method
     def menuDidClose_(self, obj) -> None:
-        self._impl._visible = False
+        self.impl._visible = False
         if self.interface.on_close:
             self.interface.on_close(self.interface)
 
@@ -593,7 +593,7 @@ class Menu:
         self.native = TogaMenu.alloc().init()
         self.native.autoenablesItems = False
 
-        self.native._impl = self
+        self.native.impl = self
         self.native.interface = self.interface
         self.native.delegate = self.native
 
@@ -654,15 +654,16 @@ class SystemTrayApp(TogaApp):
 
     _MAIN_WINDOW_CLASS = None
 
-    def create(self):
-        super().create()
-        # self.native.activationPolicy = NSApplicationActivationPolicyAccessory
+    def _create_app_commands(self):
+        # Hack: we use _create_app_commands here to inject our own modifications
+        # into the superclass create command *before* the actual GUI is loaded.
 
         self.delegate = SystemTrayAppDelegate.alloc().init()
         self.delegate.impl = self
         self.delegate.interface = self.interface
         self.delegate.native = self.native
         self.native.delegate = self.delegate
+        self.native.activationPolicy = NSApplicationActivationPolicyAccessory
 
     def select_file(self):
         pass
@@ -717,11 +718,9 @@ class SystemTrayApp(TogaApp):
         )
 
 
-class WindowDeletage(NSObject):
+class WindowDeletage(TogaWindowDeletage):
     @objc_method
     def windowWillClose_(self, notification) -> None:
-        if self.interface.on_close:
-            self.interface.on_close(self.interface)
 
         if not self.interface.is_dialog:
 
@@ -737,24 +736,23 @@ class WindowDeletage(NSObject):
             if len(visible_windows) <= 1:
                 app.activationPolicy = NSApplicationActivationPolicyAccessory
 
-    @objc_method
-    def windowDidResize_(self, notification) -> None:
-        if self.interface.content:
-            frame_width = notification.object.contentView.frame.size.width
-            frame_height = notification.object.contentView.frame.size.height
-            if frame_width > 0.0 and frame_height > 0.0:
-                # Set the window to the new size
-                self.interface.content.refresh()
-
 
 class Window(TogaWindow):
     def create(self):
         super().create()
         self.delegate = WindowDeletage.alloc().init()
         self.delegate.interface = self.interface
-        self.delegate._impl = self
+        self.delegate.impl = self
         self.native.delegate = self.delegate
         self.app = NSApplication.sharedApplication
+
+    def cocoa_windowShouldClose(self):
+        if self.interface.on_close:
+            should_close = self.interface.on_close(self)
+        else:
+            should_close = True
+
+        return should_close
 
     def is_visible(self):
         return bool(self.native.isVisible)

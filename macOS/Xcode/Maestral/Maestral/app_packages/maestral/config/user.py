@@ -126,7 +126,7 @@ class UserConfig(DefaultsConfig):
         self.reset_to_defaults(save=False)
 
         self._backup_folder = "backups"
-        self._backup_suffix = ".bak"
+        self._backup_suffix = "bak"
 
         if backup:
             self._make_backup()
@@ -151,7 +151,7 @@ class UserConfig(DefaultsConfig):
 
                 # Remove deprecated options if major version has changed.
                 if remove_obsolete and version.major > old_version.major:
-                    self._remove_deprecated_options()
+                    self.remove_deprecated_options()
 
                 # Set new version number.
                 self.set_version(version, save=False)
@@ -214,7 +214,7 @@ class UserConfig(DefaultsConfig):
             except cp.MissingSectionHeaderError:
                 logger.error("File contains no section headers.")
 
-    def _remove_deprecated_options(self) -> None:
+    def remove_deprecated_options(self) -> None:
         """
         Remove options which are present in the file but not in defaults.
         """
@@ -240,9 +240,11 @@ class UserConfig(DefaultsConfig):
         dircetory = osp.join(self._dirname, self._backup_folder)
 
         if version:
-            name = f"{self._filename}-{str(version)}{self._backup_suffix}"
+            filename = f"{self._filename}-{str(version)}"
         else:
-            name = f"{self._filename}{self._backup_suffix}"
+            filename = self._filename
+
+        name = f"{filename}.{self._suffix}.{self._backup_suffix}"
 
         return osp.join(dircetory, name)
 

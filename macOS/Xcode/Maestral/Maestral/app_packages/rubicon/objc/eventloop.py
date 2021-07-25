@@ -398,7 +398,7 @@ class CFEventLoop(unix_events.SelectorEventLoop):
         return self._running
 
     def run(self):
-        """Internal implementatin of run using the CoreFoundation event loop."""
+        """Internal implementation of run using the CoreFoundation event loop."""
         recursive = self.is_running()
         if not recursive and hasattr(events, "_get_running_loop") and events._get_running_loop():
             raise RuntimeError('Cannot run the event loop while another loop is running')
@@ -444,7 +444,8 @@ class CFEventLoop(unix_events.SelectorEventLoop):
 
     def run_forever(self, lifecycle=None):
         """Run until stop() is called."""
-        self._set_lifecycle(lifecycle if lifecycle else CFLifecycle(self._cfrunloop))
+        if not self._lifecycle:
+            self._set_lifecycle(lifecycle if lifecycle else CFLifecycle(self._cfrunloop))
 
         if self.is_running():
             raise RuntimeError(
@@ -455,6 +456,31 @@ class CFEventLoop(unix_events.SelectorEventLoop):
             self.run()
         finally:
             self.stop()
+
+    def run_forever_cooperatively(self, lifecycle=None):
+        """A non-blocking version of :meth:`run_forever`.
+
+        This may seem like nonsense; however, an iOS app is not expected to
+        invoke a blocking "main event loop" method. As a result, we need to
+        be able to *start* Python event loop handling, but then return control
+        to the main app to start the actual event loop.
+
+        The implementation is effectively all the parts of a call to
+        :meth:`run_forever()`, but without any of the shutdown/cleanup logic.
+        """
+        if not self._lifecycle:
+            self._set_lifecycle(lifecycle if lifecycle else CFLifecycle(self._cfrunloop))
+
+        if self.is_running():
+            raise RuntimeError(
+                "Recursively calling run_forever is forbidden. "
+                "To recursively run the event loop, call run().")
+
+        self._running = True
+        if hasattr(events, "_set_running_loop"):
+            events._set_running_loop(self)
+
+        self._lifecycle.start()
 
     def call_soon(self, callback, *args, context=None):
         """Arrange for a callback to be called as soon as possible.
@@ -560,6 +586,22 @@ class CFEventLoop(unix_events.SelectorEventLoop):
             raise RuntimeError("You can't set a lifecycle on a loop that's already running.")
         self._lifecycle = lifecycle
         self._policy._lifecycle = lifecycle
+
+    def _add_callback(self, handle):
+        """Add a callback to be invoked ASAP.
+
+        The inherited behavior uses a self-pipe to wake up the event loop
+        in a thread-safe fashion, which causes the logic in run_once() to
+        empty the list of handlers that are awaiting invocation.
+
+        CFEventLoop doesn't use run_once(), so adding handlers to
+        self._ready results in handlers that aren't invoked. Instead, we
+        create a 0-interval timer to invoke the callback as soon as
+        possible.
+        """
+        if handle._cancelled:
+            return
+        self.call_soon(handle._callback, *handle._args)
 
 
 class EventLoopPolicy(events.AbstractEventLoopPolicy):

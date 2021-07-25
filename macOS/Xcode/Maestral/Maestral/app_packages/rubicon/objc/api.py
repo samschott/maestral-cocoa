@@ -2,9 +2,10 @@ import collections.abc
 import decimal
 import enum
 import inspect
+import weakref
 from ctypes import (
     CFUNCTYPE, POINTER, Array, Structure, Union, addressof, byref, c_bool, c_char_p, c_int, c_uint,
-    c_uint8, c_ulong, c_void_p, cast, sizeof, string_at
+    c_uint8, c_ulong, c_void_p, cast, sizeof, string_at, py_object,
 )
 
 from .types import (
@@ -108,8 +109,9 @@ class ObjCMethod(object):
         The above argument conversions (except those performed by :mod:`ctypes`) can be disabled
         by setting the ``convert_args`` keyword argument to ``False``.
 
-        The method's return value is also :ref:`converted automatically <auto-objc-python-conversion>`.
-        This conversion can be disabled by setting the ``convert_result`` keyword argument to ``False``.
+        If the method returns an Objective-C object, it is automatically converted to an :class:`ObjCInstance`.
+        This conversion can be disabled by setting the ``convert_result`` keyword argument to ``False``,
+        in which case the object is returned as a raw :class:`~rubicon.objc.runtime.objc_id` value.
 
         The ``_cmd`` selector argument does *not* need to be passed in manually ---
         the method's :attr:`selector` is automatically added between the receiver and the method arguments.
@@ -161,7 +163,13 @@ class ObjCMethod(object):
 
         # Convert result to python type if it is a instance or class pointer.
         if self.restype is not None and issubclass(self.restype, objc_id):
-            result = py_from_ns(result, _auto=True)
+            result = ObjCInstance(result)
+
+        # Mark for release if we acquire ownership of an object. Do not autorelease here because
+        # we might retain a Python reference while the Obj-C reference goes out of scope.
+        if self.name.startswith((b'alloc', b'new', b'copy', b'mutableCopy')):
+            result._needs_release = True
+
         return result
 
 
@@ -172,7 +180,7 @@ class ObjCPartialMethod(object):
         super().__init__()
 
         self.name_start = name_start
-        self.methods = {}
+        self.methods = {}  # Initialized in ObjCClass._load_methods
 
     def __repr__(self):
         return "{cls.__module__}.{cls.__qualname__}({self.name_start!r})".format(cls=type(self), self=self)
@@ -190,14 +198,14 @@ class ObjCPartialMethod(object):
             rest = frozenset(kwargs) | frozenset(("",))
 
         try:
-            meth, order = self.methods[rest]
+            name, order = self.methods[rest]
         except KeyError:
             raise ValueError(
                 "No method was found starting with {!r} and with keywords {}\nKnown keywords are:\n{}"
                 .format(self.name_start, set(kwargs), "\n".join(repr(keywords) for keywords in self.methods))
             )
 
-        meth = ObjCMethod(meth)
+        meth = receiver.objc_class._cache_method(name)
         args += [kwargs[name] for name in order]
         return meth(receiver, *args)
 
@@ -230,7 +238,7 @@ def convert_method_arguments(encoding, args):
     new_args = []
     for e, a in zip(encoding[3:], args):
         if issubclass(e, (objc_id, ObjCInstance)):
-            new_args.append(py_from_ns(a, _auto=True))
+            new_args.append(ObjCInstance(a))
         else:
             new_args.append(a)
     return new_args
@@ -269,14 +277,14 @@ class objc_method(object):
         else:
             return result
 
-    def register(self, cls, attr):
-        name = attr.replace("_", ":")
-        cls.imp_keep_alive_table[name] = add_method(cls, name, self, self.encoding)
+    def class_register(self, class_ptr, attr_name):
+        name = attr_name.replace("_", ":")
+        add_method(class_ptr, name, self, self.encoding)
 
-    def protocol_register(self, proto, attr):
-        name = attr.replace('_', ':')
+    def protocol_register(self, proto_ptr, attr_name):
+        name = attr_name.replace('_', ':')
         types = b''.join(encoding_for_ctype(ctype_for_type(tp)) for tp in self.encoding)
-        libobjc.protocol_addMethodDescription(proto, SEL(name), types, True, True)
+        libobjc.protocol_addMethodDescription(proto_ptr, SEL(name), types, True, True)
 
 
 class objc_classmethod(object):
@@ -305,14 +313,14 @@ class objc_classmethod(object):
         else:
             return result
 
-    def register(self, cls, attr):
-        name = attr.replace("_", ":")
-        cls.imp_keep_alive_table[name] = add_method(cls.objc_class, name, self, self.encoding)
+    def class_register(self, class_ptr, attr_name):
+        name = attr_name.replace("_", ":")
+        add_method(libobjc.object_getClass(class_ptr), name, self, self.encoding)
 
-    def protocol_register(self, proto, attr):
-        name = attr.replace('_', ':')
+    def protocol_register(self, proto_ptr, attr_name):
+        name = attr_name.replace('_', ':')
         types = b''.join(encoding_for_ctype(ctype_for_type(tp)) for tp in self.encoding)
-        libobjc.protocol_addMethodDescription(proto, SEL(name), types, True, False)
+        libobjc.protocol_addMethodDescription(proto_ptr, SEL(name), types, True, False)
 
 
 class objc_ivar(object):
@@ -331,10 +339,10 @@ class objc_ivar(object):
     def __init__(self, vartype):
         self.vartype = vartype
 
-    def pre_register(self, ptr, attr):
-        return add_ivar(ptr, attr, self.vartype)
+    def class_register(self, class_ptr, attr_name):
+        return add_ivar(class_ptr, attr_name, self.vartype)
 
-    def protocol_register(self, proto, attr):
+    def protocol_register(self, proto_ptr, attr_name):
         raise TypeError('Objective-C protocols cannot have ivars')
 
 
@@ -360,27 +368,36 @@ class objc_property(object):
     the generated setter keeps the stored object retained, and releases it when it is replaced.
 
     In a custom Objective-C protocol, only the metadata for the property is generated.
+
+    If ``weak`` is ``True``, the property will be created as a weak property. When assigning an object to it,
+    the reference count of the object will not be increased. When the object is deallocated, the property
+    value is set to None.
     """
 
-    def __init__(self, vartype=objc_id):
+    def __init__(self, vartype=objc_id, weak=False):
         super().__init__()
 
         self.vartype = ctype_for_type(vartype)
+        self.weak = weak
 
     def _get_property_attributes(self):
         attrs = [
             objc_property_attribute_t(b'T', encoding_for_ctype(self.vartype)),  # Type: vartype
         ]
         if issubclass(self.vartype, objc_id):
-            attrs.append(objc_property_attribute_t(b'&', b''))  # retain
+            reference = b'W' if self.weak else b'&'
+            attrs.append(objc_property_attribute_t(reference, b''))
         return (objc_property_attribute_t * len(attrs))(*attrs)
 
-    def pre_register(self, ptr, attr):
-        add_ivar(ptr, '_' + attr, self.vartype)
+    def class_register(self, class_ptr, attr_name):
 
-    def register(self, cls, attr):
+        ivar_name = '_' + attr_name
+
+        add_ivar(class_ptr, ivar_name, self.vartype)
+
         def _objc_getter(objc_self, _cmd):
-            value = get_ivar(objc_self, '_' + attr)
+            value = get_ivar(objc_self, ivar_name, weak=self.weak)
+
             # ctypes complains when a callback returns a "boxed" primitive type, so we have to manually unbox it.
             # If the data object has a value attribute and is not a structure or union, assume that it is
             # a primitive and unbox it.
@@ -396,32 +413,54 @@ class objc_property(object):
             if not isinstance(new_value, self.vartype):
                 # If vartype is a primitive, then new_value may be unboxed. If that is the case, box it manually.
                 new_value = self.vartype(new_value)
-            old_value = get_ivar(objc_self, '_' + attr)
-            if issubclass(self.vartype, objc_id) and new_value:
+
+            if issubclass(self.vartype, objc_id) and not self.weak:
+                old_value = get_ivar(objc_self, ivar_name, weak=self.weak)
+
+                if new_value.value == old_value.value:
+                    # old and new value are the same, nothing to do
+                    return
+
+            if not self.weak and issubclass(self.vartype, objc_id) and new_value:
                 # If the new value is a non-null object, retain it.
                 send_message(new_value, 'retain', restype=objc_id, argtypes=[])
-            set_ivar(objc_self, '_' + attr, new_value)
-            if issubclass(self.vartype, objc_id) and old_value:
+
+            set_ivar(objc_self, ivar_name, new_value, weak=self.weak)
+
+            if not self.weak and issubclass(self.vartype, objc_id) and old_value:
                 # If the old value is a non-null object, release it.
                 send_message(old_value, 'release', restype=None, argtypes=[])
 
-        setter_name = 'set' + attr[0].upper() + attr[1:] + ':'
+        setter_name = 'set' + attr_name[0].upper() + attr_name[1:] + ':'
 
-        cls.imp_keep_alive_table[attr] = add_method(
-            cls.ptr, attr, _objc_getter,
+        add_method(
+            class_ptr, attr_name, _objc_getter,
             [self.vartype, ObjCInstance, SEL],
         )
-        cls.imp_keep_alive_table[setter_name] = add_method(
-            cls.ptr, setter_name, _objc_setter,
+        add_method(
+            class_ptr, setter_name, _objc_setter,
             [None, ObjCInstance, SEL, self.vartype],
         )
 
         attrs = self._get_property_attributes()
-        libobjc.class_addProperty(cls, ensure_bytes(attr), attrs, len(attrs))
+        libobjc.class_addProperty(class_ptr, ensure_bytes(attr_name), attrs, len(attrs))
 
-    def protocol_register(self, proto, attr):
+    def dealloc_callback(self, objc_self, attr_name):
+
+        ivar_name = '_' + attr_name
+
+        # Clean up ivar.
+        if self.weak:
+            # Clean up weak reference.
+            set_ivar(objc_self, ivar_name, self.vartype(None), weak=True)
+        elif issubclass(self.vartype, objc_id):
+            # If the old value is a non-null object, release it. There is no need to set the actual ivar to nil.
+            old_value = get_ivar(objc_self, ivar_name, weak=self.weak)
+            send_message(old_value, 'release', restype=None, argtypes=[])
+
+    def protocol_register(self, proto_ptr, attr_name):
         attrs = self._get_property_attributes()
-        libobjc.protocol_addProperty(proto, ensure_bytes(attr), attrs, len(attrs), True, True)
+        libobjc.protocol_addProperty(proto_ptr, ensure_bytes(attr_name), attrs, len(attrs), True, True)
 
 
 class objc_rawmethod(object):
@@ -450,11 +489,11 @@ class objc_rawmethod(object):
     def __call__(self, *args, **kwargs):
         return self.py_method(*args, **kwargs)
 
-    def register(self, cls, attr):
-        name = attr.replace("_", ":")
-        cls.imp_keep_alive_table[name] = add_method(cls, name, self, self.encoding)
+    def class_register(self, class_ptr, attr_name):
+        name = attr_name.replace("_", ":")
+        add_method(class_ptr, name, self, self.encoding)
 
-    def protocol_register(self, proto, attr):
+    def protocol_register(self, proto_ptr, attr_name):
         raise TypeError('Protocols cannot have method implementations, use objc_method instead of objc_rawmethod')
 
 
@@ -555,20 +594,43 @@ def for_objcclass(objcclass):
 class ObjCInstance(object):
     """Python wrapper for an Objective-C instance."""
 
-    _cached_objects = {}
+    # Cache dictionary containing every currently existing ObjCInstance object,
+    # with the key being the memory address (as an integer) of the Objective-C object that it wraps.
+    # Because this is a weak value dictionary,
+    # entries are automatically removed if the ObjCInstance is no longer referenced from Python.
+    # (The object may still have references in Objective-C,
+    # and a new ObjCInstance might be created for it if it is wrapped again later.)
+    _cached_objects = weakref.WeakValueDictionary()
 
     @property
     def objc_class(self):
         """The Objective-C object's class, as an :class:`ObjCClass`."""
 
-        return ObjCClass(libobjc.object_getClass(self))
+        # This property is used inside __getattr__, so any attribute accesses must be done through
+        # super(...).__getattribute__ to prevent infinite recursion.
+        try:
+            return super(ObjCInstance, type(self)).__getattribute__(self, "_objc_class")
+        except AttributeError:
+            # This assumes that objects never change their class after they are seen by Rubicon.
+            # Technically this might not always be true, because the Objective-C runtime provides a function
+            # object_setClass that can change an object's class after creation, and some code also manipulates objects'
+            # isa pointers directly (although the latter is no longer officially supported by Apple).
+            # This is only extremely rarely done in practice though, and then usually only during object
+            # creation/initialization, so it's basically safe to assume that an object's class will never change
+            # after it's been wrapped in an ObjCInstance.
+            super(ObjCInstance, type(self)).__setattr__(self, "_objc_class", ObjCClass(libobjc.object_getClass(self)))
+            return super(ObjCInstance, type(self)).__getattribute__(self, "_objc_class")
+
+    @staticmethod
+    def _associated_attr_key_for_name(name):
+        return SEL("rubicon.objc.py_attr.{}".format(name))
 
     def __new__(cls, object_ptr, _name=None, _bases=None, _ns=None):
         """The constructor accepts an :class:`~rubicon.objc.runtime.objc_id` or anything that can be cast to one,
         such as a :class:`~ctypes.c_void_p`, or an existing :class:`ObjCInstance`.
 
         :class:`ObjCInstance` objects are cached --- this means that for every Objective-C object
-        there can be at most one :class:`ObjCInstance` object. Rubicon will automatically create
+        there can be at most one :class:`ObjCInstance` object at any time. Rubicon will automatically create
         new :class:`ObjCInstance`\\s or return existing ones as needed.
 
         The returned object's Python class is not always exactly :class:`ObjCInstance`. For example,
@@ -590,13 +652,12 @@ class ObjCInstance(object):
         if not object_ptr.value:
             return None
 
-        # Check if we've already created a Python ObjCInstance for this
-        # object_ptr id and if so, then return it.  A single ObjCInstance will
-        # be created for any object pointer when it is first encountered.
-        # This same ObjCInstance will then persist until the object is
-        # deallocated.
-        if object_ptr.value in cls._cached_objects:
+        # If an ObjCInstance already exists for the Objective-C object,
+        # reuse it instead of creating a second ObjCInstance for the same object.
+        try:
             return cls._cached_objects[object_ptr.value]
+        except KeyError:
+            pass
 
         # If the given pointer points to a class, return an ObjCClass instead (if we're not already creating one).
         if not issubclass(cls, ObjCClass) and object_isClass(object_ptr):
@@ -614,33 +675,47 @@ class ObjCInstance(object):
             self = super().__new__(cls)
         super(ObjCInstance, type(self)).__setattr__(self, "ptr", object_ptr)
         super(ObjCInstance, type(self)).__setattr__(self, "_as_parameter_", object_ptr)
+        super(ObjCInstance, type(self)).__setattr__(self, "_needs_release", False)
         if isinstance(object_ptr, objc_block):
             super(ObjCInstance, type(self)).__setattr__(self, "block", ObjCBlock(object_ptr))
         # Store new object in the dictionary of cached objects, keyed
         # by the (integer) memory address pointed to by the object_ptr.
         cls._cached_objects[object_ptr.value] = self
 
-        # Classes are never deallocated, so they don't need a DeallocationObserver.
-        # This is also necessary to make the definition of DeallocationObserver work -
-        # otherwise creating the ObjCClass for DeallocationObserver would try to
-        # instantiate a DeallocationObserver itself.
-        if not object_isClass(object_ptr):
-            # Create a DeallocationObserver and associate it with this object.
-            # When the Objective-C object is deallocated, the observer will remove
-            # the ObjCInstance corresponding to the object from the cached objects
-            # dictionary, effectively destroying the ObjCInstance.
-            observer = send_message(
-                send_message(get_class('DeallocationObserver'), 'alloc', restype=objc_id, argtypes=[]),
-                'initWithObject:', self, restype=objc_id, argtypes=[objc_id]
-            )
-            libobjc.objc_setAssociatedObject(self, observer, observer, 0x301)
-
-            # The observer is retained by the object we associate it to.  We release
-            # the observer now so that it will be deallocated when the associated
-            # object is deallocated.
-            send_message(observer, 'release', restype=None, argtypes=[])
-
         return self
+
+    def release(self):
+        """
+        Manually decrement the reference count of the corresponding objc object
+
+        The objc object is sent a dealloc message when its reference count reaches 0. Calling
+        this method manually should not be necessary, unless the object was explicitly
+        ``retain``\\ed before. Objects returned from ``.alloc().init...(...)`` and similar calls
+        are released automatically by Rubicon when the corresponding Python object is deallocated.
+        """
+        self._needs_release = False
+        send_message(self, "release", restype=objc_id, argtypes=[])
+
+    def autorelease(self):
+        """
+        Decrements the receiver’s reference count at the end of the current autorelease pool block
+
+        The objc object is sent a dealloc message when its reference count reaches 0. If called,
+        the object will not be released when the Python object is deallocated.
+        """
+        self._needs_release = False
+        result = send_message(self, "autorelease", restype=objc_id, argtypes=[])
+        return ObjCInstance(result)
+
+    def __del__(self):
+        """
+        Release the corresponding objc instance if we own it, i.e., if it was returned by
+        by a method starting with 'alloc', 'new', 'copy', or 'mutableCopy' and it wasn't
+        already explicitly released by calling :meth:`release` or :meth:`autorelease`.
+        """
+
+        if self._needs_release:
+            send_message(self, "release", restype=objc_id, argtypes=[])
 
     def __str__(self):
         """Get a human-readable representation of ``self``.
@@ -748,23 +823,28 @@ class ObjCInstance(object):
         else:
             method = None
 
-        if method is not None:
-            # If the partial method can only resolve to one method that takes no arguments,
-            # return that method directly, instead of a mostly useless partial method.
-            if set(method.methods) == {frozenset()}:
-                method, _ = method.methods[frozenset()]
-                method = ObjCMethod(method)
+        if method is None or set(method.methods) == {frozenset()}:
+            # Find a method whose full name matches the given name if no partial method was found,
+            # or the partial method can only resolve to a single method that takes no arguments.
+            # The latter case avoids returning partial methods in cases where a regular method works just as well.
+            method = self.objc_class._cache_method(name.replace("_", ":"))
 
-            return ObjCBoundMethod(method, self)
-
-        # See if there's a method whose full name matches the given name.
-        method = self.objc_class._cache_method(name.replace("_", ":"))
         if method:
             return ObjCBoundMethod(method, self)
-        else:
+
+        # Check if the attribute name corresponds to an instance attribute defined at
+        # runtime from Python. Return it if yes, raise an AttributeError otherwise.
+        key = self._associated_attr_key_for_name(name)
+        pyo_wrapper = libobjc.objc_getAssociatedObject(self, key)
+
+        if pyo_wrapper.value is None:
             raise AttributeError('%s.%s %s has no attribute %s' % (
                 type(self).__module__, type(self).__qualname__, self.objc_class.name, name)
             )
+        address = get_ivar(pyo_wrapper, "wrapped_pointer")
+        pyo = cast(address.value, py_object)
+
+        return pyo.value
 
     def __setattr__(self, name, value):
         """Allows modifying Objective-C properties using Python syntax.
@@ -784,7 +864,38 @@ class ObjCInstance(object):
                     value = value.value
                 ObjCBoundMethod(method, self)(value)
             else:
-                super(ObjCInstance, type(self)).__setattr__(self, name, value)
+
+                # Wrap the Python object in a WrappedPyObject instance.
+                # A reference will be retained as long as the WrappedPyObject is alive.
+
+                wrapper = send_message(
+                    send_message(get_class('WrappedPyObject'), 'alloc',
+                                 restype=objc_id, argtypes=[]),
+                    'initWithObjectId:', id(value), restype=objc_id, argtypes=[objc_id]
+                )
+
+                # Set the Python value as an associated object. This will release
+                # any previous wrapper object with the same key.
+                key = self._associated_attr_key_for_name(name)
+                libobjc.objc_setAssociatedObject(self, key, wrapper, 0x301)
+
+                # Release the wrapper object, it will be retained by the association.
+                send_message(wrapper, 'release', restype=objc_id, argtypes=[])
+
+    def __delattr__(self, name):
+        if name in self.__dict__:
+            # For attributes already in __dict__, use the default __delattr__.
+            super(ObjCInstance, type(self)).__delattr__(self, name)
+        else:
+            key = self._associated_attr_key_for_name(name)
+            # Check for instance attributes defined at runtime.
+            pyo_wrapper = libobjc.objc_getAssociatedObject(self, key)
+            if pyo_wrapper.value is None:
+                raise AttributeError('%s.%s %s has no attribute %s' % (
+                    type(self).__module__, type(self).__qualname__, self.objc_class.name, name)
+                )
+            # If set, clear the instance attribute / associated object.
+            libobjc.objc_setAssociatedObject(self, key, None, 0x301)
 
 
 # The inheritance order is important here.
@@ -880,10 +991,41 @@ class ObjCClass(ObjCInstance, type):
             if not libobjc.class_addProtocol(ptr, proto):
                 raise RuntimeError('Failed to adopt protocol {}'.format(proto.name))
 
-        # Pre-Register all the instance variables
-        for attr, obj in attrs.items():
-            if hasattr(obj, 'pre_register'):
-                obj.pre_register(ptr, attr)
+        # Register all methods, properties, ivars, etc.
+        for attr_name, obj in attrs.items():
+            if attr_name != "dealloc":
+                try:
+                    class_register = obj.class_register
+                except AttributeError:
+                    pass
+                else:
+                    class_register(ptr, attr_name)
+
+        # Register any user-defined dealloc method. We treat dealloc differently to
+        # inject our own cleanup code for properties, ivars, etc.
+
+        user_dealloc = attrs.get("dealloc", None)
+
+        def _new_delloc(objc_self, _cmd):
+
+            # Invoke user-defined dealloc.
+            if user_dealloc:
+                user_dealloc(objc_self, _cmd)
+
+            # Invoke dealloc callback of each attribute. Currently
+            # defined for properties only.
+            for attr_name, obj in attrs.items():
+                try:
+                    dealloc_callback = obj.dealloc_callback
+                except AttributeError:
+                    pass
+                else:
+                    dealloc_callback(objc_self, attr_name)
+
+            # Invoke super dealloc.
+            send_super(ptr, objc_self, "dealloc", restype=None, argtypes=[], _allow_dealloc=True)
+
+        add_method(ptr, "dealloc", _new_delloc, [None, ObjCInstance, SEL])
 
         # Register the ObjC class
         libobjc.objc_registerClassPair(ptr)
@@ -932,7 +1074,6 @@ class ObjCClass(ObjCInstance, type):
         objc_class_name = name.decode('utf-8')
 
         new_attrs = {
-            '_class_inited': False,
             'name': objc_class_name,
             'methods_ptr_count': c_uint(0),
             'methods_ptr': None,
@@ -946,11 +1087,6 @@ class ObjCClass(ObjCInstance, type):
             'forced_properties': set(),
             # Mapping of first keyword -> ObjCPartialMethod instances
             'partial_methods': {},
-            # Mapping of name -> CFUNCTYPE callback function
-            # This only contains the IMPs of methods created in Python,
-            # which need to be kept from being garbage-collected.
-            # It does not contain any other methods, do not use it for calling methods.
-            'imp_keep_alive_table': {},
         }
 
         # On Python 3.6 and later, the class namespace may contain a __classcell__ attribute that must be passed on
@@ -964,22 +1100,6 @@ class ObjCClass(ObjCInstance, type):
         # name or pointer, not when creating a new class.
         # If there is no cached instance for ptr, a new one is created and cached.
         self = super().__new__(cls, ptr, objc_class_name, (ObjCInstance,), new_attrs)
-
-        if not self._class_inited:
-            self._class_inited = True
-
-            # Register all the methods, class methods, etc
-            registered_something = False
-            for attr, obj in attrs.items():
-                if hasattr(obj, "register"):
-                    registered_something = True
-                    obj.register(self, attr)
-
-            # If anything was registered, reload the methods of this class
-            # (and the metaclass, because there may be new class methods).
-            if registered_something:
-                self._load_methods()
-                self.objc_class._load_methods()
 
         return self
 
@@ -1199,7 +1319,7 @@ class ObjCClass(ObjCInstance, type):
 
             # order is rest without the dummy "" part
             order = rest[:-1]
-            partial.methods[frozenset(rest)] = (method, order)
+            partial.methods[frozenset(rest)] = (name, order)
 
 
 class ObjCMetaClass(ObjCClass):
@@ -1256,7 +1376,7 @@ NSMutableDictionary = ObjCClass('NSMutableDictionary')
 Protocol = ObjCClass('Protocol')
 
 
-def py_from_ns(nsobj, *, _auto=False):
+def py_from_ns(nsobj):
     """Convert a Foundation object into an equivalent Python object if possible.
 
     Currently supported types:
@@ -1296,13 +1416,6 @@ def py_from_ns(nsobj, *, _auto=False):
                 'NSNumber containing unsupported type {!r} cannot be converted to a Python object'
                 .format(objc_type)
             )
-    elif _auto:
-        # If py_from_ns is called implicitly to convert an Objective-C method's return value, only the conversions
-        # before this branch are performed. If py_from_ns is called explicitly by hand, the additional conversions
-        # below this branch are performed as well.
-        # _auto is a private kwarg that is only passed when py_from_ns is called implicitly. In that case, we return
-        # early and don't attempt any other conversions.
-        return nsobj
     elif nsobj.isKindOfClass(NSString):
         return str(nsobj)
     elif nsobj.isKindOfClass(NSData):
@@ -1448,9 +1561,9 @@ class ObjCProtocol(ObjCInstance):
                 libobjc.protocol_addProtocol(ptr, proto)
 
             # Register all methods and properties.
-            for attr, obj in ns.items():
+            for attr_name, obj in ns.items():
                 if hasattr(obj, 'protocol_register'):
-                    obj.protocol_register(ptr, attr)
+                    obj.protocol_register(ptr, attr_name)
 
             # Register the protocol object
             libobjc.objc_registerProtocol(ptr)
@@ -1476,7 +1589,7 @@ class ObjCProtocol(ObjCInstance):
             return False
 
     def __subclasscheck__(self, subclass):
-        """Check whether the given class or protool conforms to this protocol.
+        """Check whether the given class or protocol conforms to this protocol.
 
         If the given object is not an Objective-C class or protocol, :class:`TypeError` is raised.
 
@@ -1502,42 +1615,52 @@ class ObjCProtocol(ObjCInstance):
 NSObjectProtocol = ObjCProtocol('NSObject')
 
 
-# Instances of DeallocationObserver are associated with every
-# Objective-C object that gets wrapped inside an ObjCInstance.
-# Their sole purpose is to watch for when the Objective-C object
-# is deallocated, and then remove the object from the dictionary
-# of cached ObjCInstance objects kept by the ObjCInstance class.
+# When a Python object is assigned to a new ObjCInstance attribute, the Python
+# object should be kept alive for the lifetime of the ObjCInstance. This is
+# done by wrapping the Python object as a WrappedPyObject that increments
+# the reference count during assignment and decrements it when the WrappedPyObject
+# and the owning ObjCInstance are deallocated.
 #
 # The methods of the class defined below are decorated with
-# rawmethod() instead of method() because DeallocationObservers
+# rawmethod() instead of method() because WrappedPyObject
 # are created inside of ObjCInstance's __new__ method and we have
 # to be careful to not create another ObjCInstance here (which
 # happens when the usual method decorator turns the self argument
 # into an ObjCInstance), or else get trapped in an infinite recursion.
 
-# Try to reuse an existing DeallocationObserver class.
+# Try to reuse an existing WrappedPyObject class.
 # This allows reloading the module without having to restart
-# the interpreter, although any changes to DeallocationObserver
+# the interpreter, although any changes to WrappedPyObject
 # itself are only applied after a restart of course.
-try:
-    DeallocationObserver = ObjCClass("DeallocationObserver")
-except NameError:
-    class DeallocationObserver(NSObject):
 
-        observed_object = objc_ivar(objc_id)
+
+# Dictionary to keep references to wrapped Python objects. This prevents them
+# from being collected if there are otherwise only Objective-C references left
+# to the object.
+_keep_alive_objects = {}
+
+
+try:
+    WrappedPyObject = ObjCClass("WrappedPyObject")
+except NameError:
+    class WrappedPyObject(NSObject):
+
+        wrapped_pointer = objc_ivar(c_void_p)
 
         @objc_rawmethod
-        def initWithObject_(self, cmd, anObject):
+        def initWithObjectId_(self, cmd, address):
             self = send_message(self, 'init', restype=objc_id, argtypes=[])
             if self is not None:
-                set_ivar(self, 'observed_object', anObject)
+                pyo = cast(address, py_object)
+                _keep_alive_objects[(self.value, address.value)] = pyo.value
+                set_ivar(self, 'wrapped_pointer', address)
             return self.value
 
         @objc_rawmethod
         def dealloc(self, cmd) -> None:
-            anObject = get_ivar(self, 'observed_object')
-            ObjCInstance._cached_objects.pop(anObject.value, None)
-            send_super(__class__, self, 'dealloc', restype=None, argtypes=[])
+            address = get_ivar(self, 'wrapped_pointer')
+            if address.value:
+                del _keep_alive_objects[(self.value, address.value)]
 
         @objc_rawmethod
         def finalize(self, cmd) -> None:
@@ -1545,8 +1668,9 @@ except NameError:
             # (which would have to be explicitly started with
             # objc_startCollectorThread(), so probably not too much reason
             # to have this here, but I guess it can't hurt.)
-            anObject = get_ivar(self, 'observed_object')
-            ObjCInstance._cached_objects.pop(anObject.value, None)
+            address = get_ivar(self, 'wrapped_pointer')
+            if address.value:
+                del _keep_alive_objects[(self.value, address.value)]
             send_super(__class__, self, 'finalize', restype=None, argtypes=[])
 
 
@@ -1642,7 +1766,7 @@ class ObjCBlock:
     In that case, the object needs to be manually wrapped using :class:`ObjCBlock`.
     """
 
-    def __init__(self, pointer, return_type=AUTO, *arg_types):
+    def __init__(self, pointer, restype=AUTO, *argtypes):
         """The constructor takes a block object, which can be either an :class:`ObjCInstance`, or a raw
         :class:`~rubicon.objc.runtime.objc_id` pointer.
 
@@ -1656,7 +1780,7 @@ class ObjCBlock:
         In most cases, Rubicon can automatically determine the block's return type and parameter types.
         If a block object doesn't have return/parameter type information at runtime, Rubicon will raise an error when
         attempting to convert it. In that case, you need to explicitly pass the correct return type and parameter types
-        to :class:`ObjCBlock` using the ``return_type`` and ``arg_types`` parameters.
+        to :class:`ObjCBlock` using the ``restype`` and ``argtypes`` parameters.
         """
 
         if isinstance(pointer, ObjCInstance):
@@ -1667,14 +1791,14 @@ class ObjCBlock:
         self.has_signature = self.struct.contents.flags & BlockConsts.HAS_SIGNATURE
         self.descriptor = cast_block_descriptor(self)
         self.signature = self.descriptor.contents.signature if self.has_signature else None
-        if return_type is AUTO:
-            if arg_types:
-                raise ValueError('Cannot use arg_types with return_type AUTO')
+        if restype is AUTO:
+            if argtypes:
+                raise ValueError('Cannot use argtypes with restype AUTO')
             if not self.has_signature:
                 raise ValueError('Cannot use AUTO types for blocks without signatures')
-            return_type, *arg_types = ctypes_for_method_encoding(self.signature)
-        self.struct.contents.invoke.restype = ctype_for_type(return_type)
-        self.struct.contents.invoke.argtypes = (objc_id, ) + tuple(ctype_for_type(arg_type) for arg_type in arg_types)
+            restype, *argtypes = ctypes_for_method_encoding(self.signature)
+        self.struct.contents.invoke.restype = ctype_for_type(restype)
+        self.struct.contents.invoke.argtypes = (objc_id, ) + tuple(ctype_for_type(arg_type) for arg_type in argtypes)
 
     def __repr__(self):
         representation = '<ObjCBlock@{}'.format(hex(addressof(self.pointer)))
@@ -1716,7 +1840,7 @@ class Block:
 
     _keep_alive_blocks_ = {}
 
-    def __init__(self, func, restype=NOTHING, *arg_types):
+    def __init__(self, func, restype=NOTHING, *argtypes):
         """The constructor accepts any Python callable object.
 
         If the callable has parameter and return type annotations, they are used as the block's parameter and return
@@ -1729,7 +1853,7 @@ class Block:
                 return abs(arg)
 
         For callables without type annotations, the parameter and return types need to be passed to the :class:`Block`
-        constructor in the ``restype`` and ``arg_types`` arguments:
+        constructor in the ``restype`` and ``argtypes`` arguments:
 
         .. code-block:: python
 
@@ -1741,26 +1865,40 @@ class Block:
 
         self.func = func
 
-        argspec = inspect.getfullargspec(inspect.unwrap(func))
-
         if restype is NOTHING:
+            if argtypes:
+                # This can't happen unless the caller does something hacky, but guard against it just in case.
+                raise ValueError('Cannot pass argtypes without a restype')
+
+            # No explicit restype/argtypes were passed into the constructor,
+            # so try to extract them from the function's type annotations.
+
             try:
-                restype = argspec.annotations['return']
-            except KeyError:
+                signature = inspect.signature(func)
+            except (TypeError, ValueError):
                 raise ValueError(
-                    'Block callables must be fully annotated or an explicit '
-                    'return type must be specified.'
+                    'Could not retrieve function signature information - '
+                    'please pass return and argument types directly into Block'
                 )
 
-        if not arg_types:
-            try:
-                arg_types = list(argspec.annotations[varname] for varname in argspec.args)
-            except KeyError:
+            if signature.return_annotation == inspect.Signature.empty:
                 raise ValueError(
-                    'Block callables must be fully annotated or explicit '
-                    'argument types must be specified.'
+                    'Function has no return type annotation - '
+                    'please add one, or pass return and argument types directly into Block'
                 )
-        signature = tuple(ctype_for_type(tp) for tp in arg_types)
+
+            restype = signature.return_annotation
+            argtypes = []
+            for name, param in signature.parameters.items():
+                if param.annotation == inspect.Parameter.empty:
+                    raise ValueError(
+                        'Function has no argument type annotation for parameter ' + repr(name)
+                        + ' - please add one, or pass return and argument types directly into Block'
+                    )
+
+                argtypes.append(param.annotation)
+
+        signature = tuple(ctype_for_type(tp) for tp in argtypes)
 
         restype = ctype_for_type(restype)
 

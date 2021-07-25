@@ -110,6 +110,8 @@ class ActivityWindow(Window):
         self._refresh = False
         self._refresh_interval = 1
 
+        self.on_close = self.on_close_pressed
+
         self.mdbx = mdbx
 
         self.table = toga.Table(
@@ -155,8 +157,9 @@ class ActivityWindow(Window):
             for row in self.table.data:
                 row.refresh()
 
-    def on_close(self, sender: Any = None) -> None:
+    def on_close_pressed(self, sender: Any = None) -> bool:
         self._refresh = False
+        return True
 
     def show(self) -> None:
         if not self._initial_load:

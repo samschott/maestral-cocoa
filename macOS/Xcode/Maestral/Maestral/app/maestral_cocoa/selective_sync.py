@@ -356,6 +356,7 @@ class SelectiveSyncDialog(SelectiveSyncGui):
         self.mdbx = mdbx
 
         self.dialog_buttons.on_press = self.on_dialog_pressed
+        self.on_close = self.on_close_pressed
 
         self.fs_source = FileSystemSource(
             mdbx=self.mdbx,
@@ -421,6 +422,6 @@ class SelectiveSyncDialog(SelectiveSyncGui):
     def on_fs_selection_changed(self) -> None:
         self.dialog_buttons["Update"].enabled = self.fs_source.is_selection_modified()
 
-    def on_close(self) -> None:
-        super().on_close()
+    def on_close_pressed(self, sender: Any = None) -> bool:
         self.fs_source.stop_loading()
+        return True
