@@ -16,11 +16,12 @@ from rubicon.objc import (
     SEL,
     at,
 )
-from toga.constants import LEFT, RIGHT, CENTER, JUSTIFY, TRANSPARENT
+from toga.constants import LEFT, TRANSPARENT
 from toga_cocoa.libs import (
     NSColor,
     NSString,
     NSTextView,
+    NSTextAlignment,
     NSRecessedBezelStyle,
     NSViewMaxYMargin,
     NSMenuItem,
@@ -101,28 +102,6 @@ NSModalPanelWindowLevel = 8
 
 
 macos_version, *_ = platform.mac_ver()
-
-
-NSLeftTextAlignment = 0
-
-if platform.machine() == "arm64":
-    NSRightTextAlignment = 2
-    NSCenterTextAlignment = 1
-else:
-    NSRightTextAlignment = 1
-    NSCenterTextAlignment = 2
-
-NSJustifiedTextAlignment = 3
-NSNaturalTextAlignment = 4
-
-
-def NSTextAlignment(alignment):
-    return {
-        LEFT: NSLeftTextAlignment,
-        RIGHT: NSRightTextAlignment,
-        CENTER: NSCenterTextAlignment,
-        JUSTIFY: NSJustifiedTextAlignment,
-    }[alignment]
 
 
 # ==== icons ===========================================================================
