@@ -131,10 +131,6 @@ class MaestralGui(SystemTrayApp):
             self.setup_dialog.on_success = self.on_setup_completed
             self.setup_dialog.on_failure = self.exit_and_stop_daemon
 
-        elif self.mdbx.pending_dropbox_folder:
-            self.set_icon(ERROR)
-            self.add_background_task(self._exec_dbx_location_dialog)
-
         else:
             self.add_background_task(self.on_setup_completed)
 
@@ -427,7 +423,7 @@ class MaestralGui(SystemTrayApp):
     async def _exec_dbx_location_dialog(self, sender: Any = None) -> None:
         self.location_dialog = DbxLocationDialog(mdbx=self.mdbx, app=self)
         self.location_dialog.raise_()
-        self.location_dialog.on_success = self.on_setup_completed
+        self.location_dialog.on_success = lambda s: self.mdbx.start_sync()
         self.location_dialog.on_failure = self.exit_and_stop_daemon
 
     async def _exec_relink_dialog(self, reason: int) -> None:

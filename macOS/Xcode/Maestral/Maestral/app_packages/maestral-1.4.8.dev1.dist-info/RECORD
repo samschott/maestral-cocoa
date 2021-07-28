@@ -6,7 +6,7 @@ maestral-1.4.8.dev1.dist-info/METADATA,sha256=vF8Gt5M5ixwYGcY2fPjjkwGI_rGY6YBMFC
 maestral-1.4.8.dev1.dist-info/RECORD,,
 maestral-1.4.8.dev1.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
 maestral-1.4.8.dev1.dist-info/WHEEL,sha256=OqRkF0eY5GHssMorFjlbTIq072vpHpF60fIQA6lS9xA,92
-maestral-1.4.8.dev1.dist-info/direct_url.json,sha256=nCyh79o30AwKNCm5vAdhLxgVXzBbNqtpKS6DOBDeFqo,133
+maestral-1.4.8.dev1.dist-info/direct_url.json,sha256=5Jy3sw0DZiT6ZOhELS1ImEHL1fWwIk4XxR7xZ-mhleY,133
 maestral-1.4.8.dev1.dist-info/entry_points.txt,sha256=BdtBbdAp0gdxVxTTV2B5_Lxg-pVtdDUMVLKgEW81h6k,114
 maestral-1.4.8.dev1.dist-info/top_level.txt,sha256=cpmYVmNqTW_njKrQSwWbMvDUR09mvKFSBYcYCQKpHAM,9
 maestral/__init__.py,sha256=7xIgIq6MQYb-6PBA2DVXEE8dlmbtaElbyF2ezUVc-a0,618
@@ -32,7 +32,7 @@ maestral/__pyinstaller/__pycache__/hook-maestral.cpython-39.pyc,,
 maestral/__pyinstaller/hook-maestral.py,sha256=RDI7xeJlFTiqloRa0m6ZQEcK9W3Co1dR9wvBPdW5Zqw,331
 maestral/autostart.py,sha256=uQAd35U4cO89aHqICmJxWp0ZEgRhYLtvU4sCnetXHJw,11901
 maestral/cli.py,sha256=sg_rY_9MhahWTaIGQjVq9q3Obpj2nsfwJBMfU1hj7t8,60224
-maestral/client.py,sha256=jgf0S6HBhF4wffu69d1Wl4nGuGgWlFFC7N8d01O8vy8,64709
+maestral/client.py,sha256=oWt7wPL6aIWk2XprGbzM66MWqwDWN5dxXVXEKfhxteU,64739
 maestral/config/__init__.py,sha256=6ujpDWzIEu0PbD3ZVRmMmmkxJdiEkiRC9fl1MTNr0dE,1676
 maestral/config/__pycache__/__init__.cpython-39.pyc,,
 maestral/config/__pycache__/main.cpython-39.pyc,,
@@ -51,7 +51,7 @@ maestral/logging.py,sha256=ygq8FxEENxCyPCgZX_N1GN-NXZqoPOmc4HSTKeCeTGw,8982
 maestral/main.py,sha256=FXz1js_I3MF9dOCZO4KbkjjGgjBG2wfzlZ2fBWbpwT0,59074
 maestral/manager.py,sha256=woRb7K7E7jFpDogvd90xrAUY0YEj3_dK6ant7b3vSb4,18024
 maestral/notify.py,sha256=ygjh_h9X_poBA--xYAe3whiy3HUORliRXoOIoA0_nEY,4444
-maestral/oauth.py,sha256=iZscLgVyWzbHcM3twPnOlfpPuyo7aXlLFv8Ovp9t4DE,16247
+maestral/oauth.py,sha256=GJa1KJ_s0Wv9GW-CMbpP_CvnKiMVNaZ5-UjLb9AAQ9Q,16692
 maestral/py.typed,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
 maestral/resources/__init__.py,sha256=iwhKnzeBJLKxpRVjvzwiRE63_zNpIBfaKLITauVph-0,24
 maestral/resources/__pycache__/__init__.cpython-39.pyc,,

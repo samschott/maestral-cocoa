@@ -540,14 +540,14 @@ class DropboxClient:
                         if sync_event:
                             sync_event.completed = f.tell()
 
-        # Dropbox SDK provides naive datetime in UTC.
-        client_mod = md.client_modified.replace(tzinfo=timezone.utc)
-        server_mod = md.server_modified.replace(tzinfo=timezone.utc)
+            # Dropbox SDK provides naive datetime in UTC.
+            client_mod = md.client_modified.replace(tzinfo=timezone.utc)
+            server_mod = md.server_modified.replace(tzinfo=timezone.utc)
 
-        # Enforce client_modified < server_modified.
-        timestamp = min(client_mod.timestamp(), server_mod.timestamp(), time.time())
-        # Set mtime of downloaded file.
-        os.utime(local_path, (time.time(), timestamp))
+            # Enforce client_modified < server_modified.
+            timestamp = min(client_mod.timestamp(), server_mod.timestamp(), time.time())
+            # Set mtime of downloaded file.
+            os.utime(local_path, (time.time(), timestamp))
 
         return md
 
@@ -1547,7 +1547,7 @@ def dropbox_to_maestral_error(
         # See https://github.com/dropbox/dropbox-sdk-python/issues/360
         # and https://github.com/SamSchott/maestral/issues/388.
 
-        if exc.request is not None and exc.request.status_code >= 500:
+        if exc.response is not None and exc.response.status_code >= 500:
             err_cls = DropboxServerError
             title = "Dropbox server error"
             text = (
