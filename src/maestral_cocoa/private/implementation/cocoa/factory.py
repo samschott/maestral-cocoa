@@ -754,10 +754,16 @@ class Window(TogaWindow):
     def close(self):
 
         if self.native.sheetParent:
-            # end sheet session before closing
+            # End sheet session.
             self.native.sheetParent.endSheet(self.native)
-
-        self.native.close()
+        elif self.interface.closeable:
+            # Mimic the press of the close button.
+            self.native.performClose(self.native)
+        else:
+            # Window has no close button -> performClose does not work.
+            # Get close confirmation and close if ok.
+            if self.cocoa_windowShouldClose():
+                self.native.close()
 
     def set_release_on_close(self, value):
         self.native.releasedWhenClosed = value
