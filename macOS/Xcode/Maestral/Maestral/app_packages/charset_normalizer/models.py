@@ -203,9 +203,11 @@ class CharsetMatch:
             return self._unicode_ranges
         detected_ranges = set()  # type: Set[str]
         for character in str(self):
-            detected_ranges.add(
-                unicode_range(character)
-            )
+            detected_range = unicode_range(character)  # type: Optional[str]
+            if detected_range:
+                detected_ranges.add(
+                    unicode_range(character)
+                )
         self._unicode_ranges = sorted(list(detected_ranges))
         return self._unicode_ranges
 
@@ -288,7 +290,7 @@ class CharsetMatches:
         # We should disable the submatch factoring when the input file is too heavy (conserve RAM usage)
         if len(item.raw) <= TOO_BIG_SEQUENCE:
             for match in self._results:
-                if match.fingerprint == item.fingerprint:
+                if match.fingerprint == item.fingerprint and match.chaos == item.chaos:
                     match.add_submatch(item)
                     return
         self._results.append(item)

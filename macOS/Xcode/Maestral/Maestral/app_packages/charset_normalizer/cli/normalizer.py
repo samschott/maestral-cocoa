@@ -93,6 +93,8 @@ def cli_detect(argv=None):
         print('--threshold VALUE should be between 0. AND 1.', file=sys.stderr)
         return 1
 
+    x_ = []
+
     for my_file in args.files:
 
         matches = from_fp(
@@ -103,83 +105,94 @@ def cli_detect(argv=None):
 
         if len(matches) == 0:
             print('Unable to identify originating encoding for "{}". {}'.format(my_file.name, 'Maybe try increasing maximum amount of chaos.' if args.threshold < 1. else ''), file=sys.stderr)
-            if my_file.closed is False:
-                my_file.close()
-            continue
-
-        x_ = []
-
-        r_ = matches.best()
-        p_ = r_.first()
-
-        x_.append(
-            CliDetectionResult(
-                abspath(my_file.name),
-                p_.encoding,
-                p_.encoding_aliases,
-                [cp for cp in p_.could_be_from_charset if cp != p_.encoding],
-                p_.language,
-                p_.alphabets,
-                p_.bom,
-                p_.percent_chaos,
-                p_.percent_coherence,
-                None,
-                True
+            x_.append(
+                CliDetectionResult(
+                    abspath(my_file.name),
+                    None,
+                    [],
+                    [],
+                    "Unknown",
+                    [],
+                    False,
+                    1.,
+                    0.,
+                    None,
+                    True
+                )
             )
-        )
+        else:
 
-        if len(matches) > 1 and args.alternatives:
-            for el in matches:
-                if el != p_:
-                    x_.append(
-                        CliDetectionResult(
-                            abspath(my_file.name),
-                            el.encoding,
-                            el.encoding_aliases,
-                            [cp for cp in el.could_be_from_charset if cp != el.encoding],
-                            el.language,
-                            el.alphabets,
-                            el.bom,
-                            el.percent_chaos,
-                            el.percent_coherence,
-                            None,
-                            False
+            r_ = matches.best()
+            p_ = r_.first()
+
+            x_.append(
+                CliDetectionResult(
+                    abspath(my_file.name),
+                    p_.encoding,
+                    p_.encoding_aliases,
+                    [cp for cp in p_.could_be_from_charset if cp != p_.encoding],
+                    p_.language,
+                    p_.alphabets,
+                    p_.bom,
+                    p_.percent_chaos,
+                    p_.percent_coherence,
+                    None,
+                    True
+                )
+            )
+
+            if len(matches) > 1 and args.alternatives:
+                for el in matches:
+                    if el != p_:
+                        x_.append(
+                            CliDetectionResult(
+                                abspath(my_file.name),
+                                el.encoding,
+                                el.encoding_aliases,
+                                [cp for cp in el.could_be_from_charset if cp != el.encoding],
+                                el.language,
+                                el.alphabets,
+                                el.bom,
+                                el.percent_chaos,
+                                el.percent_coherence,
+                                None,
+                                False
+                            )
                         )
-                    )
 
-        if args.normalize is True:
+            if args.normalize is True:
 
-            if p_.encoding.startswith('utf') is True:
-                print('"{}" file does not need to be normalized, as it already came from unicode.'.format(my_file.name), file=sys.stderr)
-                if my_file.closed is False:
-                    my_file.close()
-                continue
-
-            o_ = my_file.name.split('.')  # type: list[str]
-
-            if args.replace is False:
-                o_.insert(-1, p_.encoding)
-                if my_file.closed is False:
-                    my_file.close()
-            else:
-                if args.force is False and query_yes_no(
-                        'Are you sure to normalize "{}" by replacing it ?'.format(my_file.name), 'no') is False:
+                if p_.encoding.startswith('utf') is True:
+                    print('"{}" file does not need to be normalized, as it already came from unicode.'.format(my_file.name), file=sys.stderr)
                     if my_file.closed is False:
                         my_file.close()
                     continue
 
-            try:
-                x_[0].unicode_path = './{}'.format('.'.join(o_))
+                o_ = my_file.name.split('.')  # type: list[str]
 
-                with open(x_[0].unicode_path, 'w', encoding='utf-8') as fp:
-                    fp.write(
-                        str(p_)
-                    )
-            except IOError as e:
-                print(str(e), file=sys.stderr)
-                if my_file.closed is False:
-                    my_file.close()
-                return 2
+                if args.replace is False:
+                    o_.insert(-1, p_.encoding)
+                    if my_file.closed is False:
+                        my_file.close()
+                else:
+                    if args.force is False and query_yes_no(
+                            'Are you sure to normalize "{}" by replacing it ?'.format(my_file.name), 'no') is False:
+                        if my_file.closed is False:
+                            my_file.close()
+                        continue
+
+                try:
+                    x_[0].unicode_path = abspath('./{}'.format('.'.join(o_)))
+
+                    with open(x_[0].unicode_path, 'w', encoding='utf-8') as fp:
+                        fp.write(
+                            str(p_)
+                        )
+                except IOError as e:
+                    print(str(e), file=sys.stderr)
+                    if my_file.closed is False:
+                        my_file.close()
+                    return 2
 
         if my_file.closed is False:
             my_file.close()
@@ -189,7 +202,7 @@ def cli_detect(argv=None):
             dumps(
                 [
                     el.__dict__ for el in x_
-                ] if args.alternatives else x_[0].__dict__,
+                ] if len(x_) > 1 else x_[0].__dict__,
                 ensure_ascii=True,
                 indent=4
             )

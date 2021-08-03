@@ -2,11 +2,11 @@
 ../../share/icons/hicolor/512x512/apps/maestral.png,sha256=nixyzBBJuCdXGGTc3_N5pW2MfMQd0dBPcOvzwatE-Ms,137001
 maestral-1.4.8.dev1.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
 maestral-1.4.8.dev1.dist-info/LICENSE.txt,sha256=hifZsycEZotvBz9OGvBwLEzlq2EooNzHxMvasFwcw4Q,1076
-maestral-1.4.8.dev1.dist-info/METADATA,sha256=vF8Gt5M5ixwYGcY2fPjjkwGI_rGY6YBMFCLEaaVKm9I,8878
+maestral-1.4.8.dev1.dist-info/METADATA,sha256=0O0gXOAa2WqnSumzXMYqAWpv7xC6Li5ZoKKe-TySpIo,8980
 maestral-1.4.8.dev1.dist-info/RECORD,,
 maestral-1.4.8.dev1.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
 maestral-1.4.8.dev1.dist-info/WHEEL,sha256=OqRkF0eY5GHssMorFjlbTIq072vpHpF60fIQA6lS9xA,92
-maestral-1.4.8.dev1.dist-info/direct_url.json,sha256=5Jy3sw0DZiT6ZOhELS1ImEHL1fWwIk4XxR7xZ-mhleY,133
+maestral-1.4.8.dev1.dist-info/direct_url.json,sha256=oRNA3CCCusqE7y7ODvkBWIkud0cJFSIVwKIwbmRIcMk,133
 maestral-1.4.8.dev1.dist-info/entry_points.txt,sha256=BdtBbdAp0gdxVxTTV2B5_Lxg-pVtdDUMVLKgEW81h6k,114
 maestral-1.4.8.dev1.dist-info/top_level.txt,sha256=cpmYVmNqTW_njKrQSwWbMvDUR09mvKFSBYcYCQKpHAM,9
 maestral/__init__.py,sha256=7xIgIq6MQYb-6PBA2DVXEE8dlmbtaElbyF2ezUVc-a0,618
@@ -48,7 +48,7 @@ maestral/fsevents/__pycache__/__init__.cpython-39.pyc,,
 maestral/fsevents/__pycache__/polling.cpython-39.pyc,,
 maestral/fsevents/polling.py,sha256=kh6t-iFZwXOUnEq1MInsxszW4YeolMlvpUQ439In9Wg,5375
 maestral/logging.py,sha256=ygq8FxEENxCyPCgZX_N1GN-NXZqoPOmc4HSTKeCeTGw,8982
-maestral/main.py,sha256=FXz1js_I3MF9dOCZO4KbkjjGgjBG2wfzlZ2fBWbpwT0,59074
+maestral/main.py,sha256=FwIVJAayuziEdA-tItmiTLYk_BqtZSVIsj7WJZXsNTM,59179
 maestral/manager.py,sha256=woRb7K7E7jFpDogvd90xrAUY0YEj3_dK6ant7b3vSb4,18024
 maestral/notify.py,sha256=ygjh_h9X_poBA--xYAe3whiy3HUORliRXoOIoA0_nEY,4444
 maestral/oauth.py,sha256=GJa1KJ_s0Wv9GW-CMbpP_CvnKiMVNaZ5-UjLb9AAQ9Q,16692
@@ -56,7 +56,7 @@ maestral/py.typed,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
 maestral/resources/__init__.py,sha256=iwhKnzeBJLKxpRVjvzwiRE63_zNpIBfaKLITauVph-0,24
 maestral/resources/__pycache__/__init__.cpython-39.pyc,,
 maestral/resources/maestral.png,sha256=nixyzBBJuCdXGGTc3_N5pW2MfMQd0dBPcOvzwatE-Ms,137001
-maestral/sync.py,sha256=qBWRL2XwEjlk_jH3VmDTMkZpxzyeZEPeiDpg-3MB2Js,136379
+maestral/sync.py,sha256=lO8gjZQS1TSmDeS_Bpa4haTUeRh98stPd4VQIPHB7yY,136569
 maestral/utils/__init__.py,sha256=gPZaxblJayK2J9VtvlgIx3F4u-jsgXFR_dD9fJyfRVg,3745
 maestral/utils/__pycache__/__init__.cpython-39.pyc,,
 maestral/utils/__pycache__/appdirs.cpython-39.pyc,,
@@ -71,7 +71,7 @@ maestral/utils/appdirs.py,sha256=Ld-g1UcMT7bp1FscYcfdVSLPPEncJ5_cvtj49pqH-W0,755
 maestral/utils/caches.py,sha256=C_pR2IaIZ5ybH_3JaAWLiNnYOlgIh6T5xrSlAyyQ0KU,1414
 maestral/utils/cli.py,sha256=dc1avZ1xyBbJxLIVGQ3iP9IDPtCSYsTOy8Hq98Rn_7M,18461
 maestral/utils/content_hasher.py,sha256=GFKeQXPV5Ml2mgoyBEMCqWp2TGWDJHn55A6IuuFOaPo,4355
-maestral/utils/integration.py,sha256=vAHAI8Q2wapVYLvclUWAunWcnCgJ222rQ27c4kQKWew,6225
+maestral/utils/integration.py,sha256=NkoPqcOPX-BwDYi-gHHzezK_ZgEiNo1tubsNuNMIgBs,6271
 maestral/utils/orm.py,sha256=fypjdpMz0hRhA07_XncP1aOvaysZwdZQ9iqq6HpMeak,17989
 maestral/utils/path.py,sha256=nRjvyhD0A28cJ0xNXfvwpEZxJhT76KACIFd1joRQ07Q,13974
 maestral/utils/serializer.py,sha256=wj9R5ZvqVP4cn5_5f7FBAPaWUJk-TDUUt3Cl9l2b6m8,2887

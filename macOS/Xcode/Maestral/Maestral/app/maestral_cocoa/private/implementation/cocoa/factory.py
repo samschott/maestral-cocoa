@@ -757,7 +757,7 @@ class Window(TogaWindow):
             # end sheet session before closing
             self.native.sheetParent.endSheet(self.native)
 
-        self.native.close()
+        self.native.performClose(self.native)
 
     def set_release_on_close(self, value):
         self.native.releasedWhenClosed = value
