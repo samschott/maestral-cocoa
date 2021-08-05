@@ -29,6 +29,7 @@ from maestral.daemon import (
 )
 from maestral.errors import (
     NoDropboxDirError,
+    NotLinkedError,
     TokenRevokedError,
     TokenExpiredError,
     KeyringAccessError,
@@ -301,6 +302,8 @@ class MaestralGui(SystemTrayApp):
                 self.item_pause.label = self.PAUSE_TEXT
         except NoDropboxDirError:
             self.add_background_task(self._exec_dbx_location_dialog)
+        except NotLinkedError:
+            self.add_background_task(self.restart)
 
     def on_settings_clicked(self, widget: Any) -> None:
         self.settings_window.raise_()
