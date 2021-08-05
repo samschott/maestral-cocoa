@@ -126,11 +126,17 @@ class MaestralGui(SystemTrayApp):
             self.add_background_task(self.update_error)
             return
 
-        if pending_link:
+        pending_folder = self.mdbx.pending_dropbox_folder
+
+        if pending_link or pending_folder:
             self.setup_dialog = SetupDialog(mdbx=self.mdbx, app=self)
             self.setup_dialog.raise_()
             self.setup_dialog.on_success = self.on_setup_completed
             self.setup_dialog.on_failure = self.exit_and_stop_daemon
+
+            if not pending_link:
+                # Skip link page.
+                self.setup_dialog.goto_page(2)
 
         else:
             self.add_background_task(self.on_setup_completed)
