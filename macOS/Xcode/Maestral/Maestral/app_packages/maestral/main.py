@@ -211,12 +211,10 @@ class Maestral:
             self._logger.debug("Could not remove token from keyring", exc_info=True)
 
         # clean up config + state
-        self.sync.clear_index()
-        self.sync.clear_sync_history()
         self._conf.cleanup()
         self._state.cleanup()
-        self.sync._load_cached_config()  # reload cached config values
-        delete(self.sync.database_path)
+        self.sync.reset_sync_state()
+        self.sync.reload_cached_config()  # reload cached config values
 
         self._logger.info("Unlinked Dropbox account.")
 
@@ -926,7 +924,14 @@ class Maestral:
     def start_sync(self) -> None:
         """
         Creates syncing threads and starts syncing.
+
+        :raises NotLinkedError: if no Dropbox account is linked.
+        :raises NoDropboxDirError: if local Dropbox folder is not set up.
         """
+
+        self._check_linked()
+        self._check_dropbox_dir()
+
         self.manager.start()
 
     def stop_sync(self) -> None:

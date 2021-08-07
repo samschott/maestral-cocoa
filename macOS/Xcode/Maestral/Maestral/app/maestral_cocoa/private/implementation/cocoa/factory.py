@@ -548,6 +548,7 @@ class MenuItemSeparator:
     def __init__(self, interface):
         self.interface = interface
         self.native = NSMenuItem.separatorItem()
+        self.native.retain()
 
 
 class TogaMenu(NSMenu):

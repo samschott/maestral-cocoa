@@ -29,6 +29,7 @@ from maestral.daemon import (
 )
 from maestral.errors import (
     NoDropboxDirError,
+    NotLinkedError,
     TokenRevokedError,
     TokenExpiredError,
     KeyringAccessError,
@@ -125,11 +126,16 @@ class MaestralGui(SystemTrayApp):
             self.add_background_task(self.update_error)
             return
 
-        if pending_link:
+        pending_folder = self.mdbx.pending_dropbox_folder
+
+        if pending_link or pending_folder:
             self.setup_dialog = SetupDialog(mdbx=self.mdbx, app=self)
             self.setup_dialog.raise_()
             self.setup_dialog.on_success = self.on_setup_completed
             self.setup_dialog.on_failure = self.exit_and_stop_daemon
+
+            if pending_folder:
+                self.setup_dialog.goto_page(2)
 
         else:
             self.add_background_task(self.on_setup_completed)
@@ -301,6 +307,8 @@ class MaestralGui(SystemTrayApp):
                 self.item_pause.label = self.PAUSE_TEXT
         except NoDropboxDirError:
             self.add_background_task(self._exec_dbx_location_dialog)
+        except NotLinkedError:
+            self.add_background_task(self.restart)
 
     def on_settings_clicked(self, widget: Any) -> None:
         self.settings_window.raise_()

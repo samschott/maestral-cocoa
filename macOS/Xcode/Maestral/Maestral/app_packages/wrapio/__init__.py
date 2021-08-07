@@ -101,11 +101,19 @@ class AutoHandle(metaclass = HandleMeta):
     as :meth:`~.AutoHandle._invoke`.
     """
 
-    __slots__ = ('_callback', '_aware', '_async')
+    __slots__ = ('_callback', '_fallback', '_aware', '_async')
 
-    def __init__(self, callback = None, aware = False, sync = True):
+    def __init__(self,
+                 callback = None,
+                 fallback = None,
+                 aware = False,
+                 sync = True):
 
-        self._callback = callback or (_noop if sync else _anoop)
+        noop = _noop if sync else _anoop
+
+        self._callback = callback or noop
+        self._fallback = fallback or noop
+
         self._aware = {} if aware else None
         self._async = not sync
 
@@ -124,8 +132,12 @@ class AutoHandle(metaclass = HandleMeta):
 
     def _invoke(self, name, *args, **kwargs):
 
-        event = events[self.__class__][name]
-        result = event(self, *args, **kwargs)
+        try:
+            callback = events[self.__class__][name]
+        except KeyError:
+            callback = functools.partial(self._fallback, name)
+
+        result = callback(self, *args, **kwargs)
 
         if self._async:
             loop = asyncio.get_event_loop()
@@ -139,8 +151,12 @@ class Handle(AutoHandle):
     """
     Base class for those implementing the event protocol.
 
+    :param callable callback:
+        Called on dispatching existing events with (*args, **kwargs).
+    :param callable fallback:
+        Called on dispatching nonexisting events with (event, *args, **kwargs).
     :param bool sync:
-        Used for creating tasks from the result of callbacks.
+        Whether not to create tasks from the result of callbacks.
     :param bool aware:
         Whether to look into the last frame's local variables to find keys for
         creating a cached :func:`collections.namedtuple` for gathering dispatch
