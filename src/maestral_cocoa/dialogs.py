@@ -16,13 +16,12 @@ from . import __url__
 from .private.widgets import (
     Window,
     DialogButtons,
-    VibrantBox,
     Label,
     RichMultilineTextInput,
     FollowLinkButton,
     Icon,
 )
-from .private.constants import VisualEffectMaterial, WORD_WRAP
+from .private.constants import WORD_WRAP
 from .utils import call_async_maestral
 
 
@@ -165,18 +164,8 @@ class Dialog(Window):
             ),
         )
 
-        self.content = VibrantBox(
-            children=[self.outer_box], material=VisualEffectMaterial.WindowBackground
-        )
+        self.content = self.outer_box
         self.center()
-
-    def show_as_sheet(self, window: Window) -> None:
-        self.content.material = VisualEffectMaterial.Sheet
-        super().show_as_sheet(window)
-
-    def show(self) -> None:
-        self.content.material = VisualEffectMaterial.WindowBackground
-        super().show()
 
 
 class ProgressDialog(Dialog):

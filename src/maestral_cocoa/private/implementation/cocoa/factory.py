@@ -3,7 +3,6 @@
 # system imports
 import os.path as osp
 import platform
-from packaging.version import Version
 
 # external imports
 from travertino.size import at_least
@@ -54,7 +53,7 @@ from toga_cocoa.window import WindowDelegate as TogaWindowDeletage
 from toga_cocoa.widgets.multilinetextinput import (
     MultilineTextInput as TogaMultilineTextInput,
 )
-from toga_cocoa.factory import ImageView, Box
+from toga_cocoa.factory import ImageView
 from toga_cocoa.factory import *  # noqa: F401,F406
 
 # local imports
@@ -68,8 +67,6 @@ from .constants import (
     NSWindowAnimationBehaviorAlertPanel,
     NSUTF8StringEncoding,
     NSImageLeading,
-    NSVisualEffectStateActive,
-    NSVisualEffectBlendingModeBehindWindow,
     NSCompositeSourceOver,
     NSImageNameFollowLinkFreestandingTemplate,
     NSImageNameInvalidDataFreestandingTemplate,
@@ -453,40 +450,6 @@ class FileSelectionButton(Widget):
         self.interface.intrinsic.width = at_least(
             max(self.interface.MIN_WIDTH, content_size.width)
         )
-
-
-# ==== layout widgets ==================================================================
-
-
-if Version(macos_version) >= Version("10.14.0"):
-
-    class VibrantBox(Widget):
-        """A box with macOS vibrancy."""
-
-        def create(self):
-            self.native = NSVisualEffectView.new()
-            self.native.state = NSVisualEffectStateActive
-            self.native.blendingMode = NSVisualEffectBlendingModeBehindWindow
-            self.native.material = self.interface.material
-            self.native.wantsLayer = True
-
-            # Add the layout constraints
-            self.add_constraints()
-
-        def set_material(self, value):
-            self.native.material = value
-
-        def rehint(self):
-            content_size = self.native.intrinsicContentSize()
-            self.interface.intrinsic.width = at_least(content_size.width)
-            self.interface.intrinsic.height = at_least(content_size.height)
-
-
-else:
-
-    class VibrantBox(Box):  # type: ignore
-        def set_material(self, value):
-            pass
 
 
 # ==== menus and status bar ============================================================
