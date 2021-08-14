@@ -134,7 +134,8 @@ class MaestralGui(SystemTrayApp):
             self.setup_dialog.on_success = self.on_setup_completed
             self.setup_dialog.on_failure = self.exit_and_stop_daemon
 
-            if pending_folder:
+            if not pending_link:
+                # Skip link page.
                 self.setup_dialog.goto_page(2)
 
         else:

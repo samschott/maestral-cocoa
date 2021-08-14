@@ -2,11 +2,11 @@
 ../../share/icons/hicolor/512x512/apps/maestral.png,sha256=nixyzBBJuCdXGGTc3_N5pW2MfMQd0dBPcOvzwatE-Ms,137001
 maestral-1.4.8.dev1.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
 maestral-1.4.8.dev1.dist-info/LICENSE.txt,sha256=hifZsycEZotvBz9OGvBwLEzlq2EooNzHxMvasFwcw4Q,1076
-maestral-1.4.8.dev1.dist-info/METADATA,sha256=0O0gXOAa2WqnSumzXMYqAWpv7xC6Li5ZoKKe-TySpIo,8980
+maestral-1.4.8.dev1.dist-info/METADATA,sha256=qSqbZWB-OGwM4MA6jmLsXjfiGnd0DKDaJHJ6ZAjgYNU,9559
 maestral-1.4.8.dev1.dist-info/RECORD,,
 maestral-1.4.8.dev1.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
-maestral-1.4.8.dev1.dist-info/WHEEL,sha256=OqRkF0eY5GHssMorFjlbTIq072vpHpF60fIQA6lS9xA,92
-maestral-1.4.8.dev1.dist-info/direct_url.json,sha256=VchEdvnG9MCW-Dr22F-RCXosYdHxGTdjswsPRKPDeEA,133
+maestral-1.4.8.dev1.dist-info/WHEEL,sha256=ewwEueio1C2XeHTvT17n8dZUJgOvyCWCt0WVNLClP9o,92
+maestral-1.4.8.dev1.dist-info/direct_url.json,sha256=nN0uLcxK6PGYNaNs7RZJYnLT0F7kw22rhLxW9GRR_cY,133
 maestral-1.4.8.dev1.dist-info/entry_points.txt,sha256=BdtBbdAp0gdxVxTTV2B5_Lxg-pVtdDUMVLKgEW81h6k,114
 maestral-1.4.8.dev1.dist-info/top_level.txt,sha256=cpmYVmNqTW_njKrQSwWbMvDUR09mvKFSBYcYCQKpHAM,9
 maestral/__init__.py,sha256=7xIgIq6MQYb-6PBA2DVXEE8dlmbtaElbyF2ezUVc-a0,618

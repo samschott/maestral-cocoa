@@ -3,7 +3,6 @@
 # system imports
 import os.path as osp
 import platform
-from packaging.version import Version
 
 # external imports
 from travertino.size import at_least
@@ -16,6 +15,7 @@ from rubicon.objc import (
     SEL,
     at,
 )
+from rubicon.objc.runtime import autoreleasepool
 from toga.constants import LEFT, TRANSPARENT
 from toga_cocoa.libs import (
     NSColor,
@@ -54,7 +54,7 @@ from toga_cocoa.window import WindowDelegate as TogaWindowDeletage
 from toga_cocoa.widgets.multilinetextinput import (
     MultilineTextInput as TogaMultilineTextInput,
 )
-from toga_cocoa.factory import ImageView, Box
+from toga_cocoa.factory import ImageView
 from toga_cocoa.factory import *  # noqa: F401,F406
 
 # local imports
@@ -68,8 +68,6 @@ from .constants import (
     NSWindowAnimationBehaviorAlertPanel,
     NSUTF8StringEncoding,
     NSImageLeading,
-    NSVisualEffectStateActive,
-    NSVisualEffectBlendingModeBehindWindow,
     NSCompositeSourceOver,
     NSImageNameFollowLinkFreestandingTemplate,
     NSImageNameInvalidDataFreestandingTemplate,
@@ -455,40 +453,6 @@ class FileSelectionButton(Widget):
         )
 
 
-# ==== layout widgets ==================================================================
-
-
-if Version(macos_version) >= Version("10.14.0"):
-
-    class VibrantBox(Widget):
-        """A box with macOS vibrancy."""
-
-        def create(self):
-            self.native = NSVisualEffectView.new()
-            self.native.state = NSVisualEffectStateActive
-            self.native.blendingMode = NSVisualEffectBlendingModeBehindWindow
-            self.native.material = self.interface.material
-            self.native.wantsLayer = True
-
-            # Add the layout constraints
-            self.add_constraints()
-
-        def set_material(self, value):
-            self.native.material = value
-
-        def rehint(self):
-            content_size = self.native.intrinsicContentSize()
-            self.interface.intrinsic.width = at_least(content_size.width)
-            self.interface.intrinsic.height = at_least(content_size.height)
-
-
-else:
-
-    class VibrantBox(Box):  # type: ignore
-        def set_material(self, value):
-            pass
-
-
 # ==== menus and status bar ============================================================
 
 
@@ -758,7 +722,12 @@ class Window(TogaWindow):
             # end sheet session before closing
             self.native.sheetParent.endSheet(self.native)
 
-        self.native.performClose(self.native)
+        if self.interface.closeable:
+            self.native.performClose(self.native)
+        else:
+            # Window has no close button -> performClose does not work.
+            if self.cocoa_windowShouldClose():
+                self.native.close()
 
     def set_release_on_close(self, value):
         self.native.releasedWhenClosed = value
@@ -826,22 +795,24 @@ def apply_round_clipping(image_view_impl: ImageView) -> None:
     composed_image = NSImage.alloc().initWithSize(image.size)
     composed_image.lockFocus()
 
-    ctx = NSGraphicsContext.currentContext
-    ctx.saveGraphicsState()
-    ctx.imageInterpolation = NSImageInterpolationHigh
+    with autoreleasepool():
 
-    image_frame = NSRect(NSPoint(0, 0), image.size)
-    clip_path = NSBezierPath.bezierPathWithRoundedRect(
-        image_frame, xRadius=image.size.width / 2, yRadius=image.size.height / 2
-    )
-    clip_path.addClip()
+        ctx = NSGraphicsContext.currentContext
+        ctx.saveGraphicsState()
+        ctx.imageInterpolation = NSImageInterpolationHigh
 
-    zero_rect = NSRect(NSPoint(0, 0), NSMakeSize(0, 0))
-    image.drawInRect(
-        image_frame, fromRect=zero_rect, operation=NSCompositeSourceOver, fraction=1
-    )
-    composed_image.unlockFocus()
-    ctx.restoreGraphicsState()
+        image_frame = NSRect(NSPoint(0, 0), image.size)
+        clip_path = NSBezierPath.bezierPathWithRoundedRect(
+            image_frame, xRadius=image.size.width / 2, yRadius=image.size.height / 2
+        )
+        clip_path.addClip()
+
+        zero_rect = NSRect(NSPoint(0, 0), NSMakeSize(0, 0))
+        image.drawInRect(
+            image_frame, fromRect=zero_rect, operation=NSCompositeSourceOver, fraction=1
+        )
+        composed_image.unlockFocus()
+        ctx.restoreGraphicsState()
 
     image_view_impl.native.image = composed_image
 
@@ -853,18 +824,20 @@ def resize_image_to(image: NSImage, height: int) -> NSImage:
     new_image.lockFocus()
     image.size = new_size
 
-    ctx = NSGraphicsContext.currentContext
-    ctx.saveGraphicsState()
-    ctx.imageInterpolation = NSImageInterpolationHigh
+    with autoreleasepool():
 
-    image.drawAtPoint(
-        NSZeroPoint,
-        fromRect=CGRectMake(0, 0, new_size.width, new_size.height),
-        operation=NSCompositingOperationCopy,
-        fraction=1.0,
-    )
+        ctx = NSGraphicsContext.currentContext
+        ctx.saveGraphicsState()
+        ctx.imageInterpolation = NSImageInterpolationHigh
 
-    new_image.unlockFocus()
-    ctx.restoreGraphicsState()
+        image.drawAtPoint(
+            NSZeroPoint,
+            fromRect=CGRectMake(0, 0, new_size.width, new_size.height),
+            operation=NSCompositingOperationCopy,
+            fraction=1.0,
+        )
+
+        new_image.unlockFocus()
+        ctx.restoreGraphicsState()
 
     return new_image

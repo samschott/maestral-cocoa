@@ -7,11 +7,9 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 # external imports
-from maestral.constants import IS_MACOS
 from maestral.daemon import MaestralProxy, stop_maestral_daemon_process
 
 # local imports
-from .constants import FROZEN
 from .utils import call_async_maestral
 from .dialogs import UpdateDialog, ProgressDialog
 from .private.widgets import SystemTrayApp
@@ -191,9 +189,9 @@ class AutoUpdater:
         self.mdbx = mdbx
         self.app = app
 
-        if IS_MACOS and FROZEN:
+        try:
             self._backend = AutoUpdaterSparkle(self.mdbx)
-        else:
+        except (ImportError, ValueError):
             self._backend = AutoUpdaterFallback(self.mdbx, self.app)
 
     def start_updater(self) -> None:

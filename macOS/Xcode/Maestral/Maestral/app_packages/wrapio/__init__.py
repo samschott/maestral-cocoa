@@ -136,8 +136,10 @@ class AutoHandle(metaclass = HandleMeta):
             callback = events[self.__class__][name]
         except KeyError:
             callback = functools.partial(self._fallback, name)
+        else:
+            callback = functools.partial(callback, self)
 
-        result = callback(self, *args, **kwargs)
+        result = callback(*args, **kwargs)
 
         if self._async:
             loop = asyncio.get_event_loop()

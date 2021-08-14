@@ -11,7 +11,7 @@ from toga.constants import ROW, RIGHT, TRANSPARENT
 
 # local imports
 from .platform import get_platform_factory
-from .constants import ON, MIXED, TRUNCATE_TAIL, VisualEffectMaterial, ImageTemplate
+from .constants import ON, MIXED, TRUNCATE_TAIL, ImageTemplate
 
 
 private_factory = get_platform_factory()
@@ -26,36 +26,6 @@ class Spacer(toga.Box):
     def __init__(self, direction=ROW, factory=None):
         style = Pack(flex=1, direction=direction, background_color=TRANSPARENT)
         super().__init__(style=style, factory=factory)
-
-
-class VibrantBox(Widget):
-    """A macOS style vibrant box, to be used as translucent window background."""
-
-    def __init__(
-        self,
-        id=None,
-        style=None,
-        children=None,
-        material=VisualEffectMaterial.UnderWindowBackground,
-        factory=private_factory,
-    ):
-        super().__init__(id=id, style=style, factory=factory)
-        self._children = []
-        if children:
-            for child in children:
-                self.add(child)
-
-        self._material = material
-        self._impl = self.factory.VibrantBox(interface=self)
-
-    @property
-    def material(self):
-        return self._material
-
-    @material.setter
-    def material(self, material):
-        self._material = material
-        self._impl.set_material(material)
 
 
 # ==== buttons =========================================================================

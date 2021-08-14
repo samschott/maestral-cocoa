@@ -98,7 +98,27 @@ or downloading a file if it already exists with the same content locally or in t
 ## Installation
 
 An app bundle is provided for macOS High Sierra and higher and can be downloaded from the
-Releases tab. On other platforms, please download and install the Python package from PyPI:
+Releases tab. This app Bundle is also package as a Homebrew cask.
+
+On other platforms, you can download and install Maestral as a Python package from PyPI or
+as a Docker image from Docker Hub.
+
+For more detailed information on the installation, setup and system requirements, please
+check the [documentation](https://maestral.app/docs/installation).
+
+
+### Homebrew
+
+The official Maestral releases are also available as Homebrew casks. If you have
+[Homebrew](https://brew.sh) on your system, you can install using:
+
+```console
+$ brew install maestral
+```
+
+### Python package using PyPI
+
+Please download and install the Python package from PyPI:
 
 ```console
 $ python3 -m pip install --upgrade maestral
@@ -112,15 +132,14 @@ on Linux and `maestral-cocoa` on macOS:
 $ python3 -m pip install --upgrade maestral[gui]
 ```
 
-There also a Docker image available for x86, arm/v7 (32bit) and arm64 platforms which can
-be installed with:
+### Docker image
+
+A Docker image is available for x86, arm/v7 (32bit) and arm64 platforms and can be
+installed with:
 
 ```colsole
-docker pull maestraldbx/maestral
+$ docker pull maestraldbx/maestral
 ```
-
-For more detailed information on the installation, setup and system requirements, please
-check the [documentation](https://samschott.github.io/maestral/docs/installation).
 
 ## Usage
 
@@ -159,16 +178,16 @@ $ maestral start --config-name="work"
 ```
 
 This will start two instances of Maestral, syncing a private and a work account, 
-respectively. Configs will be automatically cleared when unlinking an account and you can
-list all currently linked accounts with `maestral configs`:
+respectively. Configs will be automatically cleared when unlinking an account. You can
+list all currently linked accounts with `maestral config-files`. The above setup for
+example will return the following on macOS:
 
 ```console
-$ maestral configs
+$ maestral config-files
 
-Config name  Account
-personal     user@gmail.com
-work         user@mycorp.org
-
+Config name  Account          Path
+maestral     user@gmail.com   ~/Library/Application Support/maestral/maestral.ini
+private      user@mycorp.org  ~/Library/Application Support/maestral/private.ini
 ```
 
 By default, the Dropbox folder names will contain the capitalised config-name in braces.
