@@ -407,22 +407,19 @@ class RelinkDialog(Dialog):
 
         self.dialog_buttons[self.LINK_BTN].enabled = False
 
-    def on_dialog_press(self, btn_name: str) -> None:
+    async def on_dialog_press(self, btn_name: str) -> None:
 
         self.dialog_buttons.enabled = False
         self.token_field.enabled = False
         self.spinner.start()
 
         if btn_name == self.CANCEL_BTN:
-            self.app.exit(stop_daemon=True)
+            await self.app.exit_and_stop_daemon()
         elif btn_name == self.UNLINK_BTN:
-            self.do_unlink()
+            await call_async_maestral(self.mdbx.config_name, "unlink")
+            await self.app.exit_and_stop_daemon()
         elif btn_name == self.LINK_BTN:
-            self.do_relink()
-
-    async def do_unlink(self) -> None:
-        await call_async_maestral(self.mdbx.config_name, "unlink")
-        self.app.exit(stop_daemon=True)
+            await self.do_relink()
 
     async def do_relink(self) -> None:
 
@@ -436,7 +433,7 @@ class RelinkDialog(Dialog):
                 title="Relink successful!",
                 message="Click OK to restart.",
             )
-            self.app.restart()
+            await self.app.restart()
         elif res == 1:
             await self.alert_sheet(
                 title="Invalid token",
