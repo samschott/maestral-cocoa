@@ -327,6 +327,9 @@ class FileSystemSource(Node, Source):
         self._children = [PlaceholderNode("Loading...", self)]
         self._included.label = "Select all"
 
+    def reload(self):
+        create_task(self._load_children_async())
+
     def propagate_selection_to_parent(self, state: int) -> None:
         if self.on_fs_selection_changed:
             self.on_fs_selection_changed()
