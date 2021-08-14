@@ -13,7 +13,7 @@ from toga.sources import Source
 from toga.style import Pack
 from toga.constants import TRANSPARENT
 from maestral.utils.path import is_child, is_equal_or_child
-from maestral.errors import NotAFolderError, NotFoundError, BusyError
+from maestral.errors import NotAFolderError, NotFoundError, BusyError, NotLinkedError
 from maestral.daemon import MaestralProxy
 
 # local imports
@@ -157,20 +157,17 @@ class Node:
 
         try:
 
-            did_remove_placeholder = False
+            did_clear_children = False
 
             async for res in generate_async_maestral(
                 self._mdbx.config_name, "list_folder_iterator", self.path_lower
             ):
 
                 # remove placeholder nodes
-                if not did_remove_placeholder:
-                    for child in self._children.copy():
-                        if isinstance(child, PlaceholderNode):
-                            self._children.remove(child)
-                            self.notify("remove", parent=self, index=0, item=child)
-
-                    did_remove_placeholder = True
+                if not did_clear_children:
+                    self._children = []
+                    self.notify("change_source", source=self)
+                    did_clear_children = True
 
                 res.sort(key=lambda e: e["name"].lower())
 
@@ -202,14 +199,20 @@ class Node:
                 if self._stop_loading.is_set():
                     return
 
-        except ConnectionError:
+        except (ConnectionError, NotLinkedError):
             self.on_loading_failed()
         except (NotFoundError, NotAFolderError):
             self._children = []
+        else:
+            self.on_loading_succeeded()
 
     def on_loading_failed(self) -> None:
         if self.parent:
             self.parent.on_loading_failed()
+
+    def on_loading_succeeded(self) -> None:
+        if self.parent:
+            self.parent.on_loading_succeeded()
 
     def stop_loading(self) -> None:
         self._stop_loading.set()
@@ -316,18 +319,24 @@ class FileSystemSource(Node, Source):
         mdbx: MaestralProxy,
         path_display: str = "/",
         path_lower: str = "/",
+        on_fs_loading_succeeded: Optional[Callable] = None,
         on_fs_loading_failed: Optional[Callable] = None,
         on_fs_selection_changed: Optional[Callable] = None,
     ):
         super().__init__(
             path_display, path_lower, parent=None, is_folder=True, mdbx=mdbx
         )
+        self.on_fs_loading_succeeded = on_fs_loading_succeeded
         self.on_fs_loading_failed = on_fs_loading_failed
         self.on_fs_selection_changed = on_fs_selection_changed
+
         self._children = [PlaceholderNode("Loading...", self)]
-        self._included.label = "Select all"
+        self.included.label = "Select all"
+        self.included.enabled = False
 
     def reload(self):
+        self._children = [PlaceholderNode("Loading...", self)]
+        self.notify("change_source", source=self)
         create_task(self._load_children_async())
 
     def propagate_selection_to_parent(self, state: int) -> None:
@@ -345,6 +354,12 @@ class FileSystemSource(Node, Source):
         if self.on_fs_loading_failed:
             self.on_fs_loading_failed()
 
+    def on_loading_succeeded(self) -> None:
+        self.included.enabled = True
+
+        if self.on_fs_loading_succeeded:
+            self.on_fs_loading_succeeded()
+
     def index(self, node: Node) -> int:
         if node.parent:
             return node.parent.children.index(node)
@@ -357,6 +372,8 @@ class SelectiveSyncDialog(SelectiveSyncGui):
         super().__init__(app=app, is_dialog=True)
 
         self.mdbx = mdbx
+
+        self.dialog_buttons["Update"].enabled = False
 
         self.dialog_buttons.on_press = self.on_dialog_pressed
         self.on_close = self.on_close_pressed

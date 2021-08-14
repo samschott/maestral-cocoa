@@ -136,7 +136,6 @@ class MaestralGui(SystemTrayApp):
 
             if not pending_link:
                 # Skip link page programmatically.
-                self.setup_dialog.init_selective_sync_fs_source()
                 self.setup_dialog.goto_page(2)
 
         else:
