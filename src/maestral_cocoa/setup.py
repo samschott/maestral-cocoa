@@ -62,7 +62,7 @@ class SetupDialog(SetupDialogGui):
     # User interaction callbacks
     # ==================================================================================
 
-    async def on_start(self, widget: Any) -> None:
+    async def on_start(self, widget: Any = None) -> None:
         # start auth flow
         self.btn_auth_token.url = self.mdbx.get_auth_url()
         self.go_forward()
@@ -83,19 +83,7 @@ class SetupDialog(SetupDialogGui):
             res = await call_async_maestral(self.config_name, "link", token)
 
             if res == 0:
-
-                # initialize fs source
-                self.fs_source = FileSystemSource(
-                    mdbx=self.mdbx,
-                    on_fs_loading_failed=self.on_loading_failed,
-                )
-                self.fs_source.included.style.padding_left = 10
-                self.selective_sync_page.add(
-                    self.fs_source.included, self.dialog_buttons_selective_sync_page
-                )
-                self.dropbox_tree.data = self.fs_source  # triggers loading
-
-                # switch to next page
+                self.init_selective_sync_fs_source()
                 self.go_forward()
 
             elif res == 1:
@@ -121,6 +109,17 @@ class SetupDialog(SetupDialogGui):
             self.text_field_auth_token.value = ""
             self.text_field_auth_token.enabled = True
             self.dialog_buttons_link_page.enabled = True
+
+    def init_selective_sync_fs_source(self):
+        self.fs_source = FileSystemSource(
+            mdbx=self.mdbx,
+            on_fs_loading_failed=self.on_loading_failed,
+        )
+        self.fs_source.included.style.padding_left = 10
+        self.selective_sync_page.add(
+            self.fs_source.included, self.dialog_buttons_selective_sync_page
+        )
+        self.dropbox_tree.data = self.fs_source
 
     async def on_dbx_location(self, btn_name: str) -> None:
 

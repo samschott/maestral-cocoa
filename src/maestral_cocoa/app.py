@@ -135,7 +135,8 @@ class MaestralGui(SystemTrayApp):
             self.setup_dialog.on_failure = self.exit_and_stop_daemon
 
             if not pending_link:
-                # Skip link page.
+                # Skip link page programmatically.
+                self.setup_dialog.init_selective_sync_fs_source()
                 self.setup_dialog.goto_page(2)
 
         else:
