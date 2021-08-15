@@ -15,7 +15,6 @@ from rubicon.objc import (
     SEL,
     at,
 )
-from rubicon.objc.runtime import autoreleasepool
 from toga.constants import LEFT, TRANSPARENT
 from toga_cocoa.libs import (
     NSColor,
@@ -719,13 +718,14 @@ class Window(TogaWindow):
     def close(self):
 
         if self.native.sheetParent:
-            # end sheet session before closing
+            # End sheet session.
             self.native.sheetParent.endSheet(self.native)
-
-        if self.interface.closeable:
+        elif self.interface.closeable:
+            # Mimic the press of the close button.
             self.native.performClose(self.native)
         else:
             # Window has no close button -> performClose does not work.
+            # Get close confirmation and close if ok.
             if self.cocoa_windowShouldClose():
                 self.native.close()
 
@@ -795,24 +795,22 @@ def apply_round_clipping(image_view_impl: ImageView) -> None:
     composed_image = NSImage.alloc().initWithSize(image.size)
     composed_image.lockFocus()
 
-    with autoreleasepool():
+    ctx = NSGraphicsContext.currentContext
+    ctx.saveGraphicsState()
+    ctx.imageInterpolation = NSImageInterpolationHigh
 
-        ctx = NSGraphicsContext.currentContext
-        ctx.saveGraphicsState()
-        ctx.imageInterpolation = NSImageInterpolationHigh
+    image_frame = NSRect(NSPoint(0, 0), image.size)
+    clip_path = NSBezierPath.bezierPathWithRoundedRect(
+        image_frame, xRadius=image.size.width / 2, yRadius=image.size.height / 2
+    )
+    clip_path.addClip()
 
-        image_frame = NSRect(NSPoint(0, 0), image.size)
-        clip_path = NSBezierPath.bezierPathWithRoundedRect(
-            image_frame, xRadius=image.size.width / 2, yRadius=image.size.height / 2
-        )
-        clip_path.addClip()
-
-        zero_rect = NSRect(NSPoint(0, 0), NSMakeSize(0, 0))
-        image.drawInRect(
-            image_frame, fromRect=zero_rect, operation=NSCompositeSourceOver, fraction=1
-        )
-        composed_image.unlockFocus()
-        ctx.restoreGraphicsState()
+    zero_rect = NSRect(NSPoint(0, 0), NSMakeSize(0, 0))
+    image.drawInRect(
+        image_frame, fromRect=zero_rect, operation=NSCompositeSourceOver, fraction=1
+    )
+    composed_image.unlockFocus()
+    ctx.restoreGraphicsState()
 
     image_view_impl.native.image = composed_image
 
@@ -824,20 +822,18 @@ def resize_image_to(image: NSImage, height: int) -> NSImage:
     new_image.lockFocus()
     image.size = new_size
 
-    with autoreleasepool():
+    ctx = NSGraphicsContext.currentContext
+    ctx.saveGraphicsState()
+    ctx.imageInterpolation = NSImageInterpolationHigh
 
-        ctx = NSGraphicsContext.currentContext
-        ctx.saveGraphicsState()
-        ctx.imageInterpolation = NSImageInterpolationHigh
+    image.drawAtPoint(
+        NSZeroPoint,
+        fromRect=CGRectMake(0, 0, new_size.width, new_size.height),
+        operation=NSCompositingOperationCopy,
+        fraction=1.0,
+    )
 
-        image.drawAtPoint(
-            NSZeroPoint,
-            fromRect=CGRectMake(0, 0, new_size.width, new_size.height),
-            operation=NSCompositingOperationCopy,
-            fraction=1.0,
-        )
-
-        new_image.unlockFocus()
-        ctx.restoreGraphicsState()
+    new_image.unlockFocus()
+    ctx.restoreGraphicsState()
 
     return new_image

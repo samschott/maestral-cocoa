@@ -195,6 +195,7 @@ class SetupDialogGui(Window):
             children=[
                 self.label3,
                 self.dropbox_tree,
+                self.dialog_buttons_selective_sync_page,
             ],
             style=self.page_style,
         )

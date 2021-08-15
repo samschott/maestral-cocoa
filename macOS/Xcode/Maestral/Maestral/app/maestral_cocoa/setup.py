@@ -34,6 +34,16 @@ class SetupDialog(SetupDialogGui):
         dropbox_path = f"{get_home_dir()}/Dropbox ({self.config_name.capitalize()})"
         self.combobox_dbx_location.current_selection = dropbox_path
 
+        # init remote file system source for selective sync panel
+        self.fs_source = FileSystemSource(
+            mdbx=self.mdbx,
+            on_fs_loading_succeeded=self.on_selective_sync_loading_succeeded,
+            on_fs_loading_failed=self.on_selective_sync_loading_failed,
+        )
+        self.fs_source.included.style.padding_left = 10
+        self.selective_sync_page.insert(2, self.fs_source.included)
+        self.dropbox_tree.data = self.fs_source
+
         # connect buttons to callbacks
         self.btn_start.on_press = self.on_start
         self.dialog_buttons_link_page.on_press = self.on_link_dialog
@@ -62,7 +72,7 @@ class SetupDialog(SetupDialogGui):
     # User interaction callbacks
     # ==================================================================================
 
-    async def on_start(self, widget: Any) -> None:
+    async def on_start(self, widget: Any = None) -> None:
         # start auth flow
         self.btn_auth_token.url = self.mdbx.get_auth_url()
         self.go_forward()
@@ -83,19 +93,7 @@ class SetupDialog(SetupDialogGui):
             res = await call_async_maestral(self.config_name, "link", token)
 
             if res == 0:
-
-                # initialize fs source
-                self.fs_source = FileSystemSource(
-                    mdbx=self.mdbx,
-                    on_fs_loading_failed=self.on_loading_failed,
-                )
-                self.fs_source.included.style.padding_left = 10
-                self.selective_sync_page.add(
-                    self.fs_source.included, self.dialog_buttons_selective_sync_page
-                )
-                self.dropbox_tree.data = self.fs_source  # triggers loading
-
-                # switch to next page
+                self.fs_source.reload()
                 self.go_forward()
 
             elif res == 1:
@@ -207,5 +205,8 @@ class SetupDialog(SetupDialogGui):
     def _token_field_validator(self, widget: toga.TextInput) -> None:
         self.dialog_buttons_link_page["Link"].enabled = len(widget.value) > 10
 
-    def on_loading_failed(self) -> None:
+    def on_selective_sync_loading_failed(self) -> None:
         self.dialog_buttons_selective_sync_page["Select"].enabled = False
+
+    def on_selective_sync_loading_succeeded(self) -> None:
+        self.dialog_buttons_selective_sync_page["Select"].enabled = True

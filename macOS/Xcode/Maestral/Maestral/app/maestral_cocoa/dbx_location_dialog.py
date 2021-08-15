@@ -112,7 +112,8 @@ class DbxLocationDialog(Dialog):
 
         elif btn_name == "Unlink":
             self.spinner.start()
-            self.mdbx.unlink()
+
+            await call_async_maestral(self.config_name, "unlink")
 
             if self.on_failure:
                 self.on_failure(self)
