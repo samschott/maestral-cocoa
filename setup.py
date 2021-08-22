@@ -7,7 +7,7 @@ install_requires = [
     "click",
     "importlib_metadata;python_version<'3.8'",
     "importlib_resources;python_version<'3.9'",
-    "maestral>=1.4.8.dev1",
+    "maestral>=1.4.8",
     "markdown2",
     "toga==0.3.0.dev28",
     "rubicon-objc>=0.4.0",
