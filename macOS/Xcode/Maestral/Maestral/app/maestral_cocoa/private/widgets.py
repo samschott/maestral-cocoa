@@ -11,7 +11,7 @@ from toga.constants import ROW, RIGHT, TRANSPARENT
 
 # local imports
 from .platform import get_platform_factory
-from .constants import ON, MIXED, TRUNCATE_TAIL, ImageTemplate
+from .constants import TRUNCATE_TAIL, ImageTemplate
 
 
 private_factory = get_platform_factory()
@@ -141,36 +141,6 @@ class Switch(toga.Switch):
     def state(self, value):
         """Setter: Button state: 0 = off, 1 = mixed, 2 = on."""
         self._impl.set_state(value)
-
-    @property
-    def on_toggle(self):
-        return self._on_toggle
-
-    @on_toggle.setter
-    def on_toggle(self, handler):
-
-        if not handler:
-
-            def new_handler(*args, **kwargs):
-                if self.state == MIXED:
-                    self.state = ON
-
-        elif asyncio.iscoroutinefunction(handler):
-
-            async def new_handler(*args, **kwargs):
-                if self.state == MIXED:
-                    self.state = ON
-                return await handler(*args, **kwargs)
-
-        else:
-
-            def new_handler(*args, **kwargs):
-                if self.state == MIXED:
-                    self.state = ON
-                return handler(*args, **kwargs)
-
-        self._on_toggle = wrapped_handler(self, new_handler)
-        self._impl.set_on_toggle(self._on_toggle)
 
 
 class FreestandingIconButton(toga.Widget):
