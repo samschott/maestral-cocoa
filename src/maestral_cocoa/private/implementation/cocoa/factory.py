@@ -704,7 +704,6 @@ class Window(TogaWindow):
         self.native.center()
 
     def force_to_front(self):
-        self.app.activateIgnoringOtherApps(True)
         self.native.makeKeyAndOrderFront(None)
 
     def show_as_sheet(self, window):
@@ -713,6 +712,7 @@ class Window(TogaWindow):
     def show(self):
         if not self.interface.is_dialog:
             self.app.activationPolicy = NSApplicationActivationPolicyRegular
+            self.app.activateIgnoringOtherApps(True)
         super().show()
 
     def close(self):
