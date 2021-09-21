@@ -41,12 +41,14 @@ from toga_cocoa.libs import (
     NSFileHandlingPanelOKButton,
     NSCompositingOperationCopy,
     NSURL,
+    NSButton,
+    NSRoundedBezelStyle,
+    NSSwitchButton,
 )
 from toga_cocoa.colors import native_color
 from toga_cocoa.keys import cocoa_key
 from toga_cocoa.app import App as TogaApp
 from toga_cocoa.widgets.base import Widget
-from toga_cocoa.widgets.switch import Switch as TogaSwitch
 from toga_cocoa.widgets.button import Button as TogaButton
 from toga_cocoa.window import Window as TogaWindow
 from toga_cocoa.window import WindowDelegate as TogaWindowDeletage
@@ -330,20 +332,50 @@ class FreestandingIconButton(TogaButton):
         self.native.image.template = True
 
 
-class Switch(TogaSwitch):
-    """Reimplements toga_cocoa.Switch but allows *programmatic* setting of
+class SwitchTarget(NSObject):
+    @objc_method
+    def onPress_(self, obj) -> None:
+        if self.interface.on_toggle:
+            self.interface.on_toggle(self.interface)
+
+        self.impl.native.allowsMixedState = False
+
+
+class Switch(Widget):
+    """Similar to toga_cocoa.Switch but allows *programmatic* setting of
     an intermediate state."""
 
     _to_cocoa = {OFF: 0, MIXED: -1, ON: 1}
     _to_toga = {0: OFF, -1: MIXED, 1: ON}
 
     def create(self):
-        super().create()
-        self.native.allowsMixedState = True
+        self.native = NSButton.alloc().init()
+        self.native.bezelStyle = NSRoundedBezelStyle
+        self.native.setButtonType(NSSwitchButton)
         self.native.autoresizingMask = NSViewMaxYMargin | NSViewMaxYMargin
 
+        self.target = SwitchTarget.alloc().init()
+        self.target.interface = self.interface
+        self.target.impl = self
+
+        self.native.target = self.target
+        self.native.action = SEL("onPress:")
+
+        # Add the layout constraints
+        self.add_constraints()
+
+    def set_label(self, label):
+        self.native.title = self.interface.label
+
     def set_state(self, value):
+        self.native.allowsMixedState = value == MIXED
         self.native.state = self._to_cocoa[value]
+
+    def set_is_on(self, value):
+        self.set_state(int(value))
+
+    def get_is_on(self):
+        return bool(self.native.state)
 
     def get_state(self):
         return self._to_toga[self.native.state]
@@ -356,6 +388,9 @@ class Switch(TogaSwitch):
         content_size = self.native.intrinsicContentSize()
         self.interface.intrinsic.height = 20
         self.interface.intrinsic.width = at_least(content_size.width)
+
+    def set_on_toggle(self, handler):
+        pass
 
 
 class FileChooserTarget(NSObject):
