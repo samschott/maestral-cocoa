@@ -606,13 +606,28 @@ class SystemTrayApp(TogaApp):
         self.delegate.interface = self.interface
         self.delegate.native = self.native
         self.native.delegate = self.delegate
-        self.native.activationPolicy = NSApplicationActivationPolicyAccessory
 
     def select_file(self):
         pass
 
     def open_document(self, path):
         pass
+
+    def has_open_windows(self):
+
+        visible_windows = [
+            w
+            for w in self.native.windows
+            if w.isVisible and w.objc_class.name != "NSStatusBarWindow"
+        ]
+
+        return len(visible_windows) > 1
+
+    def show_dock_icon(self):
+        self.native.activationPolicy = NSApplicationActivationPolicyRegular
+
+    def hide_dock_icon(self):
+        self.native.activationPolicy = NSApplicationActivationPolicyAccessory
 
     async def alert_async(
         self,
@@ -666,18 +681,8 @@ class WindowDeletage(TogaWindowDeletage):
     def windowWillClose_(self, notification) -> None:
 
         if not self.interface.is_dialog:
-
-            # hide dock icon when last window is about to close
-            app = NSApplication.sharedApplication
-
-            visible_windows = [
-                w
-                for w in app.windows
-                if w.isVisible and w.objc_class.name != "NSStatusBarWindow"
-            ]
-
-            if len(visible_windows) <= 1:
-                app.activationPolicy = NSApplicationActivationPolicyAccessory
+            if not self.interface.app._impl.has_open_windows():
+                self.interface.app._impl.hide_dock_icon()
 
 
 class Window(TogaWindow):

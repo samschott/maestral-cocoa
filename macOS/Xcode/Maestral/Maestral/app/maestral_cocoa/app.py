@@ -139,6 +139,7 @@ class MaestralGui(SystemTrayApp):
                 self.setup_dialog.goto_page(2)
 
         else:
+            self.hide_dock_icon()
             self.add_background_task(self.on_setup_completed)
 
     def set_icon(self, status: str) -> None:

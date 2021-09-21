@@ -906,6 +906,12 @@ class SystemTrayApp(toga.App):
     def _create_impl(self):
         return self.factory.SystemTrayApp(interface=self)
 
+    def show_dock_icon(self):
+        self._impl.show_dock_icon()
+
+    def hide_dock_icon(self):
+        self._impl.hide_dock_icon()
+
     def alert(
         self,
         title,
