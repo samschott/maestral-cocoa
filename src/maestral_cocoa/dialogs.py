@@ -383,7 +383,11 @@ class RelinkDialog(Dialog):
         self.token_field = toga.TextInput(
             placeholder="Authorization token",
             on_change=self.token_field_validator,
-            style=Pack(width=self.CONTENT_WIDTH, padding_bottom=20),
+            style=Pack(
+                width=self.CONTENT_WIDTH,
+                padding_bottom=20,
+                background_color=TRANSPARENT,
+            ),
         )
 
         token_box = toga.Box(
