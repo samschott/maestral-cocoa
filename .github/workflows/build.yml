@@ -7,9 +7,6 @@ on:
 
   workflow_dispatch:
 
-  schedule:
-    - cron: "19 3 * * *" # everyday at 03:19
-
 jobs:
   check_date:
     runs-on: ubuntu-latest
