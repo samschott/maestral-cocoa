@@ -243,7 +243,7 @@ class DetailedDialog(Dialog):
 
         text_view_height = self.WINDOW_MIN_HEIGHT - Dialog.WINDOW_MIN_HEIGHT - 15
         text_view = RichMultilineTextInput(
-            details,
+            html=details,
             readonly=True,
             style=Pack(
                 width=self.CONTENT_WIDTH, height=text_view_height, padding_bottom=15
@@ -383,7 +383,11 @@ class RelinkDialog(Dialog):
         self.token_field = toga.TextInput(
             placeholder="Authorization token",
             on_change=self.token_field_validator,
-            style=Pack(width=self.CONTENT_WIDTH, padding_bottom=20),
+            style=Pack(
+                width=self.CONTENT_WIDTH,
+                padding_bottom=20,
+                background_color=TRANSPARENT,
+            ),
         )
 
         token_box = toga.Box(

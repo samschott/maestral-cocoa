@@ -3,7 +3,7 @@
 # external imports
 import toga
 from toga.style.pack import Pack, FONT_SIZE_CHOICES
-from toga.constants import COLUMN, CENTER
+from toga.constants import COLUMN, CENTER, TRANSPARENT
 from maestral.utils.appdirs import get_home_dir
 
 # local imports
@@ -100,6 +100,7 @@ class SetupDialogGui(Window):
             style=Pack(
                 width=self.CONTENT_WIDTH * 0.9,
                 text_align=CENTER,
+                background_color=TRANSPARENT,
             ),
         )
         self.spinner_link = toga.ActivityIndicator(style=Pack(width=32, height=32))
