@@ -12,7 +12,6 @@ from rubicon.objc import (
     CGRectMake,
     ObjCClass,
     objc_method,
-    objc_property,
     SEL,
     at,
 )
@@ -334,10 +333,6 @@ class FreestandingIconButton(TogaButton):
 
 
 class SwitchTarget(NSObject):
-
-    interface = objc_property(object, weak=True)
-    impl = objc_property(object, weak=True)
-
     @objc_method
     def onPress_(self, obj) -> None:
         if self.interface.on_toggle:
@@ -399,10 +394,6 @@ class Switch(Widget):
 
 
 class FileChooserTarget(NSObject):
-
-    interface = objc_property(object, weak=True)
-    impl = objc_property(object, weak=True)
-
     @objc_method
     def onSelect_(self, obj) -> None:
         if self.impl.native.indexOfSelectedItem == 2:
@@ -500,10 +491,6 @@ class FileSelectionButton(Widget):
 
 
 class TogaMenuItem(NSMenuItem):
-
-    interface = objc_property(object, weak=True)
-    impl = objc_property(object, weak=True)
-
     @objc_method
     def onPress_(self, obj) -> None:
         if self.interface.action:
@@ -563,10 +550,6 @@ class MenuItemSeparator:
 
 
 class TogaMenu(NSMenu):
-
-    interface = objc_property(object, weak=True)
-    impl = objc_property(object, weak=True)
-
     @objc_method
     def menuWillOpen_(self, obj) -> None:
         self.impl._visible = True
@@ -633,10 +616,6 @@ class StatusBarItem:
 
 
 class SystemTrayAppDelegate(NSObject):
-
-    interface = objc_property(object, weak=True)
-    impl = objc_property(object, weak=True)
-
     @objc_method
     def applicationWillTerminate_(self, sender):
         if self.interface.app.on_exit:
@@ -733,10 +712,6 @@ class SystemTrayApp(TogaApp):
 
 
 class WindowDeletage(TogaWindowDeletage):
-
-    interface = objc_property(object, weak=True)
-    impl = objc_property(object, weak=True)
-
     @objc_method
     def windowWillClose_(self, notification) -> None:
 
