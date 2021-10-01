@@ -463,13 +463,17 @@ class MaestralGui(SystemTrayApp):
         await call_async(stop_maestral_daemon_process, self.config_name)
         super().exit()
 
-    async def exit(self, sender: Any = None) -> None:
+    def exit(self, sender: Any = None) -> None:
         """Quits Maestral. Stops the sync daemon only if we started it ourselves."""
 
-        if self._started:
-            await call_async(stop_maestral_daemon_process, self.config_name)
+        # Note: Keep this method synchrounous for compatibility with the parent class.
 
-        super().exit()
+        async def async_exit(sender: Any = None) -> None:
+            if self._started:
+                stop_maestral_daemon_process(self.config_name)
+            super(MaestralGui, self).exit()
+
+        self.add_background_task(async_exit)
 
     async def restart(self, sender: Any = None) -> None:
         """Restarts the Maestral GUI and sync daemon."""
