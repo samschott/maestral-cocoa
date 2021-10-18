@@ -633,11 +633,13 @@ def start(foreground: bool, verbose: bool, config_name: str) -> None:
 
         m.start_sync()
 
-    t = threading.Thread(target=startup_dialog)
-    t.start()
-
     if foreground:
+
+        setup_thread = threading.Thread(target=startup_dialog, daemon=True)
+        setup_thread.start()
+
         start_maestral_daemon(config_name, log_to_stderr=verbose)
+
     else:
         cli.echo("Starting Maestral...", nl=False)
 
@@ -650,7 +652,8 @@ def start(foreground: bool, verbose: bool, config_name: str) -> None:
         else:
             cli.echo("\rStarting Maestral...        " + FAILED)
             cli.echo("Please check logs for more information.")
-            return
+
+        startup_dialog()
 
 
 @main.command(section="Core Commands", help="Stop the sync daemon.")
@@ -811,8 +814,8 @@ def auth_status(config_name: str) -> None:
 
     cli.echo("")
     cli.echo(f"Email:         {email}")
-    cli.echo(f"Account-type:  {account_type}")
-    cli.echo(f"Dropbox-ID:    {dbid}")
+    cli.echo(f"Account type:  {account_type}")
+    cli.echo(f"Dropbox ID:    {dbid}")
     cli.echo("")
 
 
@@ -934,13 +937,17 @@ def status(config_name: str) -> None:
             account_type = m.get_state("account", "type").capitalize()
             usage = m.get_state("account", "usage")
             status_info = m.status
+
+            account_str = f"{email} ({account_type})" if email else "--"
+            usage_str = usage or "--"
+
             n_errors = len(m.sync_errors)
             color = "red" if n_errors > 0 else "green"
             n_errors_str = click.style(str(n_errors), fg=color)
 
             cli.echo("")
-            cli.echo(f"Account:      {email} ({account_type})")
-            cli.echo(f"Usage:        {usage}")
+            cli.echo(f"Account:      {account_str}")
+            cli.echo(f"Usage:        {usage_str}")
             cli.echo(f"Status:       {status_info}")
             cli.echo(f"Sync errors:  {n_errors_str}")
             cli.echo("")
