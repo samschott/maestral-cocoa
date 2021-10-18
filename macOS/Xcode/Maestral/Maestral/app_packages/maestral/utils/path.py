@@ -315,9 +315,8 @@ def move(
     preserve_dest_permissions=False,
 ) -> Optional[OSError]:
     """
-    Moves a file or folder from ``src_path`` to ``dest_path``. If either the source or
-    the destination path no longer exist, this function does nothing. Any other
-    exceptions are either raised or returned if ``raise_error`` is False.
+    Moves a file or folder from ``src_path`` to ``dest_path``. Exceptions caught and
+    returned if ``raise_error`` is False.
 
     :param src_path: Path of item to move.
     :param dest_path: Destination path. Any existing file at this path will be replaced
@@ -341,9 +340,6 @@ def move(
 
     try:
         shutil.move(src_path, dest_path)
-    except FileNotFoundError:
-        # do nothing of source or dest path no longer exist
-        pass
     except OSError as exc:
         err = exc
     else:
