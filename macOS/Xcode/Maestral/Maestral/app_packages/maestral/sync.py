@@ -1693,6 +1693,11 @@ class SyncEngine:
                     event = FileDeletedEvent(local_path)
                 changes.append(event)
 
+        # Ensure that the local Dropbox folder still exists before returning changes.
+        # This prevents a deletion of the Dropbox folder from being incorrectly
+        # processed as individual file deletions.
+        self.ensure_dropbox_folder_present()
+
         duration = time.time() - snapshot_time
         self._logger.debug("Local indexing completed in %s sec", round(duration, 4))
         self._logger.debug("Retrieved local changes:\n%s", pf_repr(changes))
@@ -3537,10 +3542,11 @@ class SyncEngine:
             with self.fs_events.ignore(
                 DirCreatedEvent(event.local_path), recursive=False
             ):
-                os.makedirs(event.local_path)
+                os.mkdir(event.local_path)
         except FileExistsError:
             pass
         except OSError as err:
+            self.ensure_dropbox_folder_present()
             raise os_to_maestral_error(err, dbx_path=event.dbx_path)
 
         self.update_index_from_sync_event(event)
