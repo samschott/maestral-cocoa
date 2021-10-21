@@ -12,7 +12,7 @@ from maestral.autostart import (
     AutoStartXDGDesktop,
     SupportedImplementations,
 )
-from maestral.constants import BUNDLE_ID
+from maestral.constants import BUNDLE_ID, ENV
 
 
 class AutoStart:
@@ -31,7 +31,11 @@ class AutoStart:
         bundle_id = "{}.{}".format(BUNDLE_ID, config_name)
 
         if self.implementation == SupportedImplementations.launchd:
-            self._impl = AutoStartLaunchd(bundle_id, start_cmd)
+            self._impl = AutoStartLaunchd(
+                bundle_id,
+                start_cmd,
+                EnvironmentVariables=ENV,
+            )
 
         elif self.implementation == SupportedImplementations.xdg_desktop:
             self._impl = AutoStartXDGDesktop(
