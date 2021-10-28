@@ -31,7 +31,7 @@ NSAppleScript = ObjCClass("NSAppleScript")
 thread_pool_executor = ThreadPoolExecutor(10)
 
 
-def create_task(coro: Awaitable[_T]) -> Union[asyncio.Task[_T], asyncio.Future[_T]]:
+def create_task(coro: Awaitable[_T]) -> Union["asyncio.Task[_T]", "asyncio.Future[_T]"]:
 
     loop = asyncio.get_event_loop()
 
