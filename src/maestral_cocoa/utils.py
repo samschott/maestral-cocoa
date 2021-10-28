@@ -98,7 +98,7 @@ def generate_async_maestral(config_name: str, func_name: str, *args) -> AsyncGen
 def request_authorization_from_user_and_run(exe: List[str]) -> None:
     # shlex.join requires Python 3.8 and later.
 
-    cmd = shlex.join(exe)
+    cmd = shlex.join(exe)  # type: ignore
 
     source = f'do shell script "{cmd}" with administrator privileges'
 
