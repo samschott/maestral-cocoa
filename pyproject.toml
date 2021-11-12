@@ -20,7 +20,7 @@ requires = [
     "maestral@git+https://github.com/samschott/maestral",
     "markdown2",
     "rubicon-objc>=0.4.1",
-    "toga==0.3.0.dev28",
+    "toga==0.3.0.dev29",
 ]
 template = "https://github.com/samschott/briefcase-macOS-Xcode-template"
 template_branch = "maestral"

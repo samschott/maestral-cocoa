@@ -9,7 +9,7 @@ install_requires = [
     "importlib_resources;python_version<'3.9'",
     "maestral>=1.5.1",
     "markdown2",
-    "toga==0.3.0.dev28",
+    "toga==0.3.0.dev29",
     "rubicon-objc>=0.4.0",
 ]
 
