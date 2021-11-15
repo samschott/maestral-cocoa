@@ -4,7 +4,7 @@
 import sys
 
 try:
-    from importlib.metadata import metadata
+    from importlib.metadata import metadata  # type: ignore
 except ImportError:
     # Backwards compatibility Python 3.7 and lower
     from importlib_metadata import metadata  # type: ignore

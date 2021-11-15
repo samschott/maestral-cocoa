@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 try:
-    from importlib.resources import path
+    from importlib.resources import path  # type: ignore
 except ImportError:
     from importlib_resources import path  # type: ignore
 
