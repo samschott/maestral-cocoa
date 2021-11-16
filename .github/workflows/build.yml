@@ -51,10 +51,10 @@ jobs:
 
       - name: Set up Python
         run: |
-          wget -q https://www.python.org/ftp/python/3.9.7/python-3.9.7-macos11.pkg
-          sudo installer -pkg python-3.9.7-macos11.pkg -target /
+          wget -q https://www.python.org/ftp/python/3.10.0/python-3.10.0-macos11.pkg
+          sudo installer -pkg python-3.10.0-macos11.pkg -target /
           python3 -c "import sys; print(sys.version)"
-          echo "/Library/Frameworks/Python.framework/Versions/3.9/bin" >> $GITHUB_PATH
+          echo "/Library/Frameworks/Python.framework/Versions/3.10/bin" >> $GITHUB_PATH
 
       - name: Install dependencies
         run: |
