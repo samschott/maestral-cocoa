@@ -1,4 +1,4 @@
-#!/Library/Frameworks/Python.framework/Versions/3.10/bin/python3.10
+#!/Library/Frameworks/Python.framework/Versions/3.10/bin/python3
 
 import sys
 from os.path import join, dirname, exists
