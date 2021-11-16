@@ -6,7 +6,7 @@ maestral-1.5.2.dev0.dist-info/METADATA,sha256=J1pfwSaC2fA40uiQ4Ftvd0IAI8bxgJx7bK
 maestral-1.5.2.dev0.dist-info/RECORD,,
 maestral-1.5.2.dev0.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
 maestral-1.5.2.dev0.dist-info/WHEEL,sha256=ewwEueio1C2XeHTvT17n8dZUJgOvyCWCt0WVNLClP9o,92
-maestral-1.5.2.dev0.dist-info/direct_url.json,sha256=yIgOQIu2OFd9G5rJFzThSUqcRJN2AKCPWZS3_pF7iiI,133
+maestral-1.5.2.dev0.dist-info/direct_url.json,sha256=TLbzLXj7wC9yuUPUtuEb5fht61wPyt3ONzQBbDVpPu4,133
 maestral-1.5.2.dev0.dist-info/entry_points.txt,sha256=BdtBbdAp0gdxVxTTV2B5_Lxg-pVtdDUMVLKgEW81h6k,114
 maestral-1.5.2.dev0.dist-info/top_level.txt,sha256=cpmYVmNqTW_njKrQSwWbMvDUR09mvKFSBYcYCQKpHAM,9
 maestral/__init__.py,sha256=f96RwW5tn0vVtl2QT9FQcoiYhCMPRqmFPU3lUhx683w,618
@@ -40,7 +40,7 @@ maestral/config/__pycache__/user.cpython-310.pyc,,
 maestral/config/main.py,sha256=0-81AhttQU_nXoyc76sX4KJXYV0gTcaImrwcKLZu5pc,5815
 maestral/config/user.py,sha256=9tEet9Imv8dT14DAjvuPNo6xT8KiUkdkxDGAUaPCwqI,15241
 maestral/constants.py,sha256=Zu-Hs-efgwNBOOnJPHl97jpY8qiuCrRo7XpH8F0CGmc,1713
-maestral/daemon.py,sha256=rSUTx8Cl8YktbFToaCGJ7pY3YvCWsRDt8SWNT9Wa__s,22035
+maestral/daemon.py,sha256=9qFNaOydq8FHYkwGPg0uFCTXbUnJi9-wS3tVTdZa_Hs,22035
 maestral/database.py,sha256=1fGmxPJNA5JCMUAfrbot0uY1DjBpehh3AHuZGqsAbto,16805
 maestral/errors.py,sha256=h-ZO1kvjP884iP3q5tvN7zN4_V183O_PvLRkpQqznPE,7652
 maestral/fsevents/__init__.py,sha256=bxw1smmA7vNvzEUVOXffXFzfKbkppJCnnqCjqAdqX-Y,841
