@@ -101,7 +101,7 @@ var/
 wheels/
 share/python-wheels/
 *.egg-info/
-*.dist-info/
+# *.dist-info/
 .installed.cfg
 *.egg
 MANIFEST

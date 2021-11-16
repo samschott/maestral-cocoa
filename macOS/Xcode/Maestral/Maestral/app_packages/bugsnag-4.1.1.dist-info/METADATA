@@ -1,0 +1,39 @@
+Metadata-Version: 2.1
+Name: bugsnag
+Version: 4.1.1
+Summary: Automatic error monitoring for django, flask, etc.
+Home-page: https://bugsnag.com/
+Author: Simon Maynard
+Author-email: simon@bugsnag.com
+License: MIT
+Platform: UNKNOWN
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Environment :: Web Environment
+Classifier: Framework :: Django
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: System Administrators
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3.5
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Topic :: Software Development
+Requires-Python: >=3.5, <4
+Requires-Dist: webob
+Provides-Extra: flask
+Requires-Dist: flask ; extra == 'flask'
+Requires-Dist: blinker ; extra == 'flask'
+
+
+Bugsnag
+=======
+
+The official Python notifier for `Bugsnag <https://bugsnag.com/>`_.
+Provides support for automatically capturing and sending exceptions
+in your Django and other Python apps to Bugsnag, to help you find
+and solve your bugs as fast as possible.
+
+
