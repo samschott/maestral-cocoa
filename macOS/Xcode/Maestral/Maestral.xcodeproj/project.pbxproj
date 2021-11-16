@@ -26,6 +26,7 @@
 		0D8AFE752698785D002D904C /* Sparkle.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0D8AFE742698785D002D904C /* Sparkle.framework */; };
 		0D8AFE762698785D002D904C /* Sparkle.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 0D8AFE742698785D002D904C /* Sparkle.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		0D8AFE7726987B6E002D904C /* maestral-cli in Copy CLI executable */ = {isa = PBXBuildFile; fileRef = 0D8F347B26986E060092BE76 /* maestral-cli */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		0DBCA227274430DA0021CC31 /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0DBCA226274430DA0021CC31 /* SystemConfiguration.framework */; };
 		6093520D25E9D15D00C549F3 /* libffi.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 6093520C25E9D14B00C549F3 /* libffi.tbd */; };
 /* End PBXBuildFile section */
 
@@ -87,6 +88,7 @@
 		0D7B44A925560B2400CBC44B /* Support */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Support; sourceTree = "<group>"; };
 		0D8AFE742698785D002D904C /* Sparkle.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Sparkle.framework; path = Frameworks/Sparkle.framework; sourceTree = "<group>"; };
 		0D8F347B26986E060092BE76 /* maestral-cli */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "maestral-cli"; sourceTree = "<group>"; };
+		0DBCA226274430DA0021CC31 /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
 		6093520C25E9D14B00C549F3 /* libffi.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libffi.tbd; path = usr/lib/libffi.tbd; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -95,6 +97,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0DBCA227274430DA0021CC31 /* SystemConfiguration.framework in Frameworks */,
 				0D7B44BE25561C1800CBC44B /* libOpenSSL.a in Frameworks */,
 				0D7B44A62555E00500CBC44B /* CoreFoundation.framework in Frameworks */,
 				0D7B44C025561C1800CBC44B /* libxz.a in Frameworks */,
@@ -150,6 +153,7 @@
 		0D354FE42551C1E1009178D1 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				0DBCA226274430DA0021CC31 /* SystemConfiguration.framework */,
 				0D8AFE742698785D002D904C /* Sparkle.framework */,
 				6093520C25E9D14B00C549F3 /* libffi.tbd */,
 				0D7B44A72555E01500CBC44B /* Foundation.framework */,
