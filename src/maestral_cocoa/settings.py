@@ -153,12 +153,12 @@ class SettingsWindow(SettingsGui):
             try:
                 try:
                     self._macos_cli_install_path.unlink()
+                except (FileNotFoundError, NotADirectoryError):
+                    pass
                 except PermissionError:
                     request_authorization_from_user_and_run(
-                        ["/bin/rm", "-f", str(self._macos_cli_install_path)]
+                        f"/bin/rm -f {self._macos_cli_install_path}"
                     )
-            except (FileNotFoundError, NotADirectoryError):
-                pass
             except Exception as e:
                 await self.alert_sheet(
                     "Could not uninstall CLI", e.args[0], level="error"
@@ -171,29 +171,15 @@ class SettingsWindow(SettingsGui):
             maestral_cli = Path(sys.executable).parent / "maestral-cli"
             destination_dir = self._macos_cli_install_path.parent
 
-            if not destination_dir.exists():
+            try:
                 try:
-                    destination_dir.mkdir()
+                    destination_dir.mkdir(exist_ok=True)
+                    os.symlink(maestral_cli, self._macos_cli_install_path)
                 except PermissionError:
                     request_authorization_from_user_and_run(
-                        ["mkdir", str(destination_dir)]
+                        f"/bin/mkdir {destination_dir}; "
+                        f"/bin/ln -s {maestral_cli} {self._macos_cli_install_path}"
                     )
-                except Exception as e:
-                    await self.alert_sheet(
-                        "Could not install CLI", e.args[0], level="error"
-                    )
-
-            try:
-                os.symlink(maestral_cli, self._macos_cli_install_path)
-            except PermissionError:
-                request_authorization_from_user_and_run(
-                    [
-                        "/bin/ln",
-                        "-s",
-                        str(maestral_cli),
-                        str(self._macos_cli_install_path),
-                    ]
-                )
             except Exception as e:
                 await self.alert_sheet(
                     "Could not install CLI", e.args[0], level="error"
