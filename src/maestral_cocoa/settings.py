@@ -160,9 +160,7 @@ class SettingsWindow(SettingsGui):
                         f"/bin/rm -f {self._macos_cli_install_path}"
                     )
             except Exception as e:
-                await self.alert_sheet(
-                    "Could not uninstall CLI", e.args[0], level="error"
-                )
+                await self.alert_sheet("Could not uninstall CLI", str(e), level="error")
 
         elif not self._macos_cli_install_path.exists():
 
@@ -181,9 +179,7 @@ class SettingsWindow(SettingsGui):
                         f"/bin/ln -s {maestral_cli} {self._macos_cli_install_path}"
                     )
             except Exception as e:
-                await self.alert_sheet(
-                    "Could not install CLI", e.args[0], level="error"
-                )
+                await self.alert_sheet("Could not install CLI", str(e), level="error")
 
         else:
             await self.alert_sheet(
