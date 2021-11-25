@@ -175,7 +175,7 @@ class SettingsWindow(SettingsGui):
                     os.symlink(maestral_cli, self._macos_cli_install_path)
                 except PermissionError:
                     request_authorization_from_user_and_run(
-                        f"/bin/mkdir {destination_dir}; "
+                        f"/bin/mkdir -p {destination_dir} && "
                         f"/bin/ln -s {maestral_cli} {self._macos_cli_install_path}"
                     )
             except Exception as e:
