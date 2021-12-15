@@ -12,6 +12,7 @@ from typing import (
     List,
     Any,
     Callable,
+    AnyStr,
 )
 
 # external imports
@@ -105,7 +106,7 @@ def request_authorization_from_user_and_run(command: str) -> None:
         raise RuntimeError(f"Could not run privileged command {command!r}")
 
 
-def is_empty(dirname: Union[str, bytes, os.PathLike]) -> bool:
+def is_empty(dirname: AnyStr) -> bool:
     """Checks if a directory is empty."""
 
     exceptions = {".DS_Store"}
