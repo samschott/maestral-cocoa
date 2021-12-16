@@ -41,6 +41,8 @@
 	<false/>
 	<key>SUFeedURL</key>
 	<string>https://maestral.app/appcast.xml</string>
+	<key>LSUIElement</key>
+	<true/>
 	<key>SUPublicEDKey</key>
 	<string>RugM2eM14xHixaeHpl5uWSq7+sDZvYi52Xpz4IXpAdA=</string>
 </dict>

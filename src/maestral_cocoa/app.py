@@ -129,6 +129,7 @@ class MaestralGui(SystemTrayApp):
         pending_folder = self.mdbx.pending_dropbox_folder
 
         if pending_link or pending_folder:
+            self.show_dock_icon()
             self.setup_dialog = SetupDialog(mdbx=self.mdbx, app=self)
             self.setup_dialog.raise_()
             self.setup_dialog.on_success = self.on_setup_completed
