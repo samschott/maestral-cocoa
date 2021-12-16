@@ -97,7 +97,7 @@ see <https://github.com/trentm/python-markdown2/wiki/Extras> for details):
 #   not yet sure if there implications with this. Compare 'pydoc sre'
 #   and 'perldoc perlre'.
 
-__version_info__ = (2, 4, 1)
+__version_info__ = (2, 4, 2)
 __version__ = '.'.join(map(str, __version_info__))
 __author__ = "Trent Mick"
 
@@ -1235,7 +1235,7 @@ class Markdown(object):
             \s*/?>
             |
             # auto-link (e.g., <http://www.activestate.com/>)
-            <\w+[^>]*>
+            <[\w~:/?#\[\]@!$&'\(\)*+,;%=\.\\-]+>
             |
             <!--.*?-->      # comment
             |
@@ -1929,7 +1929,7 @@ class Markdown(object):
 
     _fenced_code_block_re = re.compile(r'''
         (?:\n+|\A\n?)
-        ^```\s{0,99}([\w+-]+)?\s{0,99}\n  # opening fence, $1 = optional lang
+        ^```\s{0,99}?([\w+-]+)?\s{0,99}?\n  # opening fence, $1 = optional lang
         (.*?)                             # $2 = code block content
         ^```[ \t]*\n                      # closing fence
         ''', re.M | re.X | re.S)

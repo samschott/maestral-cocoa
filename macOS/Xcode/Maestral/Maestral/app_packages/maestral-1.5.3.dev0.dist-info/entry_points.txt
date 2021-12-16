@@ -1,0 +1,6 @@
+[console_scripts]
+maestral = maestral.cli:main
+
+[pyinstaller40]
+hook-dirs = maestral.__pyinstaller:get_hook_dirs
+

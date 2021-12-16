@@ -322,7 +322,7 @@ def is_running(config_name: str) -> bool:
     return maestral_lock(config_name).locked()
 
 
-def wait_for_startup(config_name: str, timeout: float = 20) -> None:
+def wait_for_startup(config_name: str, timeout: float = 30) -> None:
     """
     Waits until we can communicate with the maestral daemon for ``config_name``.
 
@@ -382,24 +382,24 @@ def start_maestral_daemon(
 
     dlogger.info("Starting daemon")
 
+    # ==== Process and thread management ===========================================
+
+    if threading.current_thread() is not threading.main_thread():
+        dlogger.error("Must run daemon in main thread")
+        return
+
+    dlogger.debug("Environment:\n%s", pformat(os.environ.copy()))
+
     # Acquire PID lock file.
     lock = maestral_lock(config_name)
 
+    if lock.acquire():
+        dlogger.debug("Acquired daemon lock: %r", lock.path)
+    else:
+        dlogger.error("Could not acquire lock, daemon is already running")
+        return
+
     try:
-
-        # ==== Process and thread management ===========================================
-
-        if threading.current_thread() is not threading.main_thread():
-            dlogger.error("Must run daemon in main thread")
-            raise RuntimeError("Must run daemon in main thread")
-
-        dlogger.debug("Environment:\n%s", pformat(os.environ.copy()))
-
-        if lock.acquire():
-            dlogger.debug("Acquired daemon lock: %r", lock.path)
-        else:
-            dlogger.error("Could not acquire lock, daemon is already running")
-            return
 
         # Nice ourselves to give other processes priority.
         os.nice(10)
@@ -497,7 +497,7 @@ def start_maestral_daemon(
 
 
 def start_maestral_daemon_process(
-    config_name: str = "maestral", timeout: float = 20
+    config_name: str = "maestral", timeout: float = 30
 ) -> Start:
     """
     Starts the Maestral daemon in a new process by calling :func:`start_maestral_daemon`.
@@ -555,7 +555,7 @@ def start_maestral_daemon_process(
 
 
 def stop_maestral_daemon_process(
-    config_name: str = "maestral", timeout: float = 20
+    config_name: str = "maestral", timeout: float = 10
 ) -> Stop:
     """Stops a maestral daemon process by finding its PID and shutting it down.
 

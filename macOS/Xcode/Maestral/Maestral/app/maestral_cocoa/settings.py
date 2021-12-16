@@ -40,7 +40,7 @@ class SettingsWindow(SettingsGui):
         "Never": 0,
     }
 
-    _macos_cli_install_path = "/usr/local/bin/maestral"
+    _macos_cli_install_path = Path("/usr/local/bin/maestral")
     _cached_pic_stat = os.stat(FACEHOLDER_PATH)
     _cached_dbx_location = None
 
@@ -146,51 +146,56 @@ class SettingsWindow(SettingsGui):
 
     async def on_cli_pressed(self, widget: Any) -> None:
 
-        if osp.islink(self._macos_cli_install_path):
+        if self._macos_cli_install_path.is_symlink():
+
+            # Uninstall CLI from /usr/local/bin.
 
             try:
                 try:
-                    os.remove(self._macos_cli_install_path)
+                    self._macos_cli_install_path.unlink()
+                except (FileNotFoundError, NotADirectoryError):
+                    pass
                 except PermissionError:
                     request_authorization_from_user_and_run(
-                        ["/bin/rm", "-f", self._macos_cli_install_path]
+                        f"/bin/rm -f {self._macos_cli_install_path}"
                     )
-            except FileNotFoundError:
-                pass
             except Exception as e:
-                await self.alert_sheet(
-                    "Could not uninstall CLI", e.args[0], level="error"
-                )
+                await self.alert_sheet("Could not uninstall CLI", str(e), level="error")
 
-        else:
+        elif not self._macos_cli_install_path.exists():
+
+            # Install CLI to /usr/local/bin.
+
             maestral_cli = Path(sys.executable).parent / "maestral-cli"
+            destination_dir = self._macos_cli_install_path.parent
+
             try:
                 try:
+                    destination_dir.mkdir(exist_ok=True)
                     os.symlink(maestral_cli, self._macos_cli_install_path)
                 except PermissionError:
                     request_authorization_from_user_and_run(
-                        [
-                            "/bin/ln",
-                            "-s",
-                            str(maestral_cli),
-                            self._macos_cli_install_path,
-                        ]
+                        f"/bin/mkdir -p {destination_dir} && "
+                        f"/bin/ln -s {maestral_cli} {self._macos_cli_install_path}"
                     )
             except Exception as e:
-                await self.alert_sheet(
-                    "Could not install CLI", e.args[0], level="error"
-                )
+                await self.alert_sheet("Could not install CLI", str(e), level="error")
+
+        else:
+            await self.alert_sheet(
+                f"There already is a file at {self._macos_cli_install_path}"
+            )
 
         self._update_cli_tool_button()
 
     def _update_cli_tool_button(self) -> None:
-        if osp.islink(self._macos_cli_install_path):
+        if self._macos_cli_install_path.is_symlink():
             self.btn_cli_tool.enabled = True
             self.btn_cli_tool.label = "Uninstall"
             self.label_cli_tool_info.text = (
                 "CLI installed. See 'maestral --help' for available commands."
             )
-        elif osp.exists(self._macos_cli_install_path):
+        elif self._macos_cli_install_path.exists():
             self.btn_cli_tool.enabled = False
             self.btn_cli_tool.label = "Install"
             self.label_cli_tool_info.text = "CLI already installed from Python package."

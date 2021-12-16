@@ -473,7 +473,7 @@ class SyncEngine:
     _case_conversion_cache: LRUCache
 
     _max_history = 1000
-    _num_threads = min(32, CPU_COUNT * 3)
+    _num_threads = min(64, CPU_COUNT * 4)
 
     def __init__(self, client: DropboxClient):
 
@@ -3097,6 +3097,9 @@ class SyncEngine:
             else:
                 file_name = f"{n_changed} items"
 
+            def callback():
+                pass
+
             buttons = {}
 
         if change_type == ChangeType.Removed.value:
@@ -3112,7 +3115,9 @@ class SyncEngine:
         else:
             msg = f"{file_name} {change_type}"
 
-        self.desktop_notifier.notify("Items synced", msg, actions=buttons)
+        self.desktop_notifier.notify(
+            "Items synced", msg, actions=buttons, on_click=callback
+        )
 
     def _check_download_conflict(self, event: SyncEvent) -> Conflict:
         """

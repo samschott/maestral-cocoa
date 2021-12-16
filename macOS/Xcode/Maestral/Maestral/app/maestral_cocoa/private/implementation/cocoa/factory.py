@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 
 # system imports
+import sys
 import os.path as osp
 import platform
 
 # external imports
+import toga
 from travertino.size import at_least
 from rubicon.objc import (
     NSMakeSize,
@@ -15,6 +17,7 @@ from rubicon.objc import (
     SEL,
     at,
 )
+from toga.handlers import NativeHandler
 from toga.constants import LEFT, TRANSPARENT
 from toga_cocoa.libs import (
     NSColor,
@@ -44,6 +47,7 @@ from toga_cocoa.libs import (
     NSButton,
     NSRoundedBezelStyle,
     NSSwitchButton,
+    NSBundle,
 )
 from toga_cocoa.colors import native_color
 from toga_cocoa.keys import cocoa_key
@@ -632,15 +636,145 @@ class SystemTrayApp(TogaApp):
 
     _MAIN_WINDOW_CLASS = None
 
-    def _create_app_commands(self):
-        # Hack: we use _create_app_commands here to inject our own modifications
-        # into the superclass create command *before* the actual GUI is loaded.
+    def create(self):
+        self.native = NSApplication.sharedApplication
+
+        icon = self.interface.icon.bind(self.interface.factory)
+        self.native.setApplicationIconImage_(icon.native)
+
+        self.resource_path = str(NSBundle.mainBundle.resourcePath)
 
         self.delegate = SystemTrayAppDelegate.alloc().init()
         self.delegate.impl = self
         self.delegate.interface = self.interface
         self.delegate.native = self.native
         self.native.delegate = self.delegate
+
+        formal_name = self.interface.formal_name
+
+        self.interface.commands.add(
+            # ---- App menu -----------------------------------
+            toga.Command(
+                lambda _: self.interface.about(),
+                "About " + formal_name,
+                group=toga.Group.APP,
+            ),
+            toga.Command(
+                None,
+                "Preferences",
+                shortcut=toga.Key.MOD_1 + ",",
+                group=toga.Group.APP,
+                section=20,
+            ),
+            toga.Command(
+                NativeHandler(SEL("hide:")),
+                "Hide " + formal_name,
+                shortcut=toga.Key.MOD_1 + "h",
+                group=toga.Group.APP,
+                order=0,
+                section=sys.maxsize - 1,
+            ),
+            toga.Command(
+                NativeHandler(SEL("hideOtherApplications:")),
+                "Hide Others",
+                shortcut=toga.Key.MOD_1 + toga.Key.MOD_2 + "h",
+                group=toga.Group.APP,
+                order=1,
+                section=sys.maxsize - 1,
+            ),
+            toga.Command(
+                NativeHandler(SEL("unhideAllApplications:")),
+                "Show All",
+                group=toga.Group.APP,
+                order=2,
+                section=sys.maxsize - 1,
+            ),
+            # Quit should always be the last item, in a section on its own
+            toga.Command(
+                lambda _: self.interface.exit(),
+                "Quit " + formal_name,
+                shortcut=toga.Key.MOD_1 + "q",
+                group=toga.Group.APP,
+                section=sys.maxsize,
+            ),
+            # ---- Edit menu ----------------------------------
+            toga.Command(
+                NativeHandler(SEL("undo:")),
+                "Undo",
+                shortcut=toga.Key.MOD_1 + "z",
+                group=toga.Group.EDIT,
+                order=10,
+            ),
+            toga.Command(
+                NativeHandler(SEL("redo:")),
+                "Redo",
+                shortcut=toga.Key.SHIFT + toga.Key.MOD_1 + "z",
+                group=toga.Group.EDIT,
+                order=20,
+            ),
+            toga.Command(
+                NativeHandler(SEL("cut:")),
+                "Cut",
+                shortcut=toga.Key.MOD_1 + "x",
+                group=toga.Group.EDIT,
+                section=10,
+                order=10,
+            ),
+            toga.Command(
+                NativeHandler(SEL("copy:")),
+                "Copy",
+                shortcut=toga.Key.MOD_1 + "c",
+                group=toga.Group.EDIT,
+                section=10,
+                order=20,
+            ),
+            toga.Command(
+                NativeHandler(SEL("paste:")),
+                "Paste",
+                shortcut=toga.Key.MOD_1 + "v",
+                group=toga.Group.EDIT,
+                section=10,
+                order=30,
+            ),
+            toga.Command(
+                NativeHandler(SEL("pasteAsPlainText:")),
+                "Paste and Match Style",
+                shortcut=toga.Key.MOD_2 + toga.Key.SHIFT + toga.Key.MOD_1 + "v",
+                group=toga.Group.EDIT,
+                section=10,
+                order=40,
+            ),
+            toga.Command(
+                NativeHandler(SEL("delete:")),
+                "Delete",
+                group=toga.Group.EDIT,
+                section=10,
+                order=50,
+            ),
+            toga.Command(
+                NativeHandler(SEL("selectAll:")),
+                "Select All",
+                shortcut=toga.Key.MOD_1 + "a",
+                group=toga.Group.EDIT,
+                section=10,
+                order=60,
+            ),
+            # ---- Help menu ----------------------------------
+            toga.Command(
+                lambda _: self.interface.visit_homepage(),
+                "Visit homepage",
+                enabled=self.interface.home_page is not None,
+                group=toga.Group.HELP,
+            ),
+        )
+        self._create_app_commands()
+
+        # Call user code to populate the main window
+        self.interface.startup()
+
+        # Create the lookup table of menu items,
+        # then force the creation of the menus.
+        self.create_menus()
 
     def select_file(self):
         pass

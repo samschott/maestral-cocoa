@@ -3,7 +3,6 @@
 # system imports
 import os
 import asyncio
-import shlex
 from concurrent.futures import ThreadPoolExecutor
 from typing import (
     Union,
@@ -13,6 +12,7 @@ from typing import (
     List,
     Any,
     Callable,
+    AnyStr,
 )
 
 # external imports
@@ -95,21 +95,18 @@ def generate_async_maestral(config_name: str, func_name: str, *args) -> AsyncGen
 # ==== system calls ====================================================================
 
 
-def request_authorization_from_user_and_run(exe: List[str]) -> None:
-    # shlex.join requires Python 3.8 and later.
+def request_authorization_from_user_and_run(command: str) -> None:
 
-    cmd = shlex.join(exe)  # type: ignore
-
-    source = f'do shell script "{cmd}" with administrator privileges'
+    source = f'do shell script "{command}" with administrator privileges'
 
     script = NSAppleScript.alloc().initWithSource(source)
     res = script.executeAndReturnError(None)
 
     if res is None:
-        raise RuntimeError(f"Could not run privileged command {cmd!r}")
+        raise RuntimeError(f"Could not run privileged command {command!r}")
 
 
-def is_empty(dirname: Union[str, bytes, os.PathLike]) -> bool:
+def is_empty(dirname: AnyStr) -> bool:
     """Checks if a directory is empty."""
 
     exceptions = {".DS_Store"}
