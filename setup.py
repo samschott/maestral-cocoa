@@ -10,7 +10,7 @@ install_requires = [
     "maestral>=1.5.2",
     "markdown2",
     "toga==0.3.0.dev29",
-    "rubicon-objc>=0.4.0",
+    "rubicon-objc>=0.4.2",
 ]
 
 dev_requires = [
