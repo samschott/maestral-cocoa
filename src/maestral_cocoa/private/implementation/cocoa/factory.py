@@ -97,6 +97,7 @@ from ...constants import (
 
 
 NSWorkspace = ObjCClass("NSWorkspace")
+NSFileManager = ObjCClass("NSFileManager")
 NSVisualEffectView = ObjCClass("NSVisualEffectView")
 NSMutableAttributedString = ObjCClass("NSMutableAttributedString")
 NSStatusBar = ObjCClass("NSStatusBar")
@@ -455,6 +456,19 @@ class FileSelectionButton(Widget):
     def get_current_selection(self):
         return self._current_selection
 
+    def _display_path(self, path):
+
+        file_manager = NSFileManager.defaultManager
+
+        display_components = file_manager.componentsToDisplayForPath(path)
+
+        if display_components:
+            path_display = "/".join([str(p) for p in display_components])
+        else:
+            path_display = path
+
+        return path_display
+
     def set_current_selection(self, path):
 
         if not osp.exists(path) and not self.interface.select_files:
@@ -465,7 +479,15 @@ class FileSelectionButton(Widget):
             image = NSWorkspace.sharedWorkspace.iconForFile(path)
 
         item = self.native.itemAtIndex(0)
-        item.title = path if self.interface.show_full_path else osp.basename(path)
+
+        path_display = self._display_path(path)
+
+        if self.interface.show_full_path:
+            title = path_display
+        else:
+            title = osp.basename(path_display)
+
+        item.title = title
         item.image = resize_image_to(image, 16)
         self._current_selection = path
 
@@ -483,8 +505,8 @@ class FileSelectionButton(Widget):
 
     def set_show_full_path(self, value):
         item = self.native.itemAtIndex(0)
-        path = self.interface.current_selection
-        item.title = path if value else osp.basename(path)
+        display_path = self._display_path(self._current_selection)
+        item.title = display_path if value else osp.basename(display_path)
 
     def set_dialog_message(self, value):
         pass
