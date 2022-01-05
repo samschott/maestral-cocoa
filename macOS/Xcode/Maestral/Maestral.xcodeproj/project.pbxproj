@@ -185,8 +185,8 @@
 				0D354FC52551BFBA009178D1 /* Frameworks */,
 				0D354FC62551BFBA009178D1 /* Resources */,
 				0D7B44EB2556C8B800CBC44B /* Embed App Extensions */,
-				0DDA7BD3269912010065DF9B /* Increment build number */,
 				0D4E627D2782321E000325BF /* Embed Frameworks */,
+				0DDA7BD3269912010065DF9B /* Increment build number */,
 			);
 			buildRules = (
 			);
