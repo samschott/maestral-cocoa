@@ -65,20 +65,22 @@ jobs:
       - name: Build app
         id: build
         run: |
-          # build app
+          # update Python code
           briefcase update macOS Xcode -r -d
+
+          # build app
           briefcase build macOS Xcode
 
           # run post-build scripts:
           # - add CLI executable
           # - keep .pyc files only to save space
-          # - update plist entries
           APP_PATH=$( find . -name "*.app" | head -n 1)
           ./scripts/post-build-macos.sh $APP_PATH
 
-          # package dmg
+          # package as dmg
           briefcase package macOS Xcode -i "$DEV_ID"
 
+          # prepare output for notarization step
           DMG_PATH=$( find . -name "*.dmg" )
           DMG_NAME=$( basename "$DMG_PATH" )
           echo "dmg created: $DMG_PATH"

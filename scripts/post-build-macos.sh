@@ -27,9 +27,3 @@ find "$BUNDLE_PATH/Contents" -name "*.py" ! -name "nslog.py" -delete
 
 # remove all __pycache__ dirs
 find "$BUNDLE_PATH/Contents" -name "__pycache__" -prune -exec rm -rf {} \;
-
-echo "# ==== add custom Info.plist entries ============================================"
-
-#PLIST_PATH="$BUNDLE_PATH/Contents/Info.plist"
-#/usr/libexec/PlistBuddy -c "Add :LSUIElement string 1" "$PLIST_PATH"
-
