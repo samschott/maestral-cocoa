@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright © Spyder Project Contributors
 # Licensed under the terms of the MIT License
@@ -86,7 +85,7 @@ class DefaultsConfig(cp.ConfigParser):
 
 class UserConfig(DefaultsConfig):
     """
-    UserConfig class, based on ConfigParser. This class is save to use from different
+    UserConfig class, based on ConfigParser. This class is safe to use from different
     threads but must not be used from different processes!
 
     :param path: Configuration file will be saved to this path.
@@ -237,7 +236,7 @@ class UserConfig(DefaultsConfig):
         :param version: The version of the backup, if any.
         :returns: The back for the backup file.
         """
-        dircetory = osp.join(self._dirname, self._backup_folder)
+        directory = osp.join(self._dirname, self._backup_folder)
 
         if version:
             filename = f"{self._filename}-{str(version)}"
@@ -246,7 +245,7 @@ class UserConfig(DefaultsConfig):
 
         name = f"{filename}.{self._suffix}.{self._backup_suffix}"
 
-        return osp.join(dircetory, name)
+        return osp.join(directory, name)
 
     def apply_configuration_patches(self, old_version: Version) -> None:
         """
@@ -348,7 +347,7 @@ class UserConfig(DefaultsConfig):
                     self.set(section, option, default)
                     return default
 
-            raw_value: str = super(UserConfig, self).get(section, option, raw=True)
+            raw_value: str = super().get(section, option, raw=True)
             default_value = self.get_default(section, option)
             value: Any
 

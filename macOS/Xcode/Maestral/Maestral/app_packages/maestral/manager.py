@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """This module contains the classes to coordinate sync threads."""
 
 # system imports
@@ -144,7 +143,7 @@ class SyncManager:
     def history(self) -> List[SyncEvent]:
         """A list of the last SyncEvents in our history. History will be kept for the
         interval specified by the config value ``keep_history`` (defaults to two weeks)
-        but at most 1,000 events will kept."""
+        but at most 1,000 events will be kept."""
         return self.sync.history
 
     @property
@@ -605,7 +604,7 @@ class SyncManager:
         """
         Worker to sync changes of remote Dropbox with local folder.
 
-        :param running: Event to shutdown local file event handler and worker threads.
+        :param running: Event to shut down local file event handler and worker threads.
         :param startup_completed: Set when startup sync is completed.
         :param autostart: Set when syncing should automatically resume on connection.
         """
@@ -650,7 +649,7 @@ class SyncManager:
         """
         Worker to download items which have been newly included in sync.
 
-        :param running: Event to shutdown local file event handler and worker threads.
+        :param running: Event to shut down local file event handler and worker threads.
         :param startup_completed: Set when startup sync is completed.
         :param autostart: Set when syncing should automatically resume on connection.
         """
@@ -692,7 +691,7 @@ class SyncManager:
         """
         Worker to sync local changes to remote Dropbox.
 
-        :param running: Event to shutdown local file event handler and worker threads.
+        :param running: Event to shut down local file event handler and worker threads.
         :param startup_completed: Set when startup sync is completed.
         :param autostart: Set when syncing should automatically resume on connection.
         """
@@ -726,7 +725,7 @@ class SyncManager:
         """
         Worker to sync local changes to remote Dropbox.
 
-        :param running: Event to shutdown local file event handler and worker threads.
+        :param running: Event to shut down local file event handler and worker threads.
         :param startup_completed: Set when startup sync is completed.
         :param autostart: Set when syncing should automatically resume on connection.
         """

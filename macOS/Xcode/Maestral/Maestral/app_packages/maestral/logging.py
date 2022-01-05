@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """This module defines custom logging records and handlers."""
 
 import os
@@ -53,7 +52,7 @@ class EncodingSafeLogRecord(logging.LogRecord):
 
     This is useful when log messages may contain file paths generates by OS APIs. In
     Python, such path strings may contain surrogate escapes and will therefore raise
-    a :class:`UnicodeEncodeError` under many circumstances (printing to stdout, etc).
+    a :class:`UnicodeEncodeError` under many circumstances (printing to stdout, etc.).
     """
 
     _safe_msg: Optional[str] = None

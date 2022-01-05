@@ -4,6 +4,7 @@
 import sys
 import os.path as osp
 import platform
+from ctypes import py_object
 
 # external imports
 import toga
@@ -14,6 +15,7 @@ from rubicon.objc import (
     CGRectMake,
     ObjCClass,
     objc_method,
+    objc_property,
     SEL,
     at,
 )
@@ -95,6 +97,7 @@ from ...constants import (
 
 
 NSWorkspace = ObjCClass("NSWorkspace")
+NSFileManager = ObjCClass("NSFileManager")
 NSVisualEffectView = ObjCClass("NSVisualEffectView")
 NSMutableAttributedString = ObjCClass("NSMutableAttributedString")
 NSStatusBar = ObjCClass("NSStatusBar")
@@ -200,8 +203,6 @@ class Label(Widget):
 
     def create(self):
         self.native = NSTextField.labelWithString("")
-        self.native.impl = self
-        self.native.interface = self.interface
 
         # Add the layout constraints
         self.add_constraints()
@@ -252,8 +253,6 @@ class RichLabel(Widget):
     def create(self):
         self._color = None
         self.native = NSTextView.alloc().init()
-        self.native.impl = self
-        self.native.interface = self.interface
 
         self.native.drawsBackground = False
         self.native.editable = False
@@ -337,6 +336,10 @@ class FreestandingIconButton(TogaButton):
 
 
 class SwitchTarget(NSObject):
+
+    interface = objc_property(py_object, weak=True)
+    impl = objc_property(py_object, weak=True)
+
     @objc_method
     def onPress_(self, obj) -> None:
         if self.interface.on_toggle:
@@ -398,6 +401,10 @@ class Switch(Widget):
 
 
 class FileChooserTarget(NSObject):
+
+    interface = objc_property(py_object, weak=True)
+    impl = objc_property(py_object, weak=True)
+
     @objc_method
     def onSelect_(self, obj) -> None:
         if self.impl.native.indexOfSelectedItem == 2:
@@ -449,6 +456,19 @@ class FileSelectionButton(Widget):
     def get_current_selection(self):
         return self._current_selection
 
+    def _display_path(self, path):
+
+        file_manager = NSFileManager.defaultManager
+
+        display_components = file_manager.componentsToDisplayForPath(path)
+
+        if display_components:
+            path_display = "/".join([str(p) for p in display_components])
+        else:
+            path_display = path
+
+        return path_display
+
     def set_current_selection(self, path):
 
         if not osp.exists(path) and not self.interface.select_files:
@@ -459,7 +479,15 @@ class FileSelectionButton(Widget):
             image = NSWorkspace.sharedWorkspace.iconForFile(path)
 
         item = self.native.itemAtIndex(0)
-        item.title = path if self.interface.show_full_path else osp.basename(path)
+
+        path_display = self._display_path(path)
+
+        if self.interface.show_full_path:
+            title = path_display
+        else:
+            title = osp.basename(path_display)
+
+        item.title = title
         item.image = resize_image_to(image, 16)
         self._current_selection = path
 
@@ -477,8 +505,8 @@ class FileSelectionButton(Widget):
 
     def set_show_full_path(self, value):
         item = self.native.itemAtIndex(0)
-        path = self.interface.current_selection
-        item.title = path if value else osp.basename(path)
+        display_path = self._display_path(self._current_selection)
+        item.title = display_path if value else osp.basename(display_path)
 
     def set_dialog_message(self, value):
         pass
@@ -495,6 +523,10 @@ class FileSelectionButton(Widget):
 
 
 class TogaMenuItem(NSMenuItem):
+
+    interface = objc_property(py_object, weak=True)
+    impl = objc_property(py_object, weak=True)
+
     @objc_method
     def onPress_(self, obj) -> None:
         if self.interface.action:
@@ -554,6 +586,10 @@ class MenuItemSeparator:
 
 
 class TogaMenu(NSMenu):
+
+    interface = objc_property(py_object, weak=True)
+    impl = objc_property(py_object, weak=True)
+
     @objc_method
     def menuWillOpen_(self, obj) -> None:
         self.impl._visible = True
@@ -620,6 +656,10 @@ class StatusBarItem:
 
 
 class SystemTrayAppDelegate(NSObject):
+
+    interface = objc_property(py_object, weak=True)
+    impl = objc_property(py_object, weak=True)
+
     @objc_method
     def applicationWillTerminate_(self, sender):
         if self.interface.app.on_exit:
@@ -846,6 +886,10 @@ class SystemTrayApp(TogaApp):
 
 
 class WindowDeletage(TogaWindowDeletage):
+
+    interface = objc_property(py_object, weak=True)
+    impl = objc_property(py_object, weak=True)
+
     @objc_method
     def windowWillClose_(self, notification) -> None:
 

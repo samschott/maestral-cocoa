@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 This module contains functions for common path operations.
 """
@@ -91,7 +90,7 @@ def is_fs_case_sensitive(path: str) -> bool:
 def is_child(path: str, parent: str) -> bool:
     """
     Checks if ``path`` semantically is inside ``parent``. Neither path needs to
-    refer to an actual item on the drive. This function is case sensitive.
+    refer to an actual item on the drive. This function is case-sensitive.
 
     :param path: Item path.
     :param parent: Parent path.
@@ -107,7 +106,7 @@ def is_child(path: str, parent: str) -> bool:
 def is_equal_or_child(path: str, parent: str) -> bool:
     """
     Checks if ``path`` semantically is inside ``parent`` or equals ``parent``. Neither
-    path needs to refer to an actual item on the drive. This function is case sensitive.
+    path needs to refer to an actual item on the drive. This function is case-sensitive.
 
     :param path: Item path.
     :param parent: Parent path.
@@ -128,7 +127,7 @@ def equivalent_path_candidates(
     function, this method returns a list of matching un-normalized local paths.
 
     If no such local path exists, the normalized path itself is returned. If a local
-    path can be followed up to a certain parent in the hierarchy, it will be taked and
+    path can be followed up to a certain parent in the hierarchy, it will be taken and
     the remaining normalized path will be appended.
 
     :Example:
@@ -257,7 +256,7 @@ def normalized_path_exists(path: str, root: str = osp.sep) -> bool:
 def generate_cc_name(path: str, suffix: str = "conflicting copy") -> str:
     """
     Generates a path for a conflicting copy of ``path``. The file name is created by
-    inserting the given ``suffix`` between the the filename and extension. For instance:
+    inserting the given ``suffix`` between the filename and the extension. For instance:
 
         "my_file.txt" -> "my_file (conflicting copy).txt"
 
@@ -362,7 +361,9 @@ def move(
 
 def walk(
     root: Union[str, os.PathLike],
-    listdir: Callable[[Union[str, os.PathLike]], Iterable[os.DirEntry]] = os.scandir,
+    listdir: Callable[
+        [Union[str, "os.PathLike[str]"]], Iterable[os.DirEntry]
+    ] = os.scandir,
 ) -> Iterator[Tuple[str, os.stat_result]]:
     """
     Iterates recursively over the content of a folder.
@@ -381,14 +382,14 @@ def walk(
             yield path, stat
 
             if S_ISDIR(stat.st_mode):
-                for res in walk(entry.path, listdir=listdir):
-                    yield res
+                yield from walk(entry.path, listdir=listdir)
 
         except OSError as exc:
             # Directory may have been deleted between finding it in the directory
             # list of its parent and trying to list its contents. If this
-            # happens we treat it as empty. Likewise if the directory was replaced
-            # with a file of the same name (less likely, but possible).
+            # happens we treat it as empty. Likewise, if the directory was replaced
+            # with a file of the same name (less likely, but possible), it will be
+            # treated as empty.
             if exc.errno in (errno.ENOENT, errno.ENOTDIR, errno.EINVAL):
                 return
             else:

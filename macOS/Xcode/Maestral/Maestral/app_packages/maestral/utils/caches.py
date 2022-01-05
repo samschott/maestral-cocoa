@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Module containing cache implementations."""
 
 from collections import OrderedDict
@@ -9,7 +8,7 @@ from typing import Any
 class LRUCache:
     """A simple LRU cache implementation
 
-    :param capacity: Maximum number of of entries to keep.
+    :param capacity: Maximum number of entries to keep.
     """
 
     _cache: OrderedDict
