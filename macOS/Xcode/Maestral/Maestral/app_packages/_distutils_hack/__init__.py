@@ -73,6 +73,17 @@ def do_override():
         ensure_local_distutils()
 
 
+class suppress(contextlib.suppress, contextlib.ContextDecorator):
+    """
+    A version of contextlib.suppress with decorator support.
+
+    >>> @suppress(KeyError)
+    ... def key_error():
+    ...     {}['']
+    >>> key_error()
+    """
+
+
 class DistutilsMetaFinder:
     def find_spec(self, fullname, path, target=None):
         if path is not None:
@@ -116,6 +127,8 @@ class DistutilsMetaFinder:
         """
         if self.pip_imported_during_build():
             return
+        if self.is_get_pip():
+            return
         clear_distutils()
         self.spec_for_distutils = lambda: None
 
@@ -129,6 +142,15 @@ class DistutilsMetaFinder:
             cls.frame_file_is_setup(frame)
             for frame, line in traceback.walk_stack(None)
         )
+
+    @classmethod
+    @suppress(AttributeError)
+    def is_get_pip(cls):
+        """
+        Detect if get-pip is being invoked. Ref #2993.
+        """
+        import __main__
+        return os.path.basename(__main__.__file__) == 'get-pip.py'
 
     @staticmethod
     def frame_file_is_setup(frame):
