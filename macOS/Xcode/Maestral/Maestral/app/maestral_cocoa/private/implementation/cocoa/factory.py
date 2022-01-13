@@ -26,7 +26,7 @@ from toga_cocoa.libs import (
     NSString,
     NSTextView,
     NSTextAlignment,
-    NSRecessedBezelStyle,
+    NSBezelStyle,
     NSViewMaxYMargin,
     NSMenuItem,
     NSMenu,
@@ -47,7 +47,6 @@ from toga_cocoa.libs import (
     NSCompositingOperationCopy,
     NSURL,
     NSButton,
-    NSRoundedBezelStyle,
     NSSwitchButton,
     NSBundle,
 )
@@ -317,7 +316,7 @@ class FreestandingIconButton(TogaButton):
         self.native.showsBorderOnlyWhileMouseInside = True
         self.native.bordered = False
         self.native.buttonType = NSButtonTypeMomentaryPushIn
-        self.native.bezelStyle = NSRecessedBezelStyle
+        self.native.bezelStyle = NSBezelStyle.Recessed
         self.native.imagePosition = NSImageLeading
         self.native.alignment = NSTextAlignment(LEFT)
         self.native.focusRingType = NSFocusRingTypeNone
@@ -357,7 +356,7 @@ class Switch(Widget):
 
     def create(self):
         self.native = NSButton.alloc().init()
-        self.native.bezelStyle = NSRoundedBezelStyle
+        self.native.bezelStyle = NSBezelStyle.Rounded
         self.native.setButtonType(NSSwitchButton)
         self.native.autoresizingMask = NSViewMaxYMargin | NSViewMaxYMargin
 

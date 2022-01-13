@@ -136,18 +136,18 @@ class Maestral:
         self.sync = self.manager.sync
 
         # Schedule background tasks.
-        self._loop = asyncio.get_event_loop()
+        self._loop = asyncio.get_event_loop_policy().get_event_loop()
         self._tasks: Set[asyncio.Task] = set()
         self._pool = ThreadPoolExecutor(
             thread_name_prefix="maestral-thread-pool",
             max_workers=2,
         )
 
-        self._schedule_task(self._periodic_refresh_info())
-        self._schedule_task(self._period_reindexing())
+        self._schedule_task(self._periodic_refresh_profile())
+        self._schedule_task(self._periodic_reindexing())
 
         # Create a future which will return once `shutdown_daemon` is called.
-        # This can be used by an event loop wait until maestral has been stopped.
+        # This can be used by an event loop to wait until maestral has been stopped.
         self.shutdown_complete = self._loop.create_future()
 
     @property
@@ -208,11 +208,11 @@ class Maestral:
         except KeyringAccessError:
             self._logger.debug("Could not remove token from keyring", exc_info=True)
 
-        # clean up config + state
+        # Clean up config and state files.
         self._conf.cleanup()
         self._state.cleanup()
         self.sync.reset_sync_state()
-        self.sync.reload_cached_config()  # reload cached config values
+        self.sync.reload_cached_config()
 
         self._logger.info("Unlinked Dropbox account.")
 
@@ -231,7 +231,7 @@ class Maestral:
 
         log_fmt_short = logging.Formatter(fmt="%(message)s")
 
-        # log to cached handlers for status and error APIs
+        # Log to cached handlers for status and error APIs.
         self._log_handler_info_cache = CachedHandler(maxlen=1)
         self._log_handler_info_cache.setFormatter(log_fmt_short)
         self._log_handler_info_cache.setLevel(logging.INFO)
@@ -242,7 +242,7 @@ class Maestral:
         self._log_handler_error_cache.setLevel(logging.ERROR)
         self._root_logger.addHandler(self._log_handler_error_cache)
 
-    # ==== methods to access config and saved state ====================================
+    # ==== Methods to access config and saved state ====================================
 
     @property
     def config_name(self) -> str:
@@ -289,9 +289,7 @@ class Maestral:
         """
         return self._state.get(section, name)
 
-    # helper functions
-
-    # ==== getters / setters for config with side effects ==============================
+    # ==== Getters / setters for config with side effects ==============================
 
     @property
     def dropbox_path(self) -> str:
@@ -348,7 +346,7 @@ class Maestral:
                     if self.pending_first_download:
                         return
 
-                    # apply changes
+                    # Apply changes.
                     for path in added_excluded_items:
                         self._logger.info("Excluded %s", path)
                         self._remove_after_excluded(path)
@@ -404,7 +402,7 @@ class Maestral:
         """Setter: notification_level."""
         self.sync.desktop_notifier.notify_level = level
 
-    # ==== state information  ==========================================================
+    # ==== State information  ==========================================================
 
     def status_change_longpoll(self, timeout: Optional[float] = 60) -> bool:
         """
@@ -554,7 +552,7 @@ class Maestral:
         sync_event = self.manager.activity.get(local_path)
 
         if sync_event is None:
-            # check if there is any sync event for a child path
+            # Check if there is any sync event for a child path.
             # TODO: Improve performance
             path = next(
                 iter(p for p in self.manager.activity if p.startswith(local_path)), ""
@@ -643,7 +641,7 @@ class Maestral:
         res = self.client.get_space_usage()
         return dropbox_stone_to_dict(res)
 
-    # ==== control methods for front ends ==============================================
+    # ==== Control methods for front ends ==============================================
 
     def get_profile_pic(self) -> Optional[str]:
         """
@@ -798,13 +796,13 @@ class Maestral:
 
         def download_rev(rev: str) -> Tuple[List[str], FileMetadata]:
             """
-            Download a rev to a tmp file, read it and return the content + metadata
+            Download a rev to a tmp file, read it and return the content + metadata.
             """
 
             with tempfile.NamedTemporaryFile(mode="w+") as f:
                 md = self.client.download(dbx_path, f.name, rev=rev)
 
-                # Read from the file
+                # Read from the file.
                 try:
                     with convert_api_errors(dbx_path=dbx_path, local_path=f.name):
                         content = f.readlines()
@@ -830,9 +828,9 @@ class Maestral:
         dbx_path = self.sync.correct_case(md_old.path_display)
         local_path = self.sync.to_local_path(md_old.path_display)
 
-        # Check if a diff is possible
+        # Check if a diff is possible.
         # If mime is None, proceed because most files without
-        # an extension are just text files
+        # an extension are just text files.
         mime, _ = mimetypes.guess_type(dbx_path)
         if mime is not None and not mime.startswith("text/"):
             raise UnsupportedFileTypeForDiff(
@@ -978,19 +976,19 @@ class Maestral:
         self._check_linked()
         self._check_dropbox_dir()
 
-        dbx_path = dbx_path.lower().rstrip("/")
+        dbx_path_lower = normalize(dbx_path.rstrip("/"))
 
         # ---- input validation --------------------------------------------------------
 
-        md = self.client.get_metadata(dbx_path)
+        md = self.client.get_metadata(dbx_path_lower)
 
         if not md:
             raise NotFoundError(
-                "Cannot exclude item", f'"{dbx_path}" does not exist on Dropbox'
+                "Cannot exclude item", f'"{dbx_path_lower}" does not exist on Dropbox'
             )
 
-        if self.sync.is_excluded_by_user(dbx_path):
-            self._logger.info("%s was already excluded", dbx_path)
+        if self.sync.is_excluded_by_user(dbx_path_lower):
+            self._logger.info("%s was already excluded", dbx_path_lower)
             self._logger.info(IDLE)
             return
 
@@ -1001,15 +999,15 @@ class Maestral:
                 # ---- update excluded items list --------------------------------------
 
                 excluded_items = self.sync.excluded_items
-                excluded_items.append(dbx_path)
+                excluded_items.append(dbx_path_lower)
 
                 self.sync.excluded_items = excluded_items
 
                 # ---- remove item from local Dropbox ----------------------------------
 
-                self._remove_after_excluded(dbx_path)
+                self._remove_after_excluded(dbx_path_lower)
 
-                self._logger.info("Excluded %s", dbx_path)
+                self._logger.info("Excluded %s", dbx_path_lower)
                 self._logger.info(IDLE)
             finally:
                 self.sync.sync_lock.release()
@@ -1017,33 +1015,32 @@ class Maestral:
         else:
             raise BusyError("Cannot exclude item", "Please try again when idle.")
 
-    def _remove_after_excluded(self, dbx_path: str) -> None:
+    def _remove_after_excluded(self, dbx_path_lower: str) -> None:
 
-        # book keeping
-        self.sync.remove_node_from_index(dbx_path)
+        # Perform housekeeping.
+        self.sync.remove_node_from_index(dbx_path_lower)
 
         for error in self.sync.sync_errors.copy():
 
             if not error.dbx_path:
                 continue
 
-            if is_equal_or_child(normalize(error.dbx_path), dbx_path):
+            if is_equal_or_child(normalize(error.dbx_path), dbx_path_lower):
                 self.sync.sync_errors.discard(error)
 
         for path in list(self.sync.download_errors):
-            if is_equal_or_child(path, dbx_path):
+            if is_equal_or_child(path, dbx_path_lower):
                 self.sync.download_errors.discard(path)
 
         for path in list(self.sync.upload_errors):
-            if is_equal_or_child(path, dbx_path):
+            if is_equal_or_child(path, dbx_path_lower):
                 self.sync.upload_errors.discard(path)
 
-        # remove folder from local drive
-        local_path = self.sync.to_local_path_from_cased(dbx_path)
-        # dbx_path will be lower-case, we therefore explicitly run
-        # `to_existing_unnormalized_path`
+        # Remove folder from local drive.
+        local_path_uncased = f"{self.dropbox_path}{dbx_path_lower}"
+
         try:
-            local_path = to_existing_unnormalized_path(local_path)
+            local_path = to_existing_unnormalized_path(local_path_uncased)
         except FileNotFoundError:
             return
 
@@ -1077,20 +1074,20 @@ class Maestral:
         self._check_linked()
         self._check_dropbox_dir()
 
-        dbx_path = dbx_path.lower().rstrip("/")
+        dbx_path_lower = normalize(dbx_path.rstrip("/"))
 
         # ---- input validation --------------------------------------------------------
 
-        md = self.client.get_metadata(dbx_path)
+        md = self.client.get_metadata(dbx_path_lower)
 
         if not md:
             raise NotFoundError(
                 "Cannot include item",
-                f"'{dbx_path}' does not exist on Dropbox",
+                f"'{dbx_path_lower}' does not exist on Dropbox",
             )
 
-        if not self.sync.is_excluded_by_user(dbx_path):
-            self._logger.info("'%s' is already included, nothing to do", dbx_path)
+        if not self.sync.is_excluded_by_user(dbx_path_lower):
+            self._logger.info("'%s' is already included, nothing to do", dbx_path_lower)
             self._logger.info(IDLE)
             return
 
@@ -1098,9 +1095,9 @@ class Maestral:
 
         excluded_items = set(self.sync.excluded_items)
 
-        # remove dbx_path from list
+        # Remove dbx_path from list.
         try:
-            excluded_items.remove(dbx_path)
+            excluded_items.remove(dbx_path_lower)
         except KeyError:
             pass
 
@@ -1108,20 +1105,20 @@ class Maestral:
 
         for folder in excluded_items.copy():
 
-            # include all parents which are required to download dbx_path
-            if is_child(dbx_path, folder):
-                # remove parent folders from excluded list
+            # Include all parents which are required to download dbx_path.
+            if is_child(dbx_path_lower, folder):
+                # Remove parent folders from excluded list.
                 excluded_items.remove(folder)
-                # re-add their children (except parents of dbx_path)
+                # Re-add their children (except parents of dbx_path).
                 for res in self.client.list_folder_iterator(folder):
                     for entry in res.entries:
-                        if not is_equal_or_child(dbx_path, entry.path_lower):
+                        if not is_equal_or_child(dbx_path_lower, entry.path_lower):
                             excluded_items.add(entry.path_lower)
 
                 excluded_parent = folder
 
-            # include all children of dbx_path
-            if is_child(folder, dbx_path):
+            # Include all children of dbx_path.
+            if is_child(folder, dbx_path_lower):
                 excluded_items.remove(folder)
 
         if self.sync.sync_lock.acquire(blocking=False):
@@ -1133,11 +1130,13 @@ class Maestral:
                 # ---- download item from Dropbox --------------------------------------
 
                 if excluded_parent:
-                    self._logger.info("Included '%s' and parent directories", dbx_path)
+                    self._logger.info(
+                        "Included '%s' and parent directories", dbx_path_lower
+                    )
                     self.manager.added_item_queue.put(excluded_parent)
                 else:
-                    self._logger.info("Included '%s'", dbx_path)
-                    self.manager.added_item_queue.put(dbx_path)
+                    self._logger.info("Included '%s'", dbx_path_lower)
+                    self.manager.added_item_queue.put(dbx_path_lower)
             finally:
                 self.sync.sync_lock.release()
 
@@ -1156,11 +1155,11 @@ class Maestral:
 
         self._check_linked()
 
-        dbx_path = dbx_path.lower().rstrip("/")
+        dbx_path_lower = normalize(dbx_path.rstrip("/"))
 
-        if any(is_equal_or_child(dbx_path, f) for f in self.sync.excluded_items):
+        if any(is_equal_or_child(dbx_path_lower, f) for f in self.sync.excluded_items):
             return "excluded"
-        elif any(is_child(f, dbx_path) for f in self.sync.excluded_items):
+        elif any(is_child(f, dbx_path_lower) for f in self.sync.excluded_items):
             return "partially excluded"
         else:
             return "included"
@@ -1182,7 +1181,6 @@ class Maestral:
 
         self._logger.info("Moving Dropbox folder...")
 
-        # input checks
         old_path = self.sync.dropbox_path
         new_path = osp.realpath(osp.expanduser(new_path))
 
@@ -1196,22 +1194,22 @@ class Maestral:
         if osp.exists(new_path):
             raise FileExistsError(f'Path "{new_path}" already exists.')
 
-        # pause syncing
+        # Pause syncing.
         was_syncing = self.running
         self.stop_sync()
 
-        # move folder from old location or create a new one if no old folder exists
+        # Move folder from old location or create a new one if no old folder exists.
         if osp.isdir(old_path):
             shutil.move(old_path, new_path)
         else:
             os.makedirs(new_path)
 
-        # update config file and client
+        # Update config file and client.
         self.sync.dropbox_path = new_path
 
         self._logger.info(f'Dropbox folder moved to "{new_path}"')
 
-        # resume syncing
+        # Resume syncing.
         if was_syncing:
             self.start_sync()
 
@@ -1227,23 +1225,23 @@ class Maestral:
 
         self._check_linked()
 
-        # pause syncing
+        # Pause syncing.
         resume = False
         if self.running:
             self.stop_sync()
             resume = True
 
-        # housekeeping
+        # Perform housekeeping.
         path = osp.realpath(osp.expanduser(path))
         self.manager.reset_sync_state()
 
-        # create new folder
+        # Create new folder.
         os.makedirs(path, exist_ok=True)
 
-        # update config file and client
+        # Update config file and client.
         self.sync.dropbox_path = path
 
-        # resume syncing
+        # Resume syncing.
         if resume:
             self.start_sync()
 
@@ -1328,7 +1326,7 @@ class Maestral:
 
         return [dropbox_stone_to_dict(link) for link in res.links]
 
-    # ==== utility methods for front ends ==============================================
+    # ==== Utility methods for front ends ==============================================
 
     def to_local_path(self, dbx_path: str) -> str:
         """
@@ -1368,7 +1366,7 @@ class Maestral:
             releases = []
             release_notes = []
 
-            # this should do nothing since the github API already returns sorted entries
+            # Remove? The GitHub API already returns sorted entries.
             data.sort(key=lambda x: Version(x["tag_name"]), reverse=True)
 
             for item in data:
@@ -1397,8 +1395,6 @@ class Maestral:
         except Exception:
             error_msg = "Something when wrong. Please try again later."
 
-        self._state.set("app", "latest_release", new_version or current_version)
-
         return {
             "update_available": bool(new_version),
             "latest_release": new_version or current_version,
@@ -1422,7 +1418,7 @@ class Maestral:
         if self._loop.is_running():
             self._loop.call_soon_threadsafe(self.shutdown_complete.set_result, True)
 
-    # ==== verifiers ===================================================================
+    # ==== Verifiers ===================================================================
 
     def _check_linked(self) -> None:
 
@@ -1440,7 +1436,7 @@ class Maestral:
                 "Please set up a local Dropbox directory using the GUI or CLI.",
             )
 
-    # ==== housekeeping on update  =====================================================
+    # ==== Housekeeping on update  =====================================================
 
     def _check_and_run_post_update_scripts(self) -> None:
         """
@@ -1457,6 +1453,8 @@ class Maestral:
             self._update_from_pre_v1_4_5()
         if Version(updated_from) < Version("1.4.8"):
             self._update_from_pre_v1_4_8()
+        if Version(updated_from) < Version("1.5.3.dev0"):
+            self._update_from_pre_v1_5_3()
 
         self._state.set("app", "updated_scripts_completed", __version__)
 
@@ -1512,7 +1510,16 @@ class Maestral:
                 value = self._state.get(sections["old"], key)
                 self._state.set(sections["new"], key, value)
 
-    # ==== period async jobs ===========================================================
+    def _update_from_pre_v1_5_3(self) -> None:
+
+        self._logger.info("Clearing hash cache after update from pre v1.5.3.dev0")
+
+        db_path = get_data_path("maestral", f"{self.config_name}.db")
+        db = Database(db_path, check_same_thread=False)
+        db.execute("DROP TABLE hash_cache")
+        db.close()
+
+    # ==== Periodic async jobs =========================================================
 
     def _schedule_task(self, coro: Awaitable) -> None:
         """Schedules a task in our asyncio loop."""
@@ -1520,13 +1527,13 @@ class Maestral:
         task = self._loop.create_task(coro)
         self._tasks.add(task)
 
-    async def _periodic_refresh_info(self) -> None:
+    async def _periodic_refresh_profile(self) -> None:
         """Periodically refresh some infos."""
 
         await asyncio.sleep(60 * 5)
 
         while True:
-            # update account info
+
             if self.client.auth.loaded:
 
                 # Only run if we have loaded the keyring, we don't
@@ -1534,13 +1541,13 @@ class Maestral:
 
                 try:
                     await self._loop.run_in_executor(self._pool, self.get_profile_pic)
-                    await self._loop.run_in_executor(self._pool, self.check_for_updates)
+                    await self._loop.run_in_executor(self._pool, self.get_account_info)
                 except (ConnectionError, MaestralApiError):
                     await sleep_rand(60 * 10)
                 else:
                     await sleep_rand(60 * 45)
 
-    async def _period_reindexing(self) -> None:
+    async def _periodic_reindexing(self) -> None:
         """
         Trigger periodic reindexing, determined by the 'reindex_interval' setting. Don't
         reindex if we are running on battery power.

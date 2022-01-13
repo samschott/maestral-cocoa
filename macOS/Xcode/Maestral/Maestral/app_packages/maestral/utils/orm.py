@@ -126,6 +126,7 @@ class Column(property):
     :param unique: If ``True``, sets a unique constraint on the column.
     :param primary_key: If ``True``, marks this column as a primary key column.
         Currently, only a single primary key column is supported.
+    :param index: If ``True``, create an index on this column.
     :param default: Default value for the column. Set to :class:`NoDefault` if no
         default value should be used. Note than None / NULL is a valid default for an
         SQLite column.
@@ -137,6 +138,7 @@ class Column(property):
         nullable: bool = True,
         unique: bool = False,
         primary_key: bool = False,
+        index: bool = False,
         default: DefaultColumnValueType = None,
     ):
         super().__init__(fget=self._fget, fset=self._fset)
@@ -145,6 +147,7 @@ class Column(property):
         self.nullable = nullable
         self.unique = unique
         self.primary_key = primary_key
+        self.index = index
 
         self.default: DefaultColumnValueType
 
@@ -358,6 +361,12 @@ class Manager:
 
         self.db.executescript(sql)
 
+        for column in columns(self.model):
+            if column.index:
+                idx_name = f"idx_{self.model.__tablename__}_{column.name}"
+                sql = f"CREATE INDEX {idx_name} ON {self.model.__tablename__} ({column.name});"
+                self.db.executescript(sql)
+
     def clear_cache(self) -> None:
         """Clears our cache."""
         self._cache.clear()
@@ -417,11 +426,32 @@ class Manager:
 
     def delete(self, obj: "Model") -> None:
         """
-        Delete a model object / row from database
+        Delete a model object / row from database.
 
         :param obj: Object / row to delete.
         """
         pk_sql = self.get_primary_key(obj)
+        sql = f"DELETE from {self.table_name} WHERE {self.pk_column.name} = ?"
+
+        try:
+            self.db.execute(sql, pk_sql)
+        except UnicodeEncodeError:
+            # Item was not in the database in the first place.
+            pass
+
+        try:
+            del self._cache[pk_sql]
+        except KeyError:
+            pass
+
+    def delete_primary_key(self, primary_key: ColumnValueType) -> None:
+        """
+        Delete a model object / row from database by primary key.
+
+        :param primary_key: Primary key for row.
+        """
+
+        pk_sql = self.pk_column.py_to_sql(primary_key)
         sql = f"DELETE from {self.table_name} WHERE {self.pk_column.name} = ?"
 
         try:
@@ -472,9 +502,12 @@ class Manager:
         :param primary_key: The primary key.
         :returns: Whether the corresponding row exists in the table.
         """
+
+        pk_sql = self.pk_column.py_to_sql(primary_key)
         sql = f"SELECT {self.pk_column.name} FROM {self.table_name} WHERE {self.pk_column.name} = ?"
+
         try:
-            result = self.db.execute(sql, primary_key)
+            result = self.db.execute(sql, pk_sql)
         except UnicodeEncodeError:
             # Item cannot be in the table.
             return False
@@ -493,8 +526,7 @@ class Manager:
         pk_sql = self.get_primary_key(obj)
 
         if self.has(pk_sql):
-            msg = f"Object with primary key {pk_sql} is already registered"
-            raise ValueError(msg)
+            raise ValueError(f"Object with primary key {pk_sql} is already registered")
 
         py_values = column_value_dict(obj).values()
         sql_values = (col.py_to_sql(val) for col, val in zip(self._columns, py_values))
@@ -518,10 +550,18 @@ class Manager:
 
         :param obj: The object to update.
         """
-        py_values = column_value_dict(obj).values()
-        sql_values = (col.py_to_sql(val) for col, val in zip(self._columns, py_values))
+
         pk_sql = self.get_primary_key(obj)
-        self.db.execute(self._sql_update_template, *(list(sql_values) + [pk_sql]))
+
+        if pk_sql is None:
+            raise ValueError("Primary key is required to update row")
+
+        if self.has(pk_sql):
+            py_vals = column_value_dict(obj).values()
+            sql_vals = (col.py_to_sql(val) for col, val in zip(self._columns, py_vals))
+            self.db.execute(self._sql_update_template, *(list(sql_vals) + [pk_sql]))
+        else:
+            self.save(obj)
 
     def query_to_objects(self, sql: str, *args) -> List["Model"]:
         """
