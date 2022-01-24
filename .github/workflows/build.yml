@@ -62,6 +62,11 @@ jobs:
           python3 -m pip install --upgrade briefcase
           chmod +x ./scripts/post-build-macos.sh
 
+      - name: Bump build number
+        run: |
+          cd macOS/Xcode/Maestral
+          agvtool next-version -all
+
       - name: Build app
         id: build
         run: |
