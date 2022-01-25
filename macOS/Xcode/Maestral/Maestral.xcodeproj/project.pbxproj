@@ -13,8 +13,6 @@
 		0D354FE62551C1E1009178D1 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0D354FE52551C1E1009178D1 /* AppKit.framework */; };
 		0D354FEF2551C249009178D1 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0D354FEE2551C249009178D1 /* Cocoa.framework */; };
 		0D3550002551C43F009178D1 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0D354FFF2551C43F009178D1 /* CoreGraphics.framework */; };
-		0D4E628027823282000325BF /* Sparkle.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0D4E627F27823282000325BF /* Sparkle.framework */; };
-		0D4E628127823282000325BF /* Sparkle.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 0D4E627F27823282000325BF /* Sparkle.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		0D7B44A42555DFE300CBC44B /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0D7B44A32555DFE300CBC44B /* WebKit.framework */; };
 		0D7B44A62555E00500CBC44B /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0D3550012551C447009178D1 /* CoreFoundation.framework */; };
 		0D7B44A82555E01500CBC44B /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0D7B44A72555E01500CBC44B /* Foundation.framework */; };
@@ -26,22 +24,12 @@
 		0D7B44C225561C2800CBC44B /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 0D267B6D255564F100AC3E85 /* libz.tbd */; };
 		0D7B44DA2556C84100CBC44B /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 0D354FD72551BFBD009178D1 /* main.m */; };
 		0D8AFE7726987B6E002D904C /* maestral-cli in Copy CLI executable */ = {isa = PBXBuildFile; fileRef = 0D8F347B26986E060092BE76 /* maestral-cli */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		0DA9006A279F573D006BD1C0 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 0DA90069279F573D006BD1C0 /* Sparkle */; };
 		0DBCA227274430DA0021CC31 /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0DBCA226274430DA0021CC31 /* SystemConfiguration.framework */; };
 		6093520D25E9D15D00C549F3 /* libffi.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 6093520C25E9D14B00C549F3 /* libffi.tbd */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		0D4E627D2782321E000325BF /* Embed Frameworks */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 10;
-			files = (
-				0D4E628127823282000325BF /* Sparkle.framework in Embed Frameworks */,
-			);
-			name = "Embed Frameworks";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		0D7B44EB2556C8B800CBC44B /* Embed App Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -83,7 +71,6 @@
 		0D354FEE2551C249009178D1 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		0D354FFF2551C43F009178D1 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
 		0D3550012551C447009178D1 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
-		0D4E627F27823282000325BF /* Sparkle.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Sparkle.framework; path = Frameworks/Sparkle.framework; sourceTree = "<group>"; };
 		0D7B44A32555DFE300CBC44B /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
 		0D7B44A72555E01500CBC44B /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		0D7B44A925560B2400CBC44B /* Support */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Support; sourceTree = "<group>"; };
@@ -97,6 +84,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0DA9006A279F573D006BD1C0 /* Sparkle in Frameworks */,
 				0DBCA227274430DA0021CC31 /* SystemConfiguration.framework in Frameworks */,
 				0D7B44BE25561C1800CBC44B /* libOpenSSL.a in Frameworks */,
 				0D7B44A62555E00500CBC44B /* CoreFoundation.framework in Frameworks */,
@@ -104,7 +92,6 @@
 				6093520D25E9D15D00C549F3 /* libffi.tbd in Frameworks */,
 				0D7B44A42555DFE300CBC44B /* WebKit.framework in Frameworks */,
 				0D7B44C125561C2000CBC44B /* libsqlite3.tbd in Frameworks */,
-				0D4E628027823282000325BF /* Sparkle.framework in Frameworks */,
 				0D7B44A82555E01500CBC44B /* Foundation.framework in Frameworks */,
 				0D7B44BD25561C1800CBC44B /* libbzip2.a in Frameworks */,
 				0D7B44C225561C2800CBC44B /* libz.tbd in Frameworks */,
@@ -153,7 +140,6 @@
 		0D354FE42551C1E1009178D1 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				0D4E627F27823282000325BF /* Sparkle.framework */,
 				0DBCA226274430DA0021CC31 /* SystemConfiguration.framework */,
 				6093520C25E9D14B00C549F3 /* libffi.tbd */,
 				0D7B44A72555E01500CBC44B /* Foundation.framework */,
@@ -185,14 +171,15 @@
 				0D354FC52551BFBA009178D1 /* Frameworks */,
 				0D354FC62551BFBA009178D1 /* Resources */,
 				0D7B44EB2556C8B800CBC44B /* Embed App Extensions */,
-				0D4E627D2782321E000325BF /* Embed Frameworks */,
-				0DDA7BD3269912010065DF9B /* Increment build number */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
 			name = Maestral;
+			packageProductDependencies = (
+				0DA90069279F573D006BD1C0 /* Sparkle */,
+			);
 			productName = Maestral;
 			productReference = 0D354FC82551BFBA009178D1 /* Maestral.app */;
 			productType = "com.apple.product-type.application";
@@ -220,6 +207,9 @@
 				Base,
 			);
 			mainGroup = 0D354FBF2551BFBA009178D1;
+			packageReferences = (
+				0DA90068279F573D006BD1C0 /* XCRemoteSwiftPackageReference "Sparkle" */,
+			);
 			productRefGroup = 0D354FC92551BFBA009178D1 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -260,24 +250,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "mkdir -p \"$BUILT_PRODUCTS_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Support/Python/Resources\"\nrsync -pvtrL --exclude .hg --exclude .svn --exclude .git \"$PROJECT_DIR/Support/Python/Resources/lib\" \"$BUILT_PRODUCTS_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Support/Python/Resources\"\n";
-		};
-		0DDA7BD3269912010065DF9B /* Increment build number */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			name = "Increment build number";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "agvtool next-version -all\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -551,6 +523,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		0DA90068279F573D006BD1C0 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		0DA90069279F573D006BD1C0 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0DA90068279F573D006BD1C0 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 0D354FC02551BFBA009178D1 /* Project object */;
 }
