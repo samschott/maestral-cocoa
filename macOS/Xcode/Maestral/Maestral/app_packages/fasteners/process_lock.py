@@ -14,14 +14,14 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+
 from contextlib import contextmanager
 import errno
+import functools
 import logging
 import os
 import threading
 import time
-
-import six
 
 from fasteners import _utils
 
@@ -139,7 +139,6 @@ class _InterProcessLock(object):
         with watch:
             gotten = r(self._try_acquire, blocking, watch)
         if not gotten:
-            self.acquired = False
             return False
         else:
             self.acquired = True
@@ -166,13 +165,13 @@ class _InterProcessLock(object):
     def release(self):
         """Release the previously acquired lock."""
         if not self.acquired:
-            raise threading.ThreadError("Unable to release an unacquired"
-                                        " lock")
+            raise threading.ThreadError("Unable to release an unaquired lock")
         try:
             self.unlock()
-        except IOError:
-            self.logger.exception("Could not unlock the acquired lock opened"
-                                  " on `%s`", self.path)
+        except Exception as e:
+            msg = "Could not unlock the acquired lock opened on `%s`", self.path
+            self.logger.exception(msg)
+            raise threading.ThreadError(msg) from e
         else:
             self.acquired = False
             try:
@@ -532,7 +531,7 @@ def interprocess_write_locked(path):
     lock = InterProcessReaderWriterLock(path)
 
     def decorator(f):
-        @six.wraps(f)
+        @functools.wraps(f)
         def wrapper(*args, **kwargs):
             with lock.write_lock():
                 return f(*args, **kwargs)
@@ -549,7 +548,7 @@ def interprocess_read_locked(path):
     lock = InterProcessReaderWriterLock(path)
 
     def decorator(f):
-        @six.wraps(f)
+        @functools.wraps(f)
         def wrapper(*args, **kwargs):
             with lock.read_lock():
                 return f(*args, **kwargs)
@@ -566,7 +565,7 @@ def interprocess_locked(path):
     lock = InterProcessLock(path)
 
     def decorator(f):
-        @six.wraps(f)
+        @functools.wraps(f)
         def wrapper(*args, **kwargs):
             with lock:
                 return f(*args, **kwargs)

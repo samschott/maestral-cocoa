@@ -15,6 +15,7 @@ from typing import Iterator, Optional, cast, Dict, List, TypeVar, Callable, Any
 
 # external imports
 from dropbox.common import TeamRootInfo, UserRootInfo
+from dropbox.session import API_HOST
 
 # local imports
 from . import __url__
@@ -49,26 +50,26 @@ from .utils.path import move, delete, is_equal_or_child, is_child, normalize
 
 __all__ = ["SyncManager"]
 
+DROPBOX_API_HOSTNAME = "https://" + API_HOST
+
 
 FT = TypeVar("FT", bound=Callable[..., Any])
 
-
-malloc_trim: Optional[Callable]
+malloc_trim: Callable
 
 try:
     libc = ctypes.CDLL("libc.so.6")
     malloc_trim = libc.malloc_trim
 except (OSError, AttributeError):
-    malloc_trim = None
+
+    def malloc_trim(*args):
+        pass
 
 
 def _free_memory() -> None:
     """Give back memory"""
-
     gc.collect()
-
-    if malloc_trim:
-        malloc_trim(0)
+    malloc_trim(0)
 
 
 class SyncManager:
@@ -168,7 +169,7 @@ class SyncManager:
         if self.running.is_set():
             return
 
-        if not check_connection("www.dropbox.com"):
+        if not check_connection(DROPBOX_API_HOSTNAME, logger=self._logger):
             # Schedule autostart when connection becomes available.
             self.autostart.set()
             self._logger.info(CONNECTING)
@@ -592,7 +593,7 @@ class SyncManager:
 
         while self._connection_helper_running:
 
-            connected = check_connection("www.dropbox.com")
+            connected = check_connection(DROPBOX_API_HOSTNAME)
 
             if connected != self.connected:
                 # Log the status change.

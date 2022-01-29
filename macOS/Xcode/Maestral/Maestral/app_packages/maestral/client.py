@@ -35,7 +35,6 @@ from dropbox import (
     exceptions,
     async_,
     auth,
-    oauth,
     common,
 )
 from dropbox.common import PathRoot
@@ -60,6 +59,7 @@ from .errors import (
     NotAFolderError,
     IsAFolderError,
     FileSizeError,
+    SymlinkError,
     OutOfMemoryError,
     BadInputError,
     DropboxAuthError,
@@ -76,7 +76,7 @@ from .errors import (
 from .config import MaestralState
 from .constants import DROPBOX_APP_KEY
 from .utils import natural_size, chunks, clamp
-from .utils.path import fs_max_lengths_for_path
+from .utils.path import fs_max_lengths_for_path, opener_no_symlink
 
 if TYPE_CHECKING:
     from .database import SyncEvent
@@ -123,7 +123,7 @@ def convert_api_errors(
 
     try:
         yield
-    except (exceptions.DropboxException, ValidationError, requests.HTTPError) as exc:
+    except (exceptions.DropboxException, ValidationError) as exc:
         raise dropbox_to_maestral_error(exc, dbx_path, local_path)
     # Catch connection errors first, they may inherit from OSError.
     except CONNECTION_ERRORS:
@@ -618,14 +618,24 @@ class DropboxClient:
 
             md, http_resp = self.dbx.files_download(dbx_path, **kwargs)
 
-            chunksize = 2 ** 13
+            if md.symlink_info is not None:
+                # Don't download but reproduce symlink locally.
+                http_resp.close()
+                try:
+                    os.unlink(local_path)
+                except FileNotFoundError:
+                    pass
+                os.symlink(md.symlink_info.target, local_path)
 
-            with open(local_path, "wb") as f:
-                with contextlib.closing(http_resp):
-                    for c in http_resp.iter_content(chunksize):
-                        f.write(c)
-                        if sync_event:
-                            sync_event.completed = f.tell()
+            else:
+                chunksize = 2 ** 13
+
+                with open(local_path, "wb", opener=opener_no_symlink) as f:
+                    with contextlib.closing(http_resp):
+                        for c in http_resp.iter_content(chunksize):
+                            f.write(c)
+                            if sync_event:
+                                sync_event.completed = f.tell()
 
             # Dropbox SDK provides naive datetime in UTC.
             client_mod = md.client_modified.replace(tzinfo=timezone.utc)
@@ -634,7 +644,7 @@ class DropboxClient:
             # Enforce client_modified < server_modified.
             timestamp = min(client_mod.timestamp(), server_mod.timestamp(), time.time())
             # Set mtime of downloaded file.
-            os.utime(local_path, (time.time(), timestamp))
+            os.utime(local_path, (time.time(), timestamp), follow_symlinks=False)
 
         return md
 
@@ -663,14 +673,13 @@ class DropboxClient:
 
         with convert_api_errors(dbx_path=dbx_path, local_path=local_path):
 
-            size = osp.getsize(local_path)
+            stat = os.lstat(local_path)
 
             # Dropbox SDK takes naive datetime in UTC/
-            mtime = osp.getmtime(local_path)
-            mtime_dt = datetime.utcfromtimestamp(mtime)
+            mtime_dt = datetime.utcfromtimestamp(stat.st_mtime)
 
-            if size <= chunk_size:
-                with open(local_path, "rb") as f:
+            if stat.st_size <= chunk_size:
+                with open(local_path, "rb", opener=opener_no_symlink) as f:
                     md = self.dbx.files_upload(
                         f.read(), dbx_path, client_modified=mtime_dt, **kwargs
                     )
@@ -681,7 +690,7 @@ class DropboxClient:
                 # Note: We currently do not support resuming interrupted uploads.
                 # Dropbox keeps upload sessions open for 48h so this could be done in
                 # the future.
-                with open(local_path, "rb") as f:
+                with open(local_path, "rb", opener=opener_no_symlink) as f:
                     data = f.read(chunk_size)
                     session_start = self.dbx.files_upload_session_start(data)
                     uploaded = f.tell()
@@ -699,7 +708,7 @@ class DropboxClient:
                     while True:
                         try:
 
-                            if size - f.tell() <= chunk_size:
+                            if stat.st_size - f.tell() <= chunk_size:
                                 # Finish upload session and return metadata.
                                 data = f.read(chunk_size)
                                 md = self.dbx.files_upload_session_finish(
@@ -725,18 +734,16 @@ class DropboxClient:
                                 isinstance(error, files.UploadSessionFinishError)
                                 and error.is_lookup_failed()
                             ):
-                                session_lookup_error = error.get_lookup_failed()
+                                lookup_error = error.get_lookup_failed()
                             elif isinstance(error, files.UploadSessionLookupError):
-                                session_lookup_error = error
+                                lookup_error = error
                             else:
                                 raise exc
 
-                            if session_lookup_error.is_incorrect_offset():
+                            if lookup_error.is_incorrect_offset():
                                 # Reset position in file.
-                                offset = (
-                                    session_lookup_error.get_incorrect_offset().correct_offset
-                                )
-                                f.seek(offset)
+                                offset_error = lookup_error.get_incorrect_offset()
+                                f.seek(offset_error.correct_offset)
                                 cursor.offset = f.tell()
                             else:
                                 raise exc
@@ -1338,6 +1345,10 @@ def os_to_maestral_error(
         err_cls = FileSizeError  # subclass of SyncError
         title = "Could not download file"
         text = "The file size too large."
+    elif exc.errno == errno.ELOOP:
+        err_cls = SymlinkError  # subclass of SyncError
+        title = "Cannot upload symlink"
+        text = "Symlinks are not currently supported by the public Dropbox API."
     elif exc.errno == errno.ENOSPC:
         err_cls = InsufficientSpaceError  # subclass of SyncError
         title = "Could not download file"
@@ -1482,7 +1493,10 @@ def dropbox_to_maestral_error(
                 text = "Can not start a closed concurrent upload session."
             elif error.is_concurrent_session_data_not_allowed():
                 # Occurs only for programming error in maestral.
-                text = "Uploading data not allowed when starting concurrent upload session."
+                text = (
+                    "Uploading data not allowed when starting concurrent upload "
+                    "session."
+                )
 
         elif isinstance(error, files.UploadSessionFinishError):
             title = "Could not upload file"
@@ -1703,9 +1717,15 @@ def dropbox_to_maestral_error(
                 err_cls = DropboxAuthError
                 title = "Authentication error"
                 text = "Your user account has been suspended."
+            elif error.is_missing_scope():
+                scope_error = error.get_missing_scope()
+                required_scope = scope_error.required_scope
+                err_cls = InsufficientPermissionsError
+                title = "Insufficient permissions"
+                text = f"Performing this action requires the {required_scope} scope."
             else:
                 # Other tags are invalid_select_admin, invalid_select_user,
-                # missing_scope, route_access_denied. Neither should occur in our SDK
+                # route_access_denied. Neither should occur in our SDK
                 # usage.
                 pass
 
@@ -1728,39 +1748,6 @@ def dropbox_to_maestral_error(
             elif error.is_other():
                 text = "An unexpected error occurred with the given namespace."
 
-    # ---- OAuth2 flow errors ----------------------------------------------------------
-    elif isinstance(exc, requests.HTTPError):
-        # HTTPErrors are converted to a DropboxException by the SDK unless they occur
-        # when refreshing the access token. We therefore handle those manually.
-        # See https://github.com/dropbox/dropbox-sdk-python/issues/360
-        # and https://github.com/SamSchott/maestral/issues/388.
-
-        res = exc.response
-
-        if res and res.status_code == 400 and res.json()["error"] == "invalid_grant":
-            err_cls = DropboxAuthError
-            title = "Authentication failed"
-            text = "Please make sure that you entered the correct authentication code."
-
-        else:
-            err_cls = DropboxServerError
-            title = "Dropbox server error"
-            text = (
-                "Something went wrong on Dropbox’s end. Please check on "
-                "https://status.dropbox.com if their services are up and running and "
-                "try again later."
-            )
-
-    elif isinstance(exc, oauth.BadStateException):
-        err_cls = DropboxAuthError
-        title = "Authentication session expired."
-        text = "The authentication session expired. Please try again."
-
-    elif isinstance(exc, oauth.NotApprovedException):
-        err_cls = DropboxAuthError
-        title = "Not approved error"
-        text = "Please grant Maestral access to your Dropbox to start syncing."
-
     # ---- Bad input errors ------------------------------------------------------------
     # Should only occur due to user input from console scripts.
     elif isinstance(exc, (exceptions.BadInputError, ValidationError)):
@@ -1776,6 +1763,9 @@ def dropbox_to_maestral_error(
             "Something went wrong on Dropbox’s end. Please check on status.dropbox.com "
             "if their services are up and running and try again later."
         )
+    # ---- Errors which are passed through by the SDK ----------------------------------
+    elif isinstance(exc, exceptions.HttpError):
+        text = exc.body
 
     maestral_exc = err_cls(title, text, dbx_path=dbx_path, local_path=local_path)
     maestral_exc.__cause__ = exc

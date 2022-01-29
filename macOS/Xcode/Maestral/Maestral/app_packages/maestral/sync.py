@@ -1,6 +1,7 @@
 """This module contains the main syncing functionality."""
 
 # system imports
+import errno
 import sys
 import os
 import os.path as osp
@@ -110,6 +111,10 @@ from .utils.integration import (
     CPU_COUNT,
 )
 from .utils.path import (
+    exists,
+    isfile,
+    isdir,
+    getsize,
     generate_cc_name,
     move,
     delete,
@@ -531,7 +536,7 @@ class SyncEngine:
         # Initialize SQLite database.
         self._db_path = get_data_path("maestral", f"{self.config_name}.db")
 
-        if not osp.exists(self._db_path):
+        if not exists(self._db_path):
             # Reset the sync state if DB is missing.
             self.remote_cursor = ""
             self.local_cursor = 0.0
@@ -841,7 +846,7 @@ class SyncEngine:
         """
 
         try:
-            stat = os.stat(local_path)
+            stat = os.lstat(local_path)
         except (FileNotFoundError, NotADirectoryError):
             # Remove all cache entries for local_path and return None.
             with self._database_access():
@@ -854,6 +859,10 @@ class SyncEngine:
             self._db_manager_hash_cache.clear_cache()
             return None
         except OSError as err:
+
+            if err.errno == errno.ENAMETOOLONG:
+                return None
+
             raise os_to_maestral_error(err)
 
         if S_ISDIR(stat.st_mode):
@@ -875,6 +884,31 @@ class SyncEngine:
         self._save_local_hash(stat.st_ino, local_path, hash_str, mtime)
 
         return hash_str
+
+    def get_local_symlink_target(self, local_path: str) -> Optional[str]:
+        """
+        Gets the symlink target of a local file.
+
+        :param local_path: Absolute path on local drive.
+        :returns: Symlink target of local file. None if the local path does not refer to
+            a symlink or does not exist.
+        """
+
+        try:
+            return os.readlink(local_path)
+        except (FileNotFoundError, NotADirectoryError):
+            return None
+        except OSError as err:
+
+            if err.errno == errno.EINVAL:
+                # File is not a symlink.
+                return None
+
+            if err.errno == errno.ENAMETOOLONG:
+                # Path cannot exist on this filesystem.
+                return None
+
+            raise os_to_maestral_error(err)
 
     def _save_local_hash(
         self,
@@ -948,6 +982,7 @@ class SyncEngine:
                     last_sync=self._get_ctime(event.local_path),
                     rev=event.rev,
                     content_hash=event.content_hash,
+                    symlink_target=event.symlink_target,
                 )
 
                 self._db_manager_index.update(entry)
@@ -972,10 +1007,14 @@ class SyncEngine:
 
             else:
 
+                symlink_target: Optional[str] = None
+
                 if isinstance(md, FileMetadata):
                     rev = md.rev
                     hash_str = md.content_hash
                     item_type = ItemType.File
+                    if md.symlink_info:
+                        symlink_target = md.symlink_info.target
                 else:
                     rev = "folder"
                     hash_str = "folder"
@@ -993,6 +1032,7 @@ class SyncEngine:
                     last_sync=None,
                     rev=rev,
                     content_hash=hash_str,
+                    symlink_target=symlink_target,
                 )
 
                 self._db_manager_index.update(entry)
@@ -1071,7 +1111,7 @@ class SyncEngine:
             "or restart Maestral to set up a new folder.",
         )
 
-        if not osp.isdir(self.dropbox_path):
+        if not isdir(self.dropbox_path):
             raise exception
 
         # If the file system is not case-sensitive but preserving, a path which was
@@ -1103,7 +1143,7 @@ class SyncEngine:
         retries = 0
         max_retries = 10
 
-        while not osp.isdir(self.file_cache_path):
+        while not isdir(self.file_cache_path):
             try:
                 # This will raise FileExistsError if file_cache_path
                 # exists but is a file instead of a directory.
@@ -1726,7 +1766,7 @@ class SyncEngine:
             local_path = self.to_local_path_from_cased(entry.dbx_path_cased)
             is_mignore = self._is_mignore_path(entry.dbx_path_cased, entry.is_directory)
 
-            if is_mignore or not osp.exists(local_path):
+            if is_mignore or not exists(local_path):
                 if entry.is_directory:
                     event = DirDeletedEvent(local_path)
                 else:
@@ -1840,7 +1880,7 @@ class SyncEngine:
 
         for event in sync_events:
 
-            if self.is_excluded(event.dbx_path) or self.is_mignore(event):
+            if self.is_excluded(event.local_path) or self.is_mignore(event):
                 continue
 
             if event.is_deleted:
@@ -2169,7 +2209,7 @@ class SyncEngine:
                 suffix=suffix,
             )
 
-            event_cls = DirMovedEvent if osp.isdir(event.local_path) else FileMovedEvent
+            event_cls = DirMovedEvent if isdir(event.local_path) else FileMovedEvent
             with self.fs_events.ignore(event_cls(event.local_path, local_path_cc)):
                 with convert_api_errors():
                     move(event.local_path, local_path_cc, raise_error=True)
@@ -2204,7 +2244,7 @@ class SyncEngine:
                 suffix="selective sync conflict",
             )
 
-            event_cls = DirMovedEvent if osp.isdir(event.local_path) else FileMovedEvent
+            event_cls = DirMovedEvent if isdir(event.local_path) else FileMovedEvent
             with self.fs_events.ignore(event_cls(event.local_path, local_path_cc)):
                 with convert_api_errors():
                     move(event.local_path, local_path_cc, raise_error=True)
@@ -2244,12 +2284,14 @@ class SyncEngine:
         try:
 
             with self.client.clone_with_new_session() as client:
-                if event.is_added:
-                    res = self._on_local_created(event, client)
+                if event.is_added and event.is_file:
+                    res = self._on_local_file_created(event, client)
+                elif event.is_added and event.is_directory:
+                    res = self._on_local_folder_created(event, client)
                 elif event.is_moved:
                     res = self._on_local_moved(event, client)
-                elif event.is_changed:
-                    res = self._on_local_modified(event, client)
+                elif event.is_changed and event.is_file:
+                    res = self._on_local_file_modified(event, client)
                 elif event.is_deleted:
                     res = self._on_local_deleted(event, client)
                 else:
@@ -2282,9 +2324,9 @@ class SyncEngine:
         """
         try:
             while True:
-                size1 = osp.getsize(local_path)
+                size1 = getsize(local_path)
                 time.sleep(0.2)
-                size2 = osp.getsize(local_path)
+                size2 = getsize(local_path)
                 if size1 == size2:
                     return
         except OSError:
@@ -2376,11 +2418,11 @@ class SyncEngine:
             for md in result.entries:
                 self.update_index_from_dbx_metadata(md, client)
 
-    def _on_local_created(
+    def _on_local_file_created(
         self, event: SyncEvent, client: Optional[DropboxClient] = None
     ) -> Optional[Metadata]:
         """
-        Call when a local item is created.
+        Call when a local file is created.
 
         :param event: SyncEvent corresponding to local created event.
         :param client: Client instance to use. If not given, use the instance provided
@@ -2401,88 +2443,40 @@ class SyncEngine:
 
         self._wait_for_creation(event.local_path)
 
-        if event.is_directory:
-            try:
-                if client.is_team_space and event.dbx_path.count("/") == 1:
-                    # We create the folder as a shared folder immediately to prevent
-                    # race conditions when it is created, unmounted, and remounted as a
-                    # shared folder in a Team Space. We then retrieve the metadata in a
-                    # second `get_metadata` call. Note: This is also racy because the
-                    # shared folder may no longer exist at the point of the get_metadata
-                    # call. However, this is easier for us to deal with.
-                    shared_md = client.share_dir(event.dbx_path)
-                    md_new = client.get_metadata(f"ns:{shared_md.shared_folder_id}")
+        # Check if item already exists with identical content.
+        if not self._check_requires_upload(event, client):
+            return None
 
-                    if not md_new:
-                        # Remote folder has been deleted after creating. Reflect changes
-                        # locally and return.
-                        self._logger.debug(
-                            '"%s" on Dropbox was deleted after creation, '
-                            "deleting local copy",
-                            event.dbx_path,
-                        )
-                        err = delete(event.local_path)
+        local_entry = self.get_index_entry(event.dbx_path_lower)
 
-                        if err:
-                            raise os_to_maestral_error(err)
-
-                        return None
-                else:
-                    md_new = client.make_dir(event.dbx_path, autorename=False)
-            except FolderConflictError:
-                self._logger.debug(
-                    'No conflict for "%s": the folder already exists', event.local_path
-                )
-                try:
-                    md = client.get_metadata(event.dbx_path)
-                    if isinstance(md, FolderMetadata):
-                        self.update_index_from_dbx_metadata(md, client)
-                except NotFoundError:
-                    pass
-
-                return None
-            except FileConflictError:
-                md_new = client.make_dir(event.dbx_path, autorename=True)
-
+        if not local_entry:
+            # File is new to us, let Dropbox rename it if something is in the way.
+            mode = WriteMode.add
+        elif local_entry.is_directory:
+            # Try to overwrite the destination, this will fail...
+            mode = WriteMode.overwrite
         else:
-            # Check if file already exists with identical content.
-            md_old = client.get_metadata(event.dbx_path)
-            if isinstance(md_old, FileMetadata):
-                if event.content_hash == md_old.content_hash:
-                    # File hashes are identical, do not upload.
-                    self.update_index_from_dbx_metadata(md_old, client)
-                    return None
+            # File has been modified, update remote if matching rev,
+            # create conflict otherwise.
+            self._logger.debug(
+                '"%s" appears to have been created but we are ' "already tracking it",
+                event.dbx_path,
+            )
+            mode = WriteMode.update(local_entry.rev)
 
-            local_entry = self.get_index_entry(event.dbx_path_lower)
-
-            if not local_entry:
-                # File is new to us, let Dropbox rename it if something is in the way.
-                mode = WriteMode.add
-            elif local_entry.is_directory:
-                # Try to overwrite the destination, this will fail...
-                mode = WriteMode.overwrite
-            else:
-                # File has been modified, update remote if matching rev,
-                # create conflict otherwise.
-                self._logger.debug(
-                    '"%s" appears to have been created but we are '
-                    "already tracking it",
-                    event.dbx_path,
-                )
-                mode = WriteMode.update(local_entry.rev)
-            try:
-                md_new = client.upload(
-                    event.local_path,
-                    event.dbx_path,
-                    autorename=True,
-                    mode=mode,
-                    sync_event=event,
-                )
-            except (NotFoundError, IsAFolderError):
-                self._logger.debug(
-                    'Could not upload "%s": the file does not exist', event.local_path
-                )
-                return None
+        try:
+            md_new = client.upload(
+                event.local_path,
+                event.dbx_path,
+                autorename=True,
+                mode=mode,
+                sync_event=event,
+            )
+        except (NotFoundError, IsAFolderError):
+            self._logger.debug(
+                'Could not upload "%s": the file does not exist', event.local_path
+            )
+            return None
 
         if not self._handle_upload_conflict(md_new, event, client):
             self._logger.debug('Created "%s" on Dropbox', event.dbx_path)
@@ -2491,11 +2485,85 @@ class SyncEngine:
 
         return md_new
 
-    def _on_local_modified(
+    def _on_local_folder_created(
         self, event: SyncEvent, client: Optional[DropboxClient] = None
     ) -> Optional[Metadata]:
         """
-        Call when local item is modified.
+        Call when a local folder is created.
+
+        :param event: SyncEvent corresponding to local created event.
+        :param client: Client instance to use. If not given, use the instance provided
+            in the constructor.
+        :returns: Metadata for created item or None if no remote item is created.
+        :raises MaestralApiError: For any issues when syncing the item.
+        """
+
+        client = client or self.client
+
+        # Fail fast on badly decoded paths.
+        validate_encoding(event.local_path)
+
+        if self._handle_selective_sync_conflict(event):
+            return None
+        if self._handle_normalization_conflict(event):
+            return None
+
+        self._wait_for_creation(event.local_path)
+
+        try:
+            if client.is_team_space and event.dbx_path.count("/") == 1:
+                # We create the folder as a shared folder immediately to prevent
+                # race conditions when it is created, unmounted, and remounted as a
+                # shared folder in a Team Space. We then retrieve the metadata in a
+                # second `get_metadata` call. Note: This is also racy because the
+                # shared folder may no longer exist at the point of the get_metadata
+                # call. However, this is easier for us to deal with.
+                shared_md = client.share_dir(event.dbx_path)
+                md_new = client.get_metadata(f"ns:{shared_md.shared_folder_id}")
+
+                if not md_new:
+                    # Remote folder has been deleted after creating. Reflect changes
+                    # locally and return.
+                    self._logger.debug(
+                        '"%s" on Dropbox was deleted after creation, '
+                        "deleting local copy",
+                        event.dbx_path,
+                    )
+                    err = delete(event.local_path)
+
+                    if err:
+                        raise os_to_maestral_error(err)
+
+                    return None
+            else:
+                md_new = client.make_dir(event.dbx_path, autorename=False)
+        except FolderConflictError:
+            self._logger.debug(
+                'No conflict for "%s": the folder already exists', event.local_path
+            )
+            try:
+                md = client.get_metadata(event.dbx_path)
+                if isinstance(md, FolderMetadata):
+                    self.update_index_from_dbx_metadata(md, client)
+            except NotFoundError:
+                pass
+
+            return None
+        except FileConflictError:
+            md_new = client.make_dir(event.dbx_path, autorename=True)
+
+        if not self._handle_upload_conflict(md_new, event, client):
+            self._logger.debug('Created "%s" on Dropbox', event.dbx_path)
+
+        self.update_index_from_dbx_metadata(md_new, client)
+
+        return md_new
+
+    def _on_local_file_modified(
+        self, event: SyncEvent, client: Optional[DropboxClient] = None
+    ) -> Optional[Metadata]:
+        """
+        Call when a local file is modified.
 
         :param event: SyncEvent for local modified event.
         :param client: Client instance to use. If not given, use the instance provided
@@ -2507,25 +2575,11 @@ class SyncEngine:
 
         client = client or self.client
 
-        # Ignore directory modified events.
-        if event.is_directory:
-            return None
-
         self._wait_for_creation(event.local_path)
 
         # Check if item already exists with identical content.
-        md_old = client.get_metadata(event.dbx_path)
-        if isinstance(md_old, FileMetadata):
-            if event.content_hash == md_old.content_hash:
-                # File hashes are identical, do not upload.
-                self.update_index_from_dbx_metadata(md_old, client)
-                self._logger.debug(
-                    'Modification of "%s" detected but file content is '
-                    "the same as on Dropbox",
-                    event.dbx_path,
-                )
-                self.update_index_from_dbx_metadata(md_old, client)
-                return None
+        if not self._check_requires_upload(event, client):
+            return None
 
         local_entry = self.get_index_entry(event.dbx_path_lower)
 
@@ -2565,7 +2619,7 @@ class SyncEngine:
         self, event: SyncEvent, client: Optional[DropboxClient] = None
     ) -> Optional[Metadata]:
         """
-        Call when local item is deleted. We try not to delete remote items which have
+        Call when a local item is deleted. We try not to delete remote items which have
         been modified since the last sync.
 
         :param event: SyncEvent for local deletion.
@@ -2688,7 +2742,7 @@ class SyncEngine:
         moved events.
 
         :param md_new: Metadata of item after upload.
-        :param event: Original upload sync event which.
+        :param event: Original upload sync event which triggered the upload.
         :param client: Client instance to use.
         :returns: Whether a conflicting copy was created.
         """
@@ -2704,7 +2758,7 @@ class SyncEngine:
         local_path_cc = self.to_local_path(md_new.path_display, client)
 
         # Move the local item.
-        event_cls = DirMovedEvent if osp.isdir(event.local_path) else FileMovedEvent
+        event_cls = DirMovedEvent if isdir(event.local_path) else FileMovedEvent
         with self.fs_events.ignore(event_cls(event.local_path, local_path_cc)):
             with convert_api_errors():
                 move(event.local_path, local_path_cc, raise_error=True)
@@ -2716,6 +2770,48 @@ class SyncEngine:
             event.dbx_path,
             md_new.path_display,
         )
+
+        return True
+
+    def _check_requires_upload(self, event: SyncEvent, client: DropboxClient) -> bool:
+        """
+        Checks if a local file needs to be uploaded. This is determined by checking for
+        equal file contents. If no upload is required, the local index is updated with
+        the remote metadata. Note that conflict resolution in case of different content
+        will be handled by the server.
+
+        :param event: Local sync event of a file creation or modification.
+        :param client: Client instance to use.
+        :return: Whether the remote item has the same content as the local sync event.
+        """
+
+        if not (event.is_file and (event.is_changed or event.is_added)):
+            raise ValueError("Can only be called with added or modified files")
+
+        md_old = client.get_metadata(event.dbx_path)
+
+        if isinstance(md_old, FileMetadata):
+
+            if md_old.symlink_info:
+                md_symlink_target = md_old.symlink_info.target
+            else:
+                md_symlink_target = None
+
+            if (
+                event.content_hash == md_old.content_hash
+                and event.symlink_target == md_symlink_target
+            ):
+                # File contents are identical, do not upload.
+                change_type = "Modification" if event.is_changed else "Creation"
+                self._logger.debug(
+                    '%s of "%s" detected but file content is the same as on Dropbox',
+                    change_type,
+                    event.dbx_path,
+                )
+                self.update_index_from_dbx_metadata(md_old, client)
+                return False
+            else:
+                return True
 
         return True
 
@@ -3198,7 +3294,9 @@ class SyncEngine:
             )
             return Conflict.LocalNewerOrIdentical
 
-        elif event.content_hash == self.get_local_hash(event.local_path):
+        elif event.content_hash == self.get_local_hash(
+            event.local_path
+        ) and event.symlink_target == self.get_local_symlink_target(event.local_path):
             # Content hashes are equal, therefore items are identical. Folders will
             # have a content hash of 'folder'.
             self._logger.debug(
@@ -3258,7 +3356,7 @@ class SyncEngine:
         with convert_api_errors():  # Catch OSErrors.
 
             try:
-                stat = os.stat(local_path)
+                stat = os.lstat(local_path)
             except (FileNotFoundError, NotADirectoryError):
                 # Don't check ctime for deleted items (os won't give stat info)
                 # but confirm absence from index.
@@ -3271,14 +3369,15 @@ class SyncEngine:
                     return True
 
                 # Recurse over children.
+                # TODO: Handle symlinks with entry.is_symlink()
                 with os.scandir(local_path) as it:
                     for entry in it:
-                        if entry.is_dir():
+                        if entry.is_dir(follow_symlinks=False):
                             if self._ctime_newer_than_last_sync(entry.path):
                                 return True
                         elif not self.is_excluded(entry.name):
                             child_dbx_path_lower = self.to_dbx_path_lower(entry.path)
-                            ctime = entry.stat().st_ctime
+                            ctime = entry.stat(follow_symlinks=False).st_ctime
                             if ctime > self.get_last_sync(child_dbx_path_lower):
                                 return True
 
@@ -3299,15 +3398,15 @@ class SyncEngine:
         """
 
         try:
-            stat = os.stat(local_path)
+            stat = os.lstat(local_path)
             if S_ISDIR(stat.st_mode):
                 ctime = stat.st_ctime
                 with os.scandir(local_path) as it:
                     for entry in it:
-                        if entry.is_dir():
+                        if entry.is_dir(follow_symlinks=False):
                             child_ctime = self._get_ctime(entry.path)
                         elif not self.is_excluded(entry.name):
-                            child_ctime = entry.stat().st_ctime
+                            child_ctime = entry.stat(follow_symlinks=False).st_ctime
                         else:
                             child_ctime = -1.0
 
@@ -3512,7 +3611,7 @@ class SyncEngine:
 
         if self._check_download_conflict(event) == Conflict.Conflict:
             new_local_path = generate_cc_name(local_path)
-            event_cls = DirMovedEvent if osp.isdir(local_path) else FileMovedEvent
+            event_cls = DirMovedEvent if isdir(local_path) else FileMovedEvent
             with self.fs_events.ignore(event_cls(local_path, new_local_path)):
                 with convert_api_errors():
                     move(local_path, new_local_path, raise_error=True)
@@ -3522,7 +3621,7 @@ class SyncEngine:
             )
             self.rescan(new_local_path)
 
-        if osp.isdir(local_path):
+        if isdir(local_path):
             with self.fs_events.ignore(DirDeletedEvent(local_path)):
                 delete(local_path)
 
@@ -3541,16 +3640,19 @@ class SyncEngine:
             if IS_MACOS:
                 ignore_events.append(FileModifiedEvent(local_path))
 
-        if osp.isfile(local_path):
+        if isfile(local_path):
             # Ignore FileDeletedEvent when replacing old file.
             ignore_events.append(FileDeletedEvent(local_path))
 
+        is_symlink = event.symlink_target is not None
+
+        if is_symlink:
+            ignore_events.append(DirMovedEvent(tmp_fname, local_path))
+
         # Move the downloaded file to its destination.
-        with self.fs_events.ignore(*ignore_events):
-
-            stat = os.stat(tmp_fname)
-
+        with self.fs_events.ignore(*ignore_events, recursive=is_symlink):
             with convert_api_errors(dbx_path=event.dbx_path, local_path=local_path):
+                stat = os.lstat(tmp_fname)
                 move(
                     tmp_fname,
                     local_path,
@@ -3598,7 +3700,7 @@ class SyncEngine:
 
         if conflict_check == Conflict.Conflict:
             new_local_path = generate_cc_name(event.local_path)
-            event_cls = DirMovedEvent if osp.isdir(event.local_path) else FileMovedEvent
+            event_cls = DirMovedEvent if isdir(event.local_path) else FileMovedEvent
             with self.fs_events.ignore(event_cls(event.local_path, new_local_path)):
                 with convert_api_errors():
                     move(event.local_path, new_local_path, raise_error=True)
@@ -3613,7 +3715,7 @@ class SyncEngine:
         # Ensure that parent folders are synced.
         self._ensure_parent(event, client)
 
-        if osp.isfile(event.local_path):
+        if isfile(event.local_path):
             with self.fs_events.ignore(
                 FileModifiedEvent(event.local_path),  # May be emitted on macOS.
                 FileDeletedEvent(event.local_path),
@@ -3659,7 +3761,7 @@ class SyncEngine:
         elif conflict_check is Conflict.LocalNewerOrIdentical:
             return None
 
-        event_cls = DirDeletedEvent if osp.isdir(event.local_path) else FileDeletedEvent
+        event_cls = DirDeletedEvent if isdir(event.local_path) else FileDeletedEvent
         with self.fs_events.ignore(event_cls(event.local_path)):
             exc = delete(event.local_path)
 
@@ -3691,7 +3793,7 @@ class SyncEngine:
 
             local_path_old = self.to_local_path_from_cased(entry.dbx_path_cased)
 
-            event_cls = DirMovedEvent if osp.isdir(local_path_old) else FileMovedEvent
+            event_cls = DirMovedEvent if isdir(local_path_old) else FileMovedEvent
             with self.fs_events.ignore(event_cls(local_path_old, event.local_path)):
                 move(local_path_old, event.local_path)
 
@@ -3712,10 +3814,10 @@ class SyncEngine:
 
         self._logger.debug('Rescanning "%s"', local_path)
 
-        if osp.isfile(local_path):
+        if isfile(local_path):
             self.fs_events.queue_event(FileModifiedEvent(local_path))
 
-        elif osp.isdir(local_path):
+        elif isdir(local_path):
             self.fs_events.queue_event(DirCreatedEvent(local_path))
 
             # Add created and deleted events of children as appropriate.
@@ -3741,13 +3843,13 @@ class SyncEngine:
             for entry in entries:
                 entry = cast(IndexEntry, entry)
                 child_path = self.to_local_path_from_cased(entry.dbx_path_cased)
-                if not osp.exists(child_path):
+                if not exists(child_path):
                     if entry.is_directory:
                         self.fs_events.queue_event(DirDeletedEvent(child_path))
                     else:
                         self.fs_events.queue_event(FileDeletedEvent(child_path))
 
-        elif not osp.exists(local_path):
+        elif not exists(local_path):
             dbx_path_lower = self.to_dbx_path_lower(local_path)
 
             local_entry = self.get_index_entry(dbx_path_lower)
@@ -3782,7 +3884,7 @@ class SyncEngine:
             for entry in it:
                 dbx_path = self.to_dbx_path(entry.path)
                 if not self.is_excluded(entry.path) and not self._is_mignore_path(
-                    dbx_path, entry.is_dir()
+                    dbx_path, entry.is_dir(follow_symlinks=False)
                 ):
                     yield entry
 

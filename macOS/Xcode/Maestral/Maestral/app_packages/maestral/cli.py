@@ -1427,6 +1427,7 @@ def move_dir(new_path: str, config_name: str) -> None:
     from .daemon import MaestralProxy
 
     new_path = new_path or select_dbx_path_dialog(config_name)
+    new_path = osp.realpath(osp.expanduser(new_path))
 
     with MaestralProxy(config_name, fallback=True) as m:
         m.move_dropbox_directory(new_path)
@@ -1698,9 +1699,9 @@ def log():
     pass
 
 
-@log.command(name="show", help="Print logs to the console.")
+@log.command(name="show", help="View logs with a pager in the console.")
 @click.option(
-    "--external", "-e", is_flag=True, default=False, help="Open in external program."
+    "--external", "-e", is_flag=True, default=False, help="Open logs in a GUI."
 )
 @existing_config_option
 def log_show(external: bool, config_name: str) -> None:
