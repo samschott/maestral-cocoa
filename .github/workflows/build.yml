@@ -53,7 +53,7 @@ jobs:
           # run post-build scripts:
           # - add CLI executable
           # - keep .pyc files only to save space
-          APP_PATH=$( find . -name "*.app" | head -n 1)
+          APP_PATH=$( find . -name "*Maestral.app" | head -n 1)
           ./scripts/post-build-macos.sh $APP_PATH
 
           # package as dmg
