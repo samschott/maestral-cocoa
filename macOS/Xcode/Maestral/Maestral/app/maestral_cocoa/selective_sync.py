@@ -13,7 +13,12 @@ from toga.sources import Source
 from toga.style import Pack
 from toga.constants import TRANSPARENT
 from maestral.utils.path import is_child, is_equal_or_child
-from maestral.errors import NotAFolderError, NotFoundError, BusyError, NotLinkedError
+from maestral.exceptions import (
+    NotAFolderError,
+    NotFoundError,
+    BusyError,
+    NotLinkedError,
+)
 from maestral.daemon import MaestralProxy
 
 # local imports
