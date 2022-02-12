@@ -32,7 +32,6 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python3 -m pip install -U wheel
           python3 -m pip install -U pip
           python3 -m pip install -U briefcase
           chmod +x ./scripts/post-build-macos.sh
@@ -73,7 +72,7 @@ jobs:
           echo "::set-output name=dmg_path::${DMG_PATH}"
         env:
             DEV_ID: "Developer ID Application: Sam Schott (G34LNR8C4Y)"
-            PIP_NO_BINARY: ":all:"
+            PIP_NO_BINARY: "watchdog"
 
       - name: Notarize app
         run: |
