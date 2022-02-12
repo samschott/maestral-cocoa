@@ -32,8 +32,9 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python3 -m pip install --upgrade pip
-          python3 -m pip install --upgrade briefcase
+          python3 -m pip install -U wheel
+          python3 -m pip install -U pip
+          python3 -m pip install -U briefcase
           chmod +x ./scripts/post-build-macos.sh
 
       - name: Bump build number
