@@ -3,8 +3,9 @@ This module contains the default configuration and state values and functions to
 existing config or state instances for a specified config_name.
 """
 
+from __future__ import annotations
+
 import threading
-from typing import Dict
 
 from packaging.version import Version
 
@@ -66,8 +67,6 @@ DEFAULTS_STATE: DefaultsType = {
         "last_reindex": 0.0,  # time-stamp of full last reindexing
         "indexing_counter": 0,  # counter for indexing progress between restarts
         "did_finish_indexing": False,  # indicates completed indexing
-        "upload_errors": [],  # failed uploads to retry on next sync
-        "download_errors": [],  # failed downloads to retry on next sync
         "pending_uploads": [],  # incomplete uploads to retry on next sync
         "pending_downloads": [],  # incomplete downloads to retry on next sync
     },
@@ -83,12 +82,12 @@ for section_name, section_values in DEFAULTS_CONFIG.items():
 
 # IMPORTANT NOTES:
 # 1. If you want to *change* the default value of a current option, you need to
-#    do a MINOR update in config version, e.g. from 3.0.0 to 3.1.0
+#    do a MINOR update in config version, e.g. from 3.0 to 3.1
 # 2. If you want to *remove* options that are no longer needed in our codebase,
 #    or if you want to *rename* options, then you need to do a MAJOR update in
-#    version, e.g. from 3.0.0 to 4.0.0
+#    version, e.g. from 3.0 to 4.0
 # 3. You don't need to touch this value if you're just adding a new option
-CONF_VERSION = Version("17.0.0")
+CONF_VERSION = Version("18.0")
 
 
 # =============================================================================
@@ -100,7 +99,7 @@ def _get_conf(
     config_name: str,
     config_path: str,
     defaults: DefaultsType,
-    registry: Dict[str, UserConfig],
+    registry: dict[str, UserConfig],
 ):
 
     try:
@@ -128,7 +127,7 @@ def _get_conf(
     return conf
 
 
-_config_instances: Dict[str, UserConfig] = {}
+_config_instances: dict[str, UserConfig] = {}
 _config_lock = threading.Lock()
 
 
@@ -148,7 +147,7 @@ def MaestralConfig(config_name: str) -> UserConfig:
         return _get_conf(config_name, config_path, DEFAULTS_CONFIG, _config_instances)
 
 
-_state_instances: Dict[str, UserConfig] = {}
+_state_instances: dict[str, UserConfig] = {}
 _state_lock = threading.Lock()
 
 

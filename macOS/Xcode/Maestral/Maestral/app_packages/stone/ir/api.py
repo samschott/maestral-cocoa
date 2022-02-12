@@ -104,7 +104,7 @@ class ApiNamespace(object):
     def __init__(self, name):
         # type: (typing.Text) -> None
         self.name = name
-        self.doc = None                    # type: typing.Optional[six.text_type]
+        self.doc = None                    # type: typing.Optional[typing.Any]
         self.routes = []                   # type: typing.List[ApiRoute]
         # TODO (peichao): route_by_name is deprecated by routes_by_name and should be removed.
         self.route_by_name = {}            # type: typing.Dict[typing.Text, ApiRoute]
@@ -120,7 +120,7 @@ class ApiNamespace(object):
         self._imported_namespaces = {}     # type: typing.Dict[ApiNamespace, _ImportReason]
 
     def add_doc(self, docstring):
-        # type: (six.text_type) -> None
+        # type: (typing.Any) -> None
         """Adds a docstring for this namespace.
 
         The input docstring is normalized to have no leading whitespace and
@@ -415,6 +415,45 @@ class ApiRoute(object):
 
     def __repr__(self):
         return 'ApiRoute({})'.format(self.name_with_version())
+
+    def _compare(self, lhs, rhs):
+        if not isinstance(lhs, ApiRoute):
+            raise TypeError("Expected ApiRoute for object: {}".format(lhs))
+        if not isinstance(rhs, ApiRoute):
+            raise TypeError("Expected ApiRoute for object: {}".format(rhs))
+
+        if lhs.name < rhs.name or lhs.version < rhs.version:
+            return -1
+        elif lhs.name > rhs.name or lhs.version > rhs.version:
+            return 1
+        else:
+            return 0
+
+    def __lt__(self, other):
+        return self._compare(self, other) < 0
+    def __gt__(self, other):
+        return self._compare(self, other) > 0
+    def __eq__(self, other):
+        return self._compare(self, other) == 0
+    def __le__(self, other):
+        return self._compare(self, other) <= 0
+    def __ge__(self, other):
+        return self._compare(self, other) >= 0
+    def __ne__(self, other):
+        return self._compare(self, other) != 0
+    def __hash__(self):
+        return hash((
+            self.name,
+            self.version,
+            self._ast_node,
+            self.deprecated,
+            self.raw_doc,
+            self.doc,
+            self.arg_data_type,
+            self.result_data_type,
+            self.error_data_type,
+            id(self.attrs)
+        ))
 
 
 class DeprecationInfo(object):

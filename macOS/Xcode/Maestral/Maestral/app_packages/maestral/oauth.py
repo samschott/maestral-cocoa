@@ -2,10 +2,11 @@
 This module is responsible for authorization and token store in the system keyring.
 """
 
+from __future__ import annotations
+
 # system imports
 import logging
 from threading import RLock
-from typing import Optional
 from datetime import datetime
 
 # external imports
@@ -23,8 +24,9 @@ from dropbox.oauth import DropboxOAuth2FlowNoRedirect
 # local imports
 from .config import MaestralConfig, MaestralState
 from .constants import DROPBOX_APP_KEY
-from .errors import KeyringAccessError
-from .utils import cli, exc_info_tuple
+from .exceptions import KeyringAccessError
+from .cli import output
+from .utils import exc_info_tuple
 
 
 __all__ = ["OAuth2Session"]
@@ -114,17 +116,17 @@ class OAuth2Session:
             token_access_type=self.default_token_access_type,
         )
 
-        self._account_id: Optional[str] = self._conf.get("auth", "account_id") or None
-        self._token_access_type: Optional[str] = (
+        self._account_id: str | None = self._conf.get("auth", "account_id") or None
+        self._token_access_type: str | None = (
             self._state.get("auth", "token_access_type") or None
         )
 
         # defer keyring access until token requested by user
         self.loaded = False
-        self._keyring: Optional[KeyringBackend] = None
-        self._access_token: Optional[str] = None
-        self._refresh_token: Optional[str] = None
-        self._expires_at: Optional[datetime] = None
+        self._keyring: KeyringBackend | None = None
+        self._access_token: str | None = None
+        self._refresh_token: str | None = None
+        self._expires_at: datetime | None = None
 
     @property
     def keyring(self) -> KeyringBackend:
@@ -139,7 +141,7 @@ class OAuth2Session:
         return self._keyring
 
     @keyring.setter
-    def keyring(self, ring: Optional[KeyringBackend]) -> None:
+    def keyring(self, ring: KeyringBackend | None) -> None:
 
         if not ring:
             self._conf.set("auth", "keyring", "automatic")
@@ -233,14 +235,14 @@ class OAuth2Session:
         return False
 
     @property
-    def account_id(self) -> Optional[str]:
+    def account_id(self) -> str | None:
         """The account ID (read only). This call may block until the keyring is
         unlocked."""
 
         return self._account_id
 
     @property
-    def token_access_type(self) -> Optional[str]:
+    def token_access_type(self) -> str | None:
         """The type of access token (read only). If 'legacy', we have a long-lived
         access token. If 'offline', we have a short-lived access token with an expiry
         time and a long-lived refresh token to generate new access tokens. This call may
@@ -253,7 +255,7 @@ class OAuth2Session:
             return self._token_access_type
 
     @property
-    def access_token(self) -> Optional[str]:
+    def access_token(self) -> str | None:
         """The access token (read only). This will always be set for a 'legacy' token.
         For an 'offline' token, this will only be set if we completed the auth flow in
         the current session. In case of an 'offline' token, use the refresh token to
@@ -267,7 +269,7 @@ class OAuth2Session:
             return self._access_token
 
     @property
-    def refresh_token(self) -> Optional[str]:
+    def refresh_token(self) -> str | None:
         """The refresh token (read only). This will only be set for an 'offline' token.
         This call may block until the keyring is unlocked."""
 
@@ -278,7 +280,7 @@ class OAuth2Session:
             return self._refresh_token
 
     @property
-    def access_token_expiration(self) -> Optional[datetime]:
+    def access_token_expiration(self) -> datetime | None:
         """The expiry time for the short-lived access token (read only). This will only
         be set for an 'offline' token and if we completed the flow during the current
         session."""
@@ -406,10 +408,10 @@ class OAuth2Session:
                 self.keyring.set_password("Maestral", self._get_accessor(), token)
 
                 if isinstance(self.keyring, keyrings.alt.file.PlaintextKeyring):
-                    cli.warn(
+                    output.warn(
                         "No supported keyring found, credentials stored in plain text"
                     )
-                cli.ok("Credentials written")
+                output.ok("Credentials written")
             except Exception:
                 # switch to plain text keyring if we cannot access preferred backend
                 self.keyring = keyrings.alt.file.PlaintextKeyring()
@@ -432,7 +434,7 @@ class OAuth2Session:
 
             try:
                 self.keyring.delete_password("Maestral", self._get_accessor())
-                cli.ok("Credentials removed")
+                output.ok("Credentials removed")
             except (KeyringLocked, InitError):
                 title = "Could not delete auth token"
                 msg = f"{self.keyring.name} is locked. Please unlock the keyring and try again."

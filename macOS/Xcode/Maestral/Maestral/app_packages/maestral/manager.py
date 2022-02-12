@@ -1,5 +1,7 @@
 """This module contains the classes to coordinate sync threads."""
 
+from __future__ import annotations
+
 # system imports
 import os
 import errno
@@ -11,7 +13,7 @@ from functools import wraps
 from queue import Empty, Queue
 from threading import Event, RLock, Thread
 from tempfile import TemporaryDirectory
-from typing import Iterator, Optional, cast, Dict, List, TypeVar, Callable, Any
+from typing import Iterator, cast, TypeVar, Callable, Any
 
 # external imports
 from dropbox.common import TeamRootInfo, UserRootInfo
@@ -30,8 +32,8 @@ from .constants import (
     PAUSED,
     CONNECTED,
 )
-from .database import SyncEvent
-from .errors import (
+from .models import SyncEvent
+from .exceptions import (
     CancelledError,
     DropboxConnectionError,
     MaestralApiError,
@@ -78,7 +80,7 @@ class SyncManager:
     :param client: The Dropbox API client, a wrapper around the Dropbox Python SDK.
     """
 
-    added_item_queue: "Queue[str]"
+    added_item_queue: Queue[str]
     """Queue of dropbox paths which have been newly included in syncing."""
 
     def __init__(self, client: DropboxClient):
@@ -111,7 +113,7 @@ class SyncManager:
         )
         self.connection_helper.start()
 
-        self.local_observer_thread: Optional[Observer] = None
+        self.local_observer_thread: Observer | None = None
 
     def _with_lock(fn: FT) -> FT:  # type: ignore
         @wraps(fn)
@@ -136,12 +138,12 @@ class SyncManager:
         self._conf.set("sync", "reindex_interval", interval)
 
     @property
-    def activity(self) -> Dict[str, SyncEvent]:
+    def activity(self) -> dict[str, SyncEvent]:
         """Returns a list all items queued for or currently syncing."""
         return self.sync.syncing
 
     @property
-    def history(self) -> List[SyncEvent]:
+    def history(self) -> list[SyncEvent]:
         """A list of the last SyncEvents in our history. History will be kept for the
         interval specified by the config value ``keep_history`` (defaults to two weeks)
         but at most 1,000 events will be kept."""
@@ -677,7 +679,7 @@ class SyncManager:
                 except Empty:
                     pass
                 else:
-                    # Protect against crashes.
+                    # Guard against crashes.
                     self.sync.pending_downloads.add(dbx_path_lower)
 
                     if not running.is_set():
@@ -766,8 +768,8 @@ class SyncManager:
                 if len(self.sync.download_errors) > 0:
                     self._logger.info("Retrying failed syncs...")
 
-                for dbx_path in list(self.sync.download_errors):
-                    self.sync.get_remote_item(dbx_path, client)
+                for error in list(self.sync.download_errors):
+                    self.sync.get_remote_item(error.dbx_path_lower, client)
 
                 # Resume interrupted downloads.
                 if len(self.sync.pending_downloads) > 0:

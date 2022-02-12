@@ -3,6 +3,8 @@ This module defines functions to start and stop the sync daemon and retrieve pro
 objects for a running daemon.
 """
 
+from __future__ import annotations
+
 # system imports
 import sys
 import os
@@ -17,7 +19,7 @@ import argparse
 import re
 from pprint import pformat
 from shlex import quote
-from typing import Optional, Any, Union, Dict, Iterable, Type, TYPE_CHECKING
+from typing import Any, Iterable, TYPE_CHECKING
 from types import TracebackType
 
 # external imports
@@ -28,7 +30,7 @@ import sdnotify
 from fasteners import InterProcessLock
 
 # local imports
-from .errors import SYNC_ERRORS, GENERAL_ERRORS, MaestralApiError
+from .exceptions import SYNC_ERRORS, GENERAL_ERRORS, MaestralApiError
 from .utils import exc_info_tuple
 from .utils.appdirs import get_runtime_path
 from .constants import IS_MACOS, ENV
@@ -120,12 +122,13 @@ def serpent_deserialize_api_error(class_name: str, d: dict) -> MaestralApiError:
     :returns: Class instance.
     """
 
-    # Import maestral.errors for evaluation.
+    # Import maestral.exceptions for evaluation.
     # This import needs to be absolute to reconstruct the Exception class. Note that the
     # eval is safe here because ``serpent_deserialize_api_error`` is only registered for
-    # strings that match an error class name.
+    # strings that match an error class name. Note that the client process needs to be
+    # able to import `maestral.exceptions` for this to work.
 
-    import maestral.errors  # noqa: F401
+    import maestral.exceptions  # noqa: F401
 
     cls = eval(class_name)
     err = cls(*d["args"])
@@ -154,11 +157,11 @@ class Lock:
     :param path: Path of the lock file to use / create.
     """
 
-    _instances: Dict[str, "Lock"] = {}
+    _instances: dict[str, Lock] = {}
     _singleton_lock = threading.Lock()
 
     @classmethod
-    def singleton(cls, path: str) -> "Lock":
+    def singleton(cls, path: str) -> Lock:
         """
         Retrieve an existing lock object with a given 'name' or create a new one. Use
         this method for thread-safe locks.
@@ -216,7 +219,7 @@ class Lock:
                 self.release()
             return not gotten
 
-    def locking_pid(self) -> Optional[int]:
+    def locking_pid(self) -> int | None:
         """
         Returns the PID of the process which currently holds the lock or ``None``. This
         should work on macOS, OpenBSD and Linux but may fail on some platforms. Always
@@ -299,7 +302,7 @@ def lockpath_for_config(config_name: str) -> str:
     return get_runtime_path("maestral", f"{config_name}.lock")
 
 
-def get_maestral_pid(config_name: str) -> Optional[int]:
+def get_maestral_pid(config_name: str) -> int | None:
     """
     Returns the PID of the daemon if it is running, ``None`` otherwise.
 
@@ -595,34 +598,34 @@ def stop_maestral_daemon_process(
 class MaestralProxy:
     """A Proxy to the Maestral daemon
 
-    All methods and properties of Maestral's public API are accessible and calls /
-    access will be forwarded to the corresponding Maestral instance. This class can be
-    used as a context manager to close the connection to the daemon on exit.
+        All methods and properties of Maestral's public API are accessible and calls /
+        access will be forwarded to the corresponding Maestral instance. This class can be
+        used as a context manager to close the connection to the daemon on exit.
 
-    :Example:
+        :Example:
 
-        Use MaestralProxy as a context manager:
+            Use MaestralProxy as a context manager:
 
-        >>> with MaestralProxy() as m:
-        ...     print(m.status)
+    import src.maestral.cli.cli_info        >>> with MaestralProxy() as m:
+            ...     print(src.maestral.cli.cli_info.status)
 
-        Use MaestralProxy directly:
+            Use MaestralProxy directly:
 
-        >>> m = MaestralProxy()
-        >>> print(m.status)
-        >>> m._disconnect()
+    import src.maestral.cli.cli_info        >>> m = MaestralProxy()
+            >>> print(src.maestral.cli.cli_info.status)
+            >>> m._disconnect()
 
-    :ivar _is_fallback: Whether we are using an actual Maestral instance as fallback
-        instead of a Proxy.
+        :ivar _is_fallback: Whether we are using an actual Maestral instance as fallback
+            instead of a Proxy.
 
-    :param config_name: The name of the Maestral configuration to use.
-    :param fallback: If ``True``, a new instance of Maestral will be created in the
-        current process when the daemon is not running.
-    :raises CommunicationError: if the daemon is running but cannot be reached or if the
-        daemon is not running and ``fallback`` is ``False``.
+        :param config_name: The name of the Maestral configuration to use.
+        :param fallback: If ``True``, a new instance of Maestral will be created in the
+            current process when the daemon is not running.
+        :raises CommunicationError: if the daemon is running but cannot be reached or if the
+            daemon is not running and ``fallback`` is ``False``.
     """
 
-    _m: Union["Maestral", Proxy]
+    _m: Maestral | Proxy
 
     def __init__(self, config_name: str = "maestral", fallback: bool = False) -> None:
 
@@ -659,11 +662,11 @@ class MaestralProxy:
         if isinstance(self._m, Proxy):
             self._m._pyroRelease()
 
-    def __enter__(self) -> "MaestralProxy":
+    def __enter__(self) -> MaestralProxy:
         return self
 
     def __exit__(
-        self, exc_type: Type[Exception], exc_value: Exception, tb: TracebackType
+        self, exc_type: type[Exception], exc_value: Exception, tb: TracebackType
     ) -> None:
         self._disconnect()
         del self._m
@@ -697,7 +700,7 @@ class MaestralProxy:
 
 def get_maestral_proxy(
     config_name: str = "maestral", fallback: bool = False
-) -> Union["Maestral", Proxy]:
+) -> Maestral | Proxy:
 
     warnings.warn(
         "'get_maestral_proxy' is deprecated, please use 'MaestralProxy' instead",

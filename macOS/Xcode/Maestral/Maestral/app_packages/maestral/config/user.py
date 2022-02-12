@@ -8,6 +8,8 @@ This module provides user configuration file management and is mostly copied fro
 config module of the Spyder IDE.
 """
 
+from __future__ import annotations
+
 import ast
 import os
 import os.path as osp
@@ -16,7 +18,8 @@ import copy
 import logging
 import configparser as cp
 from threading import RLock
-from typing import Optional, Dict, Any
+from collections import abc
+from typing import Iterator, Any, Dict
 
 from packaging.version import Version
 
@@ -104,7 +107,7 @@ class UserConfig(DefaultsConfig):
     def __init__(
         self,
         path: str,
-        defaults: Optional[DefaultsType] = None,
+        defaults: DefaultsType | None = None,
         load: bool = True,
         version: Version = Version("0.0.0"),
         backup: bool = False,
@@ -150,7 +153,7 @@ class UserConfig(DefaultsConfig):
 
                 # Remove deprecated options if major version has changed.
                 if remove_obsolete and version.major > old_version.major:
-                    self.remove_deprecated_options()
+                    self.remove_deprecated_options(save=False)
 
                 # Set new version number.
                 self.set_version(version, save=False)
@@ -161,7 +164,7 @@ class UserConfig(DefaultsConfig):
     # --- Helpers and checkers ---------------------------------------------------------
 
     def _set_defaults(
-        self, version: Version, defaults: Optional[DefaultsType]
+        self, version: Version, defaults: DefaultsType | None
     ) -> DefaultsType:
         """
         Check if defaults are valid and update defaults values.
@@ -183,7 +186,7 @@ class UserConfig(DefaultsConfig):
 
         return self.default_config
 
-    def _make_backup(self, version: Optional[Version] = None) -> None:
+    def _make_backup(self, version: Version | None = None) -> None:
         """
         Make a backup of the configuration file.
 
@@ -213,7 +216,7 @@ class UserConfig(DefaultsConfig):
             except cp.MissingSectionHeaderError:
                 logger.error("File contains no section headers.")
 
-    def remove_deprecated_options(self) -> None:
+    def remove_deprecated_options(self, save: bool = True) -> None:
         """
         Remove options which are present in the file but not in defaults.
         """
@@ -221,15 +224,15 @@ class UserConfig(DefaultsConfig):
             for option, _ in self.items(section, raw=True):
                 if self.get_default(section, option) is NoDefault:
                     try:
-                        self.remove_option(section, option)
+                        self.remove_option(section, option, save)
                         if len(self.items(section, raw=True)) == 0:
                             self.remove_section(section)
                     except cp.NoSectionError:
-                        self.remove_section(section)
+                        self.remove_section(section, save)
 
     # --- Compatibility API ------------------------------------------------------------
 
-    def backup_path_for_version(self, version: Optional[Version]) -> str:
+    def backup_path_for_version(self, version: Version | None) -> str:
         """
         Get backup location based on version.
 
@@ -284,7 +287,7 @@ class UserConfig(DefaultsConfig):
 
     def reset_to_defaults(
         self,
-        section: Optional[str] = None,
+        section: str | None = None,
         save: bool = True,
     ) -> None:
         """
@@ -471,3 +474,75 @@ class UserConfig(DefaultsConfig):
                             os.remove(file.path)
                         except FileNotFoundError:
                             pass
+
+
+# ======================================================================================
+# Wrapper classes
+# ======================================================================================
+
+
+class PersistentMutableSet(abc.MutableSet):
+    """Wraps a list in our state file as a MutableSet
+
+    :param conf: UserConfig instance to store the set.
+    :param section: Section name in state file.
+    :param option: Option name in state file.
+    """
+
+    def __init__(self, conf: UserConfig, section: str, option: str) -> None:
+        super().__init__()
+        self.section = section
+        self.option = option
+        self._conf = conf
+        self._lock = RLock()
+
+    def __iter__(self) -> Iterator[Any]:
+        with self._lock:
+            return iter(self._conf.get(self.section, self.option))
+
+    def __contains__(self, entry: Any) -> bool:
+        with self._lock:
+            return entry in self._conf.get(self.section, self.option)
+
+    def __len__(self):
+        with self._lock:
+            return len(self._conf.get(self.section, self.option))
+
+    def add(self, entry: Any) -> None:
+        with self._lock:
+            state_list = self._conf.get(self.section, self.option)
+            state_list = set(state_list)
+            state_list.add(entry)
+            self._conf.set(self.section, self.option, list(state_list))
+
+    def discard(self, entry: Any) -> None:
+        with self._lock:
+            state_list = self._conf.get(self.section, self.option)
+            state_list = set(state_list)
+            state_list.discard(entry)
+            self._conf.set(self.section, self.option, list(state_list))
+
+    def update(self, *others: Any) -> None:
+        with self._lock:
+            state_list = self._conf.get(self.section, self.option)
+            state_list = set(state_list)
+            state_list.update(*others)
+            self._conf.set(self.section, self.option, list(state_list))
+
+    def difference_update(self, *others: Any) -> None:
+        with self._lock:
+            state_list = self._conf.get(self.section, self.option)
+            state_list = set(state_list)
+            state_list.difference_update(*others)
+            self._conf.set(self.section, self.option, list(state_list))
+
+    def clear(self) -> None:
+        """Clears all elements."""
+        with self._lock:
+            self._conf.set(self.section, self.option, [])
+
+    def __repr__(self) -> str:
+        return (
+            f"<{self.__class__.__name__}(section='{self.section}',"
+            f"option='{self.option}', entries={list(self)})>"
+        )

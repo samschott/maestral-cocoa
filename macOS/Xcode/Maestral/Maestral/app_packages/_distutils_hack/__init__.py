@@ -89,20 +89,12 @@ class DistutilsMetaFinder:
         return method()
 
     def spec_for_distutils(self):
+        if self.is_cpython():
+            return
+
         import importlib
         import importlib.abc
         import importlib.util
-        import warnings
-
-        # warnings.filterwarnings() imports the re module
-        warnings._add_filter(
-            'ignore',
-            _TrivialRe("distutils", "deprecated"),
-            DeprecationWarning,
-            None,
-            0,
-            append=True
-        )
 
         try:
             mod = importlib.import_module('setuptools._distutils')
@@ -129,6 +121,14 @@ class DistutilsMetaFinder:
             'distutils', DistutilsLoader(), origin=mod.__file__
         )
 
+    @staticmethod
+    def is_cpython():
+        """
+        Suppress supplying distutils for CPython (build and tests).
+        Ref #2965 and #3007.
+        """
+        return os.path.isfile('pybuilddir.txt')
+
     def spec_for_pip(self):
         """
         Ensure stdlib distutils when running under pip.
@@ -136,10 +136,35 @@ class DistutilsMetaFinder:
         """
         if self.pip_imported_during_build():
             return
-        if self.is_get_pip():
-            return
         clear_distutils()
         self.spec_for_distutils = lambda: None
+
+    def spec_for_setuptools(self):
+        """
+        get-pip imports setuptools solely for the purpose of
+        determining if it's installed. In this case, provide
+        a stubbed spec to represent setuptools being present
+        without invoking any behavior.
+
+        Workaround for pypa/get-pip#137. Ref #2993.
+        """
+        if not self.is_script('get-pip'):
+            return
+
+        import importlib
+
+        class StubbedLoader(importlib.abc.Loader):
+
+            def create_module(self, spec):
+                import types
+                return types.ModuleType('setuptools')
+
+            def exec_module(self, module):
+                pass
+
+        return importlib.util.spec_from_loader(
+            'setuptools', StubbedLoader(),
+        )
 
     @classmethod
     def pip_imported_during_build(cls):
@@ -152,14 +177,11 @@ class DistutilsMetaFinder:
             for frame, line in traceback.walk_stack(None)
         )
 
-    @classmethod
-    def is_get_pip(cls):
-        """
-        Detect if get-pip is being invoked. Ref #2993.
-        """
+    @staticmethod
+    def is_script(name):
         try:
             import __main__
-            return os.path.basename(__main__.__file__) == 'get-pip.py'
+            return os.path.basename(__main__.__file__) == f'{name}.py'
         except AttributeError:
             pass
 

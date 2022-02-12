@@ -39,6 +39,7 @@ from setuptools.monkey import get_unpatched
 from setuptools.config import parse_configuration
 import pkg_resources
 from setuptools.extern.packaging import version
+from . import _reqs
 
 if TYPE_CHECKING:
     from email.message import Message
@@ -113,12 +114,8 @@ def read_pkg_file(self, file):
     self.author_email = _read_field_from_msg(msg, 'author-email')
     self.maintainer_email = None
     self.url = _read_field_from_msg(msg, 'home-page')
+    self.download_url = _read_field_from_msg(msg, 'download-url')
     self.license = _read_field_unescaped_from_msg(msg, 'license')
-
-    if 'download-url' in msg:
-        self.download_url = _read_field_from_msg(msg, 'download-url')
-    else:
-        self.download_url = None
 
     self.long_description = _read_field_unescaped_from_msg(msg, 'description')
     if (
@@ -171,9 +168,10 @@ def write_pkg_file(self, file):  # noqa: C901  # is too complex (14)  # FIXME
     write_field('Name', self.get_name())
     write_field('Version', self.get_version())
     write_field('Summary', single_line(self.get_description()))
-    write_field('Home-page', self.get_url())
 
     optional_fields = (
+        ('Home-page', 'url'),
+        ('Download-URL', 'download_url'),
         ('Author', 'author'),
         ('Author-email', 'author_email'),
         ('Maintainer', 'maintainer'),
@@ -187,8 +185,6 @@ def write_pkg_file(self, file):  # noqa: C901  # is too complex (14)  # FIXME
 
     license = rfc822_escape(self.get_license())
     write_field('License', license)
-    if self.download_url:
-        write_field('Download-URL', self.download_url)
     for project_url in self.project_urls.items():
         write_field('Project-URL', '%s, %s' % project_url)
 
@@ -285,7 +281,7 @@ def _check_extra(extra, reqs):
     name, sep, marker = extra.partition(':')
     if marker and pkg_resources.invalid_marker(marker):
         raise DistutilsSetupError("Invalid environment marker: " + marker)
-    list(pkg_resources.parse_requirements(reqs))
+    list(_reqs.parse(reqs))
 
 
 def assert_bool(dist, attr, value):
@@ -305,7 +301,7 @@ def invalid_unless_false(dist, attr, value):
 def check_requirements(dist, attr, value):
     """Verify that install_requires is a valid requirements list"""
     try:
-        list(pkg_resources.parse_requirements(value))
+        list(_reqs.parse(value))
         if isinstance(value, (dict, set)):
             raise TypeError("Unordered types are not allowed")
     except (TypeError, ValueError) as error:
@@ -472,6 +468,19 @@ class Distribution(_Distribution):
         )
         self._finalize_requires()
 
+    def _validate_metadata(self):
+        required = {"name"}
+        provided = {
+            key
+            for key in vars(self.metadata)
+            if getattr(self.metadata, key, None) is not None
+        }
+        missing = required - provided
+
+        if missing:
+            msg = f"Required package metadata is missing: {missing}"
+            raise DistutilsSetupError(msg)
+
     def _set_metadata_defaults(self, attrs):
         """
         Fill-in missing metadata fields not supported by distutils.
@@ -544,7 +553,7 @@ class Distribution(_Distribution):
         for section, v in spec_ext_reqs.items():
             # Do not strip empty sections.
             self._tmp_extras_require[section]
-            for r in pkg_resources.parse_requirements(v):
+            for r in _reqs.parse(v):
                 suffix = self._suffix_for(r)
                 self._tmp_extras_require[section + suffix].append(r)
 
@@ -570,7 +579,7 @@ class Distribution(_Distribution):
             return not req.marker
 
         spec_inst_reqs = getattr(self, 'install_requires', None) or ()
-        inst_reqs = list(pkg_resources.parse_requirements(spec_inst_reqs))
+        inst_reqs = list(_reqs.parse(spec_inst_reqs))
         simple_reqs = filter(is_simple_req, inst_reqs)
         complex_reqs = itertools.filterfalse(is_simple_req, inst_reqs)
         self.install_requires = list(map(str, simple_reqs))
@@ -810,7 +819,7 @@ class Distribution(_Distribution):
     def fetch_build_eggs(self, requires):
         """Resolve pre-setup requirements"""
         resolved_dists = pkg_resources.working_set.resolve(
-            pkg_resources.parse_requirements(requires),
+            _reqs.parse(requires),
             installer=self.fetch_build_egg,
             replace_conflicting=True,
         )

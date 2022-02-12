@@ -1,5 +1,7 @@
 """This module defines the main API which is exposed to the CLI or GUI."""
 
+from __future__ import annotations
+
 # system imports
 import os
 import os.path as osp
@@ -15,17 +17,7 @@ import tempfile
 import mimetypes
 import difflib
 from concurrent.futures import ThreadPoolExecutor
-from typing import (
-    Union,
-    List,
-    Iterator,
-    Dict,
-    Set,
-    Tuple,
-    Awaitable,
-    Optional,
-    Any,
-)
+from typing import Iterator, Awaitable, Any
 
 # external imports
 import requests
@@ -37,10 +29,10 @@ from dropbox.sharing import RequestedVisibility
 
 # local imports
 from . import __version__
-from .client import CONNECTION_ERRORS, DropboxClient, convert_api_errors
+from .client import DropboxClient
 from .sync import SyncDirection
 from .manager import SyncManager
-from .errors import (
+from .exceptions import (
     MaestralApiError,
     NotLinkedError,
     NoDropboxDirError,
@@ -49,6 +41,7 @@ from .errors import (
     KeyringAccessError,
     UnsupportedFileTypeForDiff,
 )
+from .errorhandling import convert_api_errors, CONNECTION_ERRORS
 from .config import MaestralConfig, MaestralState, validate_config_name
 from .logging import CachedHandler, setup_logging, scoped_logger
 from .utils import get_newer_version
@@ -62,13 +55,12 @@ from .utils.path import (
 from .utils.serializer import (
     error_to_dict,
     dropbox_stone_to_dict,
-    sync_event_to_dict,
-    StoneType,
-    ErrorType,
+    orm_type_to_dict,
+    SerializedObjectType,
 )
 from .utils.appdirs import get_cache_path, get_data_path
 from .utils.integration import get_ac_state, ACState
-from .utils.orm import Database
+from .database.orm import Database
 from .constants import IDLE, PAUSED, CONNECTING, FileStatus, GITHUB_RELEASES_API
 
 
@@ -101,7 +93,7 @@ class Maestral:
 
     All methods and properties return objects or raise exceptions which can safely be
     serialized, i.e., pure Python types. The only exception are instances of
-    :class:`maestral.errors.MaestralApiError`: they need to be registered explicitly
+    :exc:`maestral.exceptions.MaestralApiError`: they need to be registered explicitly
     with the serpent serializer which is used for communication to frontends.
 
     Sync errors and fatal errors which occur in the sync threads can be read with the
@@ -154,7 +146,7 @@ class Maestral:
 
         # Schedule background tasks.
         self._loop = asyncio.get_event_loop_policy().get_event_loop()
-        self._tasks: Set[asyncio.Task] = set()
+        self._tasks: set[asyncio.Task] = set()
         self._pool = ThreadPoolExecutor(
             thread_name_prefix="maestral-thread-pool",
             max_workers=2,
@@ -325,7 +317,7 @@ class Maestral:
             return self.sync.dropbox_path
 
     @property
-    def excluded_items(self) -> List[str]:
+    def excluded_items(self) -> list[str]:
         """
         The list of files and folders excluded by selective sync. Any changes to this
         list will be applied immediately if we have already performed the initial sync.
@@ -341,7 +333,7 @@ class Maestral:
             return self.sync.excluded_items
 
     @excluded_items.setter
-    def excluded_items(self, items: List[str]) -> None:
+    def excluded_items(self, items: list[str]) -> None:
         """Setter: excluded_items"""
 
         excluded_items = self.sync.clean_excluded_items_list(items)
@@ -410,8 +402,7 @@ class Maestral:
 
     @property
     def notification_level(self) -> int:
-        """Level for desktop notifications. See :mod:`utils.notify` for level
-        definitions."""
+        """Level for desktop notifications. See :mod:`notify` for level definitions."""
         return self.sync.desktop_notifier.notify_level
 
     @notification_level.setter
@@ -421,14 +412,14 @@ class Maestral:
 
     # ==== State information  ==========================================================
 
-    def status_change_longpoll(self, timeout: Optional[float] = 60) -> bool:
+    def status_change_longpoll(self, timeout: float | None = 60) -> bool:
         """
         Blocks until there is a change in status or until a timeout occurs. This method
         can be used by frontends to wait for status changes without constant polling.
 
         :param timeout: Maximum time to block before returning, even if there is no
             status change.
-        :returns: ``True``if there was a status change, ``False`` in case of a timeout.
+        :returns: Whether there was a status change within the timeout.
 
         .. versionadded:: 1.3.0
         """
@@ -444,7 +435,7 @@ class Maestral:
     def pending_dropbox_folder(self) -> bool:
         """Indicates if a local Dropbox directory has been configured (read only). This
         will not check if the configured directory actually exists, starting the sync
-        may still raise a :class:`NoDropboxDirError`."""
+        may still raise a :exc:`maestral.exceptions.NoDropboxDirError`."""
         return not self.sync.dropbox_path
 
     @property
@@ -460,9 +451,9 @@ class Maestral:
 
     @property
     def running(self) -> bool:
-        """Indicates if sync threads are running (read only). They will be stopped
-        before :meth:`start_sync` is called, when shutting down or because of an
-        exception."""
+        """Indicates if sync threads are running (read only). This will return ``False``
+        before :meth:`start_sync` is called, when shutting down, or because of an
+        unhandled exception in a sync thread."""
         return self.manager.running.is_set() or self.sync.busy()
 
     @property
@@ -486,7 +477,7 @@ class Maestral:
             return self._log_handler_info_cache.getLastMessage()
 
     @property
-    def sync_errors(self) -> List[ErrorType]:
+    def sync_errors(self) -> list[SerializedObjectType]:
         """
         A list of current sync errors as dicts (read only). This list is populated by
         the sync threads. The following keys will always be present but may contain
@@ -496,10 +487,10 @@ class Maestral:
         :raises NotLinkedError: if no Dropbox account is linked.
         """
 
-        return [error_to_dict(e) for e in self.sync.sync_errors]
+        return [orm_type_to_dict(e) for e in self.sync.sync_errors]
 
     @property
-    def fatal_errors(self) -> List[ErrorType]:
+    def fatal_errors(self) -> list[SerializedObjectType]:
         """
         Returns a list of fatal errors as dicts (read only). This does not include lost
         internet connections or file sync errors which only emit warnings and are
@@ -513,7 +504,7 @@ class Maestral:
         have ``exc_info`` attached.
         """
 
-        maestral_errors_dicts: List[ErrorType] = []
+        maestral_errors_dicts: list[SerializedObjectType] = []
 
         for r in self._log_handler_error_cache.cached_records:
             if r.exc_info:
@@ -547,8 +538,8 @@ class Maestral:
         file inside that folder is being uploaded.
 
         .. versionadded:: 1.4.4
-           Recursive behavior. Previous versions would return "up to date" even if in
-           case of syncing children.
+           Recursive behavior. Previous versions would return "up to date" for a folder,
+           even if some of the contained files would be syncing.
 
         :param local_path: Path to file on the local drive. May be relative to the
             current working directory.
@@ -562,7 +553,7 @@ class Maestral:
         local_path = osp.realpath(local_path)
 
         try:
-            dbx_path = self.sync.to_dbx_path(local_path)
+            dbx_path_lower = self.sync.to_dbx_path_lower(local_path)
         except ValueError:
             return FileStatus.Unwatched.value
 
@@ -580,14 +571,14 @@ class Maestral:
             return FileStatus.Uploading.value
         elif sync_event and sync_event.direction == SyncDirection.Down:
             return FileStatus.Downloading.value
-        elif any(dbx_path == err["dbx_path"] for err in self.sync_errors):
+        elif len(self.sync.sync_errors_for_path(dbx_path_lower)) > 0:
             return FileStatus.Error.value
-        elif dbx_path == "/" or self.sync.get_local_rev(normalize(dbx_path)):
+        elif dbx_path_lower == "/" or self.sync.get_local_rev(dbx_path_lower):
             return FileStatus.Synced.value
         else:
             return FileStatus.Unwatched.value
 
-    def get_activity(self, limit: Optional[int] = 100) -> List[StoneType]:
+    def get_activity(self, limit: int | None = 100) -> list[SerializedObjectType]:
         """
         Returns the current upload / download activity.
 
@@ -601,11 +592,11 @@ class Maestral:
         self._check_linked()
 
         activity = list(self.manager.activity.values())[:limit]
-        serialized_activity = [sync_event_to_dict(event) for event in activity]
+        serialized_activity = [orm_type_to_dict(event) for event in activity]
 
         return serialized_activity
 
-    def get_history(self, limit: Optional[int] = 100) -> List[StoneType]:
+    def get_history(self, limit: int | None = 100) -> list[SerializedObjectType]:
         """
         Returns the historic upload / download activity. Up to 1,000 sync events are
         kept in the database. Any events which occurred before the interval specified by
@@ -620,13 +611,13 @@ class Maestral:
 
         self._check_linked()
         if limit:
-            history = [sync_event_to_dict(e) for e in self.manager.history[-limit:]]
+            history = [orm_type_to_dict(e) for e in self.manager.history[-limit:]]
         else:
-            history = [sync_event_to_dict(e) for e in self.manager.history]
+            history = [orm_type_to_dict(e) for e in self.manager.history]
 
         return history
 
-    def get_account_info(self) -> StoneType:
+    def get_account_info(self) -> SerializedObjectType:
         """
         Returns the account information from Dropbox and returns it as a dictionary.
 
@@ -642,7 +633,7 @@ class Maestral:
         res = self.client.get_account_info()
         return dropbox_stone_to_dict(res)
 
-    def get_space_usage(self) -> StoneType:
+    def get_space_usage(self) -> SerializedObjectType:
         """
         Gets the space usage from Dropbox and returns it as a dictionary.
 
@@ -660,7 +651,7 @@ class Maestral:
 
     # ==== Control methods for front ends ==============================================
 
-    def get_profile_pic(self) -> Optional[str]:
+    def get_profile_pic(self) -> str | None:
         """
         Attempts to download the user's profile picture from Dropbox. The picture is
         saved in Maestral's cache directory for retrieval when there is no internet
@@ -688,7 +679,7 @@ class Maestral:
             self._delete_old_profile_pics()
             return None
 
-    def get_metadata(self, dbx_path: str) -> Optional[StoneType]:
+    def get_metadata(self, dbx_path: str) -> SerializedObjectType | None:
         """
         Returns metadata for a file or folder on Dropbox.
 
@@ -711,7 +702,7 @@ class Maestral:
         else:
             return dropbox_stone_to_dict(res)
 
-    def list_folder(self, dbx_path: str, **kwargs) -> List[StoneType]:
+    def list_folder(self, dbx_path: str, **kwargs) -> list[SerializedObjectType]:
         """
         List all items inside the folder given by ``dbx_path``. Keyword arguments are
         passed on the Dropbox API call :meth:`client.DropboxClient.list_folder`.
@@ -737,7 +728,7 @@ class Maestral:
 
     def list_folder_iterator(
         self, dbx_path: str, **kwargs
-    ) -> Iterator[List[StoneType]]:
+    ) -> Iterator[list[SerializedObjectType]]:
         """
         Returns an iterator over items inside the folder given by ``dbx_path``. Keyword
         arguments are passed on the client call
@@ -768,7 +759,9 @@ class Maestral:
                 del entries
                 gc.collect()
 
-    def list_revisions(self, dbx_path: str, limit: int = 10) -> List[StoneType]:
+    def list_revisions(
+        self, dbx_path: str, limit: int = 10
+    ) -> list[SerializedObjectType]:
         """
         List revisions of old files at the given path ``dbx_path``. This will also
         return revisions if the file has already been deleted.
@@ -777,7 +770,7 @@ class Maestral:
         :param limit: Maximum number of revisions to list.
         :returns: List of Dropbox file metadata as dicts. See
             :class:`dropbox.files.Metadata` for keys and values.
-        :raises NotFoundError:if there never was a file at the given path.
+        :raises NotFoundError: if there never was a file at the given path.
         :raises IsAFolderError: if the given path refers to a folder
         :raises DropboxAuthError: in case of an invalid access token.
         :raises DropboxServerError: for internal Dropbox errors.
@@ -792,7 +785,7 @@ class Maestral:
 
         return entries
 
-    def get_file_diff(self, old_rev: str, new_rev: Optional[str] = None) -> List[str]:
+    def get_file_diff(self, old_rev: str, new_rev: str | None = None) -> list[str]:
         """
         Compare to revisions of a text file using Python's difflib. The versions will be
         downloaded to temporary files. If new_rev is None, the old revision will be
@@ -811,7 +804,7 @@ class Maestral:
             tz_date = d.replace(tzinfo=timezone.utc).astimezone()
             return tz_date.strftime("%d %b %Y at %H:%M")
 
-        def download_rev(rev: str) -> Tuple[List[str], FileMetadata]:
+        def download_rev(rev: str) -> tuple[list[str], FileMetadata]:
             """
             Download a rev to a tmp file, read it and return the content + metadata.
             """
@@ -888,7 +881,7 @@ class Maestral:
             )
         )
 
-    def restore(self, dbx_path: str, rev: str) -> StoneType:
+    def restore(self, dbx_path: str, rev: str) -> SerializedObjectType:
         """
         Restore an old revision of a file.
 
@@ -968,7 +961,7 @@ class Maestral:
         self._check_linked()
         self.manager.reset_sync_state()
 
-    def set_excluded_items(self, items: List[str]) -> None:
+    def set_excluded_items(self, items: list[str]) -> None:
         warnings.warn(
             "'set_excluded_items' is deprecated, please set 'excluded_items' directly",
             DeprecationWarning,
@@ -1036,22 +1029,7 @@ class Maestral:
 
         # Perform housekeeping.
         self.sync.remove_node_from_index(dbx_path_lower)
-
-        for error in self.sync.sync_errors.copy():
-
-            if not error.dbx_path:
-                continue
-
-            if is_equal_or_child(normalize(error.dbx_path), dbx_path_lower):
-                self.sync.sync_errors.discard(error)
-
-        for path in list(self.sync.download_errors):
-            if is_equal_or_child(path, dbx_path_lower):
-                self.sync.download_errors.discard(path)
-
-        for path in list(self.sync.upload_errors):
-            if is_equal_or_child(path, dbx_path_lower):
-                self.sync.upload_errors.discard(path)
+        self.sync.clear_sync_errors_for_path(dbx_path_lower, recursive=True)
 
         # Remove folder from local drive.
         local_path_uncased = f"{self.dropbox_path}{dbx_path_lower}"
@@ -1118,7 +1096,7 @@ class Maestral:
         except KeyError:
             pass
 
-        excluded_parent: Optional[str] = None
+        excluded_parent: str | None = None
 
         for folder in excluded_items.copy():
 
@@ -1266,9 +1244,9 @@ class Maestral:
         self,
         dbx_path: str,
         visibility: str = "public",
-        password: Optional[str] = None,
-        expires: Optional[float] = None,
-    ) -> StoneType:
+        password: str | None = None,
+        expires: float | None = None,
+    ) -> SerializedObjectType:
         """
         Creates a shared link for the given ``dbx_path``. Returns a dictionary with
         information regarding the link, including the URL, access permissions, expiry
@@ -1324,7 +1302,9 @@ class Maestral:
         self._check_linked()
         self.client.revoke_shared_link(url)
 
-    def list_shared_links(self, dbx_path: Optional[str] = None) -> List[StoneType]:
+    def list_shared_links(
+        self, dbx_path: str | None = None
+    ) -> list[SerializedObjectType]:
         """
         Returns a list of all shared links for the given Dropbox path. If no path is
         given, return all shared links for the account, up to a maximum of 1,000 links.
@@ -1361,7 +1341,7 @@ class Maestral:
 
         return self.sync.to_local_path(dbx_path)
 
-    def check_for_updates(self) -> Dict[str, Union[str, bool, None]]:
+    def check_for_updates(self) -> dict[str, str | bool | None]:
         """
         Checks if an update is available.
 
@@ -1421,8 +1401,9 @@ class Maestral:
 
     def shutdown_daemon(self) -> None:
         """
-        Stop syncing and clean up our asyncio tasks. Set a result for the
-        :attr:`shutdown_complete` future.
+        Stop syncing and clean up our asyncio tasks. Notifies the :mod:`daemon` module
+        to shut down the event loop and exit the running process if Maestral was started
+        as a daemon.
         """
 
         self.stop_sync()
@@ -1462,70 +1443,20 @@ class Maestral:
 
         updated_from = self._state.get("app", "updated_scripts_completed")
 
-        if Version(updated_from) < Version("1.2.1"):
-            self._update_from_pre_v1_2_1()
-        if Version(updated_from) < Version("1.3.2"):
-            self._update_from_pre_v1_3_2()
-        if Version(updated_from) < Version("1.4.5"):
-            self._update_from_pre_v1_4_5()
         if Version(updated_from) < Version("1.4.8"):
             self._update_from_pre_v1_4_8()
         if Version(updated_from) < Version("1.5.3"):
             self._update_from_pre_v1_5_3()
+        if Version(updated_from) < Version("1.6.0.dev0"):
+            self._update_from_pre_v1_6_0()
 
         self._state.set("app", "updated_scripts_completed", __version__)
 
         self._conf.remove_deprecated_options()
         self._state.remove_deprecated_options()
 
-    def _update_from_pre_v1_2_1(self) -> None:
-        raise RuntimeError("Cannot upgrade from version before v1.2.1")
-
-    def _update_from_pre_v1_3_2(self) -> None:
-
-        if self._conf.get("app", "keyring") == "keyring.backends.OS_X.Keyring":
-            self._logger.info("Migrating keyring after update from pre v1.3.2")
-            self._conf.set("app", "keyring", "keyring.backends.macOS.Keyring")
-
-    def _update_from_pre_v1_4_5(self) -> None:
-        # Clear sync history table because we have added new columns. Note that our
-        # sync instance has not been loaded yet, we therefore do things manually.
-
-        self._logger.info("Clearing sync history after update from pre v1.4.5")
-
-        db_path = get_data_path("maestral", f"{self.config_name}.db")
-        db = Database(db_path, check_same_thread=False)
-        _sql_drop_table(db, "history")
-        db.close()
-
     def _update_from_pre_v1_4_8(self) -> None:
-
-        # Migrate config and state keys to new sections.
-
-        self._logger.info("Migrating config after update from pre v1.4.8")
-
-        mapping = {
-            "path": {"old": "main", "new": "sync"},
-            "excluded_items": {"old": "main", "new": "sync"},
-            "keyring": {"old": "app", "new": "auth"},
-            "account_id": {"old": "account", "new": "auth"},
-        }
-
-        for key, sections in mapping.items():
-            if self._conf.has_option(sections["old"], key):
-                value = self._conf.get(sections["old"], key)
-                self._conf.set(sections["new"], key, value)
-
-        self._logger.info("Migrating state after update from pre v1.4.8")
-
-        mapping = {
-            "token_access_type": {"old": "account", "new": "auth"},
-        }
-
-        for key, sections in mapping.items():
-            if self._state.has_option(sections["old"], key):
-                value = self._state.get(sections["old"], key)
-                self._state.set(sections["new"], key, value)
+        raise RuntimeError("Cannot upgrade from version before v1.4.8")
 
     def _update_from_pre_v1_5_3(self) -> None:
 
@@ -1537,6 +1468,21 @@ class Maestral:
         _sql_drop_table(db, "hash_cache")
         _sql_add_column(db, "history", "symlink_target", "TEXT")
         _sql_add_column(db, "'index'", "symlink_target", "TEXT")
+
+        db.close()
+
+    def _update_from_pre_v1_6_0(self) -> None:
+
+        self._logger.info("Scheduling reindex after update from pre v1.6.0")
+
+        db_path = get_data_path("maestral", f"{self.config_name}.db")
+        db = Database(db_path, check_same_thread=False)
+
+        _sql_drop_table(db, "hash_cache")
+        _sql_drop_table(db, "'index'")
+        _sql_drop_table(db, "'history'")
+
+        self._state.reset_to_defaults("sync")
 
         db.close()
 

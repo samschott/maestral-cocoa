@@ -12,12 +12,12 @@ rubicon/objc/ctypes_patch.py,sha256=G_kYDla60aXR1g6zWICCJj5XMfDKXMXxUCZ7ZwtV708,
 rubicon/objc/eventloop.py,sha256=GYjYcHipn1uY9qytyWQ4LEe5g47aUZ-qa4QCYP04pTQ,23329
 rubicon/objc/runtime.py,sha256=Q1eVoKigHAkeIn2FmaW4fwNo4ZAYI1cOWUQuAp4C4uo,40965
 rubicon/objc/types.py,sha256=6LDre_-fSd53lguVD1s0__pU5YLMtZ24UGHhmme9-Io,28914
-rubicon_objc-0.4.2-py3.9-nspkg.pth,sha256=NwwU-h4xNPMq8YIB5c3OhSJG6ElyV7WFSBtxAssV0Gc,544
+rubicon_objc-0.4.2-py3.10-nspkg.pth,sha256=NwwU-h4xNPMq8YIB5c3OhSJG6ElyV7WFSBtxAssV0Gc,544
 rubicon_objc-0.4.2.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
 rubicon_objc-0.4.2.dist-info/LICENSE,sha256=FvOB4ymglFbUZvp0OwYiRoCuX_wLkgR-rL8GhkiYZl0,3278
 rubicon_objc-0.4.2.dist-info/METADATA,sha256=FnmadeKWcQkN4V8S8b8PAyaxq_SBITs019VDtXiW9Ls,4660
 rubicon_objc-0.4.2.dist-info/RECORD,,
 rubicon_objc-0.4.2.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
-rubicon_objc-0.4.2.dist-info/WHEEL,sha256=G16H4A3IeoQmnOrYV4ueZGKSjhipXx8zc8nu9FGlvMA,92
+rubicon_objc-0.4.2.dist-info/WHEEL,sha256=ewwEueio1C2XeHTvT17n8dZUJgOvyCWCt0WVNLClP9o,92
 rubicon_objc-0.4.2.dist-info/namespace_packages.txt,sha256=EWgQZTBqvpDWyS3EacpRBApxh67OK_yt43gzM2f7xg4,8
 rubicon_objc-0.4.2.dist-info/top_level.txt,sha256=EWgQZTBqvpDWyS3EacpRBApxh67OK_yt43gzM2f7xg4,8

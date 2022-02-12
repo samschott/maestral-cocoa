@@ -24,7 +24,6 @@ Classifier: Topic :: Software Development
 Classifier: Topic :: Software Development :: User Interfaces
 Requires-Python: >=3.5
 Description-Content-Type: text/x-rst
-License-File: LICENSE
 
 .. image:: https://beeware.org/static/images/defaultlogo.png
     :width: 72px
