@@ -27,7 +27,7 @@ from maestral.daemon import (
     Start,
     CommunicationError,
 )
-from maestral.errors import (
+from maestral.exceptions import (
     NoDropboxDirError,
     NotLinkedError,
     TokenRevokedError,
