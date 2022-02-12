@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import annotations
+
 # system imports
 import os.path as osp
 import threading
 import asyncio
 from queue import Queue
-from typing import Union, List, Tuple, Optional, Any, Callable
+from typing import Any, Callable
 
 # external imports
 import toga
@@ -29,13 +31,13 @@ from .private.widgets import Icon, Switch
 
 
 class Node:
-    _children: List[Union["Node", "PlaceholderNode"]]
+    _children: list[Node | PlaceholderNode]
 
     def __init__(
         self,
         path_display: str,
         path_lower: str,
-        parent: Optional["Node"],
+        parent: Node | None,
         mdbx: MaestralProxy,
         is_folder: bool,
     ) -> None:
@@ -99,10 +101,10 @@ class Node:
         )
         return own_selection_modified or child_selection_modified
 
-    def get_nodes_with_state(self, state: int) -> List["Node"]:
+    def get_nodes_with_state(self, state: int) -> list[Node]:
 
         result = []
-        queue: "Queue[Node]" = Queue()
+        queue: Queue[Node] = Queue()
         queue.put(self)
 
         while not queue.empty():
@@ -125,7 +127,7 @@ class Node:
     def __len__(self) -> int:
         return len(self.children)
 
-    def __getitem__(self, index: int) -> Union["Node", "PlaceholderNode"]:
+    def __getitem__(self, index: int) -> Node | PlaceholderNode:
         return self.children[index]
 
     def can_have_children(self) -> bool:
@@ -134,7 +136,7 @@ class Node:
     # ---- Properties for data access from GUI -----------------------------------------
 
     @property
-    def name(self) -> Tuple[Icon, str]:
+    def name(self) -> tuple[Icon, str]:
         return self._icon, osp.basename(self.path_display)
 
     @property
@@ -148,11 +150,11 @@ class Node:
     # ---- Methods for dynamic loading of children -------------------------------------
 
     @property
-    def parent(self) -> Optional["Node"]:
+    def parent(self) -> Node | None:
         return self._parent
 
     @property
-    def children(self) -> List[Union["Node", "PlaceholderNode"]]:
+    def children(self) -> list[Node | PlaceholderNode]:
         if self._is_folder and not self._did_start_loading:
             self._did_start_loading = True
             create_task(self._load_children_async())
@@ -282,7 +284,7 @@ class PlaceholderNode:
     def __len__(self) -> int:
         return 0
 
-    def __getitem__(self, index: int) -> "Node":
+    def __getitem__(self, index: int) -> Node:
         raise StopIteration()
 
     @staticmethod
@@ -306,7 +308,7 @@ class PlaceholderNode:
         return self._parent
 
     @property
-    def children(self) -> List[Node]:
+    def children(self) -> list[Node]:
         return []
 
     # ---- GUI callbacks ---------------------------------------------------------------
@@ -324,9 +326,9 @@ class FileSystemSource(Node, Source):
         mdbx: MaestralProxy,
         path_display: str = "/",
         path_lower: str = "/",
-        on_fs_loading_succeeded: Optional[Callable] = None,
-        on_fs_loading_failed: Optional[Callable] = None,
-        on_fs_selection_changed: Optional[Callable] = None,
+        on_fs_loading_succeeded: Callable | None = None,
+        on_fs_loading_failed: Callable | None = None,
+        on_fs_selection_changed: Callable | None = None,
     ):
         super().__init__(
             path_display, path_lower, parent=None, is_folder=True, mdbx=mdbx

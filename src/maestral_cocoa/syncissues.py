@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import annotations
+
 # system imports
 import os.path as osp
 import asyncio
 import urllib.parse
-from typing import List, Any
+from typing import Any
 
 # external imports
 import toga
@@ -100,7 +102,7 @@ class SyncIssuesWindow(Window):
         self.on_close = self.on_close_pressed
 
         self.mdbx = mdbx
-        self._cached_errors: List[dict] = []
+        self._cached_errors: list[dict] = []
 
         self._refresh = False
         self._refresh_interval = 1

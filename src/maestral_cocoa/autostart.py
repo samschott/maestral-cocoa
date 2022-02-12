@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import annotations
+
 # system imports
 import sys
 import platform
-from typing import Optional
 
 # external imports
 from maestral.autostart import (
@@ -85,7 +86,7 @@ class AutoStart:
 
         self._impl.disable()
 
-    def _get_available_implementation(self) -> Optional[SupportedImplementations]:
+    def _get_available_implementation(self) -> SupportedImplementations | None:
         """Returns the supported implementation depending on the platform."""
 
         system = platform.system()

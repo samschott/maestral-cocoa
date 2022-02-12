@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import annotations
+
 # system imports
-from typing import Optional, Callable, Iterable
+from typing import Callable, Iterable
 
 # external imports
 import toga
@@ -61,10 +63,10 @@ class Dialog(Window):
         message: str = "",
         button_labels: Iterable[str] = ("Ok",),
         default: str = "Ok",
-        accessory_view=None,
-        icon: Optional[toga.Icon] = None,
-        callback: Optional[Callable] = None,
-        app: Optional[toga.App] = None,
+        accessory_view: toga.Widget = toga.Box(),
+        icon: toga.Icon | None = None,
+        callback: Callable | None = None,
+        app: toga.App | None = None,
     ):
         super().__init__(
             resizeable=False,
@@ -135,7 +137,7 @@ class Dialog(Window):
         )
         self.dialog_buttons.children.insert(0, self.spinner)
 
-        self.accessory_view = accessory_view or toga.Box()
+        self.accessory_view = toga.Box()
 
         self.content_box = toga.Box(
             children=[
@@ -175,8 +177,8 @@ class ProgressDialog(Dialog):
         self,
         msg_title: str = "Progress",
         icon: toga.Icon = None,
-        callback: Optional[Callable] = None,
-        app: Optional[toga.App] = None,
+        callback: Callable | None = None,
+        app: toga.App | None = None,
     ) -> None:
 
         self.progress_bar = toga.ProgressBar(
@@ -283,8 +285,8 @@ class UpdateDialog(Dialog):
         self,
         version: str = "",
         release_notes: str = "",
-        icon: Optional[toga.Icon] = None,
-        app: Optional[toga.App] = None,
+        icon: toga.Icon | None = None,
+        app: toga.App | None = None,
     ) -> None:
 
         link_button = FollowLinkButton(

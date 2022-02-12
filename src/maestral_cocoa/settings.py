@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import annotations
+
 # system imports
 import sys
 import os
 import os.path as osp
 import asyncio
 from pathlib import Path
-from typing import Any, Union, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 # external imports
 import toga
@@ -44,7 +46,7 @@ class SettingsWindow(SettingsGui):
     _cached_pic_stat = os.stat(FACEHOLDER_PATH)
     _cached_dbx_location = None
 
-    def __init__(self, mdbx: MaestralProxy, app: "MaestralGui") -> None:
+    def __init__(self, mdbx: MaestralProxy, app: MaestralGui) -> None:
         super().__init__(app=app)
 
         self._refresh = False
@@ -206,7 +208,7 @@ class SettingsWindow(SettingsGui):
                 "Install the 'maestral' command line tool to /usr/local/bin."
             )
 
-    def set_profile_pic(self, path: Union[bytes, str, os.PathLike]) -> None:
+    def set_profile_pic(self, path: bytes | str | os.PathLike) -> None:
         if not osp.isfile(path):
             path = FACEHOLDER_PATH
         new_stat = os.stat(path)
