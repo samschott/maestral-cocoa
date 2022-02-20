@@ -34,6 +34,7 @@ jobs:
         run: |
           python3 -m pip install -U pip
           python3 -m pip install -U briefcase
+          python3 -m pip install "markupsafe<2.1"  # needed until next briefcase release
           chmod +x ./scripts/post-build-macos.sh
 
       - name: Bump build number
