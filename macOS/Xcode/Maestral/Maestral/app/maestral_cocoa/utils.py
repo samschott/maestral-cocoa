@@ -1,25 +1,19 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import annotations
+
 # system imports
 import os
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from typing import (
-    Union,
-    Awaitable,
-    TypeVar,
-    AsyncGenerator,
-    List,
-    Any,
-    Callable,
-)
+from typing import Awaitable, TypeVar, AsyncGenerator, Any, Callable
 
 # external imports
 from rubicon.objc import ObjCClass
 from maestral.daemon import MaestralProxy
 
 
-_T = TypeVar("_T")
+T = TypeVar("T")
 
 
 NSAppleScript = ObjCClass("NSAppleScript")
@@ -30,7 +24,7 @@ NSAppleScript = ObjCClass("NSAppleScript")
 thread_pool_executor = ThreadPoolExecutor(10)
 
 
-def create_task(coro: Awaitable[_T]) -> Union["asyncio.Task[_T]", "asyncio.Future[_T]"]:
+def create_task(coro: Awaitable[T]) -> asyncio.Task[T] | asyncio.Future[T]:
 
     loop = asyncio.get_event_loop()
 
@@ -105,13 +99,13 @@ def request_authorization_from_user_and_run(command: str) -> None:
         raise RuntimeError(f"Could not run privileged command {command!r}")
 
 
-def is_empty(dirname: Union[str, "os.PathLike[str]"]) -> bool:
+def is_empty(dirname: str | os.PathLike[str]) -> bool:
     """Checks if a directory is empty."""
 
     exceptions = {".DS_Store"}
     n_exceptions = len(exceptions)
 
-    children: List[os.DirEntry] = []
+    children: list[os.DirEntry] = []
 
     try:
         with os.scandir(dirname) as sd_iter:

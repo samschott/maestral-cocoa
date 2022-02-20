@@ -213,7 +213,7 @@ class Maestral:
             self._logger.debug("Could not remove token from keyring", exc_info=True)
 
         try:
-            self.client.auth.delete_creds()
+            self.client.cred_storage.delete_creds()
         except KeyringAccessError:
             self._logger.debug("Could not remove token from keyring", exc_info=True)
 
@@ -1501,15 +1501,15 @@ class Maestral:
 
         while True:
 
-            if self.client.auth.loaded:
+            if self.client.cred_storage.loaded:
 
-                # Only run if we have loaded the keyring, we don't
+                # Only run if we have loaded the access token, we don't
                 # want to trigger any keyring access from here.
 
                 try:
                     await self._loop.run_in_executor(self._pool, self.get_profile_pic)
                     await self._loop.run_in_executor(self._pool, self.get_account_info)
-                except (ConnectionError, MaestralApiError):
+                except (ConnectionError, MaestralApiError, NotLinkedError):
                     await sleep_rand(60 * 10)
                 else:
                     await sleep_rand(60 * 45)

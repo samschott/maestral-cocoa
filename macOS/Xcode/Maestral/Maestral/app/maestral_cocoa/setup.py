@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import annotations
+
 # system imports
 import os.path as osp
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
 # external imports
 import toga
@@ -25,8 +27,8 @@ class SetupDialog(SetupDialogGui):
         self.mdbx = mdbx
         self.config_name = self.mdbx.config_name
 
-        self._on_success: Optional[Callable] = None
-        self._on_failure: Optional[Callable] = None
+        self._on_success: Callable | None = None
+        self._on_failure: Callable | None = None
 
         self.on_close = self.callback_on_close
 

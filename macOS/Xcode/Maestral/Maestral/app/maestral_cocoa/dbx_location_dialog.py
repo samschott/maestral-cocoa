@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import annotations
+
 # system imports
 import os.path as osp
-from typing import Optional, Callable
+from typing import Callable
 
 # external imports
 import toga
@@ -43,8 +45,8 @@ class DbxLocationDialog(Dialog):
         self.mdbx = mdbx
         self.config_name = self.mdbx.config_name
 
-        self._on_success: Optional[Callable] = None
-        self._on_failure: Optional[Callable] = None
+        self._on_success: Callable | None = None
+        self._on_failure: Callable | None = None
 
         dropbox_path = self.mdbx.get_conf("sync", "path")
 

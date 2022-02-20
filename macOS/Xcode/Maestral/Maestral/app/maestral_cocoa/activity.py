@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import annotations
+
 # system imports
 import os.path as osp
 import asyncio
 from datetime import datetime
-from typing import Tuple, Optional, Iterable, Any
+from typing import Iterable, Any
 
 # external imports
 import click
@@ -24,7 +26,7 @@ WINDOW_SIZE = (700, 600)
 
 class SyncEventRow:
 
-    _reveal: Optional[FreestandingIconButton]
+    _reveal: FreestandingIconButton | None
 
     def __init__(self, sync_event: dict) -> None:
         self.sync_event = sync_event
@@ -34,7 +36,7 @@ class SyncEventRow:
 
         # attributes for table column values
         self._basename = basename
-        self._icon: Optional[Icon] = None
+        self._icon: Icon | None = None
         self.location = osp.basename(dirname)
         self.type = self.sync_event["change_type"].capitalize()
         self.time = dt.strftime("%d %b %Y %H:%M")
@@ -42,7 +44,7 @@ class SyncEventRow:
         self._reveal = None
 
     @property
-    def filename(self) -> Tuple[Icon, str]:
+    def filename(self) -> tuple[Icon, str]:
         if not self._icon:
             if self.sync_event["item_type"] == "folder":
                 self._icon = Icon(for_path="/usr")

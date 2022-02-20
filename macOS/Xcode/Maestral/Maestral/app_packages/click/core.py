@@ -1,8 +1,8 @@
 import enum
 import errno
+import inspect
 import os
 import sys
-import typing
 import typing as t
 from collections import abc
 from contextlib import contextmanager
@@ -632,13 +632,13 @@ class Context:
             self.obj = rv = object_type()
         return rv
 
-    @typing.overload
+    @t.overload
     def lookup_default(
         self, name: str, call: "te.Literal[True]" = True
     ) -> t.Optional[t.Any]:
         ...
 
-    @typing.overload
+    @t.overload
     def lookup_default(
         self, name: str, call: "te.Literal[False]" = ...
     ) -> t.Optional[t.Union[t.Any, t.Callable[[], t.Any]]]:
@@ -956,7 +956,7 @@ class BaseCommand:
 
         return results
 
-    @typing.overload
+    @t.overload
     def main(
         self,
         args: t.Optional[t.Sequence[str]] = None,
@@ -967,7 +967,7 @@ class BaseCommand:
     ) -> "te.NoReturn":
         ...
 
-    @typing.overload
+    @t.overload
     def main(
         self,
         args: t.Optional[t.Sequence[str]] = None,
@@ -2172,13 +2172,13 @@ class Parameter:
 
         return metavar
 
-    @typing.overload
+    @t.overload
     def get_default(
         self, ctx: Context, call: "te.Literal[True]" = True
     ) -> t.Optional[t.Any]:
         ...
 
-    @typing.overload
+    @t.overload
     def get_default(
         self, ctx: Context, call: bool = ...
     ) -> t.Optional[t.Union[t.Any, t.Callable[[], t.Any]]]:
@@ -2472,7 +2472,7 @@ class Option(Parameter):
         elif prompt is False:
             prompt_text = None
         else:
-            prompt_text = t.cast(str, prompt)
+            prompt_text = prompt
 
         self.prompt = prompt_text
         self.confirmation_prompt = confirmation_prompt
@@ -2720,7 +2720,7 @@ class Option(Parameter):
                 default_string = f"({self.show_default})"
             elif isinstance(default_value, (list, tuple)):
                 default_string = ", ".join(str(d) for d in default_value)
-            elif callable(default_value):
+            elif inspect.isfunction(default_value):
                 default_string = _("(dynamic)")
             elif self.is_bool_flag and self.secondary_opts:
                 # For boolean flags that have distinct True/False opts,
@@ -2753,13 +2753,13 @@ class Option(Parameter):
 
         return ("; " if any_prefix_is_slash else " / ").join(rv), help
 
-    @typing.overload
+    @t.overload
     def get_default(
         self, ctx: Context, call: "te.Literal[True]" = True
     ) -> t.Optional[t.Any]:
         ...
 
-    @typing.overload
+    @t.overload
     def get_default(
         self, ctx: Context, call: bool = ...
     ) -> t.Optional[t.Union[t.Any, t.Callable[[], t.Any]]]:
@@ -2770,7 +2770,7 @@ class Option(Parameter):
     ) -> t.Optional[t.Union[t.Any, t.Callable[[], t.Any]]]:
         # If we're a non boolean flag our default is more complex because
         # we need to look at all flags in the same group to figure out
-        # if we're the the default one in which case we return the flag
+        # if we're the default one in which case we return the flag
         # value as default.
         if self.is_flag and not self.is_bool_flag:
             for param in ctx.command.params:
