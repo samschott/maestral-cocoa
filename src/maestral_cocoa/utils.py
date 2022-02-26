@@ -25,8 +25,7 @@ thread_pool_executor = ThreadPoolExecutor(10)
 
 
 def create_task(coro: Awaitable[T]) -> asyncio.Task[T] | asyncio.Future[T]:
-
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_event_loop_policy().get_event_loop()
 
     try:
         return loop.create_task(coro)
