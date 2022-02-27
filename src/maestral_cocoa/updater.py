@@ -63,9 +63,10 @@ class AutoUpdaterSparkle(AutoUpdaterBackend):
         from ctypes import c_int
 
         class SparkleDelegate(NSObject):
-
             @objc_method
-            def updater_willInstallUpdate_(self, updater: objc_id, item: objc_id) -> None:
+            def updater_willInstallUpdate_(
+                self, updater: objc_id, item: objc_id
+            ) -> None:
                 stop_maestral_daemon_process(self.config_name)
 
             @objc_method
