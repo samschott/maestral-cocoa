@@ -19,6 +19,7 @@ from rubicon.objc import (
     SEL,
     at,
 )
+from rubicon.objc.runtime import objc_id
 from toga.handlers import NativeHandler
 from toga.constants import LEFT, TRANSPARENT
 from toga_cocoa.libs import (
@@ -340,7 +341,7 @@ class SwitchTarget(NSObject):
     impl = objc_property(py_object, weak=True)
 
     @objc_method
-    def onPress_(self, obj) -> None:
+    def onPress_(self, obj: objc_id) -> None:
         if self.interface.on_toggle:
             self.interface.on_toggle(self.interface)
 
@@ -405,7 +406,7 @@ class FileChooserTarget(NSObject):
     impl = objc_property(py_object, weak=True)
 
     @objc_method
-    def onSelect_(self, obj) -> None:
+    def onSelect_(self, obj: objc_id) -> None:
         if self.impl.native.indexOfSelectedItem == 2:
 
             self.impl.native.selectItemAtIndex(0)
@@ -527,7 +528,7 @@ class TogaMenuItem(NSMenuItem):
     impl = objc_property(py_object, weak=True)
 
     @objc_method
-    def onPress_(self, obj) -> None:
+    def onPress_(self, obj: objc_id) -> None:
         if self.interface.action:
             self.interface.action(self.interface)
 
@@ -590,13 +591,13 @@ class TogaMenu(NSMenu):
     impl = objc_property(py_object, weak=True)
 
     @objc_method
-    def menuWillOpen_(self, obj) -> None:
+    def menuWillOpen_(self, obj: objc_id) -> None:
         self.impl._visible = True
         if self.interface.on_open:
             self.interface.on_open(self.interface)
 
     @objc_method
-    def menuDidClose_(self, obj) -> None:
+    def menuDidClose_(self, obj: objc_id) -> None:
         self.impl._visible = False
         if self.interface.on_close:
             self.interface.on_close(self.interface)
@@ -660,12 +661,12 @@ class SystemTrayAppDelegate(NSObject):
     impl = objc_property(py_object, weak=True)
 
     @objc_method
-    def applicationWillTerminate_(self, sender):
+    def applicationWillTerminate_(self, sender: objc_id) -> None:
         if self.interface.app.on_exit:
             self.interface.app.on_exit(self.interface.app)
 
     @objc_method
-    def selectMenuItem_(self, sender) -> None:
+    def selectMenuItem_(self, sender: objc_id) -> None:
         cmd = self.impl._menu_items[sender]
         if cmd.action:
             cmd.action(None)
@@ -890,7 +891,7 @@ class WindowDeletage(TogaWindowDeletage):
     impl = objc_property(py_object, weak=True)
 
     @objc_method
-    def windowWillClose_(self, notification) -> None:
+    def windowWillClose_(self, notification: objc_id) -> None:
 
         if not self.interface.is_dialog:
             if not self.interface.app._impl.has_open_windows():
