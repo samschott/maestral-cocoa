@@ -58,23 +58,21 @@ class AutoUpdaterSparkle(AutoUpdaterBackend):
         # Note: Any macOS specific imports are kept local. We could eventually split
         # off platform-specific implementations to separate modules instead.
 
-        from ctypes import py_object
-
-        from rubicon.objc import ObjCClass, NSObject, objc_method, objc_property
-        from rubicon.objc.runtime import load_library
+        from rubicon.objc import ObjCClass, NSObject, objc_method
+        from rubicon.objc.runtime import load_library, objc_id
+        from ctypes import c_int
 
         class SparkleDelegate(NSObject):
-
-            mdbx = objc_property(py_object, weak=True)
-
             @objc_method
-            def updater_willInstallUpdate_(self, updater, item):
+            def updater_willInstallUpdate_(
+                self, updater: objc_id, item: objc_id
+            ) -> None:
                 stop_maestral_daemon_process(self.config_name)
 
             @objc_method
             def updater_didFinishUpdateCycleForUpdateCheck_error_(
-                self, updater, check, error
-            ):
+                self, updater: objc_id, check: c_int, error: objc_id
+            ) -> None:
 
                 if not error:
                     self.mdbx.set_state("app", "update_notification_last", time.time())
