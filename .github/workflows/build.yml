@@ -45,10 +45,6 @@ jobs:
       - name: Build app
         id: build
         run: |
-          
-          # remove old dist-info from app bundle, see briefcase issue #644
-          find "macOS/Xcode/Maestral/Maestral/app" -name "*.dist-info"  -prune -exec rm -rf {} \;
-          find "macOS/Xcode/Maestral/Maestral/app_packages" -name "*.dist-info"  -prune -exec rm -rf {} \;
 
           # update Python code
           briefcase update macOS Xcode -r -d
