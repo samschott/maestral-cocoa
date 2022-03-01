@@ -54,17 +54,6 @@ int main(int argc, char *argv[]) {
         NSLog(@"Initializing Python runtime...");
         Py_Initialize();
 
-        // Set the name of the python NSLog bootstrap script
-        nslog_script = [
-            [[NSBundle mainBundle] pathForResource:@"app_packages/nslog"
-                                            ofType:@"py"] cStringUsingEncoding:NSUTF8StringEncoding];
-
-        if (nslog_script == NULL) {
-            NSLog(@"Unable to locate NSLog bootstrap script.");
-            crash_dialog(@"Unable to locate NSLog bootstrap script.");
-            exit(-2);
-        }
-
         // Construct argv for the interpreter
         python_argv = PyMem_RawMalloc(sizeof(wchar_t*) * argc);
 
@@ -77,21 +66,6 @@ int main(int argc, char *argv[]) {
         PySys_SetArgv(argc, python_argv);
 
         @try {
-            NSLog(@"Installing Python NSLog handler...");
-            FILE* fd = fopen(nslog_script, "r");
-            if (fd == NULL) {
-                NSLog(@"Unable to open nslog.py; abort.");
-                crash_dialog(@"Unable to open nslog.py");
-                exit(-1);
-            }
-
-            ret = PyRun_SimpleFileEx(fd, nslog_script, 1);
-            fclose(fd);
-            if (ret != 0) {
-                NSLog(@"Unable to install Python NSLog handler; abort.");
-                crash_dialog(@"Unable to install Python NSLog handler.");
-                exit(ret);
-            }
 
             // Start the app module
             NSLog(@"Running app module: %@", module_name);
