@@ -1443,10 +1443,12 @@ class Maestral:
 
         updated_from = self._state.get("app", "updated_scripts_completed")
 
+        if Version(updated_from) < Version("1.2.1"):
+            self._update_from_pre_v1_2_1()
+        if Version(updated_from) < Version("1.3.2"):
+            self._update_from_pre_v1_3_2()
         if Version(updated_from) < Version("1.4.8"):
             self._update_from_pre_v1_4_8()
-        if Version(updated_from) < Version("1.5.3"):
-            self._update_from_pre_v1_5_3()
         if Version(updated_from) < Version("1.6.0.dev0"):
             self._update_from_pre_v1_6_0()
 
@@ -1455,21 +1457,43 @@ class Maestral:
         self._conf.remove_deprecated_options()
         self._state.remove_deprecated_options()
 
+    def _update_from_pre_v1_2_1(self) -> None:
+        raise RuntimeError("Cannot upgrade from version before v1.2.1")
+
+    def _update_from_pre_v1_3_2(self) -> None:
+
+        if self._conf.get("app", "keyring") == "keyring.backends.OS_X.Keyring":
+            self._logger.info("Migrating keyring after update from pre v1.3.2")
+            self._conf.set("app", "keyring", "keyring.backends.macOS.Keyring")
+
     def _update_from_pre_v1_4_8(self) -> None:
-        raise RuntimeError("Cannot upgrade from version before v1.4.8")
 
-    def _update_from_pre_v1_5_3(self) -> None:
+        # Migrate config and state keys to new sections.
 
-        self._logger.info("Migrating database after update from pre v1.5.3")
+        self._logger.info("Migrating config after update from pre v1.4.8")
 
-        db_path = get_data_path("maestral", f"{self.config_name}.db")
-        db = Database(db_path, check_same_thread=False)
+        mapping = {
+            "path": {"old": "main", "new": "sync"},
+            "excluded_items": {"old": "main", "new": "sync"},
+            "keyring": {"old": "app", "new": "auth"},
+            "account_id": {"old": "account", "new": "auth"},
+        }
 
-        _sql_drop_table(db, "hash_cache")
-        _sql_add_column(db, "history", "symlink_target", "TEXT")
-        _sql_add_column(db, "'index'", "symlink_target", "TEXT")
+        for key, sections in mapping.items():
+            if self._conf.has_option(sections["old"], key):
+                value = self._conf.get(sections["old"], key)
+                self._conf.set(sections["new"], key, value)
 
-        db.close()
+        self._logger.info("Migrating state after update from pre v1.4.8")
+
+        mapping = {
+            "token_access_type": {"old": "account", "new": "auth"},
+        }
+
+        for key, sections in mapping.items():
+            if self._state.has_option(sections["old"], key):
+                value = self._state.get(sections["old"], key)
+                self._state.set(sections["new"], key, value)
 
     def _update_from_pre_v1_6_0(self) -> None:
 
