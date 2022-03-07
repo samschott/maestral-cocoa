@@ -184,7 +184,7 @@ class SettingsGui(Window):
             ),
         )
         self.checkbox_notifications = Switch(
-            label="Enable notifications",
+            label="Enable notifications on file changes",
             style=Pack(
                 padding_bottom=SettingsGui.SUBELEMENT_PADDING,
                 width=SettingsGui.COLUMN_WIDTH_RIGHT,
