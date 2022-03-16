@@ -202,7 +202,11 @@ class Label(Widget):
     }
 
     def create(self):
-        self.native = NSTextField.labelWithString("")
+        self.native = NSTextField.alloc().init()
+
+        self.native.drawsBackground = False
+        self.native.editable = False
+        self.native.bezeled = False
 
         # Add the layout constraints
         self.add_constraints()
