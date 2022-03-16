@@ -21,6 +21,7 @@ from maestral.exceptions import (
     BusyError,
     NotLinkedError,
 )
+from maestral.core import FolderMetadata
 from maestral.daemon import MaestralProxy
 
 # local imports
@@ -176,15 +177,15 @@ class Node:
                     self.notify("change_source", source=self)
                     did_clear_children = True
 
-                res.sort(key=lambda e: e["name"].lower())
+                res.sort(key=lambda e: e.name.lower())
 
                 new_nodes = [
                     Node(
-                        path_display=e["path_display"],
-                        path_lower=e["path_lower"],
+                        path_display=e.path_display,
+                        path_lower=e.path_lower,
                         parent=self,
                         mdbx=self._mdbx,
-                        is_folder=e["type"] == "FolderMetadata",
+                        is_folder=isinstance(e, FolderMetadata),
                     )
                     for e in res
                 ]

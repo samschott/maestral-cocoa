@@ -8,6 +8,7 @@ from typing import Any
 
 # external imports
 from maestral.daemon import MaestralProxy, stop_maestral_daemon_process
+from maestral.exceptions import UpdateCheckError
 
 # local imports
 from .utils import call_async_maestral
@@ -143,24 +144,29 @@ class AutoUpdaterFallback(AutoUpdaterBackend):
         progress = ProgressDialog("Checking for Updates", app=self.app)
         progress.raise_()
 
-        res = await call_async_maestral(self.config_name, "check_for_updates")
+        try:
+            res = await call_async_maestral(self.config_name, "check_for_updates")
+        except UpdateCheckError as e:
+            if not progress.visible:
+                return  # aborted by user
+
+            progress.close()
+            return await self.app.alert_async(
+                title=e.title, message=e.message, level="error"
+            )
 
         if not progress.visible:
             return  # aborted by user
-        else:
-            progress.close()
 
-        if res["error"]:
+        progress.close()
+
+        if res.update_available:
+            self._show_update_dialog(res.latest_release, res.release_notes)
+        elif not res.update_available:
             await self.app.alert_async(
-                title="Could not check for updates", message=res["error"], level="error"
+                title="You’re up-to-date!",
+                message=f"Maestral v{ res.latest_release} is the newest version available.",
             )
-        elif res["update_available"]:
-            self._show_update_dialog(res["latest_release"], res["release_notes"])
-        elif not res["update_available"]:
-            message = "Maestral v{} is the newest version available.".format(
-                res["latest_release"]
-            )
-            await self.app.alert_async(title="You’re up-to-date!", message=message)
 
     def _show_update_dialog(self, latest_release: str, release_notes: str) -> None:
 
