@@ -21,7 +21,7 @@ from rubicon.objc import (
 )
 from rubicon.objc.runtime import objc_id
 from toga.handlers import NativeHandler
-from toga.constants import LEFT, TRANSPARENT
+from toga.constants import LEFT
 from toga_cocoa.libs import (
     NSColor,
     NSString,
@@ -223,14 +223,6 @@ class Label(Widget):
 
     def set_linebreak_mode(self, value):
         self.native.cell.lineBreakMode = Label._toga_to_cocoa_linebreakmode[value]
-
-    def set_background_color(self, color):
-        if color in (None, TRANSPARENT):
-            self.native.backgroundColor = NSColor.clearColor
-            self.native.drawsBackground = False
-        else:
-            self.native.backgroundColor = native_color(color)
-            self.native.drawsBackground = True
 
     def rehint(self):
 
