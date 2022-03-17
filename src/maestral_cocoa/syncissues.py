@@ -107,16 +107,15 @@ class SyncIssuesWindow(Window):
 
         self._refresh = False
         self._refresh_interval = 1
+        self._sync_issue_widgets: dict[str, SyncIssueView] = dict()
+
+        self._placeholder = Label(
+            "No sync issues 😊", style=Pack(padding_bottom=PADDING)
+        )
 
         self.size = WINDOW_SIZE
 
-        placeholder_label = Label(
-            "No sync issues 😊",
-            style=Pack(padding_bottom=PADDING),
-        )
-
         self.sync_errors_box = toga.Box(
-            children=[placeholder_label],
             style=Pack(
                 direction=COLUMN,
                 padding=2 * PADDING,
@@ -138,24 +137,39 @@ class SyncIssuesWindow(Window):
             self.refresh_gui()
             await asyncio.sleep(self._refresh_interval)
 
-    def refresh_gui(self) -> None:
+    def _has_placeholder(self) -> bool:
+        return self._placeholder in self.sync_errors_box.children
 
-        # remove old errors
-        for child in self.sync_errors_box.children.copy():
-            self.sync_errors_box.remove(child)
+    def refresh_gui(self) -> None:
 
         new_errors = self.mdbx.sync_errors
 
+        # remove placeholder if the error count > 0
+
+        if len(new_errors) > 0 and self._has_placeholder():
+            self.sync_errors_box.remove(self._placeholder)
+
         # add new errors
-        if len(new_errors) == 0:
-            placeholder_label = Label(
-                "No sync issues 😊",
-                style=Pack(padding_bottom=PADDING),
-            )
-            self.sync_errors_box.add(placeholder_label)
-        else:
-            for e in new_errors:
-                self.sync_errors_box.add(SyncIssueView(e))
+
+        new_err_paths: set[str] = set()
+
+        for error in new_errors:
+            new_err_paths.add(error.dbx_path)
+            if error.dbx_path not in self._sync_issue_widgets:
+                widget = SyncIssueView(error)
+                self.sync_errors_box.add(widget)
+                self._sync_issue_widgets[error.dbx_path] = widget
+
+        # remove old errors
+
+        for dbx_path in self._sync_issue_widgets.copy():
+            if dbx_path not in new_err_paths:
+                widget = self._sync_issue_widgets.pop(dbx_path)
+                self.sync_errors_box.remove(widget)
+
+        # add placeholder if we don't have any errors
+        if len(new_errors) == 0 and not self._has_placeholder():
+            self.sync_errors_box.add(self._placeholder)
 
     def on_close_pressed(self, sender: Any = None) -> bool:
         self._refresh = False
