@@ -1,9 +1,4 @@
-# -*- coding: utf-8 -*-
-
-try:
-    from importlib.resources import path  # type: ignore
-except ImportError:
-    from importlib_resources import path  # type: ignore
+from importlib.resources import path
 
 
 def resource_path(name: str) -> str:
