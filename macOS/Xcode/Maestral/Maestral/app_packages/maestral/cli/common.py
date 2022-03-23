@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import functools
 import sys
-from typing import Callable, cast, TYPE_CHECKING
+from typing import Callable, cast, TypeVar, Any, TYPE_CHECKING
 
 import click
 
@@ -13,6 +13,9 @@ from .utils import get_term_width
 if TYPE_CHECKING:
     from ..daemon import MaestralProxy
     from ..main import Maestral
+
+
+F = TypeVar("F", bound=Callable[..., Any])
 
 
 def convert_api_errors(func: Callable) -> Callable:
@@ -52,13 +55,10 @@ def check_for_fatal_errors(m: MaestralProxy | Maestral) -> bool:
         width = get_term_width()
 
         err = maestral_err_list[0]
-        err_title = cast(str, err["title"])
-        err_msg = cast(str, err["message"])
-
-        wrapped_msg = textwrap.fill(err_msg, width=width)
+        wrapped_msg = textwrap.fill(err.message, width=width)
 
         click.echo("")
-        click.secho(err_title, fg="red")
+        click.secho(err.title, fg="red")
         click.secho(wrapped_msg, fg="red")
         click.echo("")
 
@@ -85,3 +85,32 @@ existing_config_option = click.option(
     expose_value=True,
     help="Run command with the given configuration.",
 )
+
+
+def inject_proxy(fallback: bool, existing_config: bool):
+    def decorator(f: F) -> F:
+        def wrapper(*args, **kwargs):
+
+            from ..daemon import MaestralProxy, CommunicationError
+
+            ctx = click.get_current_context()
+
+            config_name = ctx.params.pop("config_name", "maestral")
+            kwargs.pop("config_name", None)
+
+            try:
+                proxy = ctx.with_resource(MaestralProxy(config_name, fallback=fallback))
+            except CommunicationError:
+                click.echo("Maestral daemon is not running.")
+                ctx.exit(0)
+
+            return ctx.invoke(f, proxy, *args, **kwargs)
+
+        if existing_config:
+            f = existing_config_option(f)
+        else:
+            f = config_option(f)
+
+        return functools.update_wrapper(cast(F, wrapper), f)
+
+    return decorator

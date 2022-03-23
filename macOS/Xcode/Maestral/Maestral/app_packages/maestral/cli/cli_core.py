@@ -3,20 +3,21 @@ from __future__ import annotations
 import sys
 from datetime import datetime
 from os import path as osp
-from typing import cast, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 import click
 
 from .dialogs import select_path, select, confirm, prompt, select_multiple
 from .output import warn, ok, info, echo, Table, Field, DateField, TextField
-from .utils import datetime_from_iso_str
 from .common import (
     convert_api_errors,
     check_for_fatal_errors,
     config_option,
     existing_config_option,
+    inject_proxy,
 )
 from .core import DropboxPath, CliException
+from ..core import FolderMetadata
 
 if TYPE_CHECKING:
     from ..daemon import MaestralProxy
@@ -213,11 +214,7 @@ def start(foreground: bool, verbose: bool, config_name: str) -> None:
                 info("Loading...")
                 entries = m.list_folder("/", recursive=False)
 
-                names = [
-                    cast(str, e["name"])
-                    for e in entries
-                    if e["type"] == "FolderMetadata"
-                ]
+                names = [e.name for e in entries if isinstance(e, FolderMetadata)]
 
                 choices = select_multiple(
                     "Choose which folders to include", options=names
@@ -272,7 +269,7 @@ def gui(config_name: str) -> None:
     from packaging.requirements import Requirement
 
     try:
-        from importlib.metadata import entry_points, requires, version  # type: ignore
+        from importlib.metadata import entry_points, requires, version
     except ImportError:
         from importlib_metadata import entry_points, requires, version  # type: ignore
 
@@ -292,7 +289,7 @@ def gui(config_name: str) -> None:
 
     if default_entry_point:
         # check gui requirements
-        requirements = [Requirement(r) for r in requires("maestral")]  # type: ignore
+        requirements = [Requirement(r) for r in requires("maestral")]
 
         for r in requirements:
             if r.marker and r.marker.evaluate({"extra": "gui"}):
@@ -314,33 +311,18 @@ def gui(config_name: str) -> None:
 
 
 @click.command(help="Pause syncing.")
-@existing_config_option
-def pause(config_name: str) -> None:
-
-    from ..daemon import MaestralProxy, CommunicationError
-
-    try:
-        with MaestralProxy(config_name) as m:
-            m.stop_sync()
-        ok("Syncing paused.")
-    except CommunicationError:
-        echo("Maestral daemon is not running.")
+@inject_proxy(fallback=False, existing_config=True)
+def pause(m: Maestral) -> None:
+    m.stop_sync()
+    ok("Syncing paused.")
 
 
 @click.command(help="Resume syncing.")
-@existing_config_option
-def resume(config_name: str) -> None:
-
-    from ..daemon import MaestralProxy, CommunicationError
-
-    try:
-        with MaestralProxy(config_name) as m:
-            if not check_for_fatal_errors(m):
-                m.start_sync()
-                ok("Syncing resumed.")
-
-    except CommunicationError:
-        echo("Maestral daemon is not running.")
+@inject_proxy(fallback=False, existing_config=True)
+def resume(m: Maestral) -> None:
+    if not check_for_fatal_errors(m):
+        m.start_sync()
+        ok("Syncing resumed.")
 
 
 @click.group(help="Link, unlink and view the Dropbox account.")
@@ -356,21 +338,16 @@ def auth():
     default=False,
     help="Relink to the existing account. Keeps the sync state.",
 )
-@config_option
+@inject_proxy(fallback=True, existing_config=False)
 @convert_api_errors
-def auth_link(relink: bool, config_name: str) -> None:
-
-    from ..daemon import MaestralProxy
-
-    with MaestralProxy(config_name, fallback=True) as m:
-
-        if m.pending_link or relink:
-            link_dialog(m)
-        else:
-            echo(
-                "Maestral is already linked. Use '-r' to relink to the same "
-                "account or specify a new config name with '-c'."
-            )
+def auth_link(m: Maestral, relink: bool) -> None:
+    if m.pending_link or relink:
+        link_dialog(m)
+    else:
+        echo(
+            "Maestral is already linked. Use '-r' to relink to the same "
+            "account or specify a new config name with '-c'."
+        )
 
 
 @auth.command(
@@ -440,46 +417,27 @@ def sharelink():
     type=click.DateTime(formats=["%Y-%m-%d", "%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M"]),
     help="Expiry time for the link (e.g. '2025-07-24 20:50').",
 )
-@existing_config_option
+@inject_proxy(fallback=True, existing_config=True)
 @convert_api_errors
 def sharelink_create(
+    m: Maestral,
     dropbox_path: str,
     password: str,
     expiry: datetime | None,
-    config_name: str,
 ) -> None:
 
-    from ..daemon import MaestralProxy
-
     expiry_dt: float | None
-
-    if expiry:
-        expiry_dt = expiry.timestamp()
-    else:
-        expiry_dt = None
-
-    if password:
-        visibility = "password"
-    else:
-        visibility = "public"
-
-    with MaestralProxy(config_name, fallback=True) as m:
-        link_info = m.create_shared_link(dropbox_path, visibility, password, expiry_dt)
-
-    echo(link_info["url"])
+    link_info = m.create_shared_link(dropbox_path, password=password, expires=expiry)
+    echo(link_info.url)
 
 
 @sharelink.command(name="revoke", help="Revoke a shared link.")
 @click.argument("url")
-@existing_config_option
+@inject_proxy(fallback=True, existing_config=True)
 @convert_api_errors
-def sharelink_revoke(url: str, config_name: str) -> None:
+def sharelink_revoke(m: Maestral, url: str) -> None:
 
-    from ..daemon import MaestralProxy
-
-    with MaestralProxy(config_name, fallback=True) as m:
-        m.revoke_shared_link(url)
-
+    m.revoke_shared_link(url)
     ok("Revoked shared link.")
 
 
@@ -487,31 +445,30 @@ def sharelink_revoke(url: str, config_name: str) -> None:
     name="list", help="List shared links for a path or all shared links."
 )
 @click.argument("dropbox_path", required=False, type=DropboxPath())
-@existing_config_option
+@inject_proxy(fallback=True, existing_config=True)
 @convert_api_errors
-def sharelink_list(dropbox_path: str | None, config_name: str) -> None:
+def sharelink_list(m: Maestral, dropbox_path: str | None) -> None:
 
-    from ..daemon import MaestralProxy
-
-    with MaestralProxy(config_name, fallback=True) as m:
-        links = m.list_shared_links(dropbox_path)
-
+    links = m.list_shared_links(dropbox_path)
     link_table = Table(["URL", "Item", "Access", "Expires"])
 
     for link in links:
-        url = cast(str, link["url"])
-        file_name = cast(str, link["name"])
-        visibility = cast(str, link["link_permissions"]["resolved_visibility"][".tag"])
 
         dt_field: Field
 
-        if "expires" in link:
-            expires = cast(str, link["expires"])
-            dt_field = DateField(datetime_from_iso_str(expires))
+        if link.expires:
+            dt_field = DateField(link.expires)
         else:
             dt_field = TextField("-")
 
-        link_table.append([url, file_name, visibility, dt_field])
+        link_table.append(
+            [
+                link.url,
+                link.name,
+                link.link_permissions.effective_audience.value,
+                dt_field,
+            ]
+        )
 
     echo("")
     link_table.echo()

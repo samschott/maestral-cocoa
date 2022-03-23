@@ -1,0 +1,10 @@
+Metadata-Version: 2.1
+Briefcase-Version: 0.3.6
+Name: maestral-cocoa
+Formal-Name: Maestral
+App-ID: com.samschott.maestral-cocoa
+Version: 1.6.1
+Home-page: https://maestral.app
+Author: Sam Schott
+Author-email: sam.schott@outlook.com
+Summary: An open-source Dropbox client for macOS and Linux

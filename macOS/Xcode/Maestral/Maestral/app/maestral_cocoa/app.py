@@ -1,7 +1,8 @@
-# -*- coding: utf-8 -*-
+from __future__ import annotations
 
 # system imports
 import os
+from traceback import format_exception
 from subprocess import Popen
 from datetime import datetime, timedelta
 from typing import Any
@@ -34,7 +35,6 @@ from maestral.exceptions import (
     TokenExpiredError,
     KeyringAccessError,
     MaestralApiError,
-    SyncError,
 )
 
 # local imports
@@ -411,22 +411,19 @@ class MaestralGui(SystemTrayApp):
 
         err = errs[-1]
 
-        if err["type"] == name(NoDropboxDirError):
+        if isinstance(err, NoDropboxDirError):
             await self._exec_dbx_location_dialog()
-        elif err["type"] == name(TokenRevokedError):
+        elif isinstance(err, TokenRevokedError):
             await self._exec_relink_dialog(RelinkDialog.REVOKED)
-        elif err["type"] == name(TokenExpiredError):
+        elif isinstance(err, TokenExpiredError):
             await self._exec_relink_dialog(RelinkDialog.EXPIRED)
-        elif (
-            name(SyncError) in err["inherits"]
-            or name(MaestralApiError) in err["inherits"]
-        ):
-            filename = err["dbx_path"] or err["local_path"]
+        elif isinstance(err, MaestralApiError):
+            filename = err.dbx_path or err.local_path
             if filename:
-                message = f"Path: {filename}\n" + err["message"]
+                message = f"Path: {filename}\n" + err.message
             else:
-                message = err["message"]
-            await self.alert_async(err["title"], message, level="error")
+                message = err.message
+            await self.alert_async(err.title, message, level="error")
         else:
             # We don't know this error yet. Show a full stacktrace dialog.
             await self._exec_error_dialog(err)
@@ -440,14 +437,20 @@ class MaestralGui(SystemTrayApp):
     async def _exec_relink_dialog(self, reason: int) -> None:
         self.rld = RelinkDialog(self.mdbx, self, reason).raise_()
 
-    async def _exec_error_dialog(self, err: dict) -> None:
+    async def _exec_error_dialog(self, err: Exception) -> None:
 
         title = "An unexpected error occurred"
         message = (
             "You can report this issue together with the traceback below on GitHub. "
             "Please restart Maestral to continue syncing."
         )
-        details = err["traceback"].replace("\n", "<br />")
+
+        details: str | None
+
+        if err.__traceback__:
+            details = "".join(format_exception(err.__class__, err, err.__traceback__))
+        else:
+            details = None
 
         await self.alert_async(
             title,

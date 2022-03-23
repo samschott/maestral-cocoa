@@ -15,14 +15,11 @@ from threading import Event, RLock, Thread
 from tempfile import TemporaryDirectory
 from typing import Iterator, cast, TypeVar, Callable, Any
 
-# external imports
-from dropbox.common import TeamRootInfo, UserRootInfo
-from dropbox.session import API_HOST
-
 # local imports
 from . import __url__
 from . import notify
-from .client import DropboxClient
+from .client import DropboxClient, API_HOST
+from .core import TeamRootInfo, UserRootInfo
 from .config import MaestralConfig, MaestralState
 from .constants import (
     DISCONNECTED,
@@ -278,12 +275,12 @@ class SyncManager:
                 try:
                     max_user_watches, max_user_instances, _ = get_inotify_limits()
                 except OSError:
-                    max_user_watches, max_user_instances = 2 ** 18, 2 ** 9
+                    max_user_watches, max_user_instances = 2**18, 2**9
 
                 url = f"{__url__}/docs/inotify-limits"
 
                 if exc.errno == errno.ENOSPC:
-                    n_new = max(2 ** 19, 2 * max_user_watches)
+                    n_new = max(2**19, 2 * max_user_watches)
 
                     raise InotifyError(
                         "Inotify limit reached",
@@ -294,7 +291,7 @@ class SyncManager:
                     )
 
                 else:
-                    n_new = max(2 ** 10, 2 * max_user_instances)
+                    n_new = max(2**10, 2 * max_user_instances)
 
                     raise InotifyError(
                         "Inotify limit reached",
@@ -495,7 +492,7 @@ class SyncManager:
                 # Migrate all excluded items.
                 self._logger.debug("Migrating excluded items")
                 new_excluded = [
-                    root_info.home_path + path for path in self.sync.excluded_items
+                    new_user_home_path + path for path in self.sync.excluded_items
                 ]
                 self.sync.excluded_items = new_excluded
 

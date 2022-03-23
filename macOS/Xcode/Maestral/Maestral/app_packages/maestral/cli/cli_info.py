@@ -1,64 +1,62 @@
+from __future__ import annotations
+
 import os
 import time
-from typing import cast
+from typing import TYPE_CHECKING
 
 import click
 
 from .output import echo, Column, Table, Elide, Align, TextField, Field, DateField, Grid
-from .utils import datetime_from_iso_str
-from .common import convert_api_errors, check_for_fatal_errors, existing_config_option
+from .common import convert_api_errors, check_for_fatal_errors, inject_proxy
 from .core import DropboxPath
+from ..models import SyncDirection, SyncStatus
+from ..core import FileMetadata, FolderMetadata, DeletedMetadata
+
+if TYPE_CHECKING:
+    from ..main import Maestral
 
 
 @click.command(help="Show the status of the daemon.")
-@existing_config_option
+@inject_proxy(fallback=False, existing_config=True)
 @convert_api_errors
-def status(config_name: str) -> None:
+def status(m: Maestral) -> None:
 
-    from ..daemon import MaestralProxy, CommunicationError
+    email = m.get_state("account", "email")
+    account_type = m.get_state("account", "type").capitalize()
+    usage = m.get_state("account", "usage")
+    status_info = m.status
 
-    try:
-        with MaestralProxy(config_name) as m:
+    account_str = f"{email} ({account_type})" if email else "--"
+    usage_str = usage or "--"
 
-            email = m.get_state("account", "email")
-            account_type = m.get_state("account", "type").capitalize()
-            usage = m.get_state("account", "usage")
-            status_info = m.status
+    n_errors = len(m.sync_errors)
+    color = "red" if n_errors > 0 else "green"
+    n_errors_str = click.style(str(n_errors), fg=color)
 
-            account_str = f"{email} ({account_type})" if email else "--"
-            usage_str = usage or "--"
+    echo("")
+    echo(f"Account:      {account_str}")
+    echo(f"Usage:        {usage_str}")
+    echo(f"Status:       {status_info}")
+    echo(f"Sync errors:  {n_errors_str}")
+    echo("")
 
-            n_errors = len(m.sync_errors)
-            color = "red" if n_errors > 0 else "green"
-            n_errors_str = click.style(str(n_errors), fg=color)
+    check_for_fatal_errors(m)
 
-            echo("")
-            echo(f"Account:      {account_str}")
-            echo(f"Usage:        {usage_str}")
-            echo(f"Status:       {status_info}")
-            echo(f"Sync errors:  {n_errors_str}")
-            echo("")
+    sync_errors = m.sync_errors
 
-            check_for_fatal_errors(m)
+    if len(sync_errors) > 0:
 
-            sync_errors = m.sync_errors
+        path_column = Column(title="Path")
+        message_column = Column(title="Error", wraps=True)
 
-            if len(sync_errors) > 0:
+        for error in sync_errors:
+            path_column.append(error.dbx_path)
+            message_column.append(f"{error.title}. {error.message}")
 
-                path_column = Column(title="Path")
-                message_column = Column(title="Error", wraps=True)
+        table = Table([path_column, message_column])
 
-                for error in sync_errors:
-                    path_column.append(error["dbx_path"])
-                    message_column.append("{title}. {message}".format(**error))
-
-                table = Table([path_column, message_column])
-
-                table.echo()
-                echo("")
-
-    except CommunicationError:
-        echo("Maestral daemon is not running.")
+        table.echo()
+        echo("")
 
 
 @click.command(
@@ -72,117 +70,94 @@ a file-manager.
 """,
 )
 @click.argument("local_path", type=click.Path(exists=True, resolve_path=True))
-@existing_config_option
-def filestatus(local_path: str, config_name: str) -> None:
-
-    from ..daemon import MaestralProxy, CommunicationError
-
-    try:
-        with MaestralProxy(config_name) as m:
-            stat = m.get_file_status(local_path)
-            echo(stat)
-
-    except CommunicationError:
-        echo("unwatched")
+@inject_proxy(fallback=True, existing_config=True)
+@convert_api_errors
+def filestatus(m: Maestral, local_path: str) -> None:
+    stat = m.get_file_status(local_path)
+    echo(stat)
 
 
 @click.command(help="Live view of all items being synced.")
-@existing_config_option
+@inject_proxy(fallback=False, existing_config=True)
 @convert_api_errors
-def activity(config_name: str) -> None:
+def activity(m: Maestral) -> None:
 
     import curses
     from ..utils import natural_size
-    from ..daemon import MaestralProxy, CommunicationError
 
-    try:
-        with MaestralProxy(config_name) as m:
+    if check_for_fatal_errors(m):
+        return
 
-            if check_for_fatal_errors(m):
-                return
+    def curses_loop(screen) -> None:  # no type hints for screen provided yet
 
-            def curses_loop(screen) -> None:  # no type hints for screen provided yet
+        curses.use_default_colors()  # don't change terminal background
+        screen.nodelay(1)  # sets `screen.getch()` to non-blocking
 
-                curses.use_default_colors()  # don't change terminal background
-                screen.nodelay(1)  # sets `screen.getch()` to non-blocking
+        while True:
 
-                while True:
+            height, width = screen.getmaxyx()
 
-                    height, width = screen.getmaxyx()
+            # create header
+            lines = [
+                f"Status: {m.status}, Sync errors: {len(m.sync_errors)}",
+                "",
+            ]
 
-                    # create header
-                    lines = [
-                        f"Status: {m.status}, Sync errors: {len(m.sync_errors)}",
-                        "",
-                    ]
+            # create table
+            filenames = []
+            states = []
+            col_len = 4
 
-                    # create table
-                    filenames = []
-                    states = []
-                    col_len = 4
+            for event in m.get_activity(limit=height - 3):
 
-                    for event in m.get_activity(limit=height - 3):
+                filename = os.path.basename(event.dbx_path)
+                filenames.append(filename)
 
-                        dbx_path = cast(str, event["dbx_path"])
-                        direction = cast(str, event["direction"])
-                        state = cast(str, event["status"])
-                        size = cast(int, event["size"])
-                        completed = cast(int, event["completed"])
+                arrow = "↓" if event.direction is SyncDirection.Down else "↑"
 
-                        filename = os.path.basename(dbx_path)
-                        filenames.append(filename)
-
-                        arrow = "↓" if direction == "down" else "↑"
-
-                        if completed > 0:
-                            done_str = natural_size(completed, sep=False)
-                            todo_str = natural_size(size, sep=False)
-                            states.append(f"{done_str}/{todo_str} {arrow}")
+                if event.completed > 0:
+                    done_str = natural_size(event.completed, sep=False)
+                    todo_str = natural_size(event.size, sep=False)
+                    states.append(f"{done_str}/{todo_str} {arrow}")
+                else:
+                    if event.status is SyncStatus.Syncing:
+                        if event.direction is SyncDirection.Up:
+                            states.append("uploading")
                         else:
-                            if state == "syncing" and direction == "up":
-                                states.append("uploading")
-                            elif state == "syncing" and direction == "down":
-                                states.append("downloading")
-                            else:
-                                states.append(state)
+                            states.append("downloading")
+                    else:
+                        states.append(event.status.value)
 
-                        col_len = max(len(filename), col_len)
+                col_len = max(len(filename), col_len)
 
-                    for name, state in zip(filenames, states):  # create rows
-                        lines.append(name.ljust(col_len + 2) + state)
+            for name, state in zip(filenames, states):  # create rows
+                lines.append(name.ljust(col_len + 2) + state)
 
-                    # print to console screen
-                    screen.clear()
-                    try:
-                        screen.addstr("\n".join(lines))
-                    except curses.error:
-                        pass
-                    screen.refresh()
+            # print to console screen
+            screen.clear()
+            try:
+                screen.addstr("\n".join(lines))
+            except curses.error:
+                pass
+            screen.refresh()
 
-                    # abort when user presses 'q', refresh otherwise
-                    key = screen.getch()
-                    if key == ord("q"):
-                        break
-                    elif key < 0:
-                        time.sleep(1)
+            # abort when user presses 'q', refresh otherwise
+            key = screen.getch()
+            if key == ord("q"):
+                break
+            elif key < 0:
+                time.sleep(1)
 
-            # enter curses event loop
-            curses.wrapper(curses_loop)
-
-    except CommunicationError:
-        echo("Maestral daemon is not running.")
+    # enter curses event loop
+    curses.wrapper(curses_loop)
 
 
 @click.command(help="Show recently changed or added files.")
-@existing_config_option
+@inject_proxy(fallback=True, existing_config=True)
 @convert_api_errors
-def history(config_name: str) -> None:
+def history(m: Maestral) -> None:
 
-    from datetime import datetime
-    from ..daemon import MaestralProxy
-
-    with MaestralProxy(config_name, fallback=True) as m:
-        events = m.get_history()
+    events = m.get_history()
 
     table = Table(
         [
@@ -193,13 +168,9 @@ def history(config_name: str) -> None:
     )
 
     for event in events:
-
-        dbx_path = cast(str, event["dbx_path"])
-        change_type = cast(str, event["change_type"])
-        change_time_or_sync_time = cast(float, event["change_time_or_sync_time"])
-        dt = datetime.fromtimestamp(change_time_or_sync_time)
-
-        table.append([dbx_path, change_type, dt])
+        table.append(
+            [event.dbx_path, event.change_type.value, event.change_time_or_sync_time]
+        )
 
     echo("")
     table.echo()
@@ -222,92 +193,86 @@ def history(config_name: str) -> None:
     default=False,
     help="Include deleted items in listing.",
 )
-@existing_config_option
+@inject_proxy(fallback=True, existing_config=True)
 @convert_api_errors
-def ls(long: bool, dropbox_path: str, include_deleted: bool, config_name: str) -> None:
+def ls(m: Maestral, long: bool, dropbox_path: str, include_deleted: bool) -> None:
 
     from ..utils import natural_size
-    from ..daemon import MaestralProxy
 
-    with MaestralProxy(config_name, fallback=True) as m:
+    echo("Loading...\r", nl=False)
 
-        echo("Loading...\r", nl=False)
+    entries_iter = m.list_folder_iterator(
+        dropbox_path,
+        recursive=False,
+        include_deleted=include_deleted,
+    )
 
-        entries_iter = m.list_folder_iterator(
-            dropbox_path,
-            recursive=False,
-            include_deleted=include_deleted,
+    if long:
+
+        table = Table(
+            columns=[
+                Column("Name"),
+                Column("Type"),
+                Column("Size", align=Align.Right),
+                Column("Shared"),
+                Column("Syncing"),
+                Column("Last Modified"),
+            ]
         )
 
-        if long:
+        for entries in entries_iter:
 
-            to_short_type = {
-                "FileMetadata": "file",
-                "FolderMetadata": "folder",
-                "DeletedMetadata": "deleted",
-            }
+            for entry in entries:
 
-            table = Table(
-                columns=[
-                    Column("Name"),
-                    Column("Type"),
-                    Column("Size", align=Align.Right),
-                    Column("Shared"),
-                    Column("Syncing"),
-                    Column("Last Modified"),
-                ]
-            )
+                text = "shared" if getattr(entry, "shared", False) else "private"
+                color = "bright_black" if text == "private" else None
+                shared_field = TextField(text, fg=color)
 
-            for entries in entries_iter:
+                excluded_status = m.excluded_status(entry.path_lower)
+                color = "green" if excluded_status == "included" else None
+                text = "✓" if excluded_status == "included" else excluded_status
+                excluded_field = TextField(text, fg=color)
 
-                for entry in entries:
+                dt_field: Field
 
-                    item_type = to_short_type[cast(str, entry["type"])]
-                    name = cast(str, entry["name"])
-                    path_lower = cast(str, entry["path_lower"])
+                if isinstance(entry, FileMetadata):
+                    size = natural_size(entry.size)
+                    dt_field = DateField(entry.client_modified)
+                    item_type = "file"
+                elif isinstance(entry, FolderMetadata):
+                    size = "-"
+                    dt_field = TextField("-")
+                    item_type = "folder"
+                else:
+                    size = "-"
+                    dt_field = TextField("-")
+                    item_type = "deleted"
 
-                    text = "shared" if "sharing_info" in entry else "private"
-                    color = "bright_black" if text == "private" else None
-                    shared_field = TextField(text, fg=color)
+                table.append(
+                    [
+                        entry.name,
+                        item_type,
+                        size,
+                        shared_field,
+                        excluded_field,
+                        dt_field,
+                    ]
+                )
 
-                    excluded_status = m.excluded_status(path_lower)
-                    color = "green" if excluded_status == "included" else None
-                    text = "✓" if excluded_status == "included" else excluded_status
-                    excluded_field = TextField(text, fg=color)
+        echo(" " * 15)
+        table.echo()
+        echo(" " * 15)
 
-                    if "size" in entry:
-                        size = natural_size(cast(float, entry["size"]))
-                    else:
-                        size = "-"
+    else:
 
-                    dt_field: Field
+        grid = Grid()
 
-                    if "client_modified" in entry:
-                        cm = cast(str, entry["client_modified"])
-                        dt_field = DateField(datetime_from_iso_str(cm))
-                    else:
-                        dt_field = TextField("-")
+        for entries in entries_iter:
+            for entry in entries:
+                color = "blue" if isinstance(entry, DeletedMetadata) else None
+                grid.append(TextField(entry.name, fg=color))
 
-                    table.append(
-                        [name, item_type, size, shared_field, excluded_field, dt_field]
-                    )
-
-            echo(" " * 15)
-            table.echo()
-            echo(" " * 15)
-
-        else:
-
-            grid = Grid()
-
-            for entries in entries_iter:
-                for entry in entries:
-                    name = cast(str, entry["name"])
-                    color = "blue" if entry["type"] == "DeletedMetadata" else None
-
-                    grid.append(TextField(name, fg=color))
-
-            grid.echo()
+        grid.echo()
 
 
 @click.command(help="List all configured Dropbox accounts.")

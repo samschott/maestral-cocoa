@@ -13,6 +13,8 @@ import toga
 from toga.style.pack import Pack
 from toga.constants import ROW, COLUMN
 from maestral.daemon import MaestralProxy
+from maestral.models import SyncErrorEntry
+from maestral.utils import sanitize_string
 
 # local imports
 from .private.widgets import Label, FollowLinkButton, Icon, Window
@@ -25,16 +27,14 @@ WINDOW_SIZE = (370, 400)
 
 
 class SyncIssueView(toga.Box):
-
-    dbx_address = "https://www.dropbox.com/preview"
-
-    def __init__(self, sync_err: dict) -> None:
+    def __init__(self, sync_err: SyncErrorEntry, local_path: str) -> None:
         super().__init__(style=Pack(direction=COLUMN))
 
         self.sync_err = sync_err
-        dbx_address = self.dbx_address + urllib.parse.quote(self.sync_err["dbx_path"])
+        self.local_path = local_path
 
-        icon = Icon(for_path=self.sync_err["local_path"])
+        icon = Icon(for_path=self.local_path)
+
         # noinspection PyTypeChecker
         image_view = toga.ImageView(
             image=icon,
@@ -46,13 +46,13 @@ class SyncIssueView(toga.Box):
         )
 
         path_label = Label(
-            osp.basename(self.sync_err["local_path"]),
+            sanitize_string(osp.basename(self.sync_err.dbx_path)),
             style=Pack(
                 padding_bottom=PADDING / 2,
             ),
         )
         error_label = Label(
-            self.sync_err["title"] + ":\n" + self.sync_err["message"],
+            f"{self.sync_err.title}:\n{self.sync_err.message}",
             linebreak_mode=WORD_WRAP,
             style=Pack(
                 font_size=11,
@@ -63,8 +63,8 @@ class SyncIssueView(toga.Box):
 
         link_local = FollowLinkButton(
             "Show in Finder",
-            url=self.sync_err["local_path"],
-            enabled=osp.exists(self.sync_err["local_path"]),
+            url=self.local_path,
+            enabled=osp.exists(self.local_path),
             locate=True,
             style=Pack(
                 padding_right=PADDING,
@@ -72,6 +72,10 @@ class SyncIssueView(toga.Box):
                 height=12,
             ),
         )
+
+        quoted_dbx_path = urllib.parse.quote(self.sync_err.dbx_path)
+        dbx_address = f"https://www.dropbox.com/preview{quoted_dbx_path}"
+
         link_dbx = FollowLinkButton(
             "Show Online",
             url=dbx_address,
@@ -102,20 +106,18 @@ class SyncIssuesWindow(Window):
         self.on_close = self.on_close_pressed
 
         self.mdbx = mdbx
-        self._cached_errors: list[dict] = []
 
         self._refresh = False
         self._refresh_interval = 1
+        self._sync_issue_widgets: dict[str, SyncIssueView] = dict()
+
+        self._placeholder = Label(
+            "No sync issues 😊", style=Pack(padding_bottom=PADDING)
+        )
 
         self.size = WINDOW_SIZE
 
-        placeholder_label = Label(
-            "No sync issues 😊",
-            style=Pack(padding_bottom=PADDING),
-        )
-
         self.sync_errors_box = toga.Box(
-            children=[placeholder_label],
             style=Pack(
                 direction=COLUMN,
                 padding=2 * PADDING,
@@ -137,28 +139,40 @@ class SyncIssuesWindow(Window):
             self.refresh_gui()
             await asyncio.sleep(self._refresh_interval)
 
+    def _has_placeholder(self) -> bool:
+        return self._placeholder in self.sync_errors_box.children
+
     def refresh_gui(self) -> None:
 
         new_errors = self.mdbx.sync_errors
 
-        if new_errors != self._cached_errors:
+        # remove placeholder if the error count > 0
 
-            # remove old errors
-            for child in self.sync_errors_box.children.copy():
-                self.sync_errors_box.remove(child)
+        if len(new_errors) > 0 and self._has_placeholder():
+            self.sync_errors_box.remove(self._placeholder)
 
-            # add new errors
-            if len(new_errors) == 0:
-                placeholder_label = Label(
-                    "No sync issues 😊",
-                    style=Pack(padding_bottom=PADDING),
-                )
-                self.sync_errors_box.add(placeholder_label)
-            else:
-                for e in new_errors:
-                    self.sync_errors_box.add(SyncIssueView(e))
+        # add new errors
 
-            self._cached_errors = new_errors
+        new_err_paths: set[str] = set()
+
+        for error in new_errors:
+            new_err_paths.add(error.dbx_path)
+            if error.dbx_path not in self._sync_issue_widgets:
+                local_path = self.mdbx.to_local_path(error.dbx_path)
+                widget = SyncIssueView(error, local_path)
+                self.sync_errors_box.add(widget)
+                self._sync_issue_widgets[error.dbx_path] = widget
+
+        # remove old errors
+
+        for dbx_path in self._sync_issue_widgets.copy():
+            if dbx_path not in new_err_paths:
+                widget = self._sync_issue_widgets.pop(dbx_path)
+                self.sync_errors_box.remove(widget)
+
+        # add placeholder if we don't have any errors
+        if len(new_errors) == 0 and not self._has_placeholder():
+            self.sync_errors_box.add(self._placeholder)
 
     def on_close_pressed(self, sender: Any = None) -> bool:
         self._refresh = False

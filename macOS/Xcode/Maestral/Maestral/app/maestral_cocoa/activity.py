@@ -13,11 +13,14 @@ import click
 import toga
 from toga.sources import Source
 from toga.style.pack import Pack
+from maestral.models import SyncEvent, ItemType
 from maestral.daemon import MaestralProxy
+from maestral.utils import sanitize_string
 
 # local imports
 from .private.widgets import FreestandingIconButton, Icon, Window
 from .private.constants import ImageTemplate
+
 
 PADDING = 10
 ICON_SIZE = 32
@@ -28,30 +31,30 @@ class SyncEventRow:
 
     _reveal: FreestandingIconButton | None
 
-    def __init__(self, sync_event: dict) -> None:
+    def __init__(self, sync_event: SyncEvent) -> None:
         self.sync_event = sync_event
 
-        dirname, basename = osp.split(self.sync_event["local_path"])
-        dt = datetime.fromtimestamp(self.sync_event["change_time_or_sync_time"])
+        dirname, basename = osp.split(self.sync_event.local_path)
+        dt = datetime.fromtimestamp(self.sync_event.change_time_or_sync_time)
 
         # attributes for table column values
         self._basename = basename
         self._icon: Icon | None = None
         self.location = osp.basename(dirname)
-        self.type = self.sync_event["change_type"].capitalize()
+        self.type = self.sync_event.change_type.value.capitalize()
         self.time = dt.strftime("%d %b %Y %H:%M")
-        self.username = self.sync_event["change_user_name"]
+        self.username = self.sync_event.change_user_name
         self._reveal = None
 
     @property
     def filename(self) -> tuple[Icon, str]:
         if not self._icon:
-            if self.sync_event["item_type"] == "folder":
+            if self.sync_event.item_type is ItemType.Folder:
                 self._icon = Icon(for_path="/usr")
             else:
-                self._icon = Icon(for_path=self.sync_event["local_path"])
+                self._icon = Icon(for_path=self.sync_event.local_path)
 
-        return self._icon, self._basename
+        return self._icon, sanitize_string(self._basename)
 
     @property
     def reveal(self) -> FreestandingIconButton:
@@ -60,20 +63,20 @@ class SyncEventRow:
                 label="",
                 icon=Icon(template=ImageTemplate.Reveal),
                 on_press=self.on_reveal_pressed,
-                enabled=osp.exists(self.sync_event["local_path"]),
+                enabled=osp.exists(self.sync_event.local_path),
             )
 
         return self._reveal
 
     def on_reveal_pressed(self, widget: Any) -> None:
-        click.launch(self.sync_event["local_path"], locate=True)
+        click.launch(self.sync_event.local_path, locate=True)
 
     def refresh(self) -> None:
-        self.reveal.enabled = osp.exists(self.sync_event["local_path"])
+        self.reveal.enabled = osp.exists(self.sync_event.local_path)
 
 
 class SyncEventSource(Source):
-    def __init__(self, sync_events: Iterable[dict] = tuple()) -> None:
+    def __init__(self, sync_events: Iterable[SyncEvent] = tuple()) -> None:
         super().__init__()
         self._rows = [SyncEventRow(e) for e in sync_events]
 
@@ -83,12 +86,12 @@ class SyncEventSource(Source):
     def __getitem__(self, index: int) -> SyncEventRow:
         return self._rows[index]
 
-    def add(self, sync_event: dict) -> None:
+    def add(self, sync_event: SyncEvent) -> None:
         row = SyncEventRow(sync_event)
         self._rows.append(row)
         self._notify("insert", index=len(self._rows) - 1, item=row)
 
-    def insert(self, index: int, sync_event: dict) -> None:
+    def insert(self, index: int, sync_event: SyncEvent) -> None:
         row = SyncEventRow(sync_event)
         self._rows.insert(index, row)
         self._notify("insert", index=index, item=row)
@@ -111,6 +114,7 @@ class ActivityWindow(Window):
 
         self._refresh = False
         self._refresh_interval = 1
+        self._ids: set[str] = set()
 
         self.on_close = self.on_close_pressed
 
@@ -130,7 +134,7 @@ class ActivityWindow(Window):
         self._initial_load = False
 
     def on_row_clicked(self, sender: Any, row: SyncEventRow) -> None:
-        res = click.launch(row.sync_event["local_path"])
+        res = click.launch(row.sync_event.local_path)
 
         if res != 0:
             self.app.alert(
@@ -149,9 +153,9 @@ class ActivityWindow(Window):
         needs_refresh = False
 
         for event in self.mdbx.get_history():
-            if event["id"] not in self._ids:
+            if event.id not in self._ids:
                 self.table.data.insert(0, event)
-                self._ids.add(event["id"])
+                self._ids.add(event.id)
                 await asyncio.sleep(0.002)
                 needs_refresh = True
 
@@ -167,7 +171,7 @@ class ActivityWindow(Window):
         if not self._initial_load:
             sync_events = self.mdbx.get_history()
             data_source = SyncEventSource(reversed(sync_events))
-            self._ids = set(event["id"] for event in sync_events)
+            self._ids = set(event.id for event in sync_events)
             self.table.data = data_source
             self._initial_load = True
 

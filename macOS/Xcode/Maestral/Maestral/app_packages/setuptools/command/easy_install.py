@@ -70,29 +70,13 @@ from ..extern.jaraco.text import yield_lines
 warnings.filterwarnings("default", category=pkg_resources.PEP440Warning)
 
 __all__ = [
-    'samefile', 'easy_install', 'PthDistributions', 'extract_wininst_cfg',
+    'easy_install', 'PthDistributions', 'extract_wininst_cfg',
     'get_exe_prefixes',
 ]
 
 
 def is_64bit():
     return struct.calcsize("P") == 8
-
-
-def samefile(p1, p2):
-    """
-    Determine if two paths reference the same file.
-
-    Augments os.path.samefile to work on Windows and
-    suppresses errors if the path doesn't exist.
-    """
-    both_exist = os.path.exists(p1) and os.path.exists(p2)
-    use_samefile = hasattr(os.path, 'samefile') and both_exist
-    if use_samefile:
-        return os.path.samefile(p1, p2)
-    norm_p1 = os.path.normpath(os.path.normcase(p1))
-    norm_p2 = os.path.normpath(os.path.normcase(p2))
-    return norm_p1 == norm_p2
 
 
 def _to_bytes(s):
@@ -309,24 +293,9 @@ class easy_install(Command):
             self.script_dir = self.install_scripts
         # default --record from the install command
         self.set_undefined_options('install', ('record', 'record'))
-        # Should this be moved to the if statement below? It's not used
-        # elsewhere
-        normpath = map(normalize_path, sys.path)
         self.all_site_dirs = get_site_dirs()
-        if self.site_dirs is not None:
-            site_dirs = [
-                os.path.expanduser(s.strip()) for s in
-                self.site_dirs.split(',')
-            ]
-            for d in site_dirs:
-                if not os.path.isdir(d):
-                    log.warn("%s (in --site-dirs) does not exist", d)
-                elif normalize_path(d) not in normpath:
-                    raise DistutilsOptionError(
-                        d + " (in --site-dirs) is not on sys.path"
-                    )
-                else:
-                    self.all_site_dirs.append(normalize_path(d))
+        self.all_site_dirs.extend(self._process_site_dirs(self.site_dirs))
+
         if not self.editable:
             self.check_site_dir()
         self.index_url = self.index_url or "https://pypi.org/simple/"
@@ -355,15 +324,7 @@ class easy_install(Command):
         if not self.no_find_links:
             self.package_index.add_find_links(self.find_links)
         self.set_undefined_options('install_lib', ('optimize', 'optimize'))
-        if not isinstance(self.optimize, int):
-            try:
-                self.optimize = int(self.optimize)
-                if not (0 <= self.optimize <= 2):
-                    raise ValueError
-            except ValueError as e:
-                raise DistutilsOptionError(
-                    "--optimize must be 0, 1, or 2"
-                ) from e
+        self.optimize = self._validate_optimize(self.optimize)
 
         if self.editable and not self.build_directory:
             raise DistutilsArgError(
@@ -374,6 +335,39 @@ class easy_install(Command):
                 "No urls, filenames, or requirements specified (see --help)")
 
         self.outputs = []
+
+    @staticmethod
+    def _process_site_dirs(site_dirs):
+        if site_dirs is None:
+            return
+
+        normpath = map(normalize_path, sys.path)
+        site_dirs = [
+            os.path.expanduser(s.strip()) for s in
+            site_dirs.split(',')
+        ]
+        for d in site_dirs:
+            if not os.path.isdir(d):
+                log.warn("%s (in --site-dirs) does not exist", d)
+            elif normalize_path(d) not in normpath:
+                raise DistutilsOptionError(
+                    d + " (in --site-dirs) is not on sys.path"
+                )
+            else:
+                yield normalize_path(d)
+
+    @staticmethod
+    def _validate_optimize(value):
+        try:
+            value = int(value)
+            if value not in range(3):
+                raise ValueError
+        except ValueError as e:
+            raise DistutilsOptionError(
+                "--optimize must be 0, 1, or 2"
+            ) from e
+
+        return value
 
     def _fix_install_dir_for_user_site(self):
         """
@@ -928,7 +922,9 @@ class easy_install(Command):
             ensure_directory(destination)
 
         dist = self.egg_distribution(egg_path)
-        if not samefile(egg_path, destination):
+        if not (
+            os.path.exists(destination) and os.path.samefile(egg_path, destination)
+        ):
             if os.path.isdir(destination) and not os.path.islink(destination):
                 dir_util.remove_tree(destination, dry_run=self.dry_run)
             elif os.path.exists(destination):
@@ -1659,14 +1655,14 @@ class PthDistributions(Environment):
         if new_path:
             self.paths.append(dist.location)
             self.dirty = True
-        Environment.add(self, dist)
+        super().add(dist)
 
     def remove(self, dist):
         """Remove `dist` from the distribution map"""
         while dist.location in self.paths:
             self.paths.remove(dist.location)
             self.dirty = True
-        Environment.remove(self, dist)
+        super().remove(dist)
 
     def make_relative(self, path):
         npath, last = os.path.split(normalize_path(path))

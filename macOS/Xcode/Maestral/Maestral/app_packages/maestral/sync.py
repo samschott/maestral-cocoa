@@ -28,14 +28,6 @@ from typing import Any, Iterator, Callable, cast
 # external imports
 import click
 from pathspec import PathSpec
-from dropbox.files import (
-    Metadata,
-    DeletedMetadata,
-    FileMetadata,
-    FolderMetadata,
-    WriteMode,
-    ListFolderResult,
-)
 from watchdog.events import FileSystemEventHandler
 from watchdog.events import (
     EVENT_TYPE_CREATED,
@@ -58,6 +50,14 @@ from watchdog.events import (
 # local imports
 from . import notify
 from .config import MaestralConfig, MaestralState, PersistentMutableSet
+from .core import (
+    Metadata,
+    FileMetadata,
+    FolderMetadata,
+    DeletedMetadata,
+    WriteMode,
+    ListFolderResult,
+)
 from .constants import (
     IDLE,
     EXCLUDED_FILE_NAMES,
@@ -120,10 +120,8 @@ from .utils.path import (
     to_existing_unnormalized_path,
     get_symlink_target,
 )
-from .database.orm import (
-    Database,
-    Manager,
-)
+from .database.orm import Manager
+from .database.core import Database
 from .database.query import PathTreeQuery, MatchQuery, AllQuery, AndQuery
 from .utils.appdirs import get_data_path
 
@@ -749,7 +747,7 @@ class SyncEngine:
         recursive = event.is_moved or event.is_deleted or event.is_file
 
         self.clear_sync_errors_for_path(event.dbx_path_lower, recursive)
-        if event.dbx_path_from:
+        if event.dbx_path_from_lower is not None:
             self.clear_sync_errors_for_path(event.dbx_path_from_lower, recursive)
 
     # ==== Index access and management =================================================
@@ -846,6 +844,7 @@ class SyncEngine:
             if event.change_type is ChangeType.Removed:
                 self.remove_node_from_index(dbx_path_lower)
             elif event.change_type is ChangeType.Moved:
+                assert event.dbx_path_from_lower is not None
                 self.remove_node_from_index(event.dbx_path_from_lower)
 
             # Add or update entries for created or modified items.
@@ -882,39 +881,39 @@ class SyncEngine:
         with self._database_access():
 
             if isinstance(md, DeletedMetadata):
-                self.remove_node_from_index(md.path_lower)
+                return self.remove_node_from_index(md.path_lower)
 
+            if isinstance(md, FileMetadata):
+                rev = md.rev
+                hash_str = md.content_hash
+                item_type = ItemType.File
+                symlink_target = md.symlink_target
+                md_id = md.id
+            elif isinstance(md, FolderMetadata):
+                rev = "folder"
+                hash_str = "folder"
+                item_type = ItemType.Folder
+                symlink_target = None
+                md_id = md.id
             else:
+                raise RuntimeError(f"Unknown metadata type: {md}")
 
-                symlink_target: str | None = None
+            # Construct correct display path from ancestors.
+            dbx_path_cased = self.correct_case(md.path_display, client)
 
-                if isinstance(md, FileMetadata):
-                    rev = md.rev
-                    hash_str = md.content_hash
-                    item_type = ItemType.File
-                    if md.symlink_info:
-                        symlink_target = md.symlink_info.target
-                else:
-                    rev = "folder"
-                    hash_str = "folder"
-                    item_type = ItemType.Folder
+            # Update existing entry or create new entry.
+            entry = IndexEntry(
+                dbx_path_cased=dbx_path_cased,
+                dbx_path_lower=md.path_lower,
+                dbx_id=md_id,
+                item_type=item_type,
+                last_sync=None,
+                rev=rev,
+                content_hash=hash_str,
+                symlink_target=symlink_target,
+            )
 
-                # Construct correct display path from ancestors.
-                dbx_path_cased = self.correct_case(md.path_display, client)
-
-                # Update existing entry or create new entry.
-                entry = IndexEntry(
-                    dbx_path_cased=dbx_path_cased,
-                    dbx_path_lower=md.path_lower,
-                    dbx_id=md.id,
-                    item_type=item_type,
-                    last_sync=None,
-                    rev=rev,
-                    content_hash=hash_str,
-                    symlink_target=symlink_target,
-                )
-
-                self._index_table.update(entry)
+            self._index_table.update(entry)
 
     def remove_node_from_index(self, dbx_path_lower: str) -> None:
         """
@@ -1546,6 +1545,23 @@ class SyncEngine:
         self._case_conversion_cache.clear()
         self.fs_events.expire_ignored_events()
 
+    def _sync_event_from_fs_event(self, fs_event: FileSystemEvent) -> SyncEvent:
+        return SyncEvent.from_file_system_event(fs_event, self)
+
+    def _sync_events_from_fs_events(
+        self, fs_events: list[FileSystemEvent]
+    ) -> list[SyncEvent]:
+        """Convert local file system events to sync events. This is done in a thread
+        pool to parallelize content hashing."""
+
+        with ThreadPoolExecutor(
+            max_workers=self._num_threads,
+            thread_name_prefix="maestral-local-indexer",
+        ) as executor:
+            res = executor.map(self._sync_event_from_fs_event, fs_events)
+
+            return list(res)
+
     # ==== Upload sync =================================================================
 
     def upload_local_changes_while_inactive(self) -> None:
@@ -1577,7 +1593,8 @@ class SyncEngine:
                 raise os_to_maestral_error(err)
 
             events = self._clean_local_events(events)
-            sync_events = [SyncEvent.from_file_system_event(e, self) for e in events]
+
+            sync_events = self._sync_events_from_fs_events(events)
             del events
 
             if len(sync_events) > 0:
@@ -1636,7 +1653,7 @@ class SyncEngine:
 
             mtime_check = snapshot_time > stat.st_mtime > last_sync
 
-            # Always upload untracked items, check ctime of tracked items.
+            # Always upload untracked items, check mtime of tracked items.
             is_modified = mtime_check and not is_new
 
             if is_new:
@@ -1749,7 +1766,7 @@ class SyncEngine:
         self._logger.debug("Retrieved local file events:\n%s", pf_repr(events))
 
         events = self._clean_local_events(events)
-        sync_events = [SyncEvent.from_file_system_event(e, self) for e in events]
+        sync_events = self._sync_events_from_fs_events(events)
 
         # Free memory early to prevent fragmentation.
         del events
@@ -1875,7 +1892,7 @@ class SyncEngine:
 
         for event in events:
             if event.event_type == EVENT_TYPE_MOVED:
-                deleted, created = split_moved_event(event)  # type: ignore
+                deleted, created = split_moved_event(event)
                 events_for_path[deleted.src_path].append(deleted)
                 events_for_path[created.src_path].append(created)
             else:
@@ -2012,10 +2029,10 @@ class SyncEngine:
                 if event.event_type == EVENT_TYPE_MOVED:
                     dirnames = (
                         osp.dirname(event.src_path),
-                        osp.dirname(event.dest_path),  # type: ignore
+                        osp.dirname(event.dest_path),
                     )
                     if dirnames in dir_moved_paths:
-                        child_moved_dst_paths.add(event.dest_path)  # type: ignore
+                        child_moved_dst_paths.add(event.dest_path)
 
             for path in child_moved_dst_paths:
                 del events_for_path[path]
@@ -2301,6 +2318,7 @@ class SyncEngine:
             self.rescan(event.local_path)
             return None
 
+        assert event.dbx_path_from_lower is not None
         self.remove_node_from_index(event.dbx_path_from_lower)
 
         if not self._handle_upload_conflict(md_to_new, event, client):
@@ -2350,28 +2368,32 @@ class SyncEngine:
             return None
 
         local_entry = self.get_index_entry(event.dbx_path_lower)
+        local_rev: str | None = None
 
         if not local_entry:
             # File is new to us, let Dropbox rename it if something is in the way.
-            mode = WriteMode.add
+            mode = WriteMode.Add
         elif local_entry.is_directory:
             # Try to overwrite the destination, this will fail...
-            mode = WriteMode.overwrite
+            mode = WriteMode.Overwrite
         else:
             # File has been modified, update remote if matching rev,
             # create conflict otherwise.
+            mode = WriteMode.Update
+            local_rev = local_entry.rev
+
             self._logger.debug(
-                '"%s" appears to have been created but we are ' "already tracking it",
+                '"%s" appears to have been created but we are already tracking it',
                 event.dbx_path,
             )
-            mode = WriteMode.update(local_entry.rev)
 
         try:
             md_new = client.upload(
                 event.local_path,
                 event.dbx_path,
                 autorename=True,
-                mode=mode,
+                write_mode=mode,
+                update_rev=local_rev,
                 sync_event=event,
             )
         except (NotFoundError, IsAFolderError):
@@ -2414,14 +2436,7 @@ class SyncEngine:
 
         try:
             if client.is_team_space and event.dbx_path.count("/") == 1:
-                # We create the folder as a shared folder immediately to prevent
-                # race conditions when it is created, unmounted, and remounted as a
-                # shared folder in a Team Space. We then retrieve the metadata in a
-                # second `get_metadata` call. Note: This is also racy because the
-                # shared folder may no longer exist at the point of the get_metadata
-                # call. However, this is easier for us to deal with.
-                shared_md = client.share_dir(event.dbx_path)
-                md_new = client.get_metadata(f"ns:{shared_md.shared_folder_id}")
+                md_new = client.share_dir(event.dbx_path)
 
                 if not md_new:
                     # Remote folder has been deleted after creating. Reflect changes
@@ -2484,24 +2499,27 @@ class SyncEngine:
             return None
 
         local_entry = self.get_index_entry(event.dbx_path_lower)
+        local_rev: str | None = None
 
         if not local_entry:
             self._logger.debug(
                 '"%s" appears to have been modified but cannot ' "find old revision",
                 event.dbx_path,
             )
-            mode = WriteMode.add
+            mode = WriteMode.Add
         elif local_entry.is_directory:
-            mode = WriteMode.overwrite
+            mode = WriteMode.Overwrite
         else:
-            mode = WriteMode.update(local_entry.rev)
+            mode = WriteMode.Update
+            local_rev = local_entry.rev
 
         try:
             md_new = client.upload(
                 event.local_path,
                 event.dbx_path,
                 autorename=True,
-                mode=mode,
+                write_mode=mode,
+                update_rev=local_rev,
                 sync_event=event,
             )
         except (NotFoundError, IsAFolderError):
@@ -2694,14 +2712,9 @@ class SyncEngine:
 
         if isinstance(md_old, FileMetadata):
 
-            if md_old.symlink_info:
-                md_symlink_target = md_old.symlink_info.target
-            else:
-                md_symlink_target = None
-
             if (
                 event.content_hash == md_old.content_hash
-                and event.symlink_target == md_symlink_target
+                and event.symlink_target == md_old.symlink_target
             ):
                 # File contents are identical, do not upload.
                 change_type = "Modification" if event.is_changed else "Creation"
@@ -2759,7 +2772,7 @@ class SyncEngine:
                     path_display=cased_path,
                 )
 
-            event = SyncEvent.from_dbx_metadata(md, self)
+            event = SyncEvent.from_metadata(md, self)
 
             if event.is_directory:
                 success = self._get_remote_folder(dbx_path, client)
@@ -2807,7 +2820,7 @@ class SyncEngine:
 
                     # Convert metadata to sync_events.
                     sync_events = [
-                        SyncEvent.from_dbx_metadata(md, self) for md in res.entries
+                        SyncEvent.from_metadata(md, self) for md in res.entries
                     ]
                     download_res = self.apply_remote_changes(sync_events)
 
@@ -2957,9 +2970,7 @@ class SyncEngine:
             self._logger.debug("Remote changes:\n%s", pf_repr(changes.entries))
 
             changes.entries.sort(key=lambda x: x.path_lower.count("/"))
-            sync_events = [
-                SyncEvent.from_dbx_metadata(md, self) for md in changes.entries
-            ]
+            sync_events = [SyncEvent.from_metadata(md, self) for md in changes.entries]
 
             self._logger.debug("Converted remote changes to SyncEvents")
 
@@ -3111,7 +3122,7 @@ class SyncEngine:
                 except InvalidDbidError:
                     user_name = None
                 else:
-                    user_name = account_info.name.display_name
+                    user_name = account_info.display_name
         else:
             # Don't display multiple usernames in notification.
             user_name = None
@@ -3378,7 +3389,6 @@ class SyncEngine:
                         name=last_event.name,
                         path_lower=last_event.path_lower,
                         path_display=last_event.path_display,
-                        parent_shared_folder_id=last_event.parent_shared_folder_id,
                     )
                     new_entries.append(deleted_event)
                     new_entries.append(last_event)
@@ -3470,7 +3480,7 @@ class SyncEngine:
             parent_md = client.get_metadata(dbx_path_lower_dirname)
 
             if parent_md:  # If the parent no longer exists, we don't do anything.
-                parent_event = SyncEvent.from_dbx_metadata(parent_md, self)
+                parent_event = SyncEvent.from_metadata(parent_md, self)
                 self._on_remote_folder(parent_event, client)
 
     def _on_remote_file(
@@ -3510,7 +3520,7 @@ class SyncEngine:
 
         try:
             md = client.download(f"rev:{event.rev}", tmp_fname, sync_event=event)
-            event = SyncEvent.from_dbx_metadata(md, self)
+            event = SyncEvent.from_metadata(md, self)
         except SyncError as err:
             # Replace rev number with path.
             err.dbx_path = event.dbx_path
@@ -3556,13 +3566,15 @@ class SyncEngine:
             # Ignore FileDeletedEvent when replacing old file.
             ignore_events.append(FileDeletedEvent(local_path))
 
-        is_symlink = event.symlink_target is not None
+        is_dir_symlink = event.is_directory and event.symlink_target is not None
 
-        if is_symlink:
+        if is_dir_symlink:
+            # We may get events from children of the symlink target when moving a
+            # directory symlink. Make sure to ignore those as well.
             ignore_events.append(DirMovedEvent(tmp_fname, local_path))
 
         # Move the downloaded file to its destination.
-        with self.fs_events.ignore(*ignore_events, recursive=is_symlink):
+        with self.fs_events.ignore(*ignore_events, recursive=is_dir_symlink):
             with convert_api_errors(dbx_path=event.dbx_path, local_path=local_path):
                 stat = os.lstat(tmp_fname)
                 move(

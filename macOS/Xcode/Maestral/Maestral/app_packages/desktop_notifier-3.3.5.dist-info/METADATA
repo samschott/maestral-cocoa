@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: desktop-notifier
-Version: 3.3.4
+Version: 3.3.5
 Summary: Python library for cross-platform desktop notifications
 Home-page: https://github.com/samschott/desktop-notifier
 Author: Sam Schott
