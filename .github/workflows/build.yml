@@ -87,6 +87,5 @@ jobs:
 
       - name: Push back Xcode project updates
         uses: stefanzweifel/git-auto-commit-action@v4
-        if: github.ref == 'refs/heads/master'
         with:
           commit_message: Auto-commit build updates
