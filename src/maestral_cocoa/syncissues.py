@@ -27,12 +27,14 @@ WINDOW_SIZE = (370, 400)
 
 
 class SyncIssueView(toga.Box):
-    def __init__(self, sync_err: SyncErrorEntry) -> None:
+    def __init__(self, sync_err: SyncErrorEntry, local_path: str) -> None:
         super().__init__(style=Pack(direction=COLUMN))
 
         self.sync_err = sync_err
+        self.local_path = local_path
 
-        icon = Icon(for_path=self.sync_err.local_path)
+        icon = Icon(for_path=self.local_path)
+
         # noinspection PyTypeChecker
         image_view = toga.ImageView(
             image=icon,
@@ -44,13 +46,13 @@ class SyncIssueView(toga.Box):
         )
 
         path_label = Label(
-            sanitize_string(osp.basename(self.sync_err.local_path)),
+            sanitize_string(osp.basename(self.sync_err.dbx_path)),
             style=Pack(
                 padding_bottom=PADDING / 2,
             ),
         )
         error_label = Label(
-            self.sync_err.title + ":\n" + self.sync_err.message,
+            f"{self.sync_err.title}:\n{self.sync_err.message}",
             linebreak_mode=WORD_WRAP,
             style=Pack(
                 font_size=11,
@@ -61,8 +63,8 @@ class SyncIssueView(toga.Box):
 
         link_local = FollowLinkButton(
             "Show in Finder",
-            url=self.sync_err.local_path,
-            enabled=osp.exists(self.sync_err.local_path),
+            url=self.local_path,
+            enabled=osp.exists(self.local_path),
             locate=True,
             style=Pack(
                 padding_right=PADDING,
@@ -156,7 +158,8 @@ class SyncIssuesWindow(Window):
         for error in new_errors:
             new_err_paths.add(error.dbx_path)
             if error.dbx_path not in self._sync_issue_widgets:
-                widget = SyncIssueView(error)
+                local_path = self.mdbx.to_local_path(error.dbx_path)
+                widget = SyncIssueView(error, local_path)
                 self.sync_errors_box.add(widget)
                 self._sync_issue_widgets[error.dbx_path] = widget
 
