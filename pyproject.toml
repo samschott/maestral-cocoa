@@ -13,7 +13,7 @@ description = "An open-source Dropbox client for macOS and Linux"
 icon = "icon/maestral"
 sources = ["src/maestral_cocoa"]
 requires = [
-    "click==8.0.4",
+    "click==8.1.0",
     "importlib_metadata;python_version<'3.8'",
     "maestral@git+https://github.com/samschott/maestral",
     "markdown2==2.4.2",
@@ -26,12 +26,12 @@ template_branch = "maestral"
 [tool.briefcase.app.maestral-cocoa.macOS]
 agent = 1
 requires = [
-    "toga-cocoa>=0.3.0.dev25",
+    "toga-cocoa==0.3.0.dev32",
 ]
 
 [tool.briefcase.app.maestral-cocoa.linux]
 requires = [
-    "toga-gtk>=0.3.0.dev25",
+    "toga-gtk==0.3.0.dev32",
 ]
 system_requires = [
     "libgirepository1.0-dev",
