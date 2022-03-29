@@ -60,8 +60,8 @@ class AutoUpdaterSparkle(AutoUpdaterBackend):
         # off platform-specific implementations to separate modules instead.
 
         from rubicon.objc import ObjCClass, NSObject, objc_method
-        from rubicon.objc.runtime import load_library, objc_id
-        from ctypes import c_int
+        from rubicon.objc.runtime import objc_id
+        from ctypes import c_int, CDLL
 
         class SparkleDelegate(NSObject):
             @objc_method
@@ -81,7 +81,7 @@ class AutoUpdaterSparkle(AutoUpdaterBackend):
         NSBundle = ObjCClass("NSBundle")
 
         path = f"{NSBundle.mainBundle.privateFrameworksPath}/Sparkle.framework/Sparkle"
-        load_library(path)
+        CDLL(path)
 
         SPUStandardUpdaterController = ObjCClass("SPUStandardUpdaterController")
 
