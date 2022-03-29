@@ -108,12 +108,18 @@ int main(int argc, char *argv[]) {
                 PyErr_Fetch(&exc_type, &exc_value, &exc_traceback);
                 PyErr_NormalizeException(&exc_type, &exc_value, &exc_traceback);
                 
-                traceback_str = format_traceback(exc_type, exc_value, exc_traceback);
-                
-                if (traceback_str == NULL) {
+                if (exc_traceback == NULL) {
                     NSLog(@"Could not retrieve traceback");
                     crash_dialog(@"Could not retrieve traceback");
                     exit(-5);
+                }
+
+                traceback_str = format_traceback(exc_type, exc_value, exc_traceback);
+                
+                if (traceback_str == NULL) {
+                    NSLog(@"Could not format traceback");
+                    crash_dialog(@"Could not format traceback");
+                    exit(-6);
                 }
 
                 // Restore the error state of the interpreter.
@@ -124,7 +130,7 @@ int main(int argc, char *argv[]) {
 
                 // Display stack trace in the crash dialog.
                 crash_dialog(traceback_str);
-                exit(-6);
+                exit(-7);
             }
 
         }
