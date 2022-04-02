@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # system imports
+import os
 import time
 import asyncio
 from abc import ABC, abstractmethod
@@ -81,6 +82,10 @@ class AutoUpdaterSparkle(AutoUpdaterBackend):
         NSBundle = ObjCClass("NSBundle")
 
         path = f"{NSBundle.mainBundle.privateFrameworksPath}/Sparkle.framework/Sparkle"
+
+        if not os.path.exists(path):
+            raise FileNotFoundError("Could not load Sparkle framework")
+
         CDLL(path)
 
         SPUStandardUpdaterController = ObjCClass("SPUStandardUpdaterController")
@@ -209,7 +214,7 @@ class AutoUpdater:
 
         try:
             self._backend = AutoUpdaterSparkle(self.mdbx)
-        except (ImportError, ValueError):
+        except (ImportError, ValueError, OSError):
             self._backend = AutoUpdaterFallback(self.mdbx, self.app)
 
     def start_updater(self) -> None:
