@@ -137,7 +137,7 @@ class Dialog(Window):
         )
         self.dialog_buttons.children.insert(0, self.spinner)
 
-        self.accessory_view = toga.Box()
+        self.accessory_view = accessory_view
 
         self.content_box = toga.Box(
             children=[
