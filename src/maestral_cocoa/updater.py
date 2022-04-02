@@ -165,7 +165,7 @@ class AutoUpdaterFallback(AutoUpdaterBackend):
         elif not res.update_available:
             await self.app.alert_async(
                 title="You’re up-to-date!",
-                message=f"Maestral v{ res.latest_release} is the newest version available.",
+                message=f"Maestral v{res.latest_release} is the newest version available.",
             )
 
     def _show_update_dialog(self, latest_release: str, release_notes: str) -> None:
@@ -189,9 +189,9 @@ class AutoUpdaterFallback(AutoUpdaterBackend):
 
         res = await call_async_maestral(self.config_name, "check_for_updates")
 
-        if res["update_available"]:
+        if res.update_available:
             self.mdbx.set_state("app", "update_notification_last", time.time())
-            self._show_update_dialog(res["latest_release"], res["release_notes"])
+            self._show_update_dialog(res.latest_release, res.release_notes)
 
     async def _periodic_check_for_updates(self, sender: Any = None) -> None:
         while True:
