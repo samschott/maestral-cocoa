@@ -178,7 +178,7 @@ class AutoUpdaterFallback(AutoUpdaterBackend):
         self.update_dialog = UpdateDialog(
             version=latest_release,
             release_notes=release_notes,
-            icon=self.app.icon,
+            app=self.app,
         )
         self.update_dialog.raise_()
 
