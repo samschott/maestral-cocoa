@@ -452,7 +452,7 @@
 					"$(PROJECT_DIR)/Support/XZ",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MARKETING_VERSION = 1.6.2.dev0;
+				MARKETING_VERSION = 1.6.2.dev1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.samschott.maestral;
 				STRIP_INSTALLED_PRODUCT = NO;
 				VERSIONING_SYSTEM = "apple-generic";
@@ -495,7 +495,7 @@
 					"$(PROJECT_DIR)/Support/XZ",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MARKETING_VERSION = 1.6.2.dev0;
+				MARKETING_VERSION = 1.6.2.dev1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.samschott.maestral;
 				STRIP_INSTALLED_PRODUCT = NO;
 				VERSIONING_SYSTEM = "apple-generic";
