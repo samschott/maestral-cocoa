@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # system imports
+import os
 import time
 import asyncio
 from abc import ABC, abstractmethod
@@ -60,8 +61,8 @@ class AutoUpdaterSparkle(AutoUpdaterBackend):
         # off platform-specific implementations to separate modules instead.
 
         from rubicon.objc import ObjCClass, NSObject, objc_method
-        from rubicon.objc.runtime import load_library, objc_id
-        from ctypes import c_int
+        from rubicon.objc.runtime import objc_id
+        from ctypes import c_int, CDLL
 
         class SparkleDelegate(NSObject):
             @objc_method
@@ -81,7 +82,11 @@ class AutoUpdaterSparkle(AutoUpdaterBackend):
         NSBundle = ObjCClass("NSBundle")
 
         path = f"{NSBundle.mainBundle.privateFrameworksPath}/Sparkle.framework/Sparkle"
-        load_library(path)
+
+        if not os.path.exists(path):
+            raise FileNotFoundError("Could not load Sparkle framework")
+
+        CDLL(path)
 
         SPUStandardUpdaterController = ObjCClass("SPUStandardUpdaterController")
 
@@ -165,7 +170,7 @@ class AutoUpdaterFallback(AutoUpdaterBackend):
         elif not res.update_available:
             await self.app.alert_async(
                 title="You’re up-to-date!",
-                message=f"Maestral v{ res.latest_release} is the newest version available.",
+                message=f"Maestral v{res.latest_release} is the newest version available.",
             )
 
     def _show_update_dialog(self, latest_release: str, release_notes: str) -> None:
@@ -173,7 +178,7 @@ class AutoUpdaterFallback(AutoUpdaterBackend):
         self.update_dialog = UpdateDialog(
             version=latest_release,
             release_notes=release_notes,
-            icon=self.app.icon,
+            app=self.app,
         )
         self.update_dialog.raise_()
 
@@ -189,9 +194,9 @@ class AutoUpdaterFallback(AutoUpdaterBackend):
 
         res = await call_async_maestral(self.config_name, "check_for_updates")
 
-        if res["update_available"]:
+        if res.update_available:
             self.mdbx.set_state("app", "update_notification_last", time.time())
-            self._show_update_dialog(res["latest_release"], res["release_notes"])
+            self._show_update_dialog(res.latest_release, res.release_notes)
 
     async def _periodic_check_for_updates(self, sender: Any = None) -> None:
         while True:
@@ -209,7 +214,7 @@ class AutoUpdater:
 
         try:
             self._backend = AutoUpdaterSparkle(self.mdbx)
-        except (ImportError, ValueError):
+        except (ImportError, ValueError, OSError):
             self._backend = AutoUpdaterFallback(self.mdbx, self.app)
 
     def start_updater(self) -> None:

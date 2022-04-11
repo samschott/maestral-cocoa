@@ -19,6 +19,7 @@ from glob import iglob
 import itertools
 import textwrap
 from typing import List, Optional, TYPE_CHECKING
+from pathlib import Path
 
 from collections import defaultdict
 from email import message_from_file
@@ -28,7 +29,7 @@ from distutils.util import rfc822_escape
 
 from setuptools.extern import packaging
 from setuptools.extern import ordered_set
-from setuptools.extern.more_itertools import unique_everseen
+from setuptools.extern.more_itertools import unique_everseen, partition
 from setuptools.extern import nspektr
 
 from ._importlib import metadata
@@ -39,7 +40,9 @@ import setuptools
 import setuptools.command
 from setuptools import windows_support
 from setuptools.monkey import get_unpatched
-from setuptools.config import parse_configuration
+from setuptools.config import setupcfg, pyprojecttoml
+from setuptools.discovery import ConfigDiscovery
+
 import pkg_resources
 from setuptools.extern.packaging import version
 from . import _reqs
@@ -465,6 +468,13 @@ class Distribution(_Distribution):
             },
         )
 
+        # Save the original dependencies before they are processed into the egg format
+        self._orig_extras_require = {}
+        self._orig_install_requires = []
+        self._tmp_extras_require = defaultdict(ordered_set.OrderedSet)
+
+        self.set_defaults = ConfigDiscovery(self)
+
         self._set_metadata_defaults(attrs)
 
         self.metadata.version = self._normalize_version(
@@ -535,6 +545,8 @@ class Distribution(_Distribution):
             self.metadata.python_requires = self.python_requires
 
         if getattr(self, 'extras_require', None):
+            # Save original before it is messed by _convert_extras_requirements
+            self._orig_extras_require = self._orig_extras_require or self.extras_require
             for extra in self.extras_require.keys():
                 # Since this gets called multiple times at points where the
                 # keys have become 'converted' extras, ensure that we are only
@@ -542,6 +554,10 @@ class Distribution(_Distribution):
                 extra = extra.split(':')[0]
                 if extra:
                     self.metadata.provides_extras.add(extra)
+
+        if getattr(self, 'install_requires', None) and not self._orig_install_requires:
+            # Save original before it is messed by _move_install_requirements_markers
+            self._orig_install_requires = self.install_requires
 
         self._convert_extras_requirements()
         self._move_install_requirements_markers()
@@ -553,7 +569,8 @@ class Distribution(_Distribution):
         `"extra:{marker}": ["barbazquux"]`.
         """
         spec_ext_reqs = getattr(self, 'extras_require', None) or {}
-        self._tmp_extras_require = defaultdict(list)
+        tmp = defaultdict(ordered_set.OrderedSet)
+        self._tmp_extras_require = getattr(self, '_tmp_extras_require', tmp)
         for section, v in spec_ext_reqs.items():
             # Do not strip empty sections.
             self._tmp_extras_require[section]
@@ -591,7 +608,8 @@ class Distribution(_Distribution):
         for r in complex_reqs:
             self._tmp_extras_require[':' + str(r.marker)].append(r)
         self.extras_require = dict(
-            (k, [str(r) for r in map(self._clean_req, v)])
+            # list(dict.fromkeys(...))  ensures a list of unique strings
+            (k, list(dict.fromkeys(str(r) for r in map(self._clean_req, v))))
             for k, v in self._tmp_extras_require.items()
         )
 
@@ -809,16 +827,32 @@ class Distribution(_Distribution):
             except ValueError as e:
                 raise DistutilsOptionError(e) from e
 
+    def _get_project_config_files(self, filenames):
+        """Add default file and split between INI and TOML"""
+        tomlfiles = []
+        standard_project_metadata = Path(self.src_root or os.curdir, "pyproject.toml")
+        if filenames is not None:
+            parts = partition(lambda f: Path(f).suffix == ".toml", filenames)
+            filenames = list(parts[0])  # 1st element => predicate is False
+            tomlfiles = list(parts[1])  # 2nd element => predicate is True
+        elif standard_project_metadata.exists():
+            tomlfiles = [standard_project_metadata]
+        return filenames, tomlfiles
+
     def parse_config_files(self, filenames=None, ignore_option_errors=False):
         """Parses configuration files from various levels
         and loads configuration.
-
         """
-        self._parse_config_files(filenames=filenames)
+        inifiles, tomlfiles = self._get_project_config_files(filenames)
 
-        parse_configuration(
+        self._parse_config_files(filenames=inifiles)
+
+        setupcfg.parse_configuration(
             self, self.command_options, ignore_option_errors=ignore_option_errors
         )
+        for filename in tomlfiles:
+            pyprojecttoml.apply_configuration(self, filename, ignore_option_errors)
+
         self._finalize_requires()
         self._finalize_license_files()
 
@@ -1171,6 +1205,13 @@ class Distribution(_Distribution):
             sys.stdout = io.TextIOWrapper(
                 sys.stdout.detach(), encoding, errors, newline, line_buffering
             )
+
+    def run_command(self, command):
+        self.set_defaults()
+        # Postpone defaults until all explicit configuration is considered
+        # (setup() args, config files, command line and plugins)
+
+        super().run_command(command)
 
 
 class DistDeprecationWarning(SetuptoolsDeprecationWarning):

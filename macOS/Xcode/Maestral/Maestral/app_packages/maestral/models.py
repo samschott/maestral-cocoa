@@ -11,7 +11,6 @@ from __future__ import annotations
 import os
 import time
 import enum
-from datetime import timezone
 from typing import TYPE_CHECKING
 
 # external imports
@@ -318,7 +317,7 @@ class SyncEvent(Model):
             symlink_target = md.symlink_target
             dbx_id = md.id
             size = md.size
-            change_time = md.client_modified.replace(tzinfo=timezone.utc).timestamp()
+            change_time = md.client_modified.timestamp()
             if sync_engine.get_local_rev(md.path_lower):
                 change_type = ChangeType.Modified
             else:
@@ -539,7 +538,7 @@ class SyncErrorEntry(Model):
     dbx_path_lower: Column[str] = Column(SqlPath(), primary_key=True, nullable=False)
     dbx_path_from: Column[str | None] = Column(SqlPath())
     dbx_path_from_lower: Column[str | None] = Column(SqlPath())
-    local_path: Column[str | None] = Column(SqlPath())
+    local_path: Column[str] = Column(SqlPath(), nullable=False)
     local_path_from: Column[str | None] = Column(SqlPath())
     direction: Column[SyncDirection] = Column(SqlEnum(SyncDirection), nullable=False)
     title: Column[str | None] = Column(SqlString())

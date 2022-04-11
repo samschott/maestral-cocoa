@@ -181,7 +181,8 @@ def prompt(
             return result
         while True:
             value2 = prompt_func(confirmation_prompt)
-            if value2:
+            is_empty = not value and not value2
+            if value2 or is_empty:
                 break
         if value == value2:
             return result
@@ -247,26 +248,6 @@ def confirm(
     if abort and not rv:
         raise Abort()
     return rv
-
-
-def get_terminal_size() -> os.terminal_size:
-    """Returns the current size of the terminal as tuple in the form
-    ``(width, height)`` in columns and rows.
-
-    .. deprecated:: 8.0
-        Will be removed in Click 8.1. Use
-        :func:`shutil.get_terminal_size` instead.
-    """
-    import shutil
-    import warnings
-
-    warnings.warn(
-        "'click.get_terminal_size()' is deprecated and will be removed"
-        " in Click 8.1. Use 'shutil.get_terminal_size()' instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return shutil.get_terminal_size()
 
 
 def echo_via_pager(

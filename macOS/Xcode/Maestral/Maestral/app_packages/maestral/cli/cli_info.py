@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import time
+from datetime import datetime
 from typing import TYPE_CHECKING
 
 import click
@@ -20,7 +21,6 @@ if TYPE_CHECKING:
 @inject_proxy(fallback=False, existing_config=True)
 @convert_api_errors
 def status(m: Maestral) -> None:
-
     email = m.get_state("account", "email")
     account_type = m.get_state("account", "type").capitalize()
     usage = m.get_state("account", "usage")
@@ -89,12 +89,10 @@ def activity(m: Maestral) -> None:
         return
 
     def curses_loop(screen) -> None:  # no type hints for screen provided yet
-
         curses.use_default_colors()  # don't change terminal background
         screen.nodelay(1)  # sets `screen.getch()` to non-blocking
 
         while True:
-
             height, width = screen.getmaxyx()
 
             # create header
@@ -156,7 +154,6 @@ def activity(m: Maestral) -> None:
 @inject_proxy(fallback=True, existing_config=True)
 @convert_api_errors
 def history(m: Maestral) -> None:
-
     events = m.get_history()
 
     table = Table(
@@ -168,9 +165,10 @@ def history(m: Maestral) -> None:
     )
 
     for event in events:
-        table.append(
-            [event.dbx_path, event.change_type.value, event.change_time_or_sync_time]
-        )
+        dt_local_naive = datetime.fromtimestamp(event.change_time_or_sync_time)
+        dt_field = DateField(dt_local_naive)
+
+        table.append([event.dbx_path, event.change_type.value, dt_field])
 
     echo("")
     table.echo()

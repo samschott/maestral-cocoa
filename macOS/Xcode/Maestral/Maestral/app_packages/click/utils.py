@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import typing as t
 from functools import update_wrapper
@@ -379,25 +380,6 @@ def open_file(
     return f
 
 
-def get_os_args() -> t.Sequence[str]:
-    """Returns the argument part of ``sys.argv``, removing the first
-    value which is the name of the script.
-
-    .. deprecated:: 8.0
-        Will be removed in Click 8.1. Access ``sys.argv[1:]`` directly
-        instead.
-    """
-    import warnings
-
-    warnings.warn(
-        "'get_os_args' is deprecated and will be removed in Click 8.1."
-        " Access 'sys.argv[1:]' directly instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return sys.argv[1:]
-
-
 def format_filename(
     filename: t.Union[str, bytes, os.PathLike], shorten: bool = False
 ) -> str:
@@ -493,7 +475,7 @@ class PacifyFlushWrapper:
 
 
 def _detect_program_name(
-    path: t.Optional[str] = None, _main: ModuleType = sys.modules["__main__"]
+    path: t.Optional[str] = None, _main: t.Optional[ModuleType] = None
 ) -> str:
     """Determine the command used to run the program, for use in help
     text. If a file or entry point was executed, the file name is
@@ -515,6 +497,9 @@ def _detect_program_name(
 
     :meta private:
     """
+    if _main is None:
+        _main = sys.modules["__main__"]
+
     if not path:
         path = sys.argv[0]
 
@@ -555,13 +540,17 @@ def _expand_args(
     See :func:`glob.glob`, :func:`os.path.expanduser`, and
     :func:`os.path.expandvars`.
 
-    This intended for use on Windows, where the shell does not do any
+    This is intended for use on Windows, where the shell does not do any
     expansion. It may not exactly match what a Unix shell would do.
 
     :param args: List of command line arguments to expand.
     :param user: Expand user home directory.
     :param env: Expand environment variables.
     :param glob_recursive: ``**`` matches directories recursively.
+
+    .. versionchanged:: 8.1
+        Invalid glob patterns are treated as empty expansions rather
+        than raising an error.
 
     .. versionadded:: 8.0
 
@@ -578,7 +567,10 @@ def _expand_args(
         if env:
             arg = os.path.expandvars(arg)
 
-        matches = glob(arg, recursive=glob_recursive)
+        try:
+            matches = glob(arg, recursive=glob_recursive)
+        except re.error:
+            matches = []
 
         if not matches:
             out.append(arg)

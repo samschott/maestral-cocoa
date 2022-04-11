@@ -49,7 +49,7 @@ from watchdog.events import (
 
 # local imports
 from . import notify
-from .config import MaestralConfig, MaestralState, PersistentMutableSet
+from .config import MaestralConfig, MaestralState
 from .core import (
     Metadata,
     FileMetadata,
@@ -76,6 +76,7 @@ from .exceptions import (
     FileConflictError,
     FolderConflictError,
     IsAFolderError,
+    NotAFolderError,
     InvalidDbidError,
     DatabaseError,
 )
@@ -407,9 +408,6 @@ class SyncEngine:
     :param client: Dropbox API client instance.
     """
 
-    syncing: dict[str, SyncEvent]
-    _case_conversion_cache: LRUCache
-
     _max_history = 1000
     _num_threads = min(64, CPU_COUNT * 4)
 
@@ -420,8 +418,12 @@ class SyncEngine:
         self.fs_events = FSEventHandler()
         self._logger = scoped_logger(__name__, self.config_name)
 
+        # Synchronize upload and download sync.
         self.sync_lock = RLock()
+        # Synchronizes DB access.
         self._db_lock = RLock()
+        # Synchronize sync activity across multiple levels.
+        self._tree_traversal = RLock()
 
         self._conf = MaestralConfig(self.config_name)
         self._state = MaestralState(self.config_name)
@@ -429,23 +431,11 @@ class SyncEngine:
 
         self.desktop_notifier = notify.MaestralDesktopNotifier(self.config_name)
 
-        # Pending_uploads and pending_downloads contain interrupted uploads and
-        # downloads, respectively. to retry later. Running uploads / downloads can be
-        # stored in these lists to be resumed if Maestral quits unexpectedly. This used
-        # for downloads which are not part of the regular sync cycle and are therefore
-        # not restarted automatically.
-        self.pending_downloads = PersistentMutableSet(
-            self._state, section="sync", option="pending_downloads"
-        )
-        self.pending_uploads = PersistentMutableSet(
-            self._state, section="sync", option="pending_uploads"
-        )
-
         # Data structures for internal communication.
         self._cancel_requested = Event()
 
         # Data structures for user information.
-        self.syncing = {}
+        self.syncing: dict[str, SyncEvent] = {}
 
         # Initialize SQLite database.
         self._db_path = get_data_path("maestral", f"{self.config_name}.db")
@@ -784,7 +774,7 @@ class SyncEngine:
 
     def index_count(self) -> int:
         """
-        Returns the number if items in our index without loading any items.
+        Returns the number of items in our index without loading any items.
 
         :returns: Number of index entries.
         """
@@ -1744,8 +1734,7 @@ class SyncEngine:
 
     def list_local_changes(self, delay: float = 1) -> tuple[list[SyncEvent], float]:
         """
-        Waits for local file changes. Returns a list of local changes with at most one
-        entry per path.
+        Returns a list of local changes with at most one entry per path.
 
         :param delay: Delay in sec to wait for subsequent changes before returning.
         :returns: (list of sync times events, time_stamp)
@@ -2396,7 +2385,9 @@ class SyncEngine:
                 update_rev=local_rev,
                 sync_event=event,
             )
-        except (NotFoundError, IsAFolderError):
+        except (NotFoundError, NotAFolderError, IsAFolderError):
+            # Note: NotAFolderError can be raised when a parent in the local path
+            # refers to a file instead of a folder.
             self._logger.debug(
                 'Could not upload "%s": the file does not exist', event.local_path
             )
@@ -2503,7 +2494,7 @@ class SyncEngine:
 
         if not local_entry:
             self._logger.debug(
-                '"%s" appears to have been modified but cannot ' "find old revision",
+                '"%s" appears to have been modified but cannot find old revision',
                 event.dbx_path,
             )
             mode = WriteMode.Add
@@ -2522,7 +2513,9 @@ class SyncEngine:
                 update_rev=local_rev,
                 sync_event=event,
             )
-        except (NotFoundError, IsAFolderError):
+        except (NotFoundError, NotAFolderError, IsAFolderError):
+            # Note: NotAFolderError can be raised when a parent in the local path
+            # refers to a file instead of a folder.
             self._logger.debug(
                 'Could not upload "%s": the item does not exist', event.dbx_path
             )
@@ -2966,10 +2959,10 @@ class SyncEngine:
         for changes in changes_iter:
 
             changes = self._clean_remote_changes(changes)
+            changes.entries.sort(key=lambda x: x.path_lower.count("/"))
 
             self._logger.debug("Remote changes:\n%s", pf_repr(changes.entries))
 
-            changes.entries.sort(key=lambda x: x.path_lower.count("/"))
             sync_events = [SyncEvent.from_metadata(md, self) for md in changes.entries]
 
             self._logger.debug("Converted remote changes to SyncEvents")
@@ -3291,7 +3284,6 @@ class SyncEngine:
                     return True
 
                 # Recurse over children.
-                # TODO: Handle symlinks with entry.is_symlink()
                 with os.scandir(local_path) as it:
                     for entry in it:
                         if entry.is_dir(follow_symlinks=False):
@@ -3470,18 +3462,20 @@ class SyncEngine:
         if dbx_path_lower_dirname == "/":
             return
 
-        if not self.get_index_entry(dbx_path_lower_dirname):
+        with self._tree_traversal:
 
-            self._logger.debug(
-                f"Parent folder {dbx_path_lower_dirname} is not in index. "
-                f"Syncing it now before syncing any children."
-            )
+            if not self.get_index_entry(dbx_path_lower_dirname):
 
-            parent_md = client.get_metadata(dbx_path_lower_dirname)
+                self._logger.debug(
+                    f"Parent folder {dbx_path_lower_dirname} is not in index. "
+                    f"Syncing it now before syncing any children."
+                )
 
-            if parent_md:  # If the parent no longer exists, we don't do anything.
-                parent_event = SyncEvent.from_metadata(parent_md, self)
-                self._on_remote_folder(parent_event, client)
+                parent_md = client.get_metadata(dbx_path_lower_dirname)
+
+                if parent_md:  # If the parent no longer exists, we don't do anything.
+                    parent_event = SyncEvent.from_metadata(parent_md, self)
+                    self._on_remote_folder(parent_event, client)
 
     def _on_remote_file(
         self, event: SyncEvent, client: DropboxClient | None = None

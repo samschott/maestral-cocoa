@@ -8,7 +8,6 @@ from __future__ import annotations
 # system imports
 import os
 import time
-import logging
 import contextlib
 import threading
 from datetime import datetime, timezone
@@ -34,6 +33,7 @@ from dropbox.session import API_HOST
 # local imports
 from . import __version__
 from .keyring import CredentialStorage, TokenType
+from .logging import scoped_logger
 from .core import (
     AccountType,
     Team,
@@ -142,7 +142,9 @@ class DropboxClient:
         self.cred_storage = CredentialStorage(config_name)
 
         self._state = MaestralState(config_name)
-        self._logger = logging.getLogger(__name__)
+        self._logger = scoped_logger(__name__, self.config_name)
+        self._dropbox_sdk_logger = scoped_logger("maestral.dropbox", self.config_name)
+        self._dropbox_sdk_logger.info = self._dropbox_sdk_logger.debug  # type: ignore
 
         self._timeout = timeout
         self._session = session or create_session()
@@ -302,6 +304,10 @@ class DropboxClient:
             else:
                 self._dbx = self._dbx_base
 
+            # Set our own logger for the Dropbox SDK.
+            self._dbx._logger = self._dropbox_sdk_logger
+            self._dbx_base._logger = self._dropbox_sdk_logger
+
     @property
     def account_info(self) -> FullAccount:
         """Returns cached account info. Use :meth:`get_account_info` to get the latest
@@ -364,9 +370,11 @@ class DropboxClient:
 
         if self._dbx:
             client._dbx = self._dbx.clone(session=session)
+            client._dbx._logger = self._dropbox_sdk_logger
 
         if self._dbx_base:
             client._dbx_base = self._dbx_base.clone(session=session)
+            client._dbx_base._logger = self._dropbox_sdk_logger
 
         return client
 
@@ -400,7 +408,7 @@ class DropboxClient:
             calls. Be prepared to handle :exc:`maestral.exceptions.PathRootError`
             and act accordingly for all methods.
 
-        :param root_info: Optional :class:`dropbox.common.RootInfo` describing the path
+        :param root_info: Optional :class:`core.RootInfo` describing the path
             root. If not given, the latest root info will be fetched from Dropbox
             servers.
         """
@@ -413,6 +421,7 @@ class DropboxClient:
 
         path_root = common.PathRoot.root(root_nsid)
         self._dbx = self.dbx_base.with_path_root(path_root)
+        self._dbx._logger = self._dropbox_sdk_logger
 
         if isinstance(root_info, UserRootInfo):
             actual_root_type = "user"
@@ -1222,7 +1231,7 @@ class DropboxClient:
         """
         Lists the contents of a folder on Dropbox. Similar to
         :meth:`list_folder_iterator` but returns all entries in a single
-        :class:`dropbox.files.ListFolderResult` instance.
+        :class:`core.ListFolderResult` instance.
 
         :param dbx_path: Path of folder on Dropbox.
         :param dbx_path: Path of folder on Dropbox.
@@ -1259,7 +1268,7 @@ class DropboxClient:
     ) -> Iterator[ListFolderResult]:
         """
         Lists the contents of a folder on Dropbox. Returns an iterator yielding
-        :class:`dropbox.files.ListFolderResult` instances. The number of entries
+        :class:`core.ListFolderResult` instances. The number of entries
         returned in each iteration corresponds to the number of entries returned by a
         single Dropbox API call and will be typically around 500.
 
@@ -1336,7 +1345,7 @@ class DropboxClient:
         """
         Lists changes to remote Dropbox since ``last_cursor``. Same as
         :meth:`list_remote_changes_iterator` but fetches all changes first and returns
-        a single :class:`dropbox.files.ListFolderResult`. This may be useful if you want
+        a single :class:`core.ListFolderResult`. This may be useful if you want
         to fetch all changes in advance before starting to process them.
 
         :param last_cursor: Last to cursor to compare for changes.
@@ -1351,7 +1360,7 @@ class DropboxClient:
     ) -> Iterator[ListFolderResult]:
         """
         Lists changes to the remote Dropbox since ``last_cursor``. Returns an iterator
-        yielding :class:`dropbox.files.ListFolderResult` instances. The number of
+        yielding :class:`core.ListFolderResult` instances. The number of
         entries returned in each iteration corresponds to the number of entries returned
         by a single Dropbox API call and will be typically around 500.
 
@@ -1562,8 +1571,8 @@ def convert_metadata(res):
             res.path_lower,
             res.path_display,
             res.id,
-            res.client_modified,
-            res.server_modified,
+            res.client_modified.replace(tzinfo=timezone.utc),
+            res.server_modified.replace(tzinfo=timezone.utc),
             res.rev,
             res.size,
             symlink_target,
@@ -1590,6 +1599,7 @@ def convert_list_folder_result(res: files.ListFolderResult) -> ListFolderResult:
 
 def convert_shared_link_metadata(res: sharing.SharedLinkMetadata) -> SharedLinkMetadata:
     effective_audience = LinkAudience.Other
+    require_password = res.link_permissions.require_password is True
 
     if res.link_permissions.effective_audience:
         if res.link_permissions.effective_audience.is_public():
@@ -1599,12 +1609,25 @@ def convert_shared_link_metadata(res: sharing.SharedLinkMetadata) -> SharedLinkM
         elif res.link_permissions.effective_audience.is_no_one():
             effective_audience = LinkAudience.NoOne
 
+    elif res.link_permissions.resolved_visibility:
+        if res.link_permissions.resolved_visibility.is_public():
+            effective_audience = LinkAudience.Public
+        elif res.link_permissions.resolved_visibility.is_team_only():
+            effective_audience = LinkAudience.Team
+        elif res.link_permissions.resolved_visibility.is_password():
+            require_password = True
+        elif res.link_permissions.resolved_visibility.is_team_and_password():
+            effective_audience = LinkAudience.Team
+            require_password = True
+        elif res.link_permissions.resolved_visibility.is_no_one():
+            effective_audience = LinkAudience.NoOne
+
     link_access_level = LinkAccessLevel.Other
 
     if res.link_permissions.link_access_level:
         if res.link_permissions.link_access_level.is_viewer():
             link_access_level = LinkAccessLevel.Viewer
-        elif res.link_permissions.effective_audience.is_editor():
+        elif res.link_permissions.link_access_level.is_editor():
             link_access_level = LinkAccessLevel.Editor
 
     link_permissions = LinkPermissions(
@@ -1612,10 +1635,15 @@ def convert_shared_link_metadata(res: sharing.SharedLinkMetadata) -> SharedLinkM
         res.link_permissions.allow_download,
         effective_audience,
         link_access_level,
-        res.link_permissions.require_password,
+        require_password,
     )
+
     return SharedLinkMetadata(
-        res.url, res.name, res.path_lower, res.expires, link_permissions
+        res.url,
+        res.name,
+        res.path_lower,
+        res.expires.replace(tzinfo=timezone.utc) if res.expires else None,
+        link_permissions,
     )
 
 
