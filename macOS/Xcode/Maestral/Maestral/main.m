@@ -8,9 +8,6 @@
 #include <Python.h>
 #include <dlfcn.h>
 
-#ifndef DEBUG
-    #define NSLog(...);
-#endif
 
 void crash_dialog(NSString *);
 NSString * format_traceback(PyObject *type, PyObject *value, PyObject *traceback);
@@ -24,6 +21,7 @@ int main(int argc, char *argv[]) {
     NSString *traceback_str;
     wchar_t *wpython_home;
     wchar_t** python_argv;
+    const char* nslog_script;
     PyObject *module;
     PyObject *runpy;
     PyObject *runmodule;
@@ -56,6 +54,15 @@ int main(int argc, char *argv[]) {
         NSLog(@"Initializing Python runtime...");
         Py_Initialize();
 
+        // Set the name of the python NSLog bootstrap script
+        nslog_script = [
+            [[NSBundle mainBundle] pathForResource:@"app_packages/nslog"
+                                            ofType:@"py"] cStringUsingEncoding:NSUTF8StringEncoding];
+
+        if (nslog_script == NULL) {
+            NSLog(@"Unable to locate NSLog bootstrap script.");
+        }
+
         // Construct argv for the interpreter
         python_argv = PyMem_RawMalloc(sizeof(wchar_t*) * argc);
 
@@ -68,6 +75,27 @@ int main(int argc, char *argv[]) {
         PySys_SetArgv(argc, python_argv);
 
         @try {
+            // Install the nslog script to redirect stdout/stderr if available.
+            if (nslog_script == NULL) {
+                NSLog(@"No Python NSLog handler found. stdout/stderr will not be captured.");
+                NSLog(@"To capture stdout/stderr, add 'std-nslog' to your app dependencies.");
+            } else {
+                NSLog(@"Installing Python NSLog handler...");
+                FILE *fd = fopen(nslog_script, "r");
+                if (fd == NULL) {
+                    NSLog(@"Unable to open nslog.py; abort.");
+                    crash_dialog(@"Unable to open nslog.py");
+                    exit(-1);
+                }
+
+                ret = PyRun_SimpleFileEx(fd, nslog_script, 1);
+                fclose(fd);
+                if (ret != 0) {
+                    NSLog(@"Unable to install Python NSLog handler; abort.");
+                    crash_dialog(@"Unable to install Python NSLog handler.");
+                    exit(ret);
+                }
+            }
 
             // Start the app module
             NSLog(@"Running app module: %@", module_name);
@@ -107,7 +135,7 @@ int main(int argc, char *argv[]) {
                 // Retrieve the current error state of the interpreter.
                 PyErr_Fetch(&exc_type, &exc_value, &exc_traceback);
                 PyErr_NormalizeException(&exc_type, &exc_value, &exc_traceback);
-                
+
                 if (exc_traceback == NULL) {
                     NSLog(@"Could not retrieve traceback");
                     crash_dialog(@"Could not retrieve traceback");
@@ -115,22 +143,16 @@ int main(int argc, char *argv[]) {
                 }
 
                 traceback_str = format_traceback(exc_type, exc_value, exc_traceback);
-                
-                if (traceback_str == NULL) {
-                    NSLog(@"Could not format traceback");
-                    crash_dialog(@"Could not format traceback");
-                    exit(-6);
-                }
 
                 // Restore the error state of the interpreter.
                 PyErr_Restore(exc_type, exc_value, exc_traceback);
-                
+
                 // Print exception to stderr.
                 PyErr_Print();
 
                 // Display stack trace in the crash dialog.
                 crash_dialog(traceback_str);
-                exit(-7);
+                exit(-6);
             }
 
         }
@@ -157,6 +179,10 @@ int main(int argc, char *argv[]) {
 }
 
 
+/**
+ * Construct and display a modal dialog to the user that contains
+ * details of an error during application execution (usually a traceback).
+ */
 void crash_dialog(NSString *details) {
     // We've crashed.
     NSApplication *app = [NSApplication sharedApplication];
@@ -190,27 +216,28 @@ void crash_dialog(NSString *details) {
     [alert runModal];
 }
 
-
-NSString * format_traceback(PyObject *type, PyObject *value, PyObject *traceback) {
-    
+/**
+ * Convert a Python traceback object into a user-suitable string, stripping off
+ * stack context that comes from this stub binary.
+ *
+ * If any error occurs processing the traceback, the error message returned
+ * will describe the mode of failure.
+ */
+NSString *format_traceback(PyObject *type, PyObject *value, PyObject *traceback) {
     NSRegularExpression *regex;
     NSString *traceback_str;
     PyObject *traceback_list;
     PyObject *traceback_module;
     PyObject *format_exception;
     PyObject *traceback_unicode;
-    
-
-    if (traceback == NULL) {
-        NSLog(@"Could not retrieve traceback");
-        return NULL;
-    }
+    PyObject *inner_traceback;
 
     // Drop the top two stack frames; these are internal
     // wrapper logic, and not in the control of the user.
     for (int i = 0; i < 2; i++) {
-        if (PyObject_GetAttrString(traceback, "tb_next") != NULL) {
-            traceback = PyObject_GetAttrString(traceback, "tb_next");
+        inner_traceback = PyObject_GetAttrString(traceback, "tb_next");
+        if (inner_traceback != NULL) {
+            traceback = inner_traceback;
         }
     }
 
@@ -218,7 +245,7 @@ NSString * format_traceback(PyObject *type, PyObject *value, PyObject *traceback
     traceback_module = PyImport_ImportModule("traceback");
     if (traceback_module == NULL) {
         NSLog(@"Could not import traceback");
-        return NULL;
+        return @"Could not import traceback";
     }
 
     format_exception = PyObject_GetAttrString(traceback_module, "format_exception");
@@ -226,11 +253,11 @@ NSString * format_traceback(PyObject *type, PyObject *value, PyObject *traceback
         traceback_list = PyObject_CallFunctionObjArgs(format_exception, type, value, traceback, NULL);
     } else {
         NSLog(@"Could not find 'format_exception' in 'traceback' module");
-        return NULL;
+        return @"Could not find 'format_exception' in 'traceback' module";
     }
     if (traceback_list == NULL) {
         NSLog(@"Could not format traceback");
-        return NULL;
+        return @"Could not format traceback";
     }
 
     traceback_unicode = PyUnicode_Join(PyUnicode_FromString(""), traceback_list);
