@@ -8,3 +8,4 @@ def resource_path(name: str) -> str:
 
 APP_ICON_PATH = resource_path("maestral.icns")
 FACEHOLDER_PATH = resource_path("faceholder.pdf")
+RELEASE_NOTES_CSS_PATH = resource_path("release_notes.css")
