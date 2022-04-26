@@ -17,14 +17,11 @@ from rubicon.objc import (
     objc_method,
     objc_property,
     SEL,
-    at,
 )
 from rubicon.objc.runtime import objc_id
 from toga.handlers import NativeHandler
 from toga.constants import LEFT
 from toga_cocoa.libs import (
-    NSColor,
-    NSString,
     NSTextAlignment,
     NSBezelStyle,
     NSViewMaxYMargin,
@@ -57,9 +54,6 @@ from toga_cocoa.widgets.base import Widget
 from toga_cocoa.widgets.button import Button as TogaButton
 from toga_cocoa.window import Window as TogaWindow
 from toga_cocoa.window import WindowDelegate as TogaWindowDeletage
-from toga_cocoa.widgets.multilinetextinput import (
-    MultilineTextInput as TogaMultilineTextInput,
-)
 from toga_cocoa.factory import ImageView
 from toga_cocoa.factory import *  # noqa: F401,F406
 
@@ -72,7 +66,6 @@ from .constants import (
     NSSquareStatusItemLength,
     NSWindowAnimationBehaviorDefault,
     NSWindowAnimationBehaviorAlertPanel,
-    NSUTF8StringEncoding,
     NSImageLeading,
     NSCompositeSourceOver,
     NSImageNameFollowLinkFreestandingTemplate,
@@ -98,7 +91,6 @@ from ...constants import (
 NSWorkspace = ObjCClass("NSWorkspace")
 NSFileManager = ObjCClass("NSFileManager")
 NSVisualEffectView = ObjCClass("NSVisualEffectView")
-NSMutableAttributedString = ObjCClass("NSMutableAttributedString")
 NSStatusBar = ObjCClass("NSStatusBar")
 NSColorSpace = ObjCClass("NSColorSpace")
 
@@ -163,31 +155,6 @@ class Icon:
 # ==== labels ==========================================================================
 
 
-def attributed_str_from_html(raw_html, font=None, color=None):
-    """Converts html to a NSAttributed string using the system font family and color."""
-
-    html_value = """
-    <span style="font-family: '{0}'; font-size: {1}; color: {2}">
-    {3}
-    </span>
-    """
-    font_family = font.fontName if font else "system-ui"
-    font_size = font.pointSize if font else 13
-    color = color or NSColor.labelColor
-    c = color.colorUsingColorSpace(NSColorSpace.deviceRGBColorSpace)
-    c_str = (
-        f"rgb({c.redComponent * 255},{c.blueComponent * 255},{c.greenComponent * 255})"
-    )
-    html_value = html_value.format(font_family, font_size, c_str, raw_html)
-    nsstring = NSString(at(html_value))
-    data = nsstring.dataUsingEncoding(NSUTF8StringEncoding)
-    attr_str = NSMutableAttributedString.alloc().initWithHTML(
-        data,
-        documentAttributes=None,
-    )
-    return attr_str
-
-
 class Label(Widget):
     """Reimplements toga_cocoa.Label with text wrapping."""
 
@@ -240,17 +207,6 @@ class Label(Widget):
         else:
             self.interface.intrinsic.width = at_least(0)
             self.interface.intrinsic.height = at_least(content_size.height)
-
-
-# ==== text input ======================================================================
-
-
-class RichMultilineTextInput(TogaMultilineTextInput):
-    """A scrollable text view with html support."""
-
-    def set_html(self, value):
-        attr_str = attributed_str_from_html(value, font=self.text.font)
-        self.text.textStorage.setAttributedString(attr_str)
 
 
 # ==== buttons =========================================================================
