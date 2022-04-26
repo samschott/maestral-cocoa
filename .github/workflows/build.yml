@@ -14,8 +14,6 @@ jobs:
     steps:
       - name: Checkout project
         uses: actions/checkout@v2
-        with:
-          ref: master
 
       - name: Import signing certificate into keychain
         uses: apple-actions/import-codesign-certs@v1
