@@ -5,7 +5,6 @@ import asyncio
 import click
 import toga
 from toga.handlers import wrapped_handler
-from toga.widgets.base import Widget
 from toga.style.pack import Pack
 from toga.constants import ROW, RIGHT, TRANSPARENT
 
@@ -366,28 +365,6 @@ class Label(toga.Label):
     def linebreak_mode(self, value):
         self._linebreak_mode = value
         self._impl.set_linebreak_mode(value)
-
-
-class RichLabel(Widget):
-    """A label with html support."""
-
-    def __init__(self, html, id=None, style=None, factory=private_factory):
-        super().__init__(id=id, style=style, factory=factory)
-
-        self._html = html
-
-        # Create a platform specific implementation of a Label
-        self._impl = self.factory.RichLabel(interface=self)
-        self.html = html
-
-    @property
-    def html(self):
-        return self._html
-
-    @html.setter
-    def html(self, value):
-        self._html = value
-        self._impl.set_html(value)
 
 
 # ==== input widgets ===================================================================

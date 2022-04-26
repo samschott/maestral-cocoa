@@ -11,10 +11,9 @@ from maestral import __version__ as __daemon_version__
 from maestral.utils.appdirs import get_home_dir
 
 # local imports
-from . import __url__, __author__, __version__
+from . import __author__, __version__
 from .private.widgets import (
     Label,
-    RichLabel,
     Switch,
     FileSelectionButton,
     Window,
@@ -287,13 +286,6 @@ class SettingsGui(Window):
                     children=[
                         Label(
                             f"GUI v{__version__}, daemon v{__daemon_version__}",
-                            style=Pack(
-                                padding_bottom=SettingsGui.SUBELEMENT_PADDING,
-                                width=SettingsGui.COLUMN_WIDTH_RIGHT,
-                            ),
-                        ),
-                        RichLabel(
-                            html=f'<a href="{__url__}">{__url__}</a>',
                             style=Pack(
                                 padding_bottom=SettingsGui.SUBELEMENT_PADDING,
                                 width=SettingsGui.COLUMN_WIDTH_RIGHT,

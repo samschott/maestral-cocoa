@@ -25,7 +25,6 @@ from toga.constants import LEFT
 from toga_cocoa.libs import (
     NSColor,
     NSString,
-    NSTextView,
     NSTextAlignment,
     NSBezelStyle,
     NSViewMaxYMargin,
@@ -241,54 +240,6 @@ class Label(Widget):
         else:
             self.interface.intrinsic.width = at_least(0)
             self.interface.intrinsic.height = at_least(content_size.height)
-
-
-class RichLabel(Widget):
-    """A multiline text view with html support."""
-
-    def create(self):
-        self._color = None
-        self.native = NSTextView.alloc().init()
-
-        self.native.drawsBackground = False
-        self.native.editable = False
-        self.native.selectable = True
-        self.native.textContainer.lineFragmentPadding = 0
-
-        self.native.bezeled = False
-
-        # Add the layout constraints
-        self.add_constraints()
-
-    def set_html(self, value):
-        attr_str = attributed_str_from_html(value, color=self._color)
-        self.native.textStorage.setAttributedString(attr_str)
-        self.rehint()
-
-    def set_font(self, font):
-        native_font = font.bind(self.interface.factory).native
-        attr_str = attributed_str_from_html(
-            self.interface.html, color=self._color, font=native_font
-        )
-        self.native.textStorage.setAttributedString(attr_str)
-        self.rehint()
-
-    def set_color(self, value):
-        if value:
-            self._color = native_color(value)
-
-        # update html
-        self.set_html(self.interface.html)
-
-    def rehint(self):
-        # force layout and get layout rect
-        self.native.layoutManager.glyphRangeForTextContainer(self.native.textContainer)
-        rect = self.native.layoutManager.usedRectForTextContainer(
-            self.native.textContainer
-        )
-
-        self.interface.intrinsic.width = at_least(rect.size.width)
-        self.interface.intrinsic.height = rect.size.height
 
 
 # ==== text input ======================================================================
