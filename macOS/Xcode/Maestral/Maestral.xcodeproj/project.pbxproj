@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		015AFDFD2819DDC700E74F85 /* Credits.html in Resources */ = {isa = PBXBuildFile; fileRef = 015AFDFC2819DDC700E74F85 /* Credits.html */; };
 		0D267B6B2554BB1800AC3E85 /* app_packages in Resources */ = {isa = PBXBuildFile; fileRef = 0D267B692554BB1800AC3E85 /* app_packages */; };
 		0D267B6C2554BB1800AC3E85 /* app in Resources */ = {isa = PBXBuildFile; fileRef = 0D267B6A2554BB1800AC3E85 /* app */; };
 		0D354FD22551BFBD009178D1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0D354FD12551BFBD009178D1 /* Assets.xcassets */; };
@@ -54,6 +55,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		015AFDFC2819DDC700E74F85 /* Credits.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = Credits.html; sourceTree = "<group>"; };
 		0D267B5F255427F200AC3E85 /* libPython.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libPython.a; path = Support/Python/libPython.a; sourceTree = "<group>"; };
 		0D267B632554B99D00AC3E85 /* libbzip2.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libbzip2.a; path = Support/BZip2/libbzip2.a; sourceTree = "<group>"; };
 		0D267B642554B99D00AC3E85 /* libxz.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libxz.a; path = Support/XZ/libxz.a; sourceTree = "<group>"; };
@@ -126,6 +128,7 @@
 		0D354FCA2551BFBA009178D1 /* Maestral */ = {
 			isa = PBXGroup;
 			children = (
+				015AFDFC2819DDC700E74F85 /* Credits.html */,
 				0D8F347B26986E060092BE76 /* maestral-cli */,
 				0D267B6A2554BB1800AC3E85 /* app */,
 				0D267B692554BB1800AC3E85 /* app_packages */,
@@ -226,6 +229,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				0D354FD22551BFBD009178D1 /* Assets.xcassets in Resources */,
+				015AFDFD2819DDC700E74F85 /* Credits.html in Resources */,
 				0D267B6C2554BB1800AC3E85 /* app in Resources */,
 				0D267B6B2554BB1800AC3E85 /* app_packages in Resources */,
 			);
