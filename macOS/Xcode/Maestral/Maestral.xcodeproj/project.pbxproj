@@ -452,7 +452,7 @@
 					"$(PROJECT_DIR)/Support/XZ",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.12;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.samschott.maestral-cocoa";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.samschott.maestral";
 				STRIP_INSTALLED_PRODUCT = NO;
 			};
 			name = Debug;
@@ -493,7 +493,7 @@
 					"$(PROJECT_DIR)/Support/XZ",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.12;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.samschott.maestral-cocoa";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.samschott.maestral";
 				STRIP_INSTALLED_PRODUCT = NO;
 			};
 			name = Release;

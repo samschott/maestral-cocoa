@@ -1,8 +1,8 @@
-../../bin/pyro5-check-config,sha256=nkbAua84cjNqfnEY5D9YKTjKLRidBgr5S4psFBXw2Tk,263
-../../bin/pyro5-echoserver,sha256=zyetal6mn8_c34GXzvhfLycinry9zbqvG5H8hn9zPTA,270
-../../bin/pyro5-httpgateway,sha256=_-fkOvIdZwVJLk45pPulcij3mtm13Obt3UcW70Y1jQA,271
-../../bin/pyro5-ns,sha256=kHcXQML4bqIe3Wv9fDqNocR5aHrhmTEexad0g_hqAWw,264
-../../bin/pyro5-nsc,sha256=GcLlVSE3_L46FQIQU_x79KHik_P86f7jpzbRmwJ0hbU,257
+../../bin/pyro5-check-config,sha256=F0oI1IBj667BgMJT8tlyCD3Jyts_sjYg4kIqoWuHnj8,260
+../../bin/pyro5-echoserver,sha256=hToyXWJnc8RzJu8nyI3Ct7EGoFdkmmU3W9juX0Q-vq8,267
+../../bin/pyro5-httpgateway,sha256=LoOk7YESduIChnEka7tLtZUk2YgeVEeg9ERGn9ag-YM,268
+../../bin/pyro5-ns,sha256=0xL2PD3i4yXLOLdFkU1Umpst1G_7U2G95MD5lPMywKg,261
+../../bin/pyro5-nsc,sha256=Iam5XsrdCrpto-O0a3gjTmr1OGC2LlQ3u7qAn3-TPms,254
 Pyro5-5.13.1.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
 Pyro5-5.13.1.dist-info/LICENSE,sha256=Keejv12rLQjJWDDo4Jvs0021VErViCn_fjo7LvXOcVU,1065
 Pyro5-5.13.1.dist-info/METADATA,sha256=kVdnntap2PPiT456wNMOIoNEw4pP8aT4_IJKJJ7bxUg,5348
