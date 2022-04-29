@@ -1,4 +1,4 @@
-#!/Library/Frameworks/Python.framework/Versions/3.9/bin/python3
+#!/Library/Frameworks/Python.framework/Versions/3.10/bin/python3
 # EASY-INSTALL-ENTRY-SCRIPT: 'watchdog==2.1.7','console_scripts','watchmedo'
 import re
 import sys
