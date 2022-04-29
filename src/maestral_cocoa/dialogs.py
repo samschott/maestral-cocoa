@@ -19,12 +19,12 @@ from .private.widgets import (
     Window,
     DialogButtons,
     Label,
-    RichMultilineTextInput,
     FollowLinkButton,
     Icon,
 )
 from .private.constants import WORD_WRAP
 from .utils import call_async_maestral
+from .resources import RELEASE_NOTES_CSS_PATH
 
 
 # NSAlert's are the preferred way of alerting the user. However, we use our own dialogs
@@ -243,16 +243,15 @@ class DetailedDialog(Dialog):
             ),
         )
 
-        text_view_height = self.WINDOW_MIN_HEIGHT - Dialog.WINDOW_MIN_HEIGHT - 15
-        text_view = RichMultilineTextInput(
-            html=details,
-            readonly=True,
+        html_view_height = self.WINDOW_MIN_HEIGHT - Dialog.WINDOW_MIN_HEIGHT - 15
+        self.web_view = toga.WebView(
             style=Pack(
-                width=self.CONTENT_WIDTH, height=text_view_height, padding_bottom=15
+                width=self.CONTENT_WIDTH, height=html_view_height, padding_bottom=15
             ),
         )
+        self.web_view.set_content("", details)
         accessory_view = toga.Box(
-            children=[label, text_view], style=Pack(direction=COLUMN)
+            children=[label, self.web_view], style=Pack(direction=COLUMN)
         )
 
         super().__init__(
@@ -307,21 +306,31 @@ class UpdateDialog(Dialog):
         )
 
         html_notes = markdown2.markdown(release_notes)
-        html_notes = html_notes.replace("</ul>", "</ul><br/>")
 
-        text_view_height = self.WINDOW_MIN_HEIGHT - Dialog.WINDOW_MIN_HEIGHT - 15
-        text_view = RichMultilineTextInput(
-            html=html_notes,
-            readonly=True,
+        with open(RELEASE_NOTES_CSS_PATH) as f:
+            release_notes_css = f.read()
+
+        html_notes = f"""
+        <html>
+        <head>
+        <style>{release_notes_css}</style>
+        </head>
+        <body>{html_notes}</body>
+        </html>
+        """
+
+        html_view_height = self.WINDOW_MIN_HEIGHT - Dialog.WINDOW_MIN_HEIGHT - 15
+        self.web_view = toga.WebView(
             style=Pack(
                 width=self.CONTENT_WIDTH,
-                height=text_view_height,
+                height=html_view_height,
                 padding_bottom=15,
                 font_family="Helvetica Neue",
             ),
         )
+        self.web_view.set_content("", html_notes)
         accessory_view = toga.Box(
-            children=[link_button, label, text_view], style=Pack(direction=COLUMN)
+            children=[link_button, label, self.web_view], style=Pack(direction=COLUMN)
         )
 
         message = (

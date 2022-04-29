@@ -14,7 +14,7 @@ from maestral.utils.appdirs import get_home_dir
 from . import __url__, __author__, __version__
 from .private.widgets import (
     Label,
-    RichLabel,
+    LinkLabel,
     Switch,
     FileSelectionButton,
     Window,
@@ -292,8 +292,9 @@ class SettingsGui(Window):
                                 width=SettingsGui.COLUMN_WIDTH_RIGHT,
                             ),
                         ),
-                        RichLabel(
-                            html=f'<a href="{__url__}">{__url__}</a>',
+                        LinkLabel(
+                            text=__url__,
+                            url=__url__,
                             style=Pack(
                                 padding_bottom=SettingsGui.SUBELEMENT_PADDING,
                                 width=SettingsGui.COLUMN_WIDTH_RIGHT,

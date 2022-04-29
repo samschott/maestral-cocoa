@@ -12,19 +12,21 @@ from travertino.size import at_least
 from rubicon.objc import (
     NSMakeSize,
     NSZeroPoint,
+    NSDictionary,
     CGRectMake,
     ObjCClass,
     objc_method,
     objc_property,
     SEL,
-    at,
 )
 from rubicon.objc.runtime import objc_id
+from toga.fonts import Font as InterfaceFont
 from toga.handlers import NativeHandler
 from toga.constants import LEFT
 from toga_cocoa.libs import (
-    NSColor,
-    NSString,
+    NSLinkAttributeName,
+    NSFontAttributeName,
+    NSAttributedString,
     NSTextView,
     NSTextAlignment,
     NSBezelStyle,
@@ -58,9 +60,6 @@ from toga_cocoa.widgets.base import Widget
 from toga_cocoa.widgets.button import Button as TogaButton
 from toga_cocoa.window import Window as TogaWindow
 from toga_cocoa.window import WindowDelegate as TogaWindowDeletage
-from toga_cocoa.widgets.multilinetextinput import (
-    MultilineTextInput as TogaMultilineTextInput,
-)
 from toga_cocoa.factory import ImageView
 from toga_cocoa.factory import *  # noqa: F401,F406
 
@@ -73,7 +72,6 @@ from .constants import (
     NSSquareStatusItemLength,
     NSWindowAnimationBehaviorDefault,
     NSWindowAnimationBehaviorAlertPanel,
-    NSUTF8StringEncoding,
     NSImageLeading,
     NSCompositeSourceOver,
     NSImageNameFollowLinkFreestandingTemplate,
@@ -99,7 +97,6 @@ from ...constants import (
 NSWorkspace = ObjCClass("NSWorkspace")
 NSFileManager = ObjCClass("NSFileManager")
 NSVisualEffectView = ObjCClass("NSVisualEffectView")
-NSMutableAttributedString = ObjCClass("NSMutableAttributedString")
 NSStatusBar = ObjCClass("NSStatusBar")
 NSColorSpace = ObjCClass("NSColorSpace")
 
@@ -164,31 +161,6 @@ class Icon:
 # ==== labels ==========================================================================
 
 
-def attributed_str_from_html(raw_html, font=None, color=None):
-    """Converts html to a NSAttributed string using the system font family and color."""
-
-    html_value = """
-    <span style="font-family: '{0}'; font-size: {1}; color: {2}">
-    {3}
-    </span>
-    """
-    font_family = font.fontName if font else "system-ui"
-    font_size = font.pointSize if font else 13
-    color = color or NSColor.labelColor
-    c = color.colorUsingColorSpace(NSColorSpace.deviceRGBColorSpace)
-    c_str = (
-        f"rgb({c.redComponent * 255},{c.blueComponent * 255},{c.greenComponent * 255})"
-    )
-    html_value = html_value.format(font_family, font_size, c_str, raw_html)
-    nsstring = NSString(at(html_value))
-    data = nsstring.dataUsingEncoding(NSUTF8StringEncoding)
-    attr_str = NSMutableAttributedString.alloc().initWithHTML(
-        data,
-        documentAttributes=None,
-    )
-    return attr_str
-
-
 class Label(Widget):
     """Reimplements toga_cocoa.Label with text wrapping."""
 
@@ -243,11 +215,10 @@ class Label(Widget):
             self.interface.intrinsic.height = at_least(content_size.height)
 
 
-class RichLabel(Widget):
-    """A multiline text view with html support."""
+class LinkLabel(Widget):
+    """A label with a hyperlink."""
 
     def create(self):
-        self._color = None
         self.native = NSTextView.alloc().init()
 
         self.native.drawsBackground = False
@@ -260,25 +231,29 @@ class RichLabel(Widget):
         # Add the layout constraints
         self.add_constraints()
 
-    def set_html(self, value):
-        attr_str = attributed_str_from_html(value, color=self._color)
-        self.native.textStorage.setAttributedString(attr_str)
-        self.rehint()
+    def _update(self):
+        style = self.interface.style
+        font = InterfaceFont(style.font_family, style.font_size)
 
-    def set_font(self, font):
-        native_font = font.bind(self.interface.factory).native
-        attr_str = attributed_str_from_html(
-            self.interface.html, color=self._color, font=native_font
+        attributes = NSDictionary.dictionaryWithObjects(
+            [self.interface.url, font.bind(self.interface.factory).native],
+            forKeys=[NSLinkAttributeName, NSFontAttributeName],
         )
-        self.native.textStorage.setAttributedString(attr_str)
+
+        self.attr_string = NSAttributedString.alloc().initWithString(
+            self.interface.text, attributes=attributes
+        )
+        self.native.textStorage.setAttributedString(self.attr_string)
         self.rehint()
 
-    def set_color(self, value):
-        if value:
-            self._color = native_color(value)
+    def set_text(self, value):
+        self._update()
 
-        # update html
-        self.set_html(self.interface.html)
+    def set_url(self, value):
+        self._update()
+
+    def set_font(self, value):
+        self._update()
 
     def rehint(self):
         # force layout and get layout rect
@@ -289,17 +264,6 @@ class RichLabel(Widget):
 
         self.interface.intrinsic.width = at_least(rect.size.width)
         self.interface.intrinsic.height = rect.size.height
-
-
-# ==== text input ======================================================================
-
-
-class RichMultilineTextInput(TogaMultilineTextInput):
-    """A scrollable text view with html support."""
-
-    def set_html(self, value):
-        attr_str = attributed_str_from_html(value, font=self.text.font)
-        self.text.textStorage.setAttributedString(attr_str)
 
 
 # ==== buttons =========================================================================

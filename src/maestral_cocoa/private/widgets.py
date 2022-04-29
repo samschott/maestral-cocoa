@@ -368,67 +368,36 @@ class Label(toga.Label):
         self._impl.set_linebreak_mode(value)
 
 
-class RichLabel(Widget):
-    """A label with html support."""
+class LinkLabel(Widget):
+    """A label with a hyperlink."""
 
-    def __init__(self, html, id=None, style=None, factory=private_factory):
+    def __init__(self, text, url, id=None, style=None, factory=private_factory):
         super().__init__(id=id, style=style, factory=factory)
 
-        self._html = html
+        self._text = text
+        self._url = url
 
-        # Create a platform specific implementation of a Label
-        self._impl = self.factory.RichLabel(interface=self)
-        self.html = html
-
-    @property
-    def html(self):
-        return self._html
-
-    @html.setter
-    def html(self, value):
-        self._html = value
-        self._impl.set_html(value)
-
-
-# ==== input widgets ===================================================================
-
-
-class RichMultilineTextInput(toga.MultilineTextInput):
-    """A multiline text view with html support."""
-
-    MIN_HEIGHT = 100
-    MIN_WIDTH = 100
-
-    def __init__(
-        self,
-        id=None,
-        style=None,
-        factory=private_factory,
-        html="",
-        readonly=False,
-        placeholder=None,
-    ):
-        super().__init__(
-            id=id,
-            style=style,
-            readonly=readonly,
-            placeholder=placeholder,
-            factory=factory,
-        )
-
-        # Create a platform specific implementation of a Label
-        self._impl = self.factory.RichMultilineTextInput(interface=self)
-        self.html = html
-        self.readonly = readonly
+        self._impl = self.factory.LinkLabel(interface=self)
+        self.text = text
+        self.url = url
 
     @property
-    def html(self):
-        return self._html
+    def text(self):
+        return self._text
 
-    @html.setter
-    def html(self, value):
-        self._html = value
-        self._impl.set_html(value)
+    @text.setter
+    def text(self, value):
+        self._text = value
+        self._impl.set_text(value)
+
+    @property
+    def url(self):
+        return self._text
+
+    @url.setter
+    def url(self, value):
+        self._url = value
+        self._impl.set_url(value)
 
 
 # ==== icons ===========================================================================
