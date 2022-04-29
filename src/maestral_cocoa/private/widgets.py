@@ -5,6 +5,7 @@ import asyncio
 import click
 import toga
 from toga.handlers import wrapped_handler
+from toga.widgets.base import Widget
 from toga.style.pack import Pack
 from toga.constants import ROW, RIGHT, TRANSPARENT
 
@@ -365,6 +366,38 @@ class Label(toga.Label):
     def linebreak_mode(self, value):
         self._linebreak_mode = value
         self._impl.set_linebreak_mode(value)
+
+
+class LinkLabel(Widget):
+    """A label with a hyperlink."""
+
+    def __init__(self, text, url, id=None, style=None, factory=private_factory):
+        super().__init__(id=id, style=style, factory=factory)
+
+        self._text = text
+        self._url = url
+
+        self._impl = self.factory.LinkLabel(interface=self)
+        self.text = text
+        self.url = url
+
+    @property
+    def text(self):
+        return self._text
+
+    @text.setter
+    def text(self, value):
+        self._text = value
+        self._impl.set_text(value)
+
+    @property
+    def url(self):
+        return self._text
+
+    @url.setter
+    def url(self, value):
+        self._url = value
+        self._impl.set_url(value)
 
 
 # ==== icons ===========================================================================

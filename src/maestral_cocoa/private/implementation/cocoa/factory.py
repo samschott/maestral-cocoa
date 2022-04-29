@@ -12,6 +12,7 @@ from travertino.size import at_least
 from rubicon.objc import (
     NSMakeSize,
     NSZeroPoint,
+    NSDictionary,
     CGRectMake,
     ObjCClass,
     objc_method,
@@ -19,9 +20,14 @@ from rubicon.objc import (
     SEL,
 )
 from rubicon.objc.runtime import objc_id
+from toga.fonts import Font as InterfaceFont
 from toga.handlers import NativeHandler
 from toga.constants import LEFT
 from toga_cocoa.libs import (
+    NSLinkAttributeName,
+    NSFontAttributeName,
+    NSAttributedString,
+    NSTextView,
     NSTextAlignment,
     NSBezelStyle,
     NSViewMaxYMargin,
@@ -207,6 +213,57 @@ class Label(Widget):
         else:
             self.interface.intrinsic.width = at_least(0)
             self.interface.intrinsic.height = at_least(content_size.height)
+
+
+class LinkLabel(Widget):
+    """A label with a hyperlink."""
+
+    def create(self):
+        self.native = NSTextView.alloc().init()
+
+        self.native.drawsBackground = False
+        self.native.editable = False
+        self.native.selectable = True
+        self.native.textContainer.lineFragmentPadding = 0
+
+        self.native.bezeled = False
+
+        # Add the layout constraints
+        self.add_constraints()
+
+    def _update(self):
+        style = self.interface.style
+        font = InterfaceFont(style.font_family, style.font_size)
+
+        attributes = NSDictionary.dictionaryWithObjects(
+            [self.interface.url, font.bind(self.interface.factory).native],
+            forKeys=[NSLinkAttributeName, NSFontAttributeName],
+        )
+
+        self.attr_string = NSAttributedString.alloc().initWithString(
+            self.interface.text, attributes=attributes
+        )
+        self.native.textStorage.setAttributedString(self.attr_string)
+        self.rehint()
+
+    def set_text(self, value):
+        self._update()
+
+    def set_url(self, value):
+        self._update()
+
+    def set_font(self, value):
+        self._update()
+
+    def rehint(self):
+        # force layout and get layout rect
+        self.native.layoutManager.glyphRangeForTextContainer(self.native.textContainer)
+        rect = self.native.layoutManager.usedRectForTextContainer(
+            self.native.textContainer
+        )
+
+        self.interface.intrinsic.width = at_least(rect.size.width)
+        self.interface.intrinsic.height = rect.size.height
 
 
 # ==== buttons =========================================================================
