@@ -4,7 +4,8 @@ from __future__ import annotations
 import os
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from typing import Awaitable, TypeVar, AsyncGenerator, Any, Callable
+from collections.abc import Awaitable
+from typing import TypeVar, AsyncGenerator, Any, Callable
 
 # external imports
 from rubicon.objc import ObjCClass
@@ -22,13 +23,9 @@ NSAppleScript = ObjCClass("NSAppleScript")
 thread_pool_executor = ThreadPoolExecutor(10)
 
 
-def create_task(coro: Awaitable[T]) -> asyncio.Task[T] | asyncio.Future[T]:
+def create_task(awaitable: Awaitable[T]) -> asyncio.Task[T]:
     loop = asyncio.get_event_loop_policy().get_event_loop()
-
-    try:
-        return loop.create_task(coro)
-    except AttributeError:
-        return asyncio.ensure_future(coro, loop=loop)
+    return asyncio.ensure_future(awaitable, loop=loop)
 
 
 def call_async(func: Callable, *args) -> Awaitable:
