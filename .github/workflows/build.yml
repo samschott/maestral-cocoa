@@ -23,10 +23,10 @@ jobs:
 
       - name: Set up Python
         run: |
-          wget -q https://www.python.org/ftp/python/3.9.9/python-3.9.9-macos11.pkg
-          sudo installer -pkg python-3.9.9-macos11.pkg -target /
+          wget -q https://www.python.org/ftp/python/3.10.4/python-3.10.4-macos11.pkg
+          sudo installer -pkg python-3.10.4-macos11.pkg -target /
           python3 -c "import sys; print(sys.version)"
-          echo "/Library/Frameworks/Python.framework/Versions/3.9/bin" >> $GITHUB_PATH
+          echo "/Library/Frameworks/Python.framework/Versions/3.10/bin" >> $GITHUB_PATH
 
       - name: Install dependencies
         run: |
@@ -44,11 +44,13 @@ jobs:
         id: build
         run: |
 
-          # update Python code
-          briefcase update macOS Xcode -r -d
+          # Recreate Xcode project. This is currently required to update project metadata,
+          # see https://github.com/beeware/briefcase/issues/472.
+          rm -Rf macOS/Xcode
+          briefcase create macOS Xcode --no-input
 
           # build app
-          briefcase build macOS Xcode
+          briefcase build macOS Xcode --no-input
 
           # run post-build scripts:
           # - add CLI executable
@@ -57,7 +59,7 @@ jobs:
           ./scripts/post-build-macos.sh $APP_PATH
 
           # package as dmg
-          briefcase package macOS Xcode -i "$DEV_ID"
+          briefcase package macOS Xcode -i "$DEV_ID" --no-input
 
           # prepare output for notarization step
           DMG_PATH=$( find . -name "*.dmg" )
