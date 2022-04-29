@@ -17,6 +17,10 @@ DIST_INFO_TARGET_PATH=$( find "$BUNDLE_PATH/Contents/Resources/app" -name $DIST_
 cp "$DIST_INFO_PATH/entry_points.txt" "$DIST_INFO_TARGET_PATH/entry_points.txt"
 rm -Rf dist
 
+echo "# ==== copy over cli executable ================================================="
+
+cp macOS/maestral-cli "$BUNDLE_PATH/Contents/MacOS"
+
 echo "# ==== prune py files and replace with pyc ======================================"
 
 # compile all py files

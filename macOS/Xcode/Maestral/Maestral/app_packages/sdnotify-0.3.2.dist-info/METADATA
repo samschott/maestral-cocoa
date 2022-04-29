@@ -3,10 +3,10 @@ Name: sdnotify
 Version: 0.3.2
 Summary: A pure Python implementation of systemd's service notification protocol (sd_notify)
 Home-page: https://github.com/bb4242/sdnotify
+Download-URL: https://github.com/bb4242/sdnotify/tarball/v0.3.2
 Author: Brett Bethke
 Author-email: bbethke@gmail.com
 License: UNKNOWN
-Download-URL: https://github.com/bb4242/sdnotify/tarball/v0.3.2
 Keywords: systemd
 Platform: UNKNOWN
 Classifier: Programming Language :: Python

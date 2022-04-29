@@ -28,6 +28,8 @@ agent = 1
 requires = [
     "toga-cocoa==0.3.0.dev32",
 ]
+sparkle_appcast_url = "https://maestral.app/appcast.xml"
+sparkle_public_key = "RugM2eM14xHixaeHpl5uWSq7+sDZvYi52Xpz4IXpAdA="
 
 [tool.briefcase.app.maestral-cocoa.linux]
 requires = [
