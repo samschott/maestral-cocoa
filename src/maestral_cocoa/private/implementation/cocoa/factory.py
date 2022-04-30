@@ -224,7 +224,7 @@ class LinkLabel(Widget):
         self.native.drawsBackground = False
         self.native.editable = False
         self.native.selectable = True
-        self.native.textContainer.lineFragmentPadding = 0
+        self.native.textContainer.lineFragmentPadding = 2.0
 
         self.native.bezeled = False
 
@@ -239,7 +239,6 @@ class LinkLabel(Widget):
             [self.interface.url, font.bind(self.interface.factory).native],
             forKeys=[NSLinkAttributeName, NSFontAttributeName],
         )
-
         self.attr_string = NSAttributedString.alloc().initWithString(
             self.interface.text, attributes=attributes
         )
