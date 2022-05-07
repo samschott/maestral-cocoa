@@ -757,60 +757,6 @@ class Window(toga.Window):
         self._release_on_close = value
         self._impl.set_release_on_close(value)
 
-    # dialogs
-
-    async def save_file_sheet(
-        self, title="", message="", suggested_filename="untitled", file_types=None
-    ):
-        return await self._impl.save_file_sheet(
-            title, message, suggested_filename, file_types
-        )
-
-    async def open_file_sheet(
-        self,
-        title="",
-        message="",
-        initial_directory=None,
-        file_types=None,
-        multiselect=False,
-    ):
-        return await self._impl.open_file_sheet(
-            title, message, initial_directory, file_types, multiselect
-        )
-
-    async def select_folder_sheet(
-        self, title="", message="", initial_directory=None, multiselect=False
-    ):
-        return await self._impl.select_folder_sheet(
-            title, message, initial_directory, multiselect
-        )
-
-    async def alert_sheet(
-        self,
-        title="",
-        message="",
-        details=None,
-        details_title="Traceback",
-        button_labels=("Ok",),
-        checkbox_text=None,
-        level="info",
-        icon=None,
-    ):
-
-        if not icon and self.app:
-            icon = self.app.icon
-
-        return await self._impl.alert_sheet(
-            title,
-            message,
-            details,
-            details_title,
-            button_labels,
-            checkbox_text,
-            level,
-            icon,
-        )
-
 
 # ==== Application =====================================================================
 

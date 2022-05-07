@@ -27,13 +27,8 @@ from .utils import call_async_maestral
 from .resources import RELEASE_NOTES_CSS_PATH
 
 
-# NSAlert's are the preferred way of alerting the user. However, we use our own dialogs
-# in the following cases:
-#
-#  - NSAlert is to static / inflexible to achieve our goal (see RelinkDialog, Unlink).
-#  - We want to keep the event loop running while showing the dialog *and* we cannot
-#    use an NSAlert as sheet
-#
+# System native dialogs are the preferred way of alerting the user. However, we use our
+# own dialogs when those to static / inflexible to achieve our goal.
 
 
 class Dialog(Window):
@@ -444,18 +439,18 @@ class RelinkDialog(Dialog):
         self.spinner.stop()
 
         if res == 0:
-            await self.alert_sheet(
+            await self.info_dialog(
                 title="Relink successful!",
                 message="Click OK to restart.",
             )
             await self.app.restart()
         elif res == 1:
-            await self.alert_sheet(
+            await self.error_dialog(
                 title="Invalid token",
                 message="Please make sure you copy the correct token.",
             )
         elif res == 2:
-            await self.alert_sheet(
+            await self.error_dialog(
                 title="Connection failed",
                 message="Please check your internet connection.",
             )

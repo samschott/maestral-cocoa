@@ -902,48 +902,6 @@ class Window(TogaWindow):
             self.native.animationBehavior = NSWindowAnimationBehaviorDefault
             self.native.level = NSNormalWindowLevel
 
-    # dialogs
-
-    async def save_file_sheet(self, title, message, suggested_filename, file_types):
-        return await dialogs.save_file_sheet(
-            self.interface, suggested_filename, title, message, file_types
-        )
-
-    async def open_file_sheet(
-        self, title, message, initial_directory, file_types, multiselect
-    ):
-        return await dialogs.open_file_sheet(
-            self.interface, title, message, file_types, multiselect
-        )
-
-    async def select_folder_sheet(self, title, message, initial_directory, multiselect):
-        return await dialogs.select_folder_sheet(
-            self.interface, title, message, multiselect
-        )
-
-    async def alert_sheet(
-        self,
-        title,
-        message,
-        details,
-        details_title,
-        button_labels,
-        checkbox_text,
-        level,
-        icon,
-    ):
-        return await dialogs.alert_sheet(
-            self.interface,
-            title,
-            message,
-            details,
-            details_title,
-            button_labels,
-            checkbox_text,
-            level,
-            icon,
-        )
-
 
 # ==== helpers =========================================================================
 

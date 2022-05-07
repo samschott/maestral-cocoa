@@ -101,7 +101,7 @@ class SetupDialog(SetupDialogGui):
                 self.go_forward()
 
             elif res == 1:
-                await self.alert_sheet(
+                await self.error_dialog(
                     title="Authentication failed.",
                     message=(
                         "Please make sure that you entered the "
@@ -110,7 +110,7 @@ class SetupDialog(SetupDialogGui):
                 )
 
             elif res == 2:
-                await self.alert_sheet(
+                await self.error_dialog(
                     title="Connection failed.",
                     message=(
                         "Please make sure that you are connected "
@@ -140,30 +140,26 @@ class SetupDialog(SetupDialogGui):
                     if is_empty(dropbox_path):
                         delete(dropbox_path, raise_error=True)
                     else:
-                        choice = await self.alert_sheet(
+                        should_merge = await self.question_dialog(
                             title="Folder is not empty",
                             message=(
                                 f'The folder "{osp.basename(dropbox_path)}" is not '
                                 "empty. Would you like merge its content with "
                                 "your Dropbox?"
                             ),
-                            button_labels=("Cancel", "Merge"),
                         )
 
-                        if choice == 0:  # cancel
+                        if not should_merge:
                             return
-                        elif choice == 1:  # merge
-                            pass
 
                 self.mdbx.create_dropbox_directory(dropbox_path)
             except OSError:
-                await self.alert_sheet(
+                await self.error_dialog(
                     title="Could not set folder",
                     message=(
                         "Please make sure that you have permissions "
                         "to write to the selected location."
                     ),
-                    button_labels=("Ok",),
                 )
             else:
                 self.go_forward()
