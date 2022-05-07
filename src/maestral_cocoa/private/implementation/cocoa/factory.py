@@ -858,21 +858,13 @@ class WindowDeletage(TogaWindowDeletage):
 
 
 class Window(TogaWindow):
-    def create(self):
-        super().create()
+    def __init__(self, interface, title, position, size):
+        super().__init__(interface, title, position, size)
         self.delegate = WindowDeletage.alloc().init()
         self.delegate.interface = self.interface
         self.delegate.impl = self
         self.native.delegate = self.delegate
         self.app = NSApplication.sharedApplication
-
-    def cocoa_windowShouldClose(self):
-        if self.interface.on_close:
-            should_close = self.interface.on_close(self)
-        else:
-            should_close = True
-
-        return should_close
 
     def is_visible(self):
         return bool(self.native.isVisible)
@@ -890,27 +882,19 @@ class Window(TogaWindow):
         if not self.interface.is_dialog:
             self.app.activationPolicy = NSApplicationActivationPolicyRegular
             self.app.activateIgnoringOtherApps(True)
+
         super().show()
 
     def close(self):
-
         if self.native.sheetParent:
-            # End sheet session.
             self.native.sheetParent.endSheet(self.native)
-        elif self.interface.closeable:
-            # Mimic the press of the close button.
-            self.native.performClose(self.native)
         else:
-            # Window has no close button -> performClose does not work.
-            # Get close confirmation and close if ok.
-            if self.cocoa_windowShouldClose():
-                self.native.close()
+            self.native.close()
 
     def set_release_on_close(self, value):
         self.native.releasedWhenClosed = value
 
     def set_dialog(self, value):
-
         if value:
             self.native.animationBehavior = NSWindowAnimationBehaviorAlertPanel
             self.native.level = NSModalPanelWindowLevel

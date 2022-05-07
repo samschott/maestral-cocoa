@@ -693,6 +693,7 @@ class Window(toga.Window):
         is_dialog=False,
         app=None,
         factory=private_factory,
+        on_close=lambda x: True,  # See https://github.com/beeware/toga/issues/1482
     ):
         initial_position = position or (100, 100)
         super().__init__(
@@ -705,9 +706,9 @@ class Window(toga.Window):
             closeable,
             minimizable,
             factory,
+            on_close,
         )
-        if app:
-            self.app = app
+        app.windows += self
 
         self.release_on_close = release_on_close
         self.is_dialog = is_dialog
@@ -727,6 +728,9 @@ class Window(toga.Window):
     def raise_(self):
         self.show()
         self._impl.force_to_front()
+
+    def close(self):
+        self._impl.close()
 
     # sheet support
 

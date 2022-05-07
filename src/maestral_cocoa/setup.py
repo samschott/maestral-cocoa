@@ -30,8 +30,6 @@ class SetupDialog(SetupDialogGui):
         self._on_success: Callable | None = None
         self._on_failure: Callable | None = None
 
-        self.on_close = self.callback_on_close
-
         # set up combobox
         dropbox_path = f"{get_home_dir()}/Dropbox ({self.config_name.capitalize()})"
         self.combobox_dbx_location.current_selection = dropbox_path
@@ -47,6 +45,7 @@ class SetupDialog(SetupDialogGui):
         self.dropbox_tree.data = self.fs_source
 
         # connect buttons to callbacks
+        self.on_close = self.on_close_handler
         self.btn_start.on_press = self.on_start
         self.dialog_buttons_link_page.on_press = self.on_link_dialog
         self.dialog_buttons_location_page.on_press = self.on_dbx_location
@@ -70,6 +69,10 @@ class SetupDialog(SetupDialogGui):
     def on_failure(self, value):
         self._on_failure = wrapped_handler(self, value)
 
+    def on_close_button_pressed(self, sender: Any = None) -> None:
+        self.on_close_handler()
+        self.close()
+
     # ==================================================================================
     # User interaction callbacks
     # ==================================================================================
@@ -80,9 +83,8 @@ class SetupDialog(SetupDialogGui):
         self.go_forward()
 
     async def on_link_dialog(self, btn_name: str) -> None:
-
         if btn_name == "Cancel":
-            self.close()
+            self.on_close_button_pressed()
 
         elif btn_name == "Link":
 
@@ -168,7 +170,7 @@ class SetupDialog(SetupDialogGui):
 
         elif btn_name == "Cancel & Unlink":
             self.mdbx.unlink()
-            self.close()
+            self.on_close_button_pressed()
 
     async def on_items_selected(self, btn_name: str) -> None:
 
@@ -191,18 +193,12 @@ class SetupDialog(SetupDialogGui):
         elif btn_name == "Back":
             self.go_back()
 
-    def callback_on_close(self, sender: Any = None) -> bool:
-
+    def on_close_handler(self, sender: Any = None) -> None:
         if self.current_page == 4 and self.on_success:
             self.on_success(self)
 
         elif self.on_failure:
             self.on_failure(self)
-
-        return True
-
-    def on_close_button_pressed(self, sender: Any = None) -> None:
-        self.close()
 
     def _token_field_validator(self, widget: toga.TextInput) -> None:
         self.dialog_buttons_link_page["Link"].enabled = len(widget.value) > 10
