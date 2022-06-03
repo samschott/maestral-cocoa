@@ -22,6 +22,7 @@ requires = [
 ]
 template = "https://github.com/samschott/briefcase-macOS-Xcode-template"
 template_branch = "maestral"
+support_revision = "3.10-b1"
 
 [tool.briefcase.app.maestral-cocoa.macOS]
 agent = 1
