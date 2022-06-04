@@ -1,7 +1,7 @@
 [tool.briefcase]
 project_name = "Maestral"
 bundle = "com.samschott"
-version = "1.6.3.dev0"
+version = "1.6.3"
 url = "https://maestral.app"
 license = "MIT license"
 author = "Sam Schott"
@@ -20,10 +20,11 @@ requires = [
     "rubicon-objc==0.4.2",
     "toga==0.3.0.dev32",
 ]
-template = "https://github.com/samschott/briefcase-macOS-Xcode-template"
-template_branch = "maestral"
 
 [tool.briefcase.app.maestral-cocoa.macOS]
+template = "https://github.com/samschott/briefcase-macOS-Xcode-template"
+template_branch = "maestral"
+support_revision = "b1"
 agent = 1
 requires = [
     "toga-cocoa==0.3.0.dev32",

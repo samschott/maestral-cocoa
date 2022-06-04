@@ -437,7 +437,7 @@ class SelectiveSyncDialog(SelectiveSyncGui):
             try:
                 self.update_items()
             except BusyError as err:
-                await self.alert_sheet(err.title, err.message, level="error")
+                await self.error_dialog(err.title, err.message)
             else:
                 self.close()
 
