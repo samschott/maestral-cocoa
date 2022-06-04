@@ -90,14 +90,13 @@ class SettingsWindow(SettingsGui):
             # Ask if we can delete it / its contents if it isn't empty.
 
             if not is_empty(new_path):
-                await self.alert_sheet(
+                return await self.error_dialog(
                     title="Folder is not empty",
                     message=(
                         f'The folder "{osp.basename(new_path)}" is not empty. '
                         "Please select an empty folder."
                     ),
                 )
-                return
 
             delete(new_path, raise_error=True)
 
@@ -105,10 +104,9 @@ class SettingsWindow(SettingsGui):
                 self.mdbx.config_name, "move_dropbox_directory", new_path
             )
         except Exception as exc:
-            await self.alert_sheet(
+            await self.error_dialog(
                 title="Could not move folder",
                 message=str(exc.args[0]),
-                button_labels=("Ok",),
             )
             self.mdbx.start_sync()
 
@@ -116,22 +114,20 @@ class SettingsWindow(SettingsGui):
         SelectiveSyncDialog(mdbx=self.mdbx, app=self.app).show_as_sheet(self)
 
     async def on_unlink_pressed(self, widget: Any) -> None:
-        choice = await self.alert_sheet(
+        should_unlink = await self.confirm_dialog(
             title="Unlink your Dropbox account?",
             message=(
                 "You will still keep your Dropbox folder on this "
                 "computer but your files will stop syncing."
             ),
-            button_labels=("Unlink", "Cancel"),
         )
 
-        if choice == 0:
+        if should_unlink:
             self._refresh = False
             self.mdbx.unlink()
-            await self.alert_sheet(
+            await self.info_dialog(
                 title="Successfully unlinked",
                 message="Maestral will now quit.",
-                button_labels=("Ok",),
             )
             await self.app.exit_and_stop_daemon()
 
@@ -162,7 +158,7 @@ class SettingsWindow(SettingsGui):
                         f"/bin/rm -f {self._macos_cli_install_path}"
                     )
             except Exception as e:
-                await self.alert_sheet("Could not uninstall CLI", str(e), level="error")
+                await self.error_dialog("Could not uninstall CLI", str(e))
 
         elif not self._macos_cli_install_path.exists():
 
@@ -181,11 +177,12 @@ class SettingsWindow(SettingsGui):
                         f"/bin/ln -s {maestral_cli} {self._macos_cli_install_path}"
                     )
             except Exception as e:
-                await self.alert_sheet("Could not install CLI", str(e), level="error")
+                await self.error_dialog("Could not install CLI", str(e))
 
         else:
-            await self.alert_sheet(
-                f"There already is a file at {self._macos_cli_install_path}"
+            await self.error_dialog(
+                "Could not install CLI",
+                f"There already is a file at {self._macos_cli_install_path}",
             )
 
         self._update_cli_tool_button()

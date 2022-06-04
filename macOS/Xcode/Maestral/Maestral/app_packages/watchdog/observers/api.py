@@ -101,7 +101,7 @@ class EventEmitter(BaseThread):
     """
 
     def __init__(self, event_queue, watch, timeout=DEFAULT_EMITTER_TIMEOUT):
-        BaseThread.__init__(self)
+        super().__init__()
         self._event_queue = event_queue
         self._watch = watch
         self._timeout = timeout
@@ -164,7 +164,7 @@ class EventDispatcher(BaseThread):
     """Event inserted into the queue to signal a requested stop."""
 
     def __init__(self, timeout=DEFAULT_OBSERVER_TIMEOUT):
-        BaseThread.__init__(self)
+        super().__init__()
         self._event_queue = EventQueue()
         self._timeout = timeout
 
@@ -211,7 +211,7 @@ class BaseObserver(EventDispatcher):
     """Base observer."""
 
     def __init__(self, emitter_class, timeout=DEFAULT_OBSERVER_TIMEOUT):
-        EventDispatcher.__init__(self, timeout)
+        super().__init__(timeout)
         self._emitter_class = emitter_class
         self._lock = threading.RLock()
         self._watches = set()
@@ -298,9 +298,9 @@ class BaseObserver(EventDispatcher):
                 emitter = self._emitter_class(event_queue=self.event_queue,
                                               watch=watch,
                                               timeout=self.timeout)
-                self._add_emitter(emitter)
                 if self.is_alive():
                     emitter.start()
+                self._add_emitter(emitter)
             self._watches.add(watch)
         return watch
 

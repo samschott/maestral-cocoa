@@ -5,6 +5,7 @@ import asyncio
 import click
 import toga
 from toga.handlers import wrapped_handler
+from toga.widgets.base import Widget
 from toga.style.pack import Pack
 from toga.constants import ROW, RIGHT, TRANSPARENT
 
@@ -367,6 +368,38 @@ class Label(toga.Label):
         self._impl.set_linebreak_mode(value)
 
 
+class LinkLabel(Widget):
+    """A label with a hyperlink."""
+
+    def __init__(self, text, url, id=None, style=None, factory=private_factory):
+        super().__init__(id=id, style=style, factory=factory)
+
+        self._text = text
+        self._url = url
+
+        self._impl = self.factory.LinkLabel(interface=self)
+        self.text = text
+        self.url = url
+
+    @property
+    def text(self):
+        return self._text
+
+    @text.setter
+    def text(self, value):
+        self._text = value
+        self._impl.set_text(value)
+
+    @property
+    def url(self):
+        return self._text
+
+    @url.setter
+    def url(self, value):
+        self._url = value
+        self._impl.set_url(value)
+
+
 # ==== icons ===========================================================================
 
 
@@ -660,6 +693,7 @@ class Window(toga.Window):
         is_dialog=False,
         app=None,
         factory=private_factory,
+        on_close=lambda x: True,  # See https://github.com/beeware/toga/issues/1482
     ):
         initial_position = position or (100, 100)
         super().__init__(
@@ -672,9 +706,9 @@ class Window(toga.Window):
             closeable,
             minimizable,
             factory,
+            on_close,
         )
-        if app:
-            self.app = app
+        app.windows += self
 
         self.release_on_close = release_on_close
         self.is_dialog = is_dialog
@@ -694,6 +728,9 @@ class Window(toga.Window):
     def raise_(self):
         self.show()
         self._impl.force_to_front()
+
+    def close(self):
+        self._impl.close()
 
     # sheet support
 
@@ -719,60 +756,6 @@ class Window(toga.Window):
     def release_on_close(self, value):
         self._release_on_close = value
         self._impl.set_release_on_close(value)
-
-    # dialogs
-
-    async def save_file_sheet(
-        self, title="", message="", suggested_filename="untitled", file_types=None
-    ):
-        return await self._impl.save_file_sheet(
-            title, message, suggested_filename, file_types
-        )
-
-    async def open_file_sheet(
-        self,
-        title="",
-        message="",
-        initial_directory=None,
-        file_types=None,
-        multiselect=False,
-    ):
-        return await self._impl.open_file_sheet(
-            title, message, initial_directory, file_types, multiselect
-        )
-
-    async def select_folder_sheet(
-        self, title="", message="", initial_directory=None, multiselect=False
-    ):
-        return await self._impl.select_folder_sheet(
-            title, message, initial_directory, multiselect
-        )
-
-    async def alert_sheet(
-        self,
-        title="",
-        message="",
-        details=None,
-        details_title="Traceback",
-        button_labels=("Ok",),
-        checkbox_text=None,
-        level="info",
-        icon=None,
-    ):
-
-        if not icon and self.app:
-            icon = self.app.icon
-
-        return await self._impl.alert_sheet(
-            title,
-            message,
-            details,
-            details_title,
-            button_labels,
-            checkbox_text,
-            level,
-            icon,
-        )
 
 
 # ==== Application =====================================================================
