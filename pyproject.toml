@@ -20,11 +20,11 @@ requires = [
     "rubicon-objc==0.4.2",
     "toga==0.3.0.dev32",
 ]
-template = "https://github.com/samschott/briefcase-macOS-Xcode-template"
-template_branch = "maestral"
-support_revision = "3.10-b1"
 
 [tool.briefcase.app.maestral-cocoa.macOS]
+template = "https://github.com/samschott/briefcase-macOS-Xcode-template"
+template_branch = "maestral"
+support_revision = "b1"
 agent = 1
 requires = [
     "toga-cocoa==0.3.0.dev32",
