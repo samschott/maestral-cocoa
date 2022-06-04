@@ -18,20 +18,25 @@ from toga_cocoa.libs import (
     kCGPathEOFill,
     kCGPathFill,
     kCGPathStroke,
-    objc_method
+    objc_method,
+    objc_property,
 )
 
 from .base import Widget
 
 
 class TogaCanvas(NSView):
+
+    interface = objc_property(object, weak=True)
+    impl = objc_property(object, weak=True)
+
     @objc_method
     def drawRect_(self, rect: NSRect) -> None:
         context = NSGraphicsContext.currentContext.CGContext
         # Save the "clean" state of the graphics context.
         core_graphics.CGContextSaveGState(context)
         if self.interface.redraw:
-            self.interface._draw(self._impl, draw_context=context)
+            self.interface._draw(self.impl, draw_context=context)
 
     @objc_method
     def isFlipped(self) -> bool:
@@ -85,7 +90,7 @@ class Canvas(Widget):
     def create(self):
         self.native = TogaCanvas.alloc().init()
         self.native.interface = self.interface
-        self.native._impl = self
+        self.native.impl = self
 
         # Add the layout constraints
         self.add_constraints()

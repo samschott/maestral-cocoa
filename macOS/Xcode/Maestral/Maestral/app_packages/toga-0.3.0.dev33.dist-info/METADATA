@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: toga
-Version: 0.3.0.dev32
+Version: 0.3.0.dev33
 Summary: A Python native, OS native GUI toolkit.
 Home-page: https://beeware.org/project/projects/libraries/toga/
 Author: Russell Keith-Magee
@@ -29,9 +29,10 @@ Classifier: Topic :: Software Development :: User Interfaces
 Classifier: Topic :: Software Development :: Widget Sets
 Requires-Python: >=3.6
 Description-Content-Type: text/x-rst; charset=UTF-8
-Requires-Dist: toga-cocoa (==0.3.0.dev32) ; sys_platform=="darwin"
-Requires-Dist: toga-gtk (==0.3.0.dev32) ; sys_platform=="linux"
-Requires-Dist: toga-winforms (==0.3.0.dev32) ; sys_platform=="win32"
+License-File: LICENSE
+Requires-Dist: toga-cocoa (==0.3.0.dev33) ; sys_platform=="darwin"
+Requires-Dist: toga-gtk (==0.3.0.dev33) ; sys_platform=="linux"
+Requires-Dist: toga-winforms (==0.3.0.dev33) ; sys_platform=="win32"
 
 .. image:: https://beeware.org/project/projects/libraries/toga/toga.png
     :width: 72px
@@ -92,7 +93,11 @@ Minimum requirements
 
   * **Arch / Manjaro** ``sudo pacman -Syu git pkgconf cairo python-cairo pango gobject-introspection gobject-introspection-runtime python-gobject webkit2gtk``
 
-* If you're on Windows, you'll need Windows 10 or newer.
+* If you're on Windows, you'll need Windows 10 or newer. If you are using
+  Windows 10 and want to use a WebView to display web content, you will also
+  need to install the [Edge WebView2 Evergreen
+  Runtime.](https://developer.microsoft.com/en-us/microsoft-edge/webview2/#download-section)
+  Windows 11 has this runtime installed by default.
 
 Quickstart
 ~~~~~~~~~~

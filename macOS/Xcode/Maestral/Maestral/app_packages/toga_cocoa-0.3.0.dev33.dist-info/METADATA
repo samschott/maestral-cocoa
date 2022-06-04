@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: toga-cocoa
-Version: 0.3.0.dev32
+Version: 0.3.0.dev33
 Summary: A Cocoa (macOS) backend for the Toga widget toolkit.
 Home-page: https://beeware.org/project/projects/libraries/toga/
 Author: Russell Keith-Magee
@@ -29,8 +29,9 @@ Classifier: Topic :: Software Development :: User Interfaces
 Classifier: Topic :: Software Development :: Widget Sets
 Requires-Python: >=3.6
 Description-Content-Type: text/x-rst; charset=UTF-8
-Requires-Dist: rubicon-objc (>=0.3.0)
-Requires-Dist: toga-core (==0.3.0.dev32)
+License-File: LICENSE
+Requires-Dist: rubicon-objc (>=0.4.2)
+Requires-Dist: toga-core (==0.3.0.dev33)
 
 toga-cocoa
 ==========
