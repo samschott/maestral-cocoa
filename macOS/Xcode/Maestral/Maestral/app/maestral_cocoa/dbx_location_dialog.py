@@ -131,20 +131,17 @@ class DbxLocationDialog(Dialog):
                 if is_empty(dropbox_path):
                     delete(dropbox_path, raise_error=True)
                 else:
-                    choice = await self.alert_sheet(
+                    should_merge = await self.question_dialog(
                         title="Folder is not empty",
                         message=(
                             f'The folder "{osp.basename(dropbox_path)}" is not empty. '
                             "Would you like to merge its content with your Dropbox?"
                         ),
-                        button_labels=("Cancel", "Merge"),
                     )
 
-                    if choice == 0:  # cancel
+                    if not should_merge:  # cancel
                         self.dialog_buttons.enabled = True
                         return
-                    elif choice == 1:  # merge
-                        pass
 
             await call_async_maestral(
                 self.config_name, "create_dropbox_directory", dropbox_path

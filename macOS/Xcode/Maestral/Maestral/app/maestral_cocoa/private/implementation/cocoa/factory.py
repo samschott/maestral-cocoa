@@ -12,6 +12,7 @@ from travertino.size import at_least
 from rubicon.objc import (
     NSMakeSize,
     NSZeroPoint,
+    NSDictionary,
     CGRectMake,
     ObjCClass,
     objc_method,
@@ -19,9 +20,14 @@ from rubicon.objc import (
     SEL,
 )
 from rubicon.objc.runtime import objc_id
+from toga.fonts import Font as InterfaceFont
 from toga.handlers import NativeHandler
 from toga.constants import LEFT
 from toga_cocoa.libs import (
+    NSLinkAttributeName,
+    NSFontAttributeName,
+    NSAttributedString,
+    NSTextView,
     NSTextAlignment,
     NSBezelStyle,
     NSViewMaxYMargin,
@@ -207,6 +213,56 @@ class Label(Widget):
         else:
             self.interface.intrinsic.width = at_least(0)
             self.interface.intrinsic.height = at_least(content_size.height)
+
+
+class LinkLabel(Widget):
+    """A label with a hyperlink."""
+
+    def create(self):
+        self.native = NSTextView.alloc().init()
+
+        self.native.drawsBackground = False
+        self.native.editable = False
+        self.native.selectable = True
+        self.native.textContainer.lineFragmentPadding = 2.0
+
+        self.native.bezeled = False
+
+        # Add the layout constraints
+        self.add_constraints()
+
+    def _update(self):
+        style = self.interface.style
+        font = InterfaceFont(style.font_family, style.font_size)
+
+        attributes = NSDictionary.dictionaryWithObjects(
+            [self.interface.url, font.bind(self.interface.factory).native],
+            forKeys=[NSLinkAttributeName, NSFontAttributeName],
+        )
+        self.attr_string = NSAttributedString.alloc().initWithString(
+            self.interface.text, attributes=attributes
+        )
+        self.native.textStorage.setAttributedString(self.attr_string)
+        self.rehint()
+
+    def set_text(self, value):
+        self._update()
+
+    def set_url(self, value):
+        self._update()
+
+    def set_font(self, value):
+        self._update()
+
+    def rehint(self):
+        # force layout and get layout rect
+        self.native.layoutManager.glyphRangeForTextContainer(self.native.textContainer)
+        rect = self.native.layoutManager.usedRectForTextContainer(
+            self.native.textContainer
+        )
+
+        self.interface.intrinsic.width = at_least(rect.size.width)
+        self.interface.intrinsic.height = rect.size.height
 
 
 # ==== buttons =========================================================================
@@ -802,21 +858,13 @@ class WindowDeletage(TogaWindowDeletage):
 
 
 class Window(TogaWindow):
-    def create(self):
-        super().create()
+    def __init__(self, interface, title, position, size):
+        super().__init__(interface, title, position, size)
         self.delegate = WindowDeletage.alloc().init()
         self.delegate.interface = self.interface
         self.delegate.impl = self
         self.native.delegate = self.delegate
         self.app = NSApplication.sharedApplication
-
-    def cocoa_windowShouldClose(self):
-        if self.interface.on_close:
-            should_close = self.interface.on_close(self)
-        else:
-            should_close = True
-
-        return should_close
 
     def is_visible(self):
         return bool(self.native.isVisible)
@@ -834,75 +882,25 @@ class Window(TogaWindow):
         if not self.interface.is_dialog:
             self.app.activationPolicy = NSApplicationActivationPolicyRegular
             self.app.activateIgnoringOtherApps(True)
+
         super().show()
 
     def close(self):
-
         if self.native.sheetParent:
-            # End sheet session.
             self.native.sheetParent.endSheet(self.native)
-        elif self.interface.closeable:
-            # Mimic the press of the close button.
-            self.native.performClose(self.native)
         else:
-            # Window has no close button -> performClose does not work.
-            # Get close confirmation and close if ok.
-            if self.cocoa_windowShouldClose():
-                self.native.close()
+            self.native.close()
 
     def set_release_on_close(self, value):
         self.native.releasedWhenClosed = value
 
     def set_dialog(self, value):
-
         if value:
             self.native.animationBehavior = NSWindowAnimationBehaviorAlertPanel
             self.native.level = NSModalPanelWindowLevel
         else:
             self.native.animationBehavior = NSWindowAnimationBehaviorDefault
             self.native.level = NSNormalWindowLevel
-
-    # dialogs
-
-    async def save_file_sheet(self, title, message, suggested_filename, file_types):
-        return await dialogs.save_file_sheet(
-            self.interface, suggested_filename, title, message, file_types
-        )
-
-    async def open_file_sheet(
-        self, title, message, initial_directory, file_types, multiselect
-    ):
-        return await dialogs.open_file_sheet(
-            self.interface, title, message, file_types, multiselect
-        )
-
-    async def select_folder_sheet(self, title, message, initial_directory, multiselect):
-        return await dialogs.select_folder_sheet(
-            self.interface, title, message, multiselect
-        )
-
-    async def alert_sheet(
-        self,
-        title,
-        message,
-        details,
-        details_title,
-        button_labels,
-        checkbox_text,
-        level,
-        icon,
-    ):
-        return await dialogs.alert_sheet(
-            self.interface,
-            title,
-            message,
-            details,
-            details_title,
-            button_labels,
-            checkbox_text,
-            level,
-            icon,
-        )
 
 
 # ==== helpers =========================================================================

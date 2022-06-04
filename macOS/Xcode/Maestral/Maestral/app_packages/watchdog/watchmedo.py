@@ -60,7 +60,8 @@ class HelpFormatter(RawDescriptionHelpFormatter):
         return text.splitlines()
 
 
-epilog = '''Copyright 2011 Yesudeep Mangalapilly <yesudeep@gmail.com>.
+epilog = '''\
+Copyright 2011 Yesudeep Mangalapilly <yesudeep@gmail.com>.
 Copyright 2012 Google, Inc & contributors.
 
 Licensed under the terms of the Apache license, version 2.0. Please see
@@ -68,7 +69,8 @@ LICENSE in the source code for more information.'''
 
 cli = ArgumentParser(epilog=epilog, formatter_class=HelpFormatter)
 cli.add_argument('--version', action='version', version=VERSION_STRING)
-subparsers = cli.add_subparsers(dest='command')
+subparsers = cli.add_subparsers(dest='top_command')
+command_parsers = {}
 
 
 def argument(*name_or_flags, **kwargs):
@@ -94,6 +96,12 @@ def command(args=[], parent=subparsers, cmd_aliases=[]):
                                    description=desc,
                                    aliases=cmd_aliases,
                                    formatter_class=HelpFormatter)
+        command_parsers[name] = parser
+        verbosity_group = parser.add_mutually_exclusive_group()
+        verbosity_group.add_argument('-q', '--quiet', dest='verbosity',
+                                     action='append_const', const=-1)
+        verbosity_group.add_argument('-v', '--verbose', dest='verbosity',
+                                     action='append_const', const=1)
         for arg in args:
             parser.add_argument(*arg[0], **arg[1])
             parser.set_defaults(func=func)
@@ -213,22 +221,23 @@ def schedule_tricks(observer, tricks, pathname, recursive):
                    type=float,
                    help='Use this as the polling interval/blocking timeout (in seconds).'),
           argument('--recursive',
+                   action='store_true',
                    default=True,
-                   help='Recursively monitor paths.'),
+                   help='Recursively monitor paths (defaults to True).'),
           argument('--debug-force-polling',
-                   default=False,
+                   action='store_true',
                    help='[debug] Forces polling.'),
           argument('--debug-force-kqueue',
-                   default=False,
+                   action='store_true',
                    help='[debug] Forces BSD kqueue(2).'),
           argument('--debug-force-winapi',
-                   default=False,
+                   action='store_true',
                    help='[debug] Forces Windows API.'),
           argument('--debug-force-fsevents',
-                   default=False,
+                   action='store_true',
                    help='[debug] Forces macOS FSEvents.'),
           argument('--debug-force-inotify',
-                   default=False,
+                   action='store_true',
                    help='[debug] Forces Linux inotify(7).')],
          cmd_aliases=['tricks'])
 def tricks_from(args):
@@ -302,7 +311,7 @@ def tricks_from(args):
           argument('-a',
                    '--append-only',
                    dest='append_only',
-                   default=False,
+                   action='store_true',
                    help='''
                    If --append-to-file is not specified, produces output for
                    appending instead of a complete tricks YAML file.''')],
@@ -357,13 +366,11 @@ def tricks_generate_yaml(args):
           argument('-D',
                    '--ignore-directories',
                    dest='ignore_directories',
-                   default=False,
                    action='store_true',
                    help='Ignores events for directories.'),
           argument('-R',
                    '--recursive',
                    dest='recursive',
-                   default=False,
                    action='store_true',
                    help='Monitors the directories recursively.'),
           argument('--interval',
@@ -373,22 +380,22 @@ def tricks_generate_yaml(args):
                    type=float,
                    help='Use this as the polling interval/blocking timeout.'),
           argument('--trace',
-                   default=False,
+                   action='store_true',
                    help='Dumps complete dispatching trace.'),
           argument('--debug-force-polling',
-                   default=False,
+                   action='store_true',
                    help='[debug] Forces polling.'),
           argument('--debug-force-kqueue',
-                   default=False,
+                   action='store_true',
                    help='[debug] Forces BSD kqueue(2).'),
           argument('--debug-force-winapi',
-                   default=False,
+                   action='store_true',
                    help='[debug] Forces Windows API.'),
           argument('--debug-force-fsevents',
-                   default=False,
+                   action='store_true',
                    help='[debug] Forces macOS FSEvents.'),
           argument('--debug-force-inotify',
-                   default=False,
+                   action='store_true',
                    help='[debug] Forces Linux inotify(7).')])
 def log(args):
     """
@@ -398,7 +405,8 @@ def log(args):
     from watchdog.tricks import LoggerTrick
 
     if args.trace:
-        echo.echo_class(LoggerTrick)
+        class_module_logger = logging.getLogger(LoggerTrick.__module__)
+        echo.echo_class(LoggerTrick, write=lambda msg: class_module_logger.info(msg))
 
     patterns, ignore_patterns =\
         parse_patterns(args.patterns, args.ignore_patterns)
@@ -472,7 +480,6 @@ def log(args):
           argument('-R',
                    '--recursive',
                    dest='recursive',
-                   default=False,
                    action='store_true',
                    help='Monitors the directories recursively.'),
           argument('--interval',
@@ -484,16 +491,14 @@ def log(args):
           argument('-w', '--wait',
                    dest='wait_for_process',
                    action='store_true',
-                   default=False,
                    help='Wait for process to finish to avoid multiple simultaneous instances.'),
           argument('-W', '--drop',
                    dest='drop_during_process',
                    action='store_true',
-                   default=False,
                    help='Ignore events that occur while command is still being'
                    ' executed to avoid multiple simultaneous instances.'),
           argument('--debug-force-polling',
-                   default=False,
+                   action='store_true',
                    help='[debug] Forces polling.')])
 def shell_command(args):
     """
@@ -535,7 +540,7 @@ def shell_command(args):
           argument('-d',
                    '--directory',
                    dest='directories',
-                   metavar='directory',
+                   metavar='DIRECTORY',
                    action='append',
                    help='Directory to watch. Use another -d or --directory option '
                    'for each directory.'),
@@ -560,7 +565,6 @@ def shell_command(args):
           argument('-R',
                    '--recursive',
                    dest='recursive',
-                   default=False,
                    action='store_true',
                    help='Monitors the directories recursively.'),
           argument('--interval',
@@ -574,11 +578,12 @@ def shell_command(args):
                    default='SIGINT',
                    help='Stop the subprocess with this signal (default SIGINT).'),
           argument('--debug-force-polling',
-                   default=False,
+                   action='store_true',
                    help='[debug] Forces polling.'),
           argument('--kill-after',
                    dest='kill_after',
                    default=10.0,
+                   type=float,
                    help='When stopping, kill the subprocess after the specified timeout '
                    'in seconds (default 10.0).')])
 def auto_restart(args):
@@ -636,14 +641,37 @@ def auto_restart(args):
         handler.stop()
 
 
+class LogLevelException(Exception):
+    pass
+
+
+def _get_log_level_from_args(args):
+    verbosity = sum(args.verbosity or [])
+    if verbosity < -1:
+        raise LogLevelException("-q/--quiet may be specified only once.")
+    if verbosity > 2:
+        raise LogLevelException("-v/--verbose may be specified up to 2 times.")
+    return ['ERROR', 'WARNING', 'INFO', 'DEBUG'][1 + verbosity]
+
+
 def main():
     """Entry-point function."""
     args = cli.parse_args()
-    if args.command is None:
+    if args.top_command is None:
         cli.print_help()
-    else:
-        args.func(args)
+        return 1
+
+    try:
+        log_level = _get_log_level_from_args(args)
+    except LogLevelException as exc:
+        print("Error: " + exc.args[0], file=sys.stderr)
+        command_parsers[args.top_command].print_help()
+        return 1
+    logging.getLogger('watchdog').setLevel(log_level)
+
+    args.func(args)
+    return 0
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())

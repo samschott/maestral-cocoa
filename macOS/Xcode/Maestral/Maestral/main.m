@@ -8,6 +8,9 @@
 #include <Python.h>
 #include <dlfcn.h>
 
+#ifndef DEBUG
+    #define NSLog(...);
+#endif
 
 void crash_dialog(NSString *);
 NSString * format_traceback(PyObject *type, PyObject *value, PyObject *traceback);
