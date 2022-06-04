@@ -27,7 +27,7 @@ template_branch = "maestral"
 support_revision = "b1"
 agent = 1
 requires = [
-    "toga-cocoa==0.3.0.dev32",
+    "toga-cocoa==0.3.0.dev33",
 ]
 bundle_id = "maestral"
 sparkle_appcast_url = "https://maestral.app/appcast.xml"
@@ -36,7 +36,7 @@ build = "62"
 
 [tool.briefcase.app.maestral-cocoa.linux]
 requires = [
-    "toga-gtk==0.3.0.dev32",
+    "toga-gtk==0.3.0.dev33",
 ]
 system_requires = [
     "libgirepository1.0-dev",
