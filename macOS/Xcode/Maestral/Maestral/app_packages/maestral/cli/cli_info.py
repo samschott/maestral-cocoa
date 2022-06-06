@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import sys
 import time
 from datetime import datetime
 from typing import TYPE_CHECKING
@@ -262,11 +261,8 @@ def ls(m: Maestral, long: bool, dropbox_path: str, include_deleted: bool) -> Non
         table.echo()
         echo(" " * 15)
 
-    if not sys.stdout.isatty():
-        names = [entry.name for entries in entries_iter for entry in entries]
-        echo("\n".join(names))
-
     else:
+
         grid = Grid()
 
         for entries in entries_iter:
