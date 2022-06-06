@@ -15,7 +15,7 @@ sources = ["src/maestral_cocoa"]
 requires = [
     "click==8.1.0",
     "importlib_metadata;python_version<'3.8'",
-    "maestral@git+https://github.com/samschott/maestral",
+    "maestral==1.6.3",
     "markdown2==2.4.2",
     "rubicon-objc==0.4.2",
     "toga==0.3.0.dev33",
