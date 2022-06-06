@@ -449,6 +449,47 @@ def mac_ver(release='', versioninfo=('', '', ''), machine=''):
     # If that also doesn't work return the default values
     return release, versioninfo, machine
 
+def iOS_ver():
+    """ Get iOS/tvOS version information, and return it as a
+        tuple (system, release). All tuple entries are strings.
+
+        Equivalent of:
+        system = [[UIDevice currentDevice].model] UTF8String]
+        release = [[UIDevice currentDevice].systemVersion] UTF8String]
+
+    """
+    from ctypes import cast, cdll, c_void_p, c_char_p
+    from ctypes import util
+    objc = cdll.LoadLibrary(util.find_library(b'objc'))
+    uikit = cdll.LoadLibrary(util.find_library(b'UIKit'))
+
+    objc.objc_getClass.restype = c_void_p
+    objc.objc_getClass.argtypes = [c_char_p]
+    objc.objc_msgSend.restype = c_void_p
+    objc.objc_msgSend.argtypes = [c_void_p, c_void_p]
+    objc.sel_registerName.restype = c_void_p
+    objc.sel_registerName.argtypes = [c_char_p]
+
+    UIDevice = c_void_p(objc.objc_getClass(b'UIDevice'))
+    SEL_currentDevice = c_void_p(objc.sel_registerName(b'currentDevice'))
+    device = c_void_p(objc.objc_msgSend(UIDevice, SEL_currentDevice))
+
+    SEL_systemVersion = c_void_p(objc.sel_registerName(b'systemVersion'))
+    systemVersion = c_void_p(objc.objc_msgSend(device, SEL_systemVersion))
+
+    SEL_systemName = c_void_p(objc.sel_registerName(b'systemName'))
+    systemName = c_void_p(objc.objc_msgSend(device, SEL_systemName))
+
+    # UTF8String returns a const char*;
+    SEL_UTF8String = c_void_p(objc.sel_registerName(b'UTF8String'))
+    objc.objc_msgSend.restype = c_char_p
+
+    system = objc.objc_msgSend(systemName, SEL_UTF8String).decode()
+    release = objc.objc_msgSend(systemVersion, SEL_UTF8String).decode()
+
+    return system, release
+
+
 def _java_getprop(name, default):
 
     from java.lang import System
@@ -743,6 +784,13 @@ class _Processor:
         else:
             csid, cpu_number = vms_lib.getsyi('SYI$_CPU', 0)
             return 'Alpha' if cpu_number >= 128 else 'VAX'
+
+    # iOS, tvOS and watchOS processor is the same as machine
+    def get_ios():
+        return ''
+
+    get_tvos = get_ios
+    get_watchos = get_ios
 
     def from_subprocess():
         """
@@ -1203,11 +1251,13 @@ def platform(aliased=0, terse=0):
         system, release, version = system_alias(system, release, version)
 
     if system == 'Darwin':
-        # macOS (darwin kernel)
-        macos_release = mac_ver()[0]
-        if macos_release:
-            system = 'macOS'
-            release = macos_release
+        if sys.platform in ('ios', 'tvos'):
+            system, release = iOS_ver()
+        else:
+            macos_release = mac_ver()[0]
+            if macos_release:
+                system = 'macOS'
+                release = macos_release
 
     if system == 'Windows':
         # MS platforms
@@ -1262,7 +1312,7 @@ _os_release_cache = None
 
 def _parse_os_release(lines):
     # These fields are mandatory fields with well-known defaults
-    # in pratice all Linux distributions override NAME, ID, and PRETTY_NAME.
+    # in practice all Linux distributions override NAME, ID, and PRETTY_NAME.
     info = {
         "NAME": "Linux",
         "ID": "linux",

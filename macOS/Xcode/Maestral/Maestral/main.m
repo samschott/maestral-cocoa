@@ -17,68 +17,159 @@ NSString * format_traceback(PyObject *type, PyObject *value, PyObject *traceback
 
 int main(int argc, char *argv[]) {
     int ret = 0;
-    unsigned int i;
-    NSString *module_name;
+    PyStatus status;
+    PyConfig config;
     NSString *python_home;
-    NSString *python_path;
+    NSString *app_module_name;
+    NSString *path;
     NSString *traceback_str;
-    wchar_t *wpython_home;
-    wchar_t** python_argv;
+    wchar_t *wapp_module_name;
+    wchar_t *wtmp_str;
     const char* nslog_script;
+    PyObject *app_module;
     PyObject *module;
-    PyObject *runpy;
-    PyObject *runmodule;
-    PyObject *runargs;
+    PyObject *module_attr;
+    PyObject *method_args;
     PyObject *result;
     PyObject *exc_type;
     PyObject *exc_value;
     PyObject *exc_traceback;
+    PyObject *systemExit_code;
 
     @autoreleasepool {
-
         NSString * resourcePath = [[NSBundle mainBundle] resourcePath];
 
-        // Special environment to prefer .pyo; also, dont write bytecode
-        // because the process will not have write permissions on the device.
-        putenv("PYTHONDONTWRITEBYTECODE=1");
-        putenv("PYTHONUNBUFFERED=1");
+        // Generate an isolated Python configuration.
+        NSLog(@"Configuring isolated Python...");
+        PyConfig_InitIsolatedConfig(&config);
+
+        // Configure the Python interpreter:
+        // Run at optimization level 2
+        // (remove assertions, set __debug__ to False, strip docstring)
+        config.optimization_level = 2;
+        // Don't buffer stdio. We want output to appears in the log immediately
+        config.buffered_stdio = 0;
+        // Isolated apps need to set the full PYTHONPATH manually.
+        config.module_search_paths_set = 1;
 
         // Set the home for the Python interpreter
         python_home = [NSString stringWithFormat:@"%@/Support/Python/Resources", resourcePath, nil];
-        NSLog(@"PythonHome is: %@", python_home);
-        wpython_home = Py_DecodeLocale([python_home UTF8String], NULL);
-        Py_SetPythonHome(wpython_home);
+        NSLog(@"PythonHome: %@", python_home);
+        wtmp_str = Py_DecodeLocale([python_home UTF8String], NULL);
+        status = PyConfig_SetString(&config, &config.home, wtmp_str);
+        if (PyStatus_Exception(status)) {
+            crash_dialog([NSString stringWithFormat:@"Unable to set PYTHONHOME: %s", status.err_msg, nil]);
+            PyConfig_Clear(&config);
+            Py_ExitStatusException(status);
+        }
+        PyMem_RawFree(wtmp_str);
 
-        // Set the PYTHONPATH
-        python_path = [NSString stringWithFormat:@"PYTHONPATH=%@/app:%@/app_packages", resourcePath, resourcePath, nil];
-        NSLog(@"PYTHONPATH is: %@", python_path);
-        putenv((char *)[python_path UTF8String]);
+        // Determine the app module name
+        app_module_name = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"MainModule"];
+        if (app_module_name == NULL) {
+            NSLog(@"Unable to identify app module name.");
+        }
+        wapp_module_name = Py_DecodeLocale([app_module_name UTF8String], NULL);
+        status = PyConfig_SetString(&config, &config.run_module, wapp_module_name);
+        if (PyStatus_Exception(status)) {
+            crash_dialog([NSString stringWithFormat:@"Unable to set app module name: %s", status.err_msg, nil]);
+            PyConfig_Clear(&config);
+            Py_ExitStatusException(status);
+        }
+
+        // Read the site config
+        status = PyConfig_Read(&config);
+        if (PyStatus_Exception(status)) {
+            crash_dialog([NSString stringWithFormat:@"Unable to read site config: %s", status.err_msg, nil]);
+            PyConfig_Clear(&config);
+            Py_ExitStatusException(status);
+        }
+
+        // Set the full module path. This includes the stdlib, site-packages, and app code.
+        NSLog(@"PYTHONPATH:");
+        // // The .zip form of the stdlib
+        // path = [NSString stringWithFormat:@"%@/Support/Python/Resources/lib/python310.zip", resourcePath, nil];
+        // NSLog(@"- %@", path);
+        // wtmp_str = Py_DecodeLocale([path UTF8String], NULL);
+        // status = PyWideStringList_Append(&config.module_search_paths, wtmp_str);
+        // if (PyStatus_Exception(status)) {
+        //     crash_dialog([NSString stringWithFormat:@"Unable to set .zip form of stdlib path: %s", status.err_msg, nil]);
+        //     PyConfig_Clear(&config);
+        //     Py_ExitStatusException(status);
+        // }
+        // PyMem_RawFree(wtmp_str);
+
+        // The unpacked form of the stdlib
+        path = [NSString stringWithFormat:@"%@/Support/Python/Resources/lib/python3.10", resourcePath, nil];
+        NSLog(@"- %@", path);
+        wtmp_str = Py_DecodeLocale([path UTF8String], NULL);
+        status = PyWideStringList_Append(&config.module_search_paths, wtmp_str);
+        if (PyStatus_Exception(status)) {
+            crash_dialog([NSString stringWithFormat:@"Unable to set unpacked form of stdlib path: %s", status.err_msg, nil]);
+            PyConfig_Clear(&config);
+            Py_ExitStatusException(status);
+        }
+        PyMem_RawFree(wtmp_str);
+
+        // // Add the stdlib binary modules path
+        // path = [NSString stringWithFormat:@"%@/Support/Python/Resources/lib/python3.10/lib-dynload", resourcePath, nil];
+        // NSLog(@"- %@", path);
+        // wtmp_str = Py_DecodeLocale([path UTF8String], NULL);
+        // status = PyWideStringList_Append(&config.module_search_paths, wtmp_str);
+        // if (PyStatus_Exception(status)) {
+        //     crash_dialog([NSString stringWithFormat:@"Unable to set stdlib binary module path: %s", status.err_msg, nil]);
+        //     PyConfig_Clear(&config);
+        //     Py_ExitStatusException(status);
+        // }
+        // PyMem_RawFree(wtmp_str);
+
+        // Add the app_packages path
+        path = [NSString stringWithFormat:@"%@/app_packages", resourcePath, nil];
+        NSLog(@"- %@", path);
+        wtmp_str = Py_DecodeLocale([path UTF8String], NULL);
+        status = PyWideStringList_Append(&config.module_search_paths, wtmp_str);
+        if (PyStatus_Exception(status)) {
+            crash_dialog([NSString stringWithFormat:@"Unable to set app packages path: %s", status.err_msg, nil]);
+            PyConfig_Clear(&config);
+            Py_ExitStatusException(status);
+        }
+        PyMem_RawFree(wtmp_str);
+
+        // Add the app path
+        path = [NSString stringWithFormat:@"%@/app", resourcePath, nil];
+        NSLog(@"- %@", path);
+        wtmp_str = Py_DecodeLocale([path UTF8String], NULL);
+        status = PyWideStringList_Append(&config.module_search_paths, wtmp_str);
+        if (PyStatus_Exception(status)) {
+            crash_dialog([NSString stringWithFormat:@"Unable to set app path: %s", status.err_msg, nil]);
+            PyConfig_Clear(&config);
+            Py_ExitStatusException(status);
+        }
+        PyMem_RawFree(wtmp_str);
+
+        NSLog(@"Configure argc/argv...");
+        status = PyConfig_SetBytesArgv(&config, argc, argv);
+        if (PyStatus_Exception(status)) {
+            crash_dialog([NSString stringWithFormat:@"Unable to configured argc/argv: %s", status.err_msg, nil]);
+            PyConfig_Clear(&config);
+            Py_ExitStatusException(status);
+        }
 
         NSLog(@"Initializing Python runtime...");
-        Py_Initialize();
-
-        // Set the name of the python NSLog bootstrap script
-        nslog_script = [
-            [[NSBundle mainBundle] pathForResource:@"app_packages/nslog"
-                                            ofType:@"py"] cStringUsingEncoding:NSUTF8StringEncoding];
-
-        if (nslog_script == NULL) {
-            NSLog(@"Unable to locate NSLog bootstrap script.");
+        status = Py_InitializeFromConfig(&config);
+        if (PyStatus_Exception(status)) {
+            crash_dialog([NSString stringWithFormat:@"Unable to initialize Python interpreter: %s", status.err_msg, nil]);
+            PyConfig_Clear(&config);
+            Py_ExitStatusException(status);
         }
-
-        // Construct argv for the interpreter
-        python_argv = PyMem_RawMalloc(sizeof(wchar_t*) * argc);
-
-        module_name = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"MainModule"];
-        python_argv[0] = Py_DecodeLocale([module_name UTF8String], NULL);
-        for (i = 1; i < argc; i++) {
-            python_argv[i] = Py_DecodeLocale(argv[i], NULL);
-        }
-
-        PySys_SetArgv(argc, python_argv);
 
         @try {
             // Install the nslog script to redirect stdout/stderr if available.
+            // Set the name of the python NSLog bootstrap script
+            nslog_script = [
+                [[NSBundle mainBundle] pathForResource:@"app_packages/nslog"
+                                                ofType:@"py"] cStringUsingEncoding:NSUTF8StringEncoding];
+
             if (nslog_script == NULL) {
                 NSLog(@"No Python NSLog handler found. stdout/stderr will not be captured.");
                 NSLog(@"To capture stdout/stderr, add 'std-nslog' to your app dependencies.");
@@ -86,7 +177,6 @@ int main(int argc, char *argv[]) {
                 NSLog(@"Installing Python NSLog handler...");
                 FILE *fd = fopen(nslog_script, "r");
                 if (fd == NULL) {
-                    NSLog(@"Unable to open nslog.py; abort.");
                     crash_dialog(@"Unable to open nslog.py");
                     exit(-1);
                 }
@@ -94,87 +184,95 @@ int main(int argc, char *argv[]) {
                 ret = PyRun_SimpleFileEx(fd, nslog_script, 1);
                 fclose(fd);
                 if (ret != 0) {
-                    NSLog(@"Unable to install Python NSLog handler; abort.");
-                    crash_dialog(@"Unable to install Python NSLog handler.");
+                    crash_dialog(@"Unable to install Python NSLog handler");
                     exit(ret);
                 }
             }
 
-            // Start the app module
-            NSLog(@"Running app module: %@", module_name);
-            runpy = PyImport_ImportModule("runpy");
-            if (runpy == NULL) {
-                NSLog(@"Could not import runpy module");
+            // Start the app module.
+            //
+            // From here to Py_ObjectCall(runmodule...) is effectively
+            // a copy of Py_RunMain() (and, more  specifically, the
+            // pymain_run_module() method); we need to re-implement it
+            // because we need to be able to inspect the error state of
+            // the interpreter, not just the return code of the module.
+            NSLog(@"Running app module: %@", app_module_name);
+            module = PyImport_ImportModule("runpy");
+            if (module == NULL) {
                 crash_dialog(@"Could not import runpy module");
                 exit(-2);
             }
 
-            runmodule = PyObject_GetAttrString(runpy, "_run_module_as_main");
-            if (runmodule == NULL) {
-                NSLog(@"Could not access runpy._run_module_as_main");
+            module_attr = PyObject_GetAttrString(module, "_run_module_as_main");
+            if (module_attr == NULL) {
                 crash_dialog(@"Could not access runpy._run_module_as_main");
                 exit(-3);
             }
 
-            module = PyUnicode_FromWideChar(python_argv[0], wcslen(python_argv[0]));
-            if (module == NULL) {
-                NSLog(@"Could not convert module name to unicode");
+            app_module = PyUnicode_FromWideChar(wapp_module_name, wcslen(wapp_module_name));
+            if (app_module == NULL) {
                 crash_dialog(@"Could not convert module name to unicode");
                 exit(-3);
             }
 
-            runargs = Py_BuildValue("(Oi)", module, 0);
-            if (runargs == NULL) {
-                NSLog(@"Could not create arguments for runpy._run_module_as_main");
+            method_args = Py_BuildValue("(Oi)", app_module, 0);
+            if (method_args == NULL) {
                 crash_dialog(@"Could not create arguments for runpy._run_module_as_main");
                 exit(-4);
             }
 
-            result = PyObject_Call(runmodule, runargs, NULL);
+            result = PyObject_Call(module_attr, method_args, NULL);
 
             if (result == NULL) {
-                NSLog(@"Application quit abnormally!");
-
                 // Retrieve the current error state of the interpreter.
                 PyErr_Fetch(&exc_type, &exc_value, &exc_traceback);
                 PyErr_NormalizeException(&exc_type, &exc_value, &exc_traceback);
 
                 if (exc_traceback == NULL) {
-                    NSLog(@"Could not retrieve traceback");
                     crash_dialog(@"Could not retrieve traceback");
                     exit(-5);
                 }
 
-                traceback_str = format_traceback(exc_type, exc_value, exc_traceback);
+                if (PyErr_GivenExceptionMatches(exc_value, PyExc_SystemExit)) {
+                    systemExit_code = PyObject_GetAttrString(exc_value, "code");
+                    if (systemExit_code == NULL) {
+                        NSLog(@"Could not determine exit code");
+                        ret = -10;
+                    }
+                    else {
+                        ret = (int) PyLong_AsLong(systemExit_code);
+                    }
+                } else {
+                    ret = -6;
+                }
 
-                // Restore the error state of the interpreter.
-                PyErr_Restore(exc_type, exc_value, exc_traceback);
+                if (ret != 0) {
+                    NSLog(@"Application quit abnormally (Exit code %d)!", ret);
 
-                // Print exception to stderr.
-                PyErr_Print();
+                    traceback_str = format_traceback(exc_type, exc_value, exc_traceback);
 
-                // Display stack trace in the crash dialog.
-                crash_dialog(traceback_str);
-                exit(-6);
+                    // Restore the error state of the interpreter.
+                    PyErr_Restore(exc_type, exc_value, exc_traceback);
+
+                    // Print exception to stderr.
+                    // In case of SystemExit, this will call exit()
+                    PyErr_Print();
+
+                    // Display stack trace in the crash dialog.
+                    crash_dialog(traceback_str);
+                    exit(ret);
+                }
             }
-
         }
         @catch (NSException *exception) {
-            NSLog(@"Python runtime error: %@", [exception reason]);
             crash_dialog([NSString stringWithFormat:@"Python runtime error: %@", [exception reason]]);
+            ret = -7;
         }
         @finally {
             Py_Finalize();
         }
 
-        PyMem_RawFree(wpython_home);
-        if (python_argv) {
-            for (i = 0; i < argc; i++) {
-                PyMem_RawFree(python_argv[i]);
-            }
-            PyMem_RawFree(python_argv);
-        }
-        NSLog(@"Leaving...");
+        PyMem_RawFree(wapp_module_name);
     }
 
     exit(ret);
@@ -187,7 +285,10 @@ int main(int argc, char *argv[]) {
  * details of an error during application execution (usually a traceback).
  */
 void crash_dialog(NSString *details) {
-    // We've crashed.
+    // Write the error to the log
+    NSLog(@"%@", details);
+
+    // Obtain the app instance (starting it if necessary) so that we can show an error dialog
     NSApplication *app = [NSApplication sharedApplication];
     [app setActivationPolicy:NSApplicationActivationPolicyRegular];
 

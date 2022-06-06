@@ -31,7 +31,7 @@ requires = [
 bundle_id = "maestral"
 sparkle_appcast_url = "https://maestral.app/appcast.xml"
 sparkle_public_key = "RugM2eM14xHixaeHpl5uWSq7+sDZvYi52Xpz4IXpAdA="
-build = "65"
+build = "66"
 
 [tool.briefcase.app.maestral-cocoa.linux]
 requires = [

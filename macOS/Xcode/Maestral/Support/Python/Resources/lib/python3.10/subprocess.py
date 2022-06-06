@@ -760,7 +760,7 @@ class Popen:
                  encoding=None, errors=None, text=None, umask=-1, pipesize=-1):
         """Create new Popen instance."""
         if not os.allows_subprocesses:
-            raise RuntimeError("Subprocesses are not supported on this platform.")
+            raise RuntimeError(f"Subprocesses are not supported on {sys.platform}")
 
         _cleanup()
         # Held while anything is calling waitpid before returncode has been

@@ -831,7 +831,7 @@ fsencode, fsdecode = _fscodec()
 del _fscodec
 
 
-if sys.platform in ('iOS', 'tvos', 'watchos'):
+if sys.platform in ('ios', 'tvos', 'watchos'):
     allows_subprocesses = False
 else:
     allows_subprocesses = True
