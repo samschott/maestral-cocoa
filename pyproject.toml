@@ -23,8 +23,7 @@ requires = [
 
 [tool.briefcase.app.maestral-cocoa.macOS]
 template = "https://github.com/samschott/briefcase-macOS-Xcode-template"
-template_branch = "maestral"
-support_revision = "b1"
+template_branch = "maestral-xcframework"
 agent = 1
 requires = [
     "toga-cocoa==0.3.0.dev33",
