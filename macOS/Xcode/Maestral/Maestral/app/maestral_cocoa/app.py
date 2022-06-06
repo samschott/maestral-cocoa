@@ -104,9 +104,9 @@ class MaestralGui(SystemTrayApp):
         )
 
     def startup(self) -> None:
-
         self._started = False
         self._cached_status = CONNECTING
+        self._linked_ui = False
 
         self.mdbx = self.get_or_start_maestral_daemon()
 
@@ -156,6 +156,7 @@ class MaestralGui(SystemTrayApp):
         self.mdbx.start_sync()
         self.setup_ui_linked()
         self.updater.start_updater()
+        self._linked_ui = True
         await self.periodic_refresh_gui()
 
     def get_or_start_maestral_daemon(self) -> MaestralProxy:
@@ -404,9 +405,8 @@ class MaestralGui(SystemTrayApp):
 
         self.set_icon(ERROR)
 
-        if self.item_pause:
+        if self._linked_ui:
             self.item_pause.label = self.RESUME_TEXT
-        if self.item_status:
             self.item_status.label = self.mdbx.status
 
         err = errs[-1]

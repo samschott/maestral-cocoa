@@ -6,7 +6,7 @@ maestral-1.6.4.dev0.dist-info/METADATA,sha256=iQGrPOJsdEb2vQqV5BMQUqxLbgZKnwuA2T
 maestral-1.6.4.dev0.dist-info/RECORD,,
 maestral-1.6.4.dev0.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
 maestral-1.6.4.dev0.dist-info/WHEEL,sha256=G16H4A3IeoQmnOrYV4ueZGKSjhipXx8zc8nu9FGlvMA,92
-maestral-1.6.4.dev0.dist-info/direct_url.json,sha256=s9JpplMWqa0oGWfgUr-9fsFQudevls4Z2XUwRanZK5E,133
+maestral-1.6.4.dev0.dist-info/direct_url.json,sha256=57Doj9HlaaC69O_0ZCU8MOop0BhfqsFJVIjPKBc0-Es,133
 maestral-1.6.4.dev0.dist-info/entry_points.txt,sha256=z6Hmp6xSr2qiqObXKXPA1kRZTH_MxqPnCh74ELJWaxE,113
 maestral-1.6.4.dev0.dist-info/top_level.txt,sha256=cpmYVmNqTW_njKrQSwWbMvDUR09mvKFSBYcYCQKpHAM,9
 maestral/__init__.py,sha256=fPd90dP8p2L8mI1ya1k8TRYspq3V044HradsSCgYjLY,228
@@ -83,7 +83,7 @@ maestral/fsevents/polling.py,sha256=flA_fxi4U5W9USsrnWEfl4ESWEUeZ-hJV5F-nUoN5IM,
 maestral/keyring.py,sha256=tgwpozyEQ0aP9glBu_XtA7v1j8-AVZp13ZI0YzVG3lc,10873
 maestral/logging.py,sha256=XvLGzWwQJabzVq1TU6y2CSX7iiUKpQ_KGyakRp9Ytmo,8873
 maestral/main.py,sha256=QnOsMTgKQ3mj-3sMEHX_qSHwTWvdUukd3CsQ72aAHOY,60908
-maestral/manager.py,sha256=7FI_MfQrMmdPy_BRnMX1JrXjAtnT4ncTq6dWdT5sxTc,29215
+maestral/manager.py,sha256=6orbnYxAcElAA6AA3WGs8kE4k_cfxMn9JS5xvhNmEr4,29186
 maestral/models.py,sha256=OFvnymHqz2yECqVyTvgNtVUFC3W7FjfgM4o49qgZV7w,18046
 maestral/notify.py,sha256=j-tAsk2mI9sS-8GfqTlxEvXRy9tr9sLY35TmEVRazAE,4552
 maestral/py.typed,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
