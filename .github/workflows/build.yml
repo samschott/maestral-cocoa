@@ -21,6 +21,17 @@ jobs:
           p12-file-base64: ${{ secrets.SIGNING_CERTIFICATE_P12_DATA }}
           p12-password: ${{ secrets.SIGNING_CERTIFICATE_PASSWORD }}
 
+      - name: Store notary service credentials in keychain
+        run: |
+          xcrun notarytool store-credentials \
+            --team-id $TEAM_ID \
+            --apple-id $APPLE_ID \
+            --password ${{ secrets.NOTARIZE_PASSWORD }} \
+            "briefcase-macOS-$TEAM_ID"
+        env:
+            APPLE_ID: "sam.schott@outlook.com"
+            TEAM_ID: "G34LNR8C4Y"
+
       - name: Set up Python
         run: |
           wget -q https://www.python.org/ftp/python/3.10.4/python-3.10.4-macos11.pkg
@@ -33,7 +44,6 @@ jobs:
           python3 -m pip install -U pip
           python3 -m pip install -U briefcase
           python3 -m pip install -U bump2version
-          python3 -m pip install "markupsafe<2.1"  # needed until next briefcase release
           chmod +x ./scripts/post-build-macos.sh
 
       - name: Bump build number
@@ -61,7 +71,7 @@ jobs:
           # package as dmg
           briefcase package macOS Xcode -i "$DEV_ID" --no-input
 
-          # prepare output for notarization step
+          # prepare output for upload
           DMG_PATH=$( find . -name "*.dmg" )
           DMG_NAME=$( basename "$DMG_PATH" )
           echo "dmg created: $DMG_PATH"
@@ -70,14 +80,6 @@ jobs:
         env:
             DEV_ID: "Developer ID Application: Sam Schott (G34LNR8C4Y)"
             PIP_NO_BINARY: "watchdog"
-
-      - name: Notarize app
-        run: |
-          npx notarize-cli --bundle-id "com.samschott.maestral" \
-                           --file ${{ steps.build.outputs.dmg_path }}
-        env:
-          NOTARIZE_USERNAME: ${{ secrets.NOTARIZE_USERNAME }}
-          NOTARIZE_PASSWORD: ${{ secrets.NOTARIZE_PASSWORD }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
