@@ -48,9 +48,9 @@ import signal
 import subprocess
 import time
 
-from watchdog.utils import echo
 from watchdog.events import PatternMatchingEventHandler
-
+from watchdog.utils import echo
+from watchdog.utils.process_watcher import ProcessWatcher
 
 logger = logging.getLogger(__name__)
 echo_events = functools.partial(echo.echo, write=lambda msg: logger.info(msg))
@@ -116,12 +116,14 @@ class ShellCommandTrick(Trick):
         self.shell_command = shell_command
         self.wait_for_process = wait_for_process
         self.drop_during_process = drop_during_process
+
         self.process = None
+        self._process_watchers = set()
 
     def on_any_event(self, event):
         from string import Template
 
-        if self.drop_during_process and self.process and self.process.poll() is None:
+        if self.drop_during_process and self.is_process_running():
             return
 
         if event.is_directory:
@@ -151,6 +153,15 @@ class ShellCommandTrick(Trick):
         self.process = subprocess.Popen(command, shell=True)
         if self.wait_for_process:
             self.process.wait()
+        else:
+            process_watcher = ProcessWatcher(self.process, None)
+            self._process_watchers.add(process_watcher)
+            process_watcher.process_termination_callback = \
+                functools.partial(self._process_watchers.discard, process_watcher)
+            process_watcher.start()
+
+    def is_process_running(self):
+        return self._process_watchers or (self.process is not None and self.process.poll() is None)
 
 
 class AutoRestartTrick(Trick):
@@ -173,15 +184,23 @@ class AutoRestartTrick(Trick):
         self.command = command
         self.stop_signal = stop_signal
         self.kill_after = kill_after
+
         self.process = None
+        self.process_watcher = None
 
     def start(self):
         # windows doesn't have setsid
         self.process = subprocess.Popen(self.command, preexec_fn=getattr(os, 'setsid', None))
+        self.process_watcher = ProcessWatcher(self.process, self._restart)
+        self.process_watcher.start()
 
     def stop(self):
         if self.process is None:
             return
+
+        if self.process_watcher is not None:
+            self.process_watcher.stop()
+            self.process_watcher = None
 
         def kill_process(stop_signal):
             if hasattr(os, 'getpgid') and hasattr(os, 'killpg'):
@@ -210,5 +229,8 @@ class AutoRestartTrick(Trick):
 
     @echo_events
     def on_any_event(self, event):
+        self._restart()
+
+    def _restart(self):
         self.stop()
         self.start()

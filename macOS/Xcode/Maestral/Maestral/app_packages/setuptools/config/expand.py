@@ -14,6 +14,8 @@ We can split the process of interpreting configuration files into 2 steps:
 
 This module focus on the second step, and therefore allow sharing the expansion
 functions among several configuration file formats.
+
+**PRIVATE MODULE**: API reserved for setuptools internal usage only.
 """
 import ast
 import importlib
@@ -43,6 +45,8 @@ from types import ModuleType
 
 from distutils.errors import DistutilsOptionError
 
+from .._path import same_path as _same_path
+
 if TYPE_CHECKING:
     from setuptools.dist import Distribution  # noqa
     from setuptools.discovery import ConfigDiscovery  # noqa
@@ -64,25 +68,21 @@ class StaticModule:
         vars(self).update(locals())
         del self.self
 
+    def _find_assignments(self) -> Iterator[Tuple[ast.AST, ast.AST]]:
+        for statement in self.module.body:
+            if isinstance(statement, ast.Assign):
+                yield from ((target, statement.value) for target in statement.targets)
+            elif isinstance(statement, ast.AnnAssign) and statement.value:
+                yield (statement.target, statement.value)
+
     def __getattr__(self, attr):
         """Attempt to load an attribute "statically", via :func:`ast.literal_eval`."""
         try:
-            assignment_expressions = (
-                statement
-                for statement in self.module.body
-                if isinstance(statement, ast.Assign)
-            )
-            expressions_with_target = (
-                (statement, target)
-                for statement in assignment_expressions
-                for target in statement.targets
-            )
-            matching_values = (
-                statement.value
-                for statement, target in expressions_with_target
+            return next(
+                ast.literal_eval(value)
+                for target, value in self._find_assignments()
                 if isinstance(target, ast.Name) and target.id == attr
             )
-            return next(ast.literal_eval(value) for value in matching_values)
         except Exception as e:
             raise AttributeError(f"{self.name} has no attribute {attr}") from e
 
@@ -328,25 +328,6 @@ def find_packages(
             fill_package_dir.update(construct_package_dir(pkgs, path))
 
     return packages
-
-
-def _same_path(p1: _Path, p2: _Path) -> bool:
-    """Differs from os.path.samefile because it does not require paths to exist.
-    Purely string based (no comparison between i-nodes).
-    >>> _same_path("a/b", "./a/b")
-    True
-    >>> _same_path("a/b", "a/./b")
-    True
-    >>> _same_path("a/b", "././a/b")
-    True
-    >>> _same_path("a/b", "./a/b/c/..")
-    True
-    >>> _same_path("a/b", "../a/b/c")
-    False
-    >>> _same_path("a", "a/b")
-    False
-    """
-    return os.path.normpath(p1) == os.path.normpath(p2)
 
 
 def _nest_path(parent: _Path, path: _Path) -> str:

@@ -55,7 +55,7 @@ import collections
 import enum
 from collections.abc import KeysView, ValuesView, ItemsView
 
-__version__ = "1.40"
+__version__ = "1.41"
 __all__ = ["dump", "dumps", "load", "loads", "register_class", "unregister_class", "tobytes"]
 
 
@@ -491,18 +491,17 @@ class Serializer(object):
             raise ValueError("Circular reference detected (class)")
         self.serialized_obj_ids.add(id(obj))
         try:
-            try:
+            # note: python 3.11+ object itself now has __getstate__
+            has_own_getstate = (
+                hasattr(type(obj), '__getstate__')
+                and type(obj).__getstate__ is not getattr(object, '__getstate__', None)
+            )
+            if has_own_getstate:
                 value = obj.__getstate__()
-                if value is None and isinstance(obj, tuple):
-                    # collections.namedtuple specialcase (if it is not handled by the tuple serializer)
-                    value = {
-                        "__class__": self.get_class_name(obj),
-                        "items": list(obj._asdict().items())
-                    }
                 if isinstance(value, dict):
                     self.ser_builtins_dict(value, out, level)
                     return
-            except AttributeError:
+            else:
                 try:
                     value = dict(vars(obj))  # make sure we can serialize anything that resembles a dict
                     value["__class__"] = self.get_class_name(obj)

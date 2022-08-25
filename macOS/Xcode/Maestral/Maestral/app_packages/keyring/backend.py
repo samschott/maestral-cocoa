@@ -6,11 +6,11 @@ import os
 import abc
 import logging
 import operator
+import copy
 
 from typing import Optional
 
-import importlib_metadata as metadata
-
+from .py310compat import metadata
 from . import credentials, errors, util
 from .util import properties
 
@@ -152,6 +152,11 @@ class KeyringBackend(metaclass=KeyringBackendMeta):
         for name, value in props:
             setattr(self, name, value)
 
+    def with_properties(self, **kwargs):
+        alt = copy.copy(self)
+        vars(alt).update(kwargs)
+        return alt
+
 
 class Crypter:
     """Base class providing encryption and decryption"""
@@ -213,3 +218,41 @@ def get_all_keyring():
     viable_classes = KeyringBackend.get_viable_backends()
     rings = util.suppress_exceptions(viable_classes, exceptions=TypeError)
     return list(rings)
+
+
+class SchemeSelectable:
+    """
+    Allow a backend to select different "schemes" for the
+    username and service.
+
+    >>> backend = SchemeSelectable()
+    >>> backend._query('contoso', 'alice')
+    {'username': 'alice', 'service': 'contoso'}
+    >>> backend._query('contoso')
+    {'service': 'contoso'}
+    >>> backend.scheme = 'KeePassXC'
+    >>> backend._query('contoso', 'alice')
+    {'UserName': 'alice', 'Title': 'contoso'}
+    >>> backend._query('contoso', 'alice', foo='bar')
+    {'UserName': 'alice', 'Title': 'contoso', 'foo': 'bar'}
+    """
+
+    scheme = 'default'
+    schemes = dict(
+        default=dict(username='username', service='service'),
+        KeePassXC=dict(username='UserName', service='Title'),
+    )
+
+    def _query(self, service, username=None, **base):
+        scheme = self.schemes[self.scheme]
+        return dict(
+            {
+                scheme['username']: username,
+                scheme['service']: service,
+            }
+            if username is not None
+            else {
+                scheme['service']: service,
+            },
+            **base,
+        )

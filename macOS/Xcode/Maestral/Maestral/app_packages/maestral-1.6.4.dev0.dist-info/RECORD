@@ -2,11 +2,10 @@
 ../../share/icons/hicolor/512x512/apps/maestral.png,sha256=nixyzBBJuCdXGGTc3_N5pW2MfMQd0dBPcOvzwatE-Ms,137001
 maestral-1.6.4.dev0.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
 maestral-1.6.4.dev0.dist-info/LICENSE.txt,sha256=hifZsycEZotvBz9OGvBwLEzlq2EooNzHxMvasFwcw4Q,1076
-maestral-1.6.4.dev0.dist-info/METADATA,sha256=iQGrPOJsdEb2vQqV5BMQUqxLbgZKnwuA2TNaRG0dyWU,9572
+maestral-1.6.4.dev0.dist-info/METADATA,sha256=CWwHR6pB3b-6qSSf9vTTYsn5bp3PD76_rfiNporkiTs,9572
 maestral-1.6.4.dev0.dist-info/RECORD,,
 maestral-1.6.4.dev0.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
 maestral-1.6.4.dev0.dist-info/WHEEL,sha256=G16H4A3IeoQmnOrYV4ueZGKSjhipXx8zc8nu9FGlvMA,92
-maestral-1.6.4.dev0.dist-info/direct_url.json,sha256=57Doj9HlaaC69O_0ZCU8MOop0BhfqsFJVIjPKBc0-Es,133
 maestral-1.6.4.dev0.dist-info/entry_points.txt,sha256=z6Hmp6xSr2qiqObXKXPA1kRZTH_MxqPnCh74ELJWaxE,113
 maestral-1.6.4.dev0.dist-info/top_level.txt,sha256=cpmYVmNqTW_njKrQSwWbMvDUR09mvKFSBYcYCQKpHAM,9
 maestral/__init__.py,sha256=fPd90dP8p2L8mI1ya1k8TRYspq3V044HradsSCgYjLY,228
@@ -54,7 +53,7 @@ maestral/cli/core.py,sha256=pyY6zcZrcLXIATRbCZadFdDYXhDo-kF4zNAoiDgOO_g,7973
 maestral/cli/dialogs.py,sha256=6E8eapfC2Z0BoGr-BetRrU-Up1XVi27hl0JtUit8Nd4,3374
 maestral/cli/output.py,sha256=nOvpVfSgEXekwK26WiY8tagZhrjYT76Q_hvTINwPJOk,15844
 maestral/cli/utils.py,sha256=dqmQlM2oeWL0POM9DhjTyQrai8q11jIQ45N2xBklOaY,921
-maestral/client.py,sha256=1_dqjBXv7NP9ILnw6oR-EsEtMdFQq5Vw8h8_kEBgL-E,65567
+maestral/client.py,sha256=ZVpT5VsQmquPlOwjxKkTclM3tDz_Mk9NC1Fr_5I-yIw,65515
 maestral/config/__init__.py,sha256=klHJuuOHdh0IRFq2ImNgjDULLWvFJOqaXWlcYRIKuSE,1718
 maestral/config/__pycache__/__init__.cpython-310.pyc,,
 maestral/config/__pycache__/main.cpython-310.pyc,,
@@ -82,8 +81,8 @@ maestral/fsevents/__pycache__/polling.cpython-310.pyc,,
 maestral/fsevents/polling.py,sha256=flA_fxi4U5W9USsrnWEfl4ESWEUeZ-hJV5F-nUoN5IM,5335
 maestral/keyring.py,sha256=tgwpozyEQ0aP9glBu_XtA7v1j8-AVZp13ZI0YzVG3lc,10873
 maestral/logging.py,sha256=XvLGzWwQJabzVq1TU6y2CSX7iiUKpQ_KGyakRp9Ytmo,8873
-maestral/main.py,sha256=QnOsMTgKQ3mj-3sMEHX_qSHwTWvdUukd3CsQ72aAHOY,60908
-maestral/manager.py,sha256=6orbnYxAcElAA6AA3WGs8kE4k_cfxMn9JS5xvhNmEr4,29186
+maestral/main.py,sha256=1sB9RejI6WkyPvffRZ2QExgd14kvZtTbG3ktDxMAQBk,60870
+maestral/manager.py,sha256=knClE0vL9x2-df2Yf-uJuPyFKUSYuOuFG0aY2lPB7xs,29168
 maestral/models.py,sha256=OFvnymHqz2yECqVyTvgNtVUFC3W7FjfgM4o49qgZV7w,18046
 maestral/notify.py,sha256=j-tAsk2mI9sS-8GfqTlxEvXRy9tr9sLY35TmEVRazAE,4552
 maestral/py.typed,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
