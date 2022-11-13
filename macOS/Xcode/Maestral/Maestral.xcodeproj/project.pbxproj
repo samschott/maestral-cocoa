@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		015AFDFD2819DDC700E74F85 /* Credits.html in Resources */ = {isa = PBXBuildFile; fileRef = 015AFDFC2819DDC700E74F85 /* Credits.html */; };
+		015AFDFD2819DDC700E74F85 /* (null) in Resources */ = {isa = PBXBuildFile; };
 		0D267B6B2554BB1800AC3E85 /* app_packages in Resources */ = {isa = PBXBuildFile; fileRef = 0D267B692554BB1800AC3E85 /* app_packages */; };
 		0D267B6C2554BB1800AC3E85 /* app in Resources */ = {isa = PBXBuildFile; fileRef = 0D267B6A2554BB1800AC3E85 /* app */; };
 		0D354FD22551BFBD009178D1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0D354FD12551BFBD009178D1 /* Assets.xcassets */; };
@@ -20,6 +20,7 @@
 		0D7B44C125561C2000CBC44B /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 0D267B6F2555650500AC3E85 /* libsqlite3.tbd */; };
 		0D7B44C225561C2800CBC44B /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 0D267B6D255564F100AC3E85 /* libz.tbd */; };
 		0D7B44DA2556C84100CBC44B /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 0D354FD72551BFBD009178D1 /* main.m */; };
+		0DA9006A279F573D006BD1C0 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 0DA90069279F573D006BD1C0 /* Sparkle */; };
 		6011C1E928224C1600B4605F /* BZip2.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6011C1E828224C1600B4605F /* BZip2.xcframework */; };
 		6011C1EE28224C2700B4605F /* XZ.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6011C1EB28224C2700B4605F /* XZ.xcframework */; };
 		6011C1F028224C2700B4605F /* Python.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6011C1EC28224C2700B4605F /* Python.xcframework */; };
@@ -27,7 +28,6 @@
 		6011C21E2823A52D00B4605F /* libncurses.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 6011C21D2823A51A00B4605F /* libncurses.tbd */; };
 		6011C2202823A57E00B4605F /* libpanel.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 6011C21F2823A56100B4605F /* libpanel.tbd */; };
 		60775F0E26B4E7E6001E2CE8 /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 60775F0D26B4E7E6001E2CE8 /* SystemConfiguration.framework */; };
-		0DA9006A279F573D006BD1C0 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 0DA90069279F573D006BD1C0 /* Sparkle */; };
 		6093520D25E9D15D00C549F3 /* libffi.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 6093520C25E9D14B00C549F3 /* libffi.tbd */; };
 /* End PBXBuildFile section */
 
@@ -49,11 +49,11 @@
 		0D267B6A2554BB1800AC3E85 /* app */ = {isa = PBXFileReference; lastKnownFileType = folder; path = app; sourceTree = "<group>"; };
 		0D267B6D255564F100AC3E85 /* libz.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = usr/lib/libz.tbd; sourceTree = SDKROOT; };
 		0D267B6F2555650500AC3E85 /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
-		0D354FC82551BFBA009178D1 /* Maestral.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Maestral.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		0D354FC82551BFBA009178D1 /* Maestral.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Maestral.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0D354FD12551BFBD009178D1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		0D354FD62551BFBD009178D1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		0D354FD72551BFBD009178D1 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
-		0D354FD92551BFBD009178D1 /* maestral-cocoa.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = maestral-cocoa.entitlements; sourceTree = "<group>"; };
+		0D354FD92551BFBD009178D1 /* maestral-cocoa.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "maestral-cocoa.entitlements"; sourceTree = "<group>"; };
 		0D354FE52551C1E1009178D1 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
 		0D354FEE2551C249009178D1 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		0D354FFF2551C43F009178D1 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
@@ -120,7 +120,6 @@
 		0D354FCA2551BFBA009178D1 /* Maestral */ = {
 			isa = PBXGroup;
 			children = (
-				015AFDFC2819DDC700E74F85 /* Credits.html */,
 				0D267B6A2554BB1800AC3E85 /* app */,
 				0D267B692554BB1800AC3E85 /* app_packages */,
 				0D354FD12551BFBD009178D1 /* Assets.xcassets */,
@@ -128,7 +127,7 @@
 				0D354FD72551BFBD009178D1 /* main.m */,
 				0D354FD92551BFBD009178D1 /* maestral-cocoa.entitlements */,
 			);
-			path = "Maestral";
+			path = Maestral;
 			sourceTree = "<group>";
 		};
 		0D354FE42551C1E1009178D1 /* Frameworks */ = {
@@ -171,11 +170,11 @@
 			);
 			dependencies = (
 			);
-			name = "Maestral";
+			name = Maestral;
 			packageProductDependencies = (
 				0DA90069279F573D006BD1C0 /* Sparkle */,
 			);
-			productName = "Maestral";
+			productName = Maestral;
 			productReference = 0D354FC82551BFBA009178D1 /* Maestral.app */;
 			productType = "com.apple.product-type.application";
 		};
@@ -221,7 +220,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				0D354FD22551BFBD009178D1 /* Assets.xcassets in Resources */,
-				015AFDFD2819DDC700E74F85 /* Credits.html in Resources */,
+				015AFDFD2819DDC700E74F85 /* (null) in Resources */,
 				0D267B6C2554BB1800AC3E85 /* app in Resources */,
 				0D267B6B2554BB1800AC3E85 /* app_packages in Resources */,
 			);
@@ -320,7 +319,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
-				PRODUCT_NAME = "Maestral";
+				PRODUCT_NAME = Maestral;
 				SDKROOT = macosx;
 			};
 			name = Debug;
@@ -377,7 +376,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
-				PRODUCT_NAME = "Maestral";
+				PRODUCT_NAME = Maestral;
 				SDKROOT = macosx;
 			};
 			name = Release;
@@ -386,23 +385,24 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD)";
-				ASSETCATALOG_COMPILER_APPICON_NAME = "Maestral";
+				ASSETCATALOG_COMPILER_APPICON_NAME = Maestral;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				CODE_SIGN_ENTITLEMENTS = "Maestral/maestral-cocoa.entitlements";
-				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = G34LNR8C4Y;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
-				INFOPLIST_FILE = "Maestral/Info.plist";
+				INFOPLIST_FILE = Maestral/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.samschott.maestral";
+				PRODUCT_BUNDLE_IDENTIFIER = com.samschott.maestral;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRIP_INSTALLED_PRODUCT = NO;
 			};
@@ -412,24 +412,26 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD)";
-				ASSETCATALOG_COMPILER_APPICON_NAME = "Maestral";
+				ASSETCATALOG_COMPILER_APPICON_NAME = Maestral;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				CODE_SIGN_ENTITLEMENTS = "Maestral/maestral-cocoa.entitlements";
-                CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = G34LNR8C4Y;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
-				INFOPLIST_FILE = "Maestral/Info.plist";
+				INFOPLIST_FILE = Maestral/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.samschott.maestral";
+				PRODUCT_BUNDLE_IDENTIFIER = com.samschott.maestral;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRIP_INSTALLED_PRODUCT = NO;
 			};
 			name = Release;
