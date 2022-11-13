@@ -53,25 +53,22 @@ jobs:
       - name: Build app
         id: build
         run: |
+          # Update app code and dependencies.
+          briefcase update macOS Xcode --update-dependencies --no-input
 
-          # Recreate Xcode project. This is currently required to update project metadata,
-          # see https://github.com/beeware/briefcase/issues/472.
-          rm -Rf macOS/Xcode
-          briefcase create macOS Xcode --no-input
-
-          # build app
+          # Build app.
           briefcase build macOS Xcode --no-input
 
-          # run post-build scripts:
+          # Run post-build scripts.
           # - add CLI executable
           # - keep .pyc files only to save space
           APP_PATH=$( find . -name "*Maestral.app" | head -n 1)
           ./scripts/post-build-macos.sh $APP_PATH
 
-          # package as dmg
+          # Package as dmg.
           briefcase package macOS Xcode -i "$DEV_ID" --no-input
 
-          # prepare output for upload
+          # Prepare output for upload.
           DMG_PATH=$( find . -name "*.dmg" )
           DMG_NAME=$( basename "$DMG_PATH" )
           echo "dmg created: $DMG_PATH"

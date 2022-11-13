@@ -22,15 +22,9 @@ requires = [
 ]
 
 [tool.briefcase.app.maestral-cocoa.macOS]
-template = "https://github.com/samschott/briefcase-macOS-Xcode-template"
-template_branch = "maestral-xcframework"
-agent = 1
 requires = [
     "toga-cocoa==0.3.0.dev33",
 ]
-bundle_id = "maestral"
-sparkle_appcast_url = "https://maestral.app/appcast.xml"
-sparkle_public_key = "RugM2eM14xHixaeHpl5uWSq7+sDZvYi52Xpz4IXpAdA="
 build = "67"
 
 [tool.briefcase.app.maestral-cocoa.linux]
