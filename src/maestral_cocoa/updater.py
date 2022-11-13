@@ -60,11 +60,14 @@ class AutoUpdaterSparkle(AutoUpdaterBackend):
         # Note: Any macOS specific imports are kept local. We could eventually split
         # off platform-specific implementations to separate modules instead.
 
-        from rubicon.objc import ObjCClass, NSObject, objc_method
+        from rubicon.objc import ObjCClass, NSObject, objc_method, objc_property
         from rubicon.objc.runtime import objc_id
-        from ctypes import c_int, CDLL
+        from ctypes import c_int, c_bool, CDLL
 
         class SparkleDelegate(NSObject):
+
+            supportsGentleScheduledUpdateReminders = objc_property(c_bool)
+
             @objc_method
             def updater_willInstallUpdate_(
                 self, updater: objc_id, item: objc_id
@@ -91,6 +94,7 @@ class AutoUpdaterSparkle(AutoUpdaterBackend):
         SPUStandardUpdaterController = ObjCClass("SPUStandardUpdaterController")
 
         self.delegate = SparkleDelegate.alloc().init()
+        self.delegate.supportsGentleScheduledUpdateReminders = True
         self.delegate.config_name = self.mdbx.config_name
         self.delegate.mdbx = self.mdbx
 
