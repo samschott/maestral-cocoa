@@ -284,7 +284,7 @@ class UpdateDialog(Dialog):
     ) -> None:
 
         link_button = FollowLinkButton(
-            label="GitHub Releases",
+            text="GitHub Releases",
             url=f"{__url__}/download",
             style=Pack(padding_bottom=10),
         )
@@ -384,7 +384,7 @@ class RelinkDialog(Dialog):
         ).format(reason_str)
 
         self.website_button = FollowLinkButton(
-            label="Retrieve Token", url=url, style=Pack(padding_bottom=10)
+            text="Retrieve Token", url=url, style=Pack(padding_bottom=10)
         )
         self.token_field = toga.TextInput(
             placeholder="Authorization token",

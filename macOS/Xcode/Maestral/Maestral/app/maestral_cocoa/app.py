@@ -255,7 +255,7 @@ class MaestralGui(SystemTrayApp):
         self.item_sync_issues = MenuItem(
             "Show Sync Issues...", action=self.on_sync_issues_clicked
         )
-        self.item_rebuild = MenuItem("Rebuild index...", action=self.on_rebuild_clicked)
+        self.item_rebuild = MenuItem("Rebuild Index...", action=self.on_rebuild_clicked)
 
         self.item_settings = MenuItem("Preferences...", action=self.on_settings_clicked)
         self.item_updates = MenuItem(

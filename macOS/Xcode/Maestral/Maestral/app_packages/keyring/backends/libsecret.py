@@ -1,13 +1,12 @@
 import logging
 
 from .. import backend
-from ..util import properties
+from .._compat import properties
 from ..backend import KeyringBackend
 from ..credentials import SimpleCredential
 from ..errors import (
     PasswordDeleteError,
     PasswordSetError,
-    ExceptionRaisedContext,
     KeyringLocked,
 )
 
@@ -48,13 +47,17 @@ class Keyring(backend.SchemeSelectable, KeyringBackend):
     def collection(self):
         return Secret.COLLECTION_DEFAULT
 
-    @properties.ClassProperty
-    @classmethod
+    @properties.classproperty
     def priority(cls):
-        with ExceptionRaisedContext() as exc:
-            Secret.__name__
-        if exc:
+        if not available:
             raise RuntimeError("libsecret required")
+
+        # Make sure there is actually a secret service running
+        try:
+            Secret.Service.get_sync(Secret.ServiceFlags.OPEN_SESSION, None)
+        except GLib.Error as error:
+            raise RuntimeError("Can't open a session to the secret service") from error
+
         return 4.8
 
     def get_password(self, service, username):

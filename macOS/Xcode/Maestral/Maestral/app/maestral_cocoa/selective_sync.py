@@ -59,8 +59,8 @@ class Node:
         self._stop_loading = threading.Event()
 
         self._included = Switch(
-            label="",
-            on_toggle=self.on_selected_toggled,
+            text="",
+            on_change=self.on_selected_toggled,
             style=Pack(background_color=TRANSPARENT),
         )
 
@@ -339,7 +339,7 @@ class FileSystemSource(Node, Source):
         self.on_fs_selection_changed = on_fs_selection_changed
 
         self._children = [PlaceholderNode("Loading...", self)]
-        self.included.label = "Select all"
+        self.included.text = "Select all"
         self.included.enabled = False
 
     def reload(self):

@@ -60,7 +60,7 @@ class SyncEventRow:
     def reveal(self) -> FreestandingIconButton:
         if not self._reveal:
             self._reveal = FreestandingIconButton(
-                label="",
+                text="",
                 icon=Icon(template=ImageTemplate.Reveal),
                 on_press=self.on_reveal_pressed,
                 enabled=osp.exists(self.sync_event.local_path),

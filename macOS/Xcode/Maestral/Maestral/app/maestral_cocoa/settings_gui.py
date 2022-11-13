@@ -124,7 +124,7 @@ class SettingsGui(Window):
             style=Pack(text_align=RIGHT, width=SettingsGui.COLUMN_WIDTH_LEFT),
         )
         self.btn_select_folders = toga.Button(
-            label="Select files and folders...",
+            "Select files and folders...",
             style=Pack(
                 padding_left=SettingsGui.COLUMN_PADDING, width=SettingsGui.BUTTON_WIDTH
             ),
@@ -177,14 +177,14 @@ class SettingsGui(Window):
             style=Pack(text_align=RIGHT, width=SettingsGui.COLUMN_WIDTH_LEFT),
         )
         self.checkbox_autostart = Switch(
-            label="Start Maestral on login",
+            "Start Maestral on login",
             style=Pack(
                 padding_bottom=SettingsGui.SUBELEMENT_PADDING,
                 width=SettingsGui.COLUMN_WIDTH_RIGHT,
             ),
         )
         self.checkbox_notifications = Switch(
-            label="Enable notifications on file changes",
+            "Enable notifications on file changes",
             style=Pack(
                 padding_bottom=SettingsGui.SUBELEMENT_PADDING,
                 width=SettingsGui.COLUMN_WIDTH_RIGHT,

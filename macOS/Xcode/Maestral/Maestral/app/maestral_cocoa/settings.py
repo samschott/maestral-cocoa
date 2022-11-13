@@ -61,8 +61,8 @@ class SettingsWindow(SettingsGui):
         self.btn_select_folders.on_press = self.on_folder_selection_pressed
         self.combobox_dbx_location.on_select = self.on_dbx_location_selected
         self.combobox_update_interval.on_select = self.on_update_interval_selected
-        self.checkbox_autostart.on_toggle = self.on_autostart_clicked
-        self.checkbox_notifications.on_toggle = self.on_notifications_clicked
+        self.checkbox_autostart.on_change = self.on_autostart_clicked
+        self.checkbox_notifications.on_change = self.on_notifications_clicked
 
         if FROZEN:
             self.btn_cli_tool.on_press = self.on_cli_pressed
@@ -190,17 +190,17 @@ class SettingsWindow(SettingsGui):
     def _update_cli_tool_button(self) -> None:
         if self._macos_cli_install_path.is_symlink():
             self.btn_cli_tool.enabled = True
-            self.btn_cli_tool.label = "Uninstall"
+            self.btn_cli_tool.text = "Uninstall"
             self.label_cli_tool_info.text = (
                 "CLI installed. See 'maestral --help' for available commands."
             )
         elif self._macos_cli_install_path.exists():
             self.btn_cli_tool.enabled = False
-            self.btn_cli_tool.label = "Install"
+            self.btn_cli_tool.text = "Install"
             self.label_cli_tool_info.text = "CLI already installed from Python package."
         else:
             self.btn_cli_tool.enabled = True
-            self.btn_cli_tool.label = "Install"
+            self.btn_cli_tool.text = "Install"
             self.label_cli_tool_info.text = (
                 "Install the 'maestral' command line tool to /usr/local/bin."
             )

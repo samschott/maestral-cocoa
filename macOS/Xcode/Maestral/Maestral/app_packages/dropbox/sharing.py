@@ -2264,8 +2264,11 @@ class FileMemberActionIndividualResult(bb.Union):
     corresponding ``get_*`` method.
 
     :ivar Optional[AccessLevel]
-        sharing.FileMemberActionIndividualResult.success: Member was
-        successfully removed from this file. If AccessLevel is given, the member
+        sharing.FileMemberActionIndividualResult.success: Part of the response
+        for both add_file_member and remove_file_member_v1 (deprecated). For
+        add_file_member, indicates giving access was successful and at what
+        AccessLevel. For remove_file_member_v1, indicates member was
+        successfully removed from the file. If AccessLevel is given, the member
         still has access via a parent shared folder.
     :ivar FileMemberActionError FileMemberActionIndividualResult.member_error:
         User was not able to perform this action.
@@ -2313,7 +2316,10 @@ class FileMemberActionIndividualResult(bb.Union):
 
     def get_success(self):
         """
-        Member was successfully removed from this file. If AccessLevel is given,
+        Part of the response for both add_file_member and remove_file_member_v1
+        (deprecated). For add_file_member, indicates giving access was
+        successful and at what AccessLevel. For remove_file_member_v1, indicates
+        member was successfully removed from the file. If AccessLevel is given,
         the member still has access via a parent shared folder.
 
         Only call this if :meth:`is_success` is true.
@@ -7677,6 +7683,8 @@ class RequestedLinkAccessLevel(bb.Union):
         edit links yet.
     :ivar sharing.RequestedLinkAccessLevel.max: Request for the maximum access
         level you can set the link to.
+    :ivar sharing.RequestedLinkAccessLevel.default: Request for the default
+        access level the user has set.
     """
 
     _catch_all = 'other'
@@ -7686,6 +7694,8 @@ class RequestedLinkAccessLevel(bb.Union):
     editor = None
     # Attribute is overwritten below the class definition
     max = None
+    # Attribute is overwritten below the class definition
+    default = None
     # Attribute is overwritten below the class definition
     other = None
 
@@ -7712,6 +7722,14 @@ class RequestedLinkAccessLevel(bb.Union):
         :rtype: bool
         """
         return self._tag == 'max'
+
+    def is_default(self):
+        """
+        Check if the union tag is ``default``.
+
+        :rtype: bool
+        """
+        return self._tag == 'default'
 
     def is_other(self):
         """
@@ -12709,17 +12727,20 @@ RemoveMemberJobStatus._tagmap.update(async_.PollResultBase._tagmap)
 RequestedLinkAccessLevel._viewer_validator = bv.Void()
 RequestedLinkAccessLevel._editor_validator = bv.Void()
 RequestedLinkAccessLevel._max_validator = bv.Void()
+RequestedLinkAccessLevel._default_validator = bv.Void()
 RequestedLinkAccessLevel._other_validator = bv.Void()
 RequestedLinkAccessLevel._tagmap = {
     'viewer': RequestedLinkAccessLevel._viewer_validator,
     'editor': RequestedLinkAccessLevel._editor_validator,
     'max': RequestedLinkAccessLevel._max_validator,
+    'default': RequestedLinkAccessLevel._default_validator,
     'other': RequestedLinkAccessLevel._other_validator,
 }
 
 RequestedLinkAccessLevel.viewer = RequestedLinkAccessLevel('viewer')
 RequestedLinkAccessLevel.editor = RequestedLinkAccessLevel('editor')
 RequestedLinkAccessLevel.max = RequestedLinkAccessLevel('max')
+RequestedLinkAccessLevel.default = RequestedLinkAccessLevel('default')
 RequestedLinkAccessLevel.other = RequestedLinkAccessLevel('other')
 
 RevokeSharedLinkArg.url.validator = bv.String()

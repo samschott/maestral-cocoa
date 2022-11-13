@@ -281,8 +281,8 @@ class FreestandingIconButton(TogaButton):
         self.native.alignment = NSTextAlignment(LEFT)
         self.native.focusRingType = NSFocusRingTypeNone
 
-    def set_label(self, label):
-        self.native.title = " {}".format(self.interface.label)
+    def set_text(self, text):
+        self.native.title = " {}".format(self.interface.text)
 
     def set_icon(self, icon_iface):
         icon = icon_iface.bind(self.interface.factory)
@@ -301,8 +301,8 @@ class SwitchTarget(NSObject):
 
     @objc_method
     def onPress_(self, obj: objc_id) -> None:
-        if self.interface.on_toggle:
-            self.interface.on_toggle(self.interface)
+        if self.interface.on_change:
+            self.interface.on_change(self.interface)
 
         self.impl.native.allowsMixedState = False
 
@@ -330,17 +330,17 @@ class Switch(Widget):
         # Add the layout constraints
         self.add_constraints()
 
-    def set_label(self, label):
-        self.native.title = self.interface.label
+    def set_text(self, text):
+        self.native.title = self.interface.text
 
     def set_state(self, value):
         self.native.allowsMixedState = value == MIXED
         self.native.state = self._to_cocoa[value]
 
-    def set_is_on(self, value):
+    def set_value(self, value):
         self.set_state(int(value))
 
-    def get_is_on(self):
+    def get_value(self):
         return bool(self.native.state)
 
     def get_state(self):
@@ -355,7 +355,7 @@ class Switch(Widget):
         self.interface.intrinsic.height = 20
         self.interface.intrinsic.width = at_least(content_size.width)
 
-    def set_on_toggle(self, handler):
+    def set_on_change(self, handler):
         pass
 
 

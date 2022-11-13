@@ -4,6 +4,7 @@ Client related classes (Proxy, mostly)
 Pyro - Python Remote Objects.  Copyright by Irmen de Jong (irmen@razorvine.net).
 """
 
+import sys
 import time
 import logging
 import serpent
@@ -41,10 +42,18 @@ class Proxy(object):
     .. attribute:: _pyroHandshake
 
         The data object that should be sent in the initial connection handshake message. Can be any serializable object.
+
+    .. attribute:: _pyroLocalSocket
+
+        The socket that is used locally to connect to the remote daemon.
+        The format depends on the address family used for the connection, but usually
+        for IPV4 connections it is the familiar (hostname, port) tuple.
+        Consult the Python documentation on `socket families <https://docs.python.org/3/library/socket.html#socket-families>`_
+        for more details
     """
     __pyroAttributes = frozenset(
         ["__getnewargs__", "__getnewargs_ex__", "__getinitargs__", "_pyroConnection", "_pyroUri",
-         "_pyroOneway", "_pyroMethods", "_pyroAttrs", "_pyroTimeout", "_pyroSeq",
+         "_pyroOneway", "_pyroMethods", "_pyroAttrs", "_pyroTimeout", "_pyroSeq", "_pyroLocalSocket",
          "_pyroRawWireResponse", "_pyroHandshake", "_pyroMaxRetries", "_pyroSerializer",
          "_Proxy__pyroTimeout", "_Proxy__pyroOwnerThread"])
 
@@ -131,6 +140,7 @@ class Proxy(object):
         self.__pyroTimeout = config.COMMTIMEOUT
         self._pyroMaxRetries = config.MAX_RETRIES
         self._pyroConnection = None
+        self._pyroLocalSocket = None
         self._pyroSeq = 0
         self._pyroRawWireResponse = False
         self.__pyroOwnerThread = get_ident()
@@ -166,12 +176,34 @@ class Proxy(object):
         result = dir(self.__class__) + list(self.__dict__.keys())
         return sorted(set(result) | self._pyroMethods | self._pyroAttrs)
 
+    # When special methods are invoked via special syntax (e.g. obj[index] calls
+    # obj.__getitem__(index)), the special methods are not looked up via __getattr__
+    # for efficiency reasons; instead, their presence is checked directly.
+    # Thus we need to define them here to force (remote) lookup through __getitem__.
+    def __bool__(self): return True
+    def __len__(self): return self.__getattr__('__len__')()
+    def __getitem__(self, index): return self.__getattr__('__getitem__')(index)
+    def __setitem__(self, index, val): return self.__getattr__('__setitem__')(index, val)
+    def __delitem__(self, index): return self.__getattr__('__delitem__')(index)
+
+    def __iter__(self):
+        try:
+            # use remote iterator if it exists
+            yield from self.__getattr__('__iter__')()
+        except AttributeError:
+            # fallback to indexed based iteration
+            try:
+                yield from (self[index] for index in range(sys.maxsize))
+            except (StopIteration, IndexError):
+                return
+
     def _pyroRelease(self):
         """release the connection to the pyro daemon"""
         self.__check_owner()
         if self._pyroConnection is not None:
             self._pyroConnection.close()
             self._pyroConnection = None
+            self._pyroLocalSocket = None
 
     def _pyroBind(self):
         """
@@ -316,6 +348,7 @@ class Proxy(object):
                     self.__processMetadata(handshake_response["meta"])
                     handshake_response = handshake_response["handshake"]
                     self._pyroConnection = conn
+                    self._pyroLocalSocket = conn.sock.getsockname()
                     if replaceUri:
                         self._pyroUri = uri
                     self._pyroValidateHandshake(handshake_response)
@@ -338,6 +371,7 @@ class Proxy(object):
         connect_location = uri.sockname or (uri.host, uri.port)
         if connected_socket:
             self._pyroConnection = socketutil.SocketConnection(connected_socket, uri.object, True)
+            self._pyroLocalSocket = connected_socket.getsockname()
         else:
             connect_and_handshake(conn)
         # obtain metadata if this feature is enabled, and the metadata is not known yet

@@ -63,7 +63,7 @@ class DialogButtons(toga.Box):
 
         for label in labels[::-1]:
             style = Pack(padding_left=10, alignment=RIGHT, background_color=TRANSPARENT)
-            btn = toga.Button(label=label, style=style)
+            btn = toga.Button(text=label, style=style)
 
             if label == default:
                 # TODO: remove private API access
@@ -88,12 +88,12 @@ class DialogButtons(toga.Box):
         elif asyncio.iscoroutinefunction(handler):
 
             async def new_handler(widget):
-                return await handler(widget.label)
+                return await handler(widget.text)
 
         else:
 
             def new_handler(widget):
-                return handler(widget.label)
+                return handler(widget.text)
 
         for btn in self._buttons:
             btn.on_press = new_handler
@@ -101,7 +101,7 @@ class DialogButtons(toga.Box):
         self._on_press = new_handler
 
     def __getitem__(self, item):
-        return next(btn for btn in self._buttons if btn.label == item)
+        return next(btn for btn in self._buttons if btn.text == item)
 
     def __iter__(self):
         return iter(self._buttons)
@@ -122,15 +122,15 @@ class Switch(toga.Switch):
 
     def __init__(
         self,
-        label,
+        text,
         id=None,
         style=None,
-        on_toggle=None,
+        on_change=None,
         is_on=False,
         enabled=True,
         factory=private_factory,
     ):
-        super().__init__(label, id, style, on_toggle, is_on, enabled, factory)
+        super().__init__(text, id, style, on_change, is_on, enabled, factory)
 
     @property
     def state(self):
@@ -148,7 +148,7 @@ class FreestandingIconButton(toga.Widget):
 
     def __init__(
         self,
-        label,
+        text,
         icon=None,
         id=None,
         style=None,
@@ -162,26 +162,26 @@ class FreestandingIconButton(toga.Widget):
         self._impl = self.factory.FreestandingIconButton(interface=self)
 
         # Set all the properties
-        self.label = label
+        self.text = text
         self.on_press = on_press
         self.enabled = enabled
         self.icon = icon
 
     @property
-    def label(self):
+    def text(self):
         """
         Returns:
-            The button label as a ``str``
+            The button text as a ``str``
         """
-        return self._label
+        return self._text
 
-    @label.setter
-    def label(self, value):
+    @text.setter
+    def text(self, value):
         if value is None:
-            self._label = ""
+            self._text = ""
         else:
-            self._label = str(value)
-        self._impl.set_label(value)
+            self._text = str(value)
+        self._impl.set_text(value)
         self._impl.rehint()
 
     @property
@@ -221,7 +221,7 @@ class FreestandingIconButton(toga.Widget):
 class FollowLinkButton(FreestandingIconButton):
     def __init__(
         self,
-        label,
+        text,
         url=None,
         locate=False,
         id=None,
@@ -233,7 +233,7 @@ class FollowLinkButton(FreestandingIconButton):
         self.url = url
         self.locate = locate
         super().__init__(
-            label, icon=icon, id=id, enabled=enabled, style=style, factory=factory
+            text, icon=icon, id=id, enabled=enabled, style=style, factory=factory
         )
 
         def handler(widget):
