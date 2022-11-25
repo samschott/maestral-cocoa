@@ -2,6 +2,7 @@
 app_path = "Maestral/app"
 app_packages_path = "Maestral/app_packages"
 support_path = "Support"
+entitlements_path = "Maestral/maestral-cocoa.entitlements"
 
 icon.16 = "Maestral/Assets.xcassets/Maestral.appiconset/icon-16.png"
 icon.32 = "Maestral/Assets.xcassets/Maestral.appiconset/icon-32.png"
