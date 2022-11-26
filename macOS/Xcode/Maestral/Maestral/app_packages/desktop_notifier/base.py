@@ -6,19 +6,34 @@ must inherit from :class:`DesktopNotifierBase`.
 
 # system imports
 import logging
+import pathlib
 from enum import Enum
 from collections import deque
-from typing import Optional, Dict, Callable, Any, Union, Deque, List, Sequence
+from typing import (
+    Optional,
+    Dict,
+    Callable,
+    Any,
+    Union,
+    Deque,
+    List,
+    Sequence,
+    ContextManager,
+)
 
 try:
-    from importlib.resources import path  # type: ignore
+    from importlib.resources import as_file, files  # type:ignore
+
+    def resource_path(package: str, resource: str) -> ContextManager[pathlib.Path]:
+        return as_file(files(package) / resource)
+
 except ImportError:
-    from importlib_resources import path  # type: ignore
+    from importlib.resources import path as resource_path  # type:ignore
 
 
 logger = logging.getLogger(__name__)
 
-PYTHON_ICON_PATH = path("desktop_notifier.resources", "python.png").__enter__()
+PYTHON_ICON_PATH = resource_path("desktop_notifier.resources", "python.png").__enter__()
 
 
 class AuthorisationError(Exception):
@@ -101,6 +116,7 @@ class Notification:
     :attachment: URI for an attachment to the notification.
     :param sound: Whether to play a sound when the notification is shown.
     :param thread: An identifier to group related notifications together.
+    :param timeout: Duration for which the notification in shown.
     """
 
     def __init__(
@@ -116,6 +132,7 @@ class Notification:
         attachment: Optional[str] = None,
         sound: bool = False,
         thread: Optional[str] = None,
+        timeout: int = -1,
     ) -> None:
 
         self._identifier: Union[str, int, None] = None
@@ -130,6 +147,7 @@ class Notification:
         self.attachment = attachment
         self.sound = sound
         self.thread = thread
+        self.timeout = timeout
 
     @property
     def identifier(self) -> Union[str, int, None]:

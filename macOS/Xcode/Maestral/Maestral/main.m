@@ -19,12 +19,13 @@ int main(int argc, char *argv[]) {
     int ret = 0;
     PyStatus status;
     PyConfig config;
+    PyPreConfig preconfig;
     NSString *python_home;
     NSString *app_module_name;
     NSString *path;
     NSString *traceback_str;
-    wchar_t *wapp_module_name;
     wchar_t *wtmp_str;
+    const char *app_module_str;
     const char* nslog_script;
     PyObject *app_module;
     PyObject *module;
@@ -42,18 +43,32 @@ int main(int argc, char *argv[]) {
         // Generate an isolated Python configuration.
         NSLog(@"Configuring isolated Python...");
         PyConfig_InitIsolatedConfig(&config);
+        PyPreConfig_InitIsolatedConfig(&preconfig);
 
         // Configure the Python interpreter:
+        // Always use UTF-8 encoding.
+        preconfig.utf8_mode = 1;
         // Run at optimization level 2
         // (remove assertions, set __debug__ to False, strip docstring)
         config.optimization_level = 2;
         // Don't buffer stdio. We want output to appears in the log immediately
         config.buffered_stdio = 0;
+        // Don't write bytecode; we can't modify the app bundle
+        // after it has been signed.
+        config.write_bytecode = 0;
         // Isolated apps need to set the full PYTHONPATH manually.
         config.module_search_paths_set = 1;
 
+        NSLog(@"Pre-initializing Python runtime...");
+        status = Py_PreInitialize(&preconfig);
+        if (PyStatus_Exception(status)) {
+            crash_dialog([NSString stringWithFormat:@"Unable to pre-initialize Python interpreter: %s", status.err_msg, nil]);
+            PyConfig_Clear(&config);
+            Py_ExitStatusException(status);
+        }
+
         // Set the home for the Python interpreter
-        python_home = [NSString stringWithFormat:@"%@/Support/Python/Resources", resourcePath, nil];
+        python_home = [NSString stringWithFormat:@"%@/support/python-stdlib", resourcePath, nil];
         NSLog(@"PythonHome: %@", python_home);
         wtmp_str = Py_DecodeLocale([python_home UTF8String], NULL);
         status = PyConfig_SetString(&config, &config.home, wtmp_str);
@@ -64,13 +79,21 @@ int main(int argc, char *argv[]) {
         }
         PyMem_RawFree(wtmp_str);
 
-        // Determine the app module name
-        app_module_name = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"MainModule"];
-        if (app_module_name == NULL) {
-            NSLog(@"Unable to identify app module name.");
+        // Determine the app module name. Look for the BRIEFCASE_MAIN_MODULE
+        // environment variable first; if that exists, we're probably in test
+        // mode. If it doesn't exist, fall back to the MainModule key in the
+        // main bundle.
+        app_module_str = getenv("BRIEFCASE_MAIN_MODULE");
+        if (app_module_str) {
+            app_module_name = [[NSString alloc] initWithUTF8String:app_module_str];
+        } else {
+            app_module_name = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"MainModule"];
+            if (app_module_name == NULL) {
+                NSLog(@"Unable to identify app module name.");
+            }
+            app_module_str = [app_module_name UTF8String];
         }
-        wapp_module_name = Py_DecodeLocale([app_module_name UTF8String], NULL);
-        status = PyConfig_SetString(&config, &config.run_module, wapp_module_name);
+        status = PyConfig_SetBytesString(&config, &config.run_module, app_module_str);
         if (PyStatus_Exception(status)) {
             crash_dialog([NSString stringWithFormat:@"Unable to set app module name: %s", status.err_msg, nil]);
             PyConfig_Clear(&config);
@@ -87,20 +110,21 @@ int main(int argc, char *argv[]) {
 
         // Set the full module path. This includes the stdlib, site-packages, and app code.
         NSLog(@"PYTHONPATH:");
-        // // The .zip form of the stdlib
-        // path = [NSString stringWithFormat:@"%@/Support/Python/Resources/lib/python310.zip", resourcePath, nil];
-        // NSLog(@"- %@", path);
-        // wtmp_str = Py_DecodeLocale([path UTF8String], NULL);
-        // status = PyWideStringList_Append(&config.module_search_paths, wtmp_str);
-        // if (PyStatus_Exception(status)) {
-        //     crash_dialog([NSString stringWithFormat:@"Unable to set .zip form of stdlib path: %s", status.err_msg, nil]);
-        //     PyConfig_Clear(&config);
-        //     Py_ExitStatusException(status);
-        // }
-        // PyMem_RawFree(wtmp_str);
+
+        // The .zip form of the stdlib
+        path = [NSString stringWithFormat:@"%@/support/python311.zip", resourcePath, nil];
+        NSLog(@"- %@", path);
+        wtmp_str = Py_DecodeLocale([path UTF8String], NULL);
+        status = PyWideStringList_Append(&config.module_search_paths, wtmp_str);
+        if (PyStatus_Exception(status)) {
+            crash_dialog([NSString stringWithFormat:@"Unable to set .zip form of stdlib path: %s", status.err_msg, nil]);
+            PyConfig_Clear(&config);
+            Py_ExitStatusException(status);
+        }
+        PyMem_RawFree(wtmp_str);
 
         // The unpacked form of the stdlib
-        path = [NSString stringWithFormat:@"%@/Support/Python/Resources/lib/python3.10", resourcePath, nil];
+        path = [NSString stringWithFormat:@"%@/support/python-stdlib", resourcePath, nil];
         NSLog(@"- %@", path);
         wtmp_str = Py_DecodeLocale([path UTF8String], NULL);
         status = PyWideStringList_Append(&config.module_search_paths, wtmp_str);
@@ -111,17 +135,17 @@ int main(int argc, char *argv[]) {
         }
         PyMem_RawFree(wtmp_str);
 
-        // // Add the stdlib binary modules path
-        // path = [NSString stringWithFormat:@"%@/Support/Python/Resources/lib/python3.10/lib-dynload", resourcePath, nil];
-        // NSLog(@"- %@", path);
-        // wtmp_str = Py_DecodeLocale([path UTF8String], NULL);
-        // status = PyWideStringList_Append(&config.module_search_paths, wtmp_str);
-        // if (PyStatus_Exception(status)) {
-        //     crash_dialog([NSString stringWithFormat:@"Unable to set stdlib binary module path: %s", status.err_msg, nil]);
-        //     PyConfig_Clear(&config);
-        //     Py_ExitStatusException(status);
-        // }
-        // PyMem_RawFree(wtmp_str);
+        // Add the stdlib binary modules path
+        path = [NSString stringWithFormat:@"%@/support/python-stdlib/lib-dynload", resourcePath, nil];
+        NSLog(@"- %@", path);
+        wtmp_str = Py_DecodeLocale([path UTF8String], NULL);
+        status = PyWideStringList_Append(&config.module_search_paths, wtmp_str);
+        if (PyStatus_Exception(status)) {
+            crash_dialog([NSString stringWithFormat:@"Unable to set stdlib binary module path: %s", status.err_msg, nil]);
+            PyConfig_Clear(&config);
+            Py_ExitStatusException(status);
+        }
+        PyMem_RawFree(wtmp_str);
 
         // Add the app_packages path
         path = [NSString stringWithFormat:@"%@/app_packages", resourcePath, nil];
@@ -209,7 +233,7 @@ int main(int argc, char *argv[]) {
                 exit(-3);
             }
 
-            app_module = PyUnicode_FromWideChar(wapp_module_name, wcslen(wapp_module_name));
+            app_module = PyUnicode_FromString(app_module_str);
             if (app_module == NULL) {
                 crash_dialog(@"Could not convert module name to unicode");
                 exit(-3);
@@ -221,6 +245,10 @@ int main(int argc, char *argv[]) {
                 exit(-4);
             }
 
+            // Print a separator to differentiate Python startup logs from app logs
+            NSLog(@"---------------------------------------------------------------------------");
+
+            // Invoke the app module
             result = PyObject_Call(module_attr, method_args, NULL);
 
             if (result == NULL) {
@@ -271,8 +299,6 @@ int main(int argc, char *argv[]) {
         @finally {
             Py_Finalize();
         }
-
-        PyMem_RawFree(wapp_module_name);
     }
 
     exit(ret);
@@ -287,6 +313,11 @@ int main(int argc, char *argv[]) {
 void crash_dialog(NSString *details) {
     // Write the error to the log
     NSLog(@"%@", details);
+
+    // If there's an app module override, we're running in test mode; don't show error dialogs
+    if (getenv("BRIEFCASE_MAIN_MODULE")) {
+        return;
+    }
 
     // Obtain the app instance (starting it if necessary) so that we can show an error dialog
     NSApplication *app = [NSApplication sharedApplication];

@@ -1,0 +1,8 @@
+android
+cocoa
+core
+dummy
+gtk
+iOS
+web
+winforms

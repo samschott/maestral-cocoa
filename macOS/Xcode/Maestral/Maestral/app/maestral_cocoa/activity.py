@@ -138,7 +138,7 @@ class ActivityWindow(Window):
 
         if res != 0:
             self.app.alert(
-                title="Count not open item",
+                title="Could not open item",
                 message="The file or folder no longer exists.",
             )
 

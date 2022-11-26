@@ -187,6 +187,7 @@ typedef struct {
 
 #define PyDateTime_CAPSULE_NAME "datetime.datetime_CAPI"
 
+
 /* This block is only used as part of the public API and should not be
  * included in _datetimemodule.c, which does not use the C API capsule.
  * See bpo-35081 for more details.

@@ -7,8 +7,10 @@ from typing import TYPE_CHECKING
 
 import click
 
+from rich.console import Console, ConsoleRenderable
+
 from .dialogs import select_path, select, confirm, prompt, select_multiple
-from .output import warn, ok, info, echo, Table, Field, DateField, TextField
+from .output import warn, ok, info, echo, RichDateField, rich_table
 from .common import (
     convert_api_errors,
     check_for_fatal_errors,
@@ -35,16 +37,16 @@ def stop_daemon_with_cli_feedback(config_name: str) -> None:
 
     from ..daemon import stop_maestral_daemon_process, Stop
 
-    click.echo("Stopping Maestral...", nl=False)
+    echo("Stopping Maestral...", nl=False)
     res = stop_maestral_daemon_process(config_name)
     if res == Stop.Ok:
-        click.echo("\rStopping Maestral...        " + OK)
+        echo("\rStopping Maestral...        " + OK)
     elif res == Stop.NotRunning:
-        click.echo("\rMaestral daemon is not running.")
+        echo("\rMaestral daemon is not running.")
     elif res == Stop.Killed:
-        click.echo("\rStopping Maestral...        " + KILLED)
+        echo("\rStopping Maestral...        " + KILLED)
     elif res == Stop.Failed:
-        click.echo("\rStopping Maestral...        " + FAILED)
+        echo("\rStopping Maestral...        " + FAILED)
 
 
 def select_dbx_path_dialog(
@@ -176,11 +178,11 @@ def start(foreground: bool, verbose: bool, config_name: str) -> None:
     )
 
     if is_running(config_name):
-        click.echo("Daemon is already running.")
+        echo("Daemon is already running.")
         return
 
     @convert_api_errors
-    def startup_dialog():
+    def startup_dialog() -> None:
 
         try:
             wait_for_startup(config_name)
@@ -288,15 +290,16 @@ def gui(config_name: str) -> None:
 
     if default_entry_point:
         # check gui requirements
-        requirements = [Requirement(r) for r in requires("maestral")]
-
-        for r in requirements:
-            if r.marker and r.marker.evaluate({"extra": "gui"}):
-                version_str = version(r.name)
-                if not r.specifier.contains(Version(version_str), prereleases=True):
-                    raise CliException(
-                        f"{r.name}{r.specifier} required but you have {version_str}"
-                    )
+        requirement_names = requires("maestral")
+        if requirement_names is not None:
+            for name in requirement_names:
+                r = Requirement(name)
+                if r.marker and r.marker.evaluate({"extra": "gui"}):
+                    version_str = version(r.name)
+                    if not r.specifier.contains(Version(version_str), prereleases=True):
+                        raise CliException(
+                            f"{r.name}{r.specifier} required but you have {version_str}"
+                        )
 
         # load entry point
         run = default_entry_point.load()
@@ -325,7 +328,7 @@ def resume(m: Maestral) -> None:
 
 
 @click.group(help="Link, unlink and view the Dropbox account.")
-def auth():
+def auth() -> None:
     pass
 
 
@@ -397,7 +400,7 @@ def auth_status(config_name: str) -> None:
 
 
 @click.group(help="Create and manage shared links.")
-def sharelink():
+def sharelink() -> None:
     pass
 
 
@@ -452,7 +455,6 @@ def sharelink_revoke(m: Maestral, url: str) -> None:
 @inject_proxy(fallback=True, existing_config=True)
 @convert_api_errors
 def sharelink_list(m: Maestral, dropbox_path: list[str], long: bool) -> None:
-
     links: list[SharedLinkMetadata]
 
     if len(dropbox_path) > 0:
@@ -463,34 +465,25 @@ def sharelink_list(m: Maestral, dropbox_path: list[str], long: bool) -> None:
         links = m.list_shared_links()
 
     if long:
-        link_table = Table(["URL", "Item", "Access", "Expires"])
+        link_table = rich_table("URL", "Item", "Access", "Expires")
 
         for link in links:
-
-            dt_field: Field
+            dt_field: ConsoleRenderable | str
 
             if link.expires:
-                dt_field = DateField(link.expires)
+                dt_field = RichDateField(link.expires)
             else:
-                dt_field = TextField("-")
+                dt_field = "-"
 
             if link.link_permissions.require_password:
                 access = "password"
             else:
                 access = link.link_permissions.effective_audience.value
 
-            link_table.append(
-                [
-                    link.url,
-                    link.name,
-                    access,
-                    dt_field,
-                ]
-            )
+            link_table.add_row(link.url, link.name, access, dt_field)
 
-        echo("")
-        link_table.echo()
-        echo("")
+        console = Console()
+        console.print(link_table)
 
     else:
         echo("\n".join(link.url for link in links))

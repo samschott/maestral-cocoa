@@ -1,8 +1,12 @@
+# Generated using Python 3.11.0
 [paths]
 app_path = "Maestral/app"
 app_packages_path = "Maestral/app_packages"
-support_path = "Support"
+info_plist_path = "Maestral/Info.plist"
 entitlements_path = "Maestral/maestral-cocoa.entitlements"
+
+support_path = "Support"
+support_revision = 1
 
 icon.16 = "Maestral/Assets.xcassets/Maestral.appiconset/icon-16.png"
 icon.32 = "Maestral/Assets.xcassets/Maestral.appiconset/icon-32.png"
