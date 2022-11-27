@@ -14,7 +14,7 @@ APP_PACKAGES_PATH = BUNDLE_PATH / "Contents" / "Resources" / "app_packages"
 LIB_PATH = BUNDLE_PATH / "Contents" / "Resources" / "support" / "python-stdlib"
 DIST_INFO_TARGET_PATH = next(APP_PATH.glob("maestral_cocoa-*.dist-info"))
 
-print("# ==== create entry-points metadata required by maestral =======================")
+print("# ==== create entry-points metadata required by maestral ===============")
 #!/usr/bin/env python3
 
 d = distribution("maestral-cocoa")
@@ -24,11 +24,11 @@ with open(DIST_INFO_TARGET_PATH / "entry_points.txt", "w") as f:
         f.write(f"[{e.group}]\n")
         f.write(f"{e.name} = {e.value}\n\n")
 
-print("# ==== copy over cli executable =================================================")
+print("# ==== copy over cli executable =========================================")
 
 shutil.copy("macOS/maestral-cli", BUNDLE_PATH / "Contents" / "MacOS")
 
-print("# ==== prune unneeded modules ===================================================")
+print("# ==== prune unneeded modules ===========================================")
 
 # This performs a hacky version of tree-shaking: We import the main entry points
 # of maestral and maestral-cocoa and inspect sys.imports to see which dependencies
@@ -60,12 +60,16 @@ for p in paths:
     print(p)
 """
 
-required_paths = subprocess.check_output(
-    [sys.executable, "-X", "utf8", "-c", check_imports_script],
-    env={
-        "PYTHONPATH": f"{LIB_PATH}:{LIB_PATH}/lib-dynload:{APP_PATH}:{APP_PACKAGES_PATH}"
-    }
-).decode().split("\n")
+required_paths = (
+    subprocess.check_output(
+        [sys.executable, "-X", "utf8", "-c", check_imports_script],
+        env={
+            "PYTHONPATH": f"{LIB_PATH}:{LIB_PATH}/lib-dynload:{APP_PATH}:{APP_PACKAGES_PATH}"
+        },
+    )
+    .decode()
+    .split("\n")
+)
 
 # clean_required_paths = []
 #
@@ -94,7 +98,7 @@ for path in LIB_PATH.glob("**/*.so"):
         print(str(path))
         path.unlink()
 
-print("# ==== prune py files and replace with pyc ======================================")
+print("# ==== prune py files and replace with pyc ==============================")
 
 print("compiling py -> pyc")
 compileall.compile_dir(str(RESOURCE_PATH), optimize=2, ddir="", legacy=True)
