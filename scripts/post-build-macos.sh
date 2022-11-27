@@ -27,13 +27,13 @@ cp macOS/maestral-cli "$BUNDLE_PATH/Contents/MacOS"
 
 echo "# ==== prune unneeded modules ==================================================="
 
-for PACKAGE in "pygments" "setuptools" "commonmark" "core" "cocoa" "gtk" "winforms" "web" "iOS" "android" "dummy"
+for PACKAGE in "ply" "pygments" "pyparsing" "setuptools" "commonmark" "core" "cocoa" "gtk" "winforms" "web" "iOS" "android" "dummy"
 do
   echo $PACKAGE
   rm -Rf "$BUNDLE_PATH/Contents/Resources/app_packages/$PACKAGE"
 done
 
-for MODULE in "unittest" "lib2to3" "pydoc_data"
+for MODULE in "unittest" "lib2to3" "pydoc_data" "distutils"
 do
   echo $MODULE
   rm -Rf "$BUNDLE_PATH/Contents/Resources/support/python-stdlib/$MODULE"
