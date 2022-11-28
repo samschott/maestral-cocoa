@@ -83,17 +83,12 @@ required_paths = (
 #     clean_required_paths.append(path)
 
 
-for path in APP_PACKAGES_PATH.glob("**/*.py"):
+for path in RESOURCE_PATH.glob("**/*.py"):
     if str(path.absolute()) not in required_paths:
         print(str(path))
         path.unlink()
 
-for path in LIB_PATH.glob("**/*.py"):
-    if str(path.absolute()) not in required_paths:
-        print(str(path))
-        path.unlink()
-
-for path in LIB_PATH.glob("**/*.so"):
+for path in RESOURCE_PATH.glob("**/*.so"):
     if str(path.absolute()) not in required_paths:
         print(str(path))
         path.unlink()
