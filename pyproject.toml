@@ -41,8 +41,8 @@ system_requires = [
 
 [tool.black]
 line-length = 88
-target-version = ["py36", "py37", "py38", "py39"]
-extend-exclude = 'macOS/(.*?)'
+target-version = ["py37", "py38", "py39", "py310", "py311"]
+extend-exclude = "macOS/(.*?)"
 
 [build-system]
 requires = ["setuptools>=41.0", "wheel"]
