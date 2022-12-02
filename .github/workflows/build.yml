@@ -63,7 +63,7 @@ jobs:
           # - add CLI executable
           # - keep .pyc files only to save space
           APP_PATH=$( find . -name "*Maestral.app" | head -n 1)
-          ./scripts/post-build-macos.sh $APP_PATH
+          python3 scripts/post-build-macos.py $APP_PATH
 
           # Package as dmg.
           briefcase package macOS Xcode -i "$DEV_ID" --no-input
