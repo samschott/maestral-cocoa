@@ -32,20 +32,23 @@ print("# ==== prune unneeded modules ===========================================
 
 # This performs a hacky version of tree-shaking: We import the main entry points
 # of maestral and maestral-cocoa and inspect sys.imports to see which dependencies
-# are actually required at runtime. Note that the CLI performs some lazy imports on
-# function calls for better performance, those are imported separately as "hidden imports".
+# are actually required at runtime. Note some modules are imported lazily within
+# function calls for better performance, or because they are only required from
+# an app bundle. Those are imported separately here as "hidden imports".
 
 check_imports_script = f"""
 import sys
 
 # hidden imports
 import survey
-import Pyro5.svr_threads
 import packaging.requirements
 import click._textwrap
 import click._compat
 import click._textwrap
 import click._termui_impl
+import Pyro5.svr_threads
+import _strptime
+import desktop_notifier.macos
 
 # regular imports
 import maestral.__main__
