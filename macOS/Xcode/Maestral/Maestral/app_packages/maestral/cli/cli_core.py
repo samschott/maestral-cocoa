@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import sys
+import threading
 from datetime import datetime
 from os import path as osp
 from typing import TYPE_CHECKING
@@ -20,6 +20,7 @@ from .common import (
 )
 from .core import DropboxPath, CliException
 from ..core import FolderMetadata, SharedLinkMetadata
+from ..utils.path import delete
 
 if TYPE_CHECKING:
     from ..daemon import MaestralProxy
@@ -62,9 +63,6 @@ def select_dbx_path_dialog(
         deleting it. Defaults to ``False``.
     :returns: Path given by user.
     """
-
-    from ..utils.path import delete
-
     default_dir_name = default_dir_name or f"Dropbox ({config_name.capitalize()})"
 
     while True:
@@ -166,7 +164,6 @@ def link_dialog(m: MaestralProxy | Maestral) -> None:
 @convert_api_errors
 def start(foreground: bool, verbose: bool, config_name: str) -> None:
 
-    import threading
     from ..daemon import (
         MaestralProxy,
         start_maestral_daemon,
@@ -274,22 +271,25 @@ def gui(config_name: str) -> None:
     except ImportError:
         from importlib_metadata import entry_points, requires, version  # type: ignore
 
-    # find all "maestral_gui" entry points registered by other packages
-    gui_entry_points = entry_points().get("maestral_gui")
+    # Find all entry points for "maestral_gui" registered by other packages.
+    gui_entry_points = entry_points(group="maestral_gui")
 
-    if not gui_entry_points or len(gui_entry_points) == 0:
+    if len(gui_entry_points) == 0:
         raise CliException(
             "No maestral GUI installed. Please run 'pip3 install maestral[gui]'."
         )
 
-    # check if 1st party defaults "maestral_cocoa" or "maestral_qt" are installed
-    default_gui = "maestral_cocoa" if sys.platform == "darwin" else "maestral_qt"
-    default_entry_point = next(
-        (e for e in gui_entry_points if e.name == default_gui), None
-    )
+    if len(gui_entry_points) > 1:
+        _prompt = "Multiple GUIs found, please choose:"
+        index = select(_prompt, [e.name for e in gui_entry_points])
+    else:
+        index = 0
 
-    if default_entry_point:
-        # check gui requirements
+    entry_point = gui_entry_points[index]
+
+    if entry_point in {"maestral_cocoa", "maestral_qt"}:
+        # For 1st party GUIs "maestral_cocoa" or "maestral_qt", check if the installed
+        # version fulfills requirements in maestral's gui extra.
         requirement_names = requires("maestral")
         if requirement_names is not None:
             for name in requirement_names:
@@ -301,14 +301,8 @@ def gui(config_name: str) -> None:
                             f"{r.name}{r.specifier} required but you have {version_str}"
                         )
 
-        # load entry point
-        run = default_entry_point.load()
-
-    else:
-        # load any 3rd party GUI
-        fallback_entry_point = next(iter(gui_entry_points))
-        run = fallback_entry_point.load()
-
+    # Run the GUI.
+    run = entry_point.load()
     run(config_name)
 
 
@@ -340,11 +334,26 @@ def auth() -> None:
     default=False,
     help="Relink to the existing account. Keeps the sync state.",
 )
+@click.option(
+    "--refresh-token",
+    hidden=True,
+    help="Refresh token to bypass OAuth exchange.",
+)
+@click.option(
+    "--access-token",
+    hidden=True,
+    help="Access token to bypass OAuth exchange.",
+)
 @inject_proxy(fallback=True, existing_config=False)
 @convert_api_errors
-def auth_link(m: Maestral, relink: bool) -> None:
+def auth_link(
+    m: Maestral, relink: bool, refresh_token: str | None, access_token: str | None
+) -> None:
     if m.pending_link or relink:
-        link_dialog(m)
+        if refresh_token or access_token:
+            m.link(refresh_token=refresh_token, access_token=access_token)
+        else:
+            link_dialog(m)
     else:
         echo(
             "Maestral is already linked. Use '-r' to relink to the same "
