@@ -6,7 +6,8 @@ import subprocess
 from pathlib import Path
 from importlib.metadata import distribution
 from importlib.util import find_spec
-from setuptools.config.setupcfg import read_configuration
+from setuptools.dist import Distribution
+from setuptools.command.egg_info import write_entries
 
 BUNDLE_PATH = Path(sys.argv[1])
 RESOURCE_PATH = BUNDLE_PATH / "Contents" / "Resources"
@@ -17,15 +18,10 @@ DIST_INFO_TARGET_PATH = next(APP_PATH.glob("maestral_cocoa-*.dist-info"))
 
 print("# ==== create entry-points metadata required by maestral ===============")
 
-config = read_configuration("setup.cfg")
-entry_points = config["options"]["entry_points"]
-
-with open(DIST_INFO_TARGET_PATH / "entry_points.txt", "w") as f:
-    for group in config["options"]["entry_points"]:
-        f.write(f"[{group}]\n")
-        for name in config["options"]["entry_points"][group]:
-            f.write(f"{name}\n")
-        f.write("\n")
+d = Distribution()
+d = d.parse_config_files(["setup.cfg"])
+cmd = d.get_command_obj("egg_info")
+write_entries(cmd, "entry_points", DIST_INFO_TARGET_PATH / "entry_points.txt")
 
 print("# ==== copy over cli executable =========================================")
 
@@ -62,8 +58,7 @@ import maestral_cocoa.__main__
 
 modules = list(sys.modules.values())
 paths  = [m.__file__ for m in modules if hasattr(m, "__file__") and m.__file__  is not None]
-for p in paths:
-    print(p)
+print("\n".join(paths))
 """
 
 required_paths = (
@@ -95,7 +90,7 @@ all_modules = py_module_paths | binary_module_paths
 removals = (py_module_paths | binary_module_paths) - set(required_paths)
 
 for path in removals:
-    print(f"Removing {path!s}")
+    print(f"Removing {path}")
     path.unlink()
 
 print("# ==== prune py files and replace with pyc ==============================")
