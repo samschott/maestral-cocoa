@@ -6,6 +6,7 @@ import subprocess
 from pathlib import Path
 from importlib.metadata import distribution
 from importlib.util import find_spec
+from setuptools.config.setupcfg import read_configuration
 
 BUNDLE_PATH = Path(sys.argv[1])
 RESOURCE_PATH = BUNDLE_PATH / "Contents" / "Resources"
@@ -16,12 +17,15 @@ DIST_INFO_TARGET_PATH = next(APP_PATH.glob("maestral_cocoa-*.dist-info"))
 
 print("# ==== create entry-points metadata required by maestral ===============")
 
-d = distribution("maestral-cocoa")
+config = read_configuration("setup.cfg")
+entry_points = config["options"]["entry_points"]
 
 with open(DIST_INFO_TARGET_PATH / "entry_points.txt", "w") as f:
-    for e in d.entry_points:
-        f.write(f"[{e.group}]\n")
-        f.write(f"{e.name} = {e.value}\n\n")
+    for group in config["options"]["entry_points"]:
+        f.write(f"[{group}]\n")
+        for name in config["options"]["entry_points"][group]:
+            f.write(f"{name}\n")
+        f.write("\n")
 
 print("# ==== copy over cli executable =========================================")
 
