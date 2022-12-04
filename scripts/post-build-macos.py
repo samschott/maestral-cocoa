@@ -15,7 +15,6 @@ LIB_PATH = BUNDLE_PATH / "Contents" / "Resources" / "support" / "python-stdlib"
 DIST_INFO_TARGET_PATH = next(APP_PATH.glob("maestral_cocoa-*.dist-info"))
 
 print("# ==== create entry-points metadata required by maestral ===============")
-#!/usr/bin/env python3
 
 d = distribution("maestral-cocoa")
 
