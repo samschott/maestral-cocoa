@@ -73,6 +73,7 @@ required_paths = (
     .decode()
     .split("\n")
 )
+required_paths = set(Path(p) for p in required_paths)
 
 # clean_required_paths = []
 #
@@ -85,16 +86,14 @@ required_paths = (
 #     path = path.replace(sdt_lib_so, str(LIB_PATH.absolute() / "lib-dynload"))
 #     clean_required_paths.append(path)
 
+py_module_paths = set(path.resolve() for path in RESOURCE_PATH.glob("**/*.py"))
+binary_module_paths = set(path.resolve() for path in RESOURCE_PATH.glob("**/*.so"))
+all_modules = py_module_paths | binary_module_paths
+removals = (py_module_paths | binary_module_paths) - set(required_paths)
 
-for path in RESOURCE_PATH.glob("**/*.py"):
-    if str(path.absolute()) not in required_paths:
-        print(str(path))
-        path.unlink()
-
-for path in RESOURCE_PATH.glob("**/*.so"):
-    if str(path.absolute()) not in required_paths:
-        print(str(path))
-        path.unlink()
+for path in removals:
+    print(f"Removing {path!s}")
+    path.unlink()
 
 print("# ==== prune py files and replace with pyc ==============================")
 
