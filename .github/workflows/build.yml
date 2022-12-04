@@ -44,7 +44,6 @@ jobs:
           python3 -m pip install -U pip
           python3 -m pip install -U briefcase
           python3 -m pip install -U bump2version
-          python3 -m pip install .
 
       - name: Bump build number
         run: |
