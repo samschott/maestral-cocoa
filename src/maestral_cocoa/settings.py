@@ -14,6 +14,7 @@ from typing import Any, TYPE_CHECKING
 import toga
 from maestral.utils.path import delete
 from maestral.daemon import MaestralProxy
+from maestral.exceptions import MaestralApiError, NotLinkedError
 
 # local imports
 from .utils import (
@@ -51,6 +52,7 @@ class SettingsWindow(SettingsGui):
 
         self._refresh = False
         self._refresh_interval = 2
+        self._refresh_interval_profile_pic = 60 * 45
 
         self.on_close = self.on_close_pressed
 
@@ -74,6 +76,7 @@ class SettingsWindow(SettingsGui):
 
         self.combobox_dbx_location.dialog_message = path_selection_message
         self.refresh_gui()
+        self.app.add_background_task(self.refresh_profile_pic)
 
     # ==== callback implementations ====================================================
 
@@ -86,7 +89,7 @@ class SettingsWindow(SettingsGui):
 
         try:
 
-            # The folder will always exist (cannot chose a non-existing folder).
+            # The folder will always exist (cannot choose a non-existing folder).
             # Ask if we can delete it / its contents if it isn't empty.
 
             if not is_empty(new_path):
@@ -205,8 +208,8 @@ class SettingsWindow(SettingsGui):
                 "Install the 'maestral' command line tool to /usr/local/bin."
             )
 
-    def set_profile_pic(self, path: bytes | str | os.PathLike) -> None:
-        if not osp.isfile(path):
+    def set_profile_pic(self, path: bytes | str | os.PathLike | None) -> None:
+        if not path or not osp.isfile(path):
             path = FACEHOLDER_PATH
         new_stat = os.stat(path)
         if new_stat != self._cached_pic_stat:
@@ -219,16 +222,8 @@ class SettingsWindow(SettingsGui):
 
     # ==== populate gui with data ======================================================
 
-    async def periodic_refresh_gui(self, sender: Any = None) -> None:
-
-        while self._refresh:
-            self.refresh_gui()
-            await asyncio.sleep(self._refresh_interval)
-
     def refresh_gui(self) -> None:
-
         # populate account info
-        self.set_profile_pic(self.mdbx.account_profile_pic_path)
         self.set_account_info_from_cache()
 
         # populate sync section
@@ -248,6 +243,24 @@ class SettingsWindow(SettingsGui):
 
         if FROZEN:
             self._update_cli_tool_button()
+
+    async def refresh_profile_pic(self, sender: Any = None) -> None:
+        path = await call_async_maestral(self.mdbx.config_name, "get_profile_pic")
+        self.set_profile_pic(path)
+
+    async def periodic_refresh_gui(self, sender: Any = None) -> None:
+        while self._refresh:
+            self.refresh_gui()
+            await asyncio.sleep(self._refresh_interval)
+
+    async def periodic_refresh_profile_pic(self, sender: Any = None) -> None:
+        while self._refresh:
+            try:
+                await self.refresh_profile_pic()
+            except (ConnectionError, MaestralApiError, NotLinkedError):
+                await asyncio.sleep(60 * 10)
+            else:
+                await asyncio.sleep(self._refresh_interval_profile_pic)
 
     def set_account_info_from_cache(self) -> None:
 
@@ -276,4 +289,5 @@ class SettingsWindow(SettingsGui):
     def show(self) -> None:
         self._refresh = True
         self.app.add_background_task(self.periodic_refresh_gui)
+        self.app.add_background_task(self.periodic_refresh_profile_pic)
         super().show()
