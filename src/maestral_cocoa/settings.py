@@ -81,17 +81,14 @@ class SettingsWindow(SettingsGui):
     # ==== callback implementations ====================================================
 
     async def on_dbx_location_selected(self, widget: FileSelectionButton) -> None:
-
         new_path = widget.current_selection
 
         if new_path == self.mdbx.dropbox_path:
             return
 
         try:
-
             # The folder will always exist (cannot choose a non-existing folder).
             # Ask if we can delete it / its contents if it isn't empty.
-
             if not is_empty(new_path):
                 return await self.error_dialog(
                     title="Folder is not empty",
@@ -146,11 +143,8 @@ class SettingsWindow(SettingsGui):
         self.mdbx.notification_level = 15 if widget.state == ON else 30
 
     async def on_cli_pressed(self, widget: Any) -> None:
-
         if self._macos_cli_install_path.is_symlink():
-
             # Uninstall CLI from /usr/local/bin.
-
             try:
                 try:
                     self._macos_cli_install_path.unlink()
@@ -164,9 +158,7 @@ class SettingsWindow(SettingsGui):
                 await self.error_dialog("Could not uninstall CLI", str(e))
 
         elif not self._macos_cli_install_path.exists():
-
             # Install CLI to /usr/local/bin.
-
             maestral_cli = Path(sys.executable).parent / "maestral-cli"
             destination_dir = self._macos_cli_install_path.parent
 
@@ -263,7 +255,6 @@ class SettingsWindow(SettingsGui):
                 await asyncio.sleep(self._refresh_interval_profile_pic)
 
     def set_account_info_from_cache(self) -> None:
-
         acc_display_name = self.mdbx.get_state("account", "display_name")
         acc_mail = self.mdbx.get_state("account", "email")
         acc_type = self.mdbx.get_state("account", "type")
