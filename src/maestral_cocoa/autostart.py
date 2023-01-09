@@ -24,16 +24,15 @@ class AutoStart:
     _impl: AutoStartBase
 
     def __init__(self, config_name: str) -> None:
-
         self.implementation = self._get_available_implementation()
 
         start_cmd_list = [sys.executable, "-m", "maestral_cocoa", "-c", config_name]
         start_cmd = " ".join(start_cmd_list)
-        bundle_id = "{}.{}".format(BUNDLE_ID, config_name)
+        launchd_id = "{}.{}".format(BUNDLE_ID, config_name)
 
         if self.implementation == SupportedImplementations.launchd:
             self._impl = AutoStartLaunchd(
-                bundle_id,
+                launchd_id,
                 start_cmd,
                 EnvironmentVariables=ENV,
             )
