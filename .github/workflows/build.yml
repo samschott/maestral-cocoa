@@ -78,7 +78,7 @@ jobs:
             PIP_NO_BINARY: "watchdog"
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ steps.build.outputs.dmg_name }}
           path: ${{ steps.build.outputs.dmg_path }}
