@@ -35,7 +35,7 @@ print("# ==== prune unneeded modules ===========================================
 # function calls for better performance, or because they are only required from
 # an app bundle. Those are imported separately here as "hidden imports".
 
-check_imports_script = f"""
+check_imports_script = r"""
 import sys
 
 # hidden imports
