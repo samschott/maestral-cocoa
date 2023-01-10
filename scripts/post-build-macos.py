@@ -19,7 +19,7 @@ DIST_INFO_TARGET_PATH = next(APP_PATH.glob("maestral_cocoa-*.dist-info"))
 print("# ==== create entry-points metadata required by maestral ===============")
 
 d = Distribution()
-d = d.parse_config_files(["setup.cfg"])
+d.parse_config_files(["setup.cfg"])
 cmd = d.get_command_obj("egg_info")
 write_entries(cmd, "entry_points", DIST_INFO_TARGET_PATH / "entry_points.txt")
 
