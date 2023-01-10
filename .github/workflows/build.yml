@@ -71,8 +71,8 @@ jobs:
           DMG_PATH=$( find . -name "*.dmg" )
           DMG_NAME=$( basename "$DMG_PATH" )
           echo "dmg created: $DMG_PATH"
-          echo "::set-output name=dmg_name::${DMG_NAME}"
-          echo "::set-output name=dmg_path::${DMG_PATH}"
+          echo "dmg_name=${DMG_NAME}" >> $GITHUB_OUTPUT
+          echo "dmg_path=${DMG_PATH}" >> $GITHUB_OUTPUT
         env:
             DEV_ID: "Developer ID Application: Sam Schott (G34LNR8C4Y)"
             PIP_NO_BINARY: "watchdog"
