@@ -184,7 +184,7 @@ class SettingsGui(Window):
             ),
         )
         self.checkbox_notifications = Switch(
-            "Enable notifications on file changes",
+            "Enable notifications for remote changes",
             style=Pack(
                 padding_bottom=SettingsGui.SUBELEMENT_PADDING,
                 width=SettingsGui.COLUMN_WIDTH_RIGHT,
