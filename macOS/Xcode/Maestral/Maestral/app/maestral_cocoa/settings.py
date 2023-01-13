@@ -14,6 +14,7 @@ from typing import Any, TYPE_CHECKING
 import toga
 from maestral.utils.path import delete
 from maestral.daemon import MaestralProxy
+from maestral.exceptions import MaestralApiError, NotLinkedError
 
 # local imports
 from .utils import (
@@ -51,6 +52,7 @@ class SettingsWindow(SettingsGui):
 
         self._refresh = False
         self._refresh_interval = 2
+        self._refresh_interval_profile_pic = 60 * 45
 
         self.on_close = self.on_close_pressed
 
@@ -74,21 +76,19 @@ class SettingsWindow(SettingsGui):
 
         self.combobox_dbx_location.dialog_message = path_selection_message
         self.refresh_gui()
+        self.app.add_background_task(self.refresh_profile_pic)
 
     # ==== callback implementations ====================================================
 
     async def on_dbx_location_selected(self, widget: FileSelectionButton) -> None:
-
         new_path = widget.current_selection
 
         if new_path == self.mdbx.dropbox_path:
             return
 
         try:
-
-            # The folder will always exist (cannot chose a non-existing folder).
+            # The folder will always exist (cannot choose a non-existing folder).
             # Ask if we can delete it / its contents if it isn't empty.
-
             if not is_empty(new_path):
                 return await self.error_dialog(
                     title="Folder is not empty",
@@ -143,11 +143,8 @@ class SettingsWindow(SettingsGui):
         self.mdbx.notification_level = 15 if widget.state == ON else 30
 
     async def on_cli_pressed(self, widget: Any) -> None:
-
         if self._macos_cli_install_path.is_symlink():
-
             # Uninstall CLI from /usr/local/bin.
-
             try:
                 try:
                     self._macos_cli_install_path.unlink()
@@ -161,9 +158,7 @@ class SettingsWindow(SettingsGui):
                 await self.error_dialog("Could not uninstall CLI", str(e))
 
         elif not self._macos_cli_install_path.exists():
-
             # Install CLI to /usr/local/bin.
-
             maestral_cli = Path(sys.executable).parent / "maestral-cli"
             destination_dir = self._macos_cli_install_path.parent
 
@@ -205,8 +200,8 @@ class SettingsWindow(SettingsGui):
                 "Install the 'maestral' command line tool to /usr/local/bin."
             )
 
-    def set_profile_pic(self, path: bytes | str | os.PathLike) -> None:
-        if not osp.isfile(path):
+    def set_profile_pic(self, path: bytes | str | os.PathLike | None) -> None:
+        if not path or not osp.isfile(path):
             path = FACEHOLDER_PATH
         new_stat = os.stat(path)
         if new_stat != self._cached_pic_stat:
@@ -219,16 +214,8 @@ class SettingsWindow(SettingsGui):
 
     # ==== populate gui with data ======================================================
 
-    async def periodic_refresh_gui(self, sender: Any = None) -> None:
-
-        while self._refresh:
-            self.refresh_gui()
-            await asyncio.sleep(self._refresh_interval)
-
     def refresh_gui(self) -> None:
-
         # populate account info
-        self.set_profile_pic(self.mdbx.account_profile_pic_path)
         self.set_account_info_from_cache()
 
         # populate sync section
@@ -249,8 +236,25 @@ class SettingsWindow(SettingsGui):
         if FROZEN:
             self._update_cli_tool_button()
 
-    def set_account_info_from_cache(self) -> None:
+    async def refresh_profile_pic(self, sender: Any = None) -> None:
+        path = await call_async_maestral(self.mdbx.config_name, "get_profile_pic")
+        self.set_profile_pic(path)
 
+    async def periodic_refresh_gui(self, sender: Any = None) -> None:
+        while self._refresh:
+            self.refresh_gui()
+            await asyncio.sleep(self._refresh_interval)
+
+    async def periodic_refresh_profile_pic(self, sender: Any = None) -> None:
+        while self._refresh:
+            try:
+                await self.refresh_profile_pic()
+            except (ConnectionError, MaestralApiError, NotLinkedError):
+                await asyncio.sleep(60 * 10)
+            else:
+                await asyncio.sleep(self._refresh_interval_profile_pic)
+
+    def set_account_info_from_cache(self) -> None:
         acc_display_name = self.mdbx.get_state("account", "display_name")
         acc_mail = self.mdbx.get_state("account", "email")
         acc_type = self.mdbx.get_state("account", "type")
@@ -276,4 +280,5 @@ class SettingsWindow(SettingsGui):
     def show(self) -> None:
         self._refresh = True
         self.app.add_background_task(self.periodic_refresh_gui)
+        self.app.add_background_task(self.periodic_refresh_profile_pic)
         super().show()

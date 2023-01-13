@@ -1,10 +1,10 @@
 #!/Library/Frameworks/Python.framework/Versions/3.11/bin/python3
-# EASY-INSTALL-ENTRY-SCRIPT: 'watchdog==2.1.9','console_scripts','watchmedo'
+# EASY-INSTALL-ENTRY-SCRIPT: 'watchdog==2.2.1','console_scripts','watchmedo'
 import re
 import sys
 
 # for compatibility with easy_install; see #2198
-__requires__ = 'watchdog==2.1.9'
+__requires__ = 'watchdog==2.2.1'
 
 try:
     from importlib.metadata import distribution
@@ -30,4 +30,4 @@ globals().setdefault('load_entry_point', importlib_load_entry_point)
 
 if __name__ == '__main__':
     sys.argv[0] = re.sub(r'(-script\.pyw?|\.exe)?$', '', sys.argv[0])
-    sys.exit(load_entry_point('watchdog==2.1.9', 'console_scripts', 'watchmedo')())
+    sys.exit(load_entry_point('watchdog==2.2.1', 'console_scripts', 'watchmedo')())

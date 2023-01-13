@@ -22,8 +22,18 @@ from queue import Queue, Empty
 from collections import defaultdict
 from contextlib import contextmanager
 from tempfile import NamedTemporaryFile
-from typing import Any, Iterator, Iterable, Collection, Callable, TypeVar, cast
-from typing_extensions import ParamSpec
+from typing import (
+    Any,
+    Iterator,
+    Iterable,
+    Collection,
+    Callable,
+    Type,
+    TypeVar,
+    cast,
+    overload,
+)
+from typing_extensions import ParamSpec, TypeGuard
 
 # external imports
 import click
@@ -123,7 +133,7 @@ from .utils.path import (
 )
 from .database.orm import Manager
 from .database.core import Database
-from .database.query import PathTreeQuery, MatchQuery, AllQuery, AndQuery
+from .database.query import PathTreeQuery, MatchQuery, AllQuery, AndQuery, Query
 from .utils.appdirs import get_data_path
 
 
@@ -132,6 +142,8 @@ __all__ = [
     "SyncDirection",
     "FSEventHandler",
     "SyncEngine",
+    "ActivityNode",
+    "ActivityTree",
 ]
 
 umask = os.umask(0o22)
@@ -319,14 +331,11 @@ class FSEventHandler(FileSystemEventHandler):
             recursive = ignore.recursive
 
             if event == ignore_event:
-
                 if not recursive:
                     self._ignored_events.discard(ignore)
-
                 return True
 
             elif recursive:
-
                 type_match = event.event_type == ignore_event.event_type
                 src_match = is_equal_or_child(event.src_path, ignore_event.src_path)
                 dest_match = is_equal_or_child(
@@ -358,10 +367,10 @@ class FSEventHandler(FileSystemEventHandler):
         if not event.is_directory and event.event_type not in self.file_event_types:
             return
 
-        # Ignore moves onto itself, they may be erroneuosly emitted on older versions of
+        # Ignore moves onto itself, they may be erroneously emitted on older versions of
         # macOS when changing the unicode normalisation of a path with os.rename().
         # See https://github.com/samschott/maestral/issues/671.
-        if event.event_type == EVENT_TYPE_MOVED and event.src_path == event.dest_path:
+        if is_moved(event) and event.src_path == event.dest_path:
             return
 
         # Check if event should be ignored.
@@ -404,6 +413,113 @@ class FSEventHandler(FileSystemEventHandler):
             return self.local_file_event_queue.qsize() > 0
 
 
+class ActivityNode:
+    """A node in a sparse tree to represent syncing activity.
+
+    Each node represents an item in the local Dropbox folder. Apart from the root node,
+    items will only be present if they or any of their children have any sync activity.
+
+    :attr children: All children with sync activity. Leaf nodes must represent items
+        that are being uploaded, downloaded, or have a sync error.
+    :attr sync_events: All SyncEvents of this node and its children.
+    """
+
+    __slots__ = ["name", "parent", "children", "sync_events"]
+
+    def __init__(
+        self,
+        name: str,
+        sync_events: Iterable[SyncEvent] = (),
+        parent: ActivityNode | None = None,
+    ) -> None:
+        self.name = name
+        self.parent = parent
+        self.children: dict[str, ActivityNode] = {}
+        self.sync_events = set(sync_events)
+
+    def __repr__(self) -> str:
+        return f"<{self.__class__.__name__}(name={self.name}, children={self.children}, sync_events={self.sync_events})>"
+
+
+class ActivityTree(ActivityNode):
+    """The root node in a sync activity tree. Represents Dropbox root."""
+
+    def __init__(self) -> None:
+        super().__init__(name="/")
+        self._lock = RLock()
+
+    def add(self, event: SyncEvent) -> None:
+        with self._lock:
+            parts = event.dbx_path.lstrip("/").split("/")
+
+            # Remove any failures at this path.
+            node = self.get_node(event.dbx_path)
+            if node:
+                failed = [e for e in node.sync_events if e.status is SyncStatus.Failed]
+                for fail in failed:
+                    self.remove(fail)
+
+            # Traverse tree and create children as required.
+            # Insert SyncEvent for each parent as we move down.
+            current_node: ActivityNode = self
+            current_node.sync_events.add(event)
+
+            for part in parts:
+                try:
+                    child_node = current_node.children[part]
+                except KeyError:
+                    child_node = ActivityNode(part, parent=current_node)
+                    current_node.children[part] = child_node
+                child_node.sync_events.add(event)
+                current_node = child_node
+
+    def remove(self, event: SyncEvent) -> None:
+        with self._lock:
+            node = self.get_node(event.dbx_path)
+            if not node:
+                raise KeyError(f"No node at path {event.dbx_path}")
+            if event not in node.sync_events:
+                raise KeyError(f"SyncEvent not found at path {event.dbx_path}")
+
+            # Walk tree upwards. Remove nodes if no SyncEvents remain.
+            node.sync_events.remove(event)
+            parent = node.parent
+
+            while parent:
+                # Remove event from parent.
+                parent.sync_events.remove(event)
+                # Remove node from tree if it is empty.
+                if len(node.sync_events) == 0:
+                    parent.children.pop(node.name)
+                # Move up.
+                node = parent
+                parent = node.parent
+
+    def discard(self, event: SyncEvent) -> None:
+        try:
+            self.remove(event)
+        except KeyError:
+            pass
+
+    def has_path(self, dbx_path: str) -> bool:
+        return self.get_node(dbx_path) is not None
+
+    def get_node(self, dbx_path: str) -> ActivityNode | None:
+        if dbx_path == "/":
+            return self
+
+        with self._lock:
+            parts = dbx_path.lstrip("/").split("/")
+            node: ActivityNode = self
+            for part in parts:
+                try:
+                    node = node.children[part]
+                except KeyError:
+                    return None
+
+            return node
+
+
 class SyncEngine:
     """Class that handles syncing with Dropbox
 
@@ -411,12 +527,17 @@ class SyncEngine:
     conflict resolution and updates to our index.
 
     :param client: Dropbox API client instance.
+    :param desktop_notifier: Desktop notifier instance to use for user notifications.
     """
 
     _max_history = 1000
     _num_threads = min(64, CPU_COUNT * 4)
 
-    def __init__(self, client: DropboxClient):
+    def __init__(
+        self,
+        client: DropboxClient,
+        desktop_notifier: notify.MaestralDesktopNotifier | None = None,
+    ) -> None:
         self.client = client
         self.config_name = self.client.config_name
         self.fs_events = FSEventHandler()
@@ -433,13 +554,13 @@ class SyncEngine:
         self._state = MaestralState(self.config_name)
         self.reload_cached_config()
 
-        self.desktop_notifier = notify.MaestralDesktopNotifier(self.config_name)
+        self.desktop_notifier = desktop_notifier
 
         # Data structures for internal communication.
         self._cancel_requested = Event()
 
         # Data structures for user information.
-        self.syncing: dict[str, SyncEvent] = {}
+        self.activity = ActivityTree()
 
         # Initialize SQLite database.
         self._db_path = get_data_path("maestral", f"{self.config_name}.db")
@@ -619,10 +740,12 @@ class SyncEngine:
         """The time stamp of the last file change or 0.0 if there are no file changes in
         our history."""
         with self._database_access():
-            res = self._db.execute("SELECT MAX(last_sync) FROM 'index'").fetchone()
-            if res:
-                return res["MAX(sync_time)"] or 0.0
-            else:
+            row = self._db.execute("SELECT MAX(last_sync) FROM 'index'").fetchone()
+            if not row:
+                return 0.0
+            try:
+                return row[0] or 0.0
+            except IndexError:
                 return 0.0
 
     @property
@@ -631,15 +754,19 @@ class SyncEngine:
         full indexing should take place."""
         return self._state.get("sync", "last_reindex")
 
-    @property
-    def history(self) -> list[SyncEvent]:
+    def get_history(self, dbx_path: str | None = None) -> list[SyncEvent]:
         """A list of the last SyncEvents in our history. History will be kept for the
         interval specified by the config value ``keep_history`` (defaults to two weeks)
         but at most 1,000 events will be kept."""
         with self._database_access():
-            sync_events = self._history_table.select_sql(
-                "ORDER BY IFNULL(change_time, sync_time)"
-            )
+            query: Query
+            if dbx_path is None:
+                query = AllQuery()
+            else:
+                query = MatchQuery(SyncEvent.dbx_path, dbx_path)
+
+            order_expr = "IFNULL(change_time, sync_time)"
+            sync_events = self._history_table.select(query.order_by(order_expr))
             return sync_events
 
     def reset_sync_state(self) -> None:
@@ -1094,10 +1221,13 @@ class SyncEngine:
                     raise exc
 
                 self._logger.error(exc.title, exc_info=exc_info_tuple(exc))
-                self.desktop_notifier.notify(exc.title, exc.message, level=notify.ERROR)
+                if self.desktop_notifier:
+                    self.desktop_notifier.notify(
+                        exc.title, exc.message, level=notify.ERROR
+                    )
 
     def _new_tmp_file(self) -> str:
-        """Returns a new temporary file name in our cache directory."""
+        """Creates a new temporary file in our cache directory and returns its path."""
         self.ensure_cache_dir_present()
         try:
             with NamedTemporaryFile(dir=self.file_cache_path, delete=False) as f:
@@ -1412,13 +1542,14 @@ class SyncEngine:
                 url_path = urllib.parse.quote(err.dbx_path)
                 click.launch(f"https://www.dropbox.com/preview{url_path}")
 
-        self.desktop_notifier.notify(
-            "Sync error",
-            f"Could not {direction.value}load {printable_file_name}",
-            level=notify.SYNCISSUE,
-            actions={"Show": callback},
-            on_click=callback,
-        )
+        if self.desktop_notifier:
+            self.desktop_notifier.notify(
+                "Sync error",
+                f"Could not {direction.value}load {printable_file_name}",
+                level=notify.SYNCISSUE,
+                actions={"Show": callback},
+                on_click=callback,
+            )
 
         # Save sync errors to retry later.
 
@@ -1484,7 +1615,8 @@ class SyncEngine:
             if raise_error:
                 raise new_exc
             self._logger.error(title, exc_info=exc_info_tuple(new_exc))
-            self.desktop_notifier.notify(title, msg, level=notify.ERROR)
+            if self.desktop_notifier:
+                self.desktop_notifier.notify(title, msg, level=notify.ERROR)
 
     def _clear_caches(self) -> None:
         """
@@ -1598,6 +1730,10 @@ class SyncEngine:
 
             # Always upload untracked items, check mtime of tracked items.
             is_modified = mtime_check and not is_new
+
+            event: FileSystemEvent
+            event0: FileSystemEvent
+            event1: FileSystemEvent
 
             if is_new:
                 if is_dir:
@@ -1733,7 +1869,6 @@ class SyncEngine:
         other: defaultdict[int, list[SyncEvent]] = defaultdict(list)
 
         for event in sync_events:
-
             if self.is_excluded(event.local_path) or self.is_mignore(event):
                 continue
 
@@ -1746,7 +1881,7 @@ class SyncEngine:
                 other[level].append(event)
 
             # Housekeeping.
-            self.syncing[event.local_path] = event
+            self.activity.add(event)
 
         self._logger.debug("Filtered deleted events:\n%s", pf_repr(deleted))
         self._logger.debug("Filtered dir moved events:\n%s", pf_repr(dir_moved))
@@ -1817,7 +1952,7 @@ class SyncEngine:
         moved_events: defaultdict[str, list[FileSystemEvent]] = defaultdict(list)
 
         for event in events:
-            if event.event_type == EVENT_TYPE_MOVED:
+            if is_moved(event):
                 deleted, created = split_moved_event(event)
                 events_for_path[deleted.src_path].append(deleted)
                 events_for_path[created.src_path].append(created)
@@ -1852,11 +1987,11 @@ class SyncEngine:
                 for i in reversed(range(len(events))):
                     event = events[i]
 
-                    if event.event_type == EVENT_TYPE_CREATED:
+                    if is_created(event):
                         n_created += 1
                         first_created_index = i
 
-                    if event.event_type == EVENT_TYPE_DELETED:
+                    if is_deleted(event):
                         n_deleted += 1
                         first_deleted_index = i
 
@@ -1910,6 +2045,8 @@ class SyncEngine:
                 src_path = split_events[0].src_path
                 dest_path = split_events[1].src_path
 
+                new_event: DirMovedEvent | FileMovedEvent
+
                 if split_events[0].is_directory:
                     new_event = DirMovedEvent(src_path, dest_path)
                 else:
@@ -1952,7 +2089,7 @@ class SyncEngine:
             # For each event, check if it is a child of a moved event discard it if yes.
             for events in events_for_path.values():
                 event = events[0]
-                if event.event_type == EVENT_TYPE_MOVED:
+                if is_moved(event):
                     dirnames = (
                         osp.dirname(event.src_path),
                         osp.dirname(event.dest_path),
@@ -1970,7 +2107,7 @@ class SyncEngine:
 
             for events in events_for_path.values():
                 event = events[0]
-                if event.event_type == EVENT_TYPE_DELETED:
+                if is_deleted(event):
                     dirname = osp.dirname(event.src_path)
                     if dirname in dir_deleted_paths:
                         child_deleted_paths.add(event.src_path)
@@ -1995,9 +2132,6 @@ class SyncEngine:
         return cleaned_events
 
     def _should_split_excluded(self, event: FileMovedEvent | DirMovedEvent) -> bool:
-        if event.event_type != EVENT_TYPE_MOVED:
-            raise ValueError("Can only split moved events")
-
         dbx_src_path = self.to_dbx_path(event.src_path)
         dbx_dest_path = self.to_dbx_path(event.dest_path)
 
@@ -2146,8 +2280,7 @@ class SyncEngine:
             event.status = SyncStatus.Failed
         else:
             self.clear_sync_errors_from_event(event)
-        finally:
-            self.syncing.pop(event.local_path, None)
+            self.activity.discard(event)
 
         # Add events to history database.
         if event.status == SyncStatus.Done:
@@ -2697,7 +2830,7 @@ class SyncEngine:
             if event.is_directory:
                 success = self._get_remote_folder(dbx_path, client)
             else:
-                self.syncing[event.local_path] = event
+                self.activity.add(event)
                 e = self._create_local_entry(event)
                 success = e.status in (SyncStatus.Done, SyncStatus.Skipped)
 
@@ -2818,7 +2951,6 @@ class SyncEngine:
 
             # Download changes in chunks to reduce memory usage.
             for changes, cursor in changes_iter:
-
                 idx += len(changes)
 
                 if idx > 0:
@@ -2940,7 +3072,7 @@ class SyncEngine:
                     folders[level].append(event)
 
                 # Housekeeping.
-                self.syncing[event.local_path] = event
+                self.activity.add(event)
 
         self.excluded_items = new_excluded
 
@@ -3069,9 +3201,10 @@ class SyncEngine:
         else:
             msg = f"{file_name} {change_type}"
 
-        self.desktop_notifier.notify(
-            "Items synced", msg, actions=buttons, on_click=callback
-        )
+        if self.desktop_notifier:
+            self.desktop_notifier.notify(
+                "Items synced", msg, actions=buttons, on_click=callback
+            )
 
     def _check_download_conflict(self, event: SyncEvent) -> Conflict:
         """
@@ -3326,8 +3459,7 @@ class SyncEngine:
             event.status = SyncStatus.Failed
         else:
             self.clear_sync_errors_from_event(event)
-        finally:
-            self.syncing.pop(event.local_path, None)
+            self.activity.discard(event)
 
         # Add events to history database.
         if event.status == SyncStatus.Done:
@@ -3400,74 +3532,81 @@ class SyncEngine:
         # Ensure that parent folders are synced.
         self._ensure_parent(event, client)
 
-        # We download to a temporary file first (this may take some time).
-        tmp_fname = self._new_tmp_file()
+        if event.symlink_target is not None:
+            # Don't download but reproduce symlink locally.
+            with self.fs_events.ignore(
+                FileCreatedEvent(event.local_path), recursive=False
+            ):
+                with convert_api_errors(dbx_path=event.dbx_path):
+                    os.symlink(event.symlink_target, event.local_path)
+                    stat = os.lstat(event.local_path)
+        else:
+            # We download to a temporary file first (this may take some time).
+            tmp_fname = self._new_tmp_file()
 
-        try:
-            md = client.download(f"rev:{event.rev}", tmp_fname, sync_event=event)
-            event = SyncEvent.from_metadata(md, self)
-        except SyncError as err:
-            # Replace rev number with path.
-            err.dbx_path = event.dbx_path
-            raise err
+            try:
+                md = client.download(f"rev:{event.rev}", tmp_fname, sync_event=event)
+                event = SyncEvent.from_metadata(md, self)
+            except SyncError as err:
+                # Replace rev number with path.
+                err.dbx_path = event.dbx_path
+                raise err
 
-        # Re-check for conflict and move the conflict
-        # out of the way if anything has changed.
+            # Re-check for conflict and move the conflict
+            # out of the way if anything has changed.
+            if self._check_download_conflict(event) == Conflict.Conflict:
+                new_local_path = generate_cc_name(event.local_path)
+                event_cls = DirMovedEvent if isdir(event.local_path) else FileMovedEvent
+                with self.fs_events.ignore(event_cls(event.local_path, new_local_path)):
+                    with convert_api_errors():
+                        move(event.local_path, new_local_path, raise_error=True)
 
-        local_path = event.local_path
-
-        if self._check_download_conflict(event) == Conflict.Conflict:
-            new_local_path = generate_cc_name(local_path)
-            event_cls = DirMovedEvent if isdir(local_path) else FileMovedEvent
-            with self.fs_events.ignore(event_cls(local_path, new_local_path)):
-                with convert_api_errors():
-                    move(local_path, new_local_path, raise_error=True)
-
-            self._logger.debug(
-                'Download conflict: renamed "%s" to "%s"', local_path, new_local_path
-            )
-            self.rescan(new_local_path)
-
-        if isdir(local_path):
-            with self.fs_events.ignore(DirDeletedEvent(local_path)):
-                delete(local_path, force_case_sensitive=not self.is_fs_case_sensitive)
-
-        # Preserve permissions of the destination file if we are only syncing an update
-        # to the file content (Dropbox ID of the file remains the same).
-        old_entry = self.get_index_entry(event.dbx_path_lower)
-
-        preserve_permissions = bool(old_entry and event.dbx_id == old_entry.dbx_id)
-
-        ignore_events = [FileMovedEvent(tmp_fname, local_path)]
-
-        if preserve_permissions:
-            # Ignore FileModifiedEvent when changing permissions.
-            # Note that two FileModifiedEvents may be emitted on macOS.
-            ignore_events.append(FileModifiedEvent(local_path))
-            if IS_MACOS:
-                ignore_events.append(FileModifiedEvent(local_path))
-
-        if isfile(local_path):
-            # Ignore FileDeletedEvent when replacing old file.
-            ignore_events.append(FileDeletedEvent(local_path))
-
-        is_dir_symlink = event.is_directory and event.symlink_target is not None
-
-        if is_dir_symlink:
-            # We may get events from children of the symlink target when moving a
-            # directory symlink. Make sure to ignore those as well.
-            ignore_events.append(DirMovedEvent(tmp_fname, local_path))
-
-        # Move the downloaded file to its destination.
-        with self.fs_events.ignore(*ignore_events, recursive=is_dir_symlink):
-            with convert_api_errors(dbx_path=event.dbx_path, local_path=local_path):
-                stat = os.lstat(tmp_fname)
-                move(
-                    tmp_fname,
-                    local_path,
-                    preserve_dest_permissions=preserve_permissions,
-                    raise_error=True,
+                self._logger.debug(
+                    'Download conflict: renamed "%s" to "%s"',
+                    event.local_path,
+                    new_local_path,
                 )
+                self.rescan(new_local_path)
+
+            if isdir(event.local_path):
+                with self.fs_events.ignore(DirDeletedEvent(event.local_path)):
+                    delete(
+                        event.local_path,
+                        force_case_sensitive=not self.is_fs_case_sensitive,
+                    )
+
+            ignore_events: list[FileSystemEvent] = [
+                FileMovedEvent(tmp_fname, event.local_path)
+            ]
+
+            # Preserve permissions of the destination file if we are only syncing an
+            # update to the file content (Dropbox ID of the file remains the same).
+            old_entry = self.get_index_entry(event.dbx_path_lower)
+            preserve_permissions = bool(old_entry and event.dbx_id == old_entry.dbx_id)
+
+            if preserve_permissions:
+                # Ignore FileModifiedEvent when changing permissions.
+                # Note that two FileModifiedEvents may be emitted on macOS.
+                ignore_events.append(FileModifiedEvent(event.local_path))
+                if IS_MACOS:
+                    ignore_events.append(FileModifiedEvent(event.local_path))
+
+            if isfile(event.local_path):
+                # Ignore FileDeletedEvent when replacing old file.
+                ignore_events.append(FileDeletedEvent(event.local_path))
+
+            # Move the downloaded file to its destination.
+            with self.fs_events.ignore(*ignore_events, recursive=False):
+                with convert_api_errors(
+                    dbx_path=event.dbx_path, local_path=event.local_path
+                ):
+                    stat = os.lstat(tmp_fname)
+                    move(
+                        tmp_fname,
+                        event.local_path,
+                        preserve_dest_permissions=preserve_permissions,
+                        raise_error=True,
+                    )
 
         self.update_index_from_sync_event(event)
         self._save_local_hash(
@@ -3723,6 +3862,18 @@ def do_parallel(
             yield f.result()
 
 
+def is_moved(event: FileSystemEvent) -> TypeGuard[FileMovedEvent | DirMovedEvent]:
+    return event.event_type == EVENT_TYPE_MOVED
+
+
+def is_deleted(event: FileSystemEvent) -> TypeGuard[FileDeletedEvent | DirDeletedEvent]:
+    return event.event_type == EVENT_TYPE_DELETED
+
+
+def is_created(event: FileSystemEvent) -> TypeGuard[FileCreatedEvent | DirCreatedEvent]:
+    return event.event_type == EVENT_TYPE_CREATED
+
+
 def get_dest_path(event: FileSystemEvent) -> str:
     """
     Returns the dest_path of a file system event if present (moved events only)
@@ -3736,6 +3887,18 @@ def get_dest_path(event: FileSystemEvent) -> str:
     return event.src_path
 
 
+@overload
+def split_moved_event(
+    event: FileMovedEvent,
+) -> tuple[FileDeletedEvent, FileCreatedEvent]:
+    ...
+
+
+@overload
+def split_moved_event(event: DirMovedEvent) -> tuple[DirDeletedEvent, DirCreatedEvent]:
+    ...
+
+
 def split_moved_event(
     event: FileMovedEvent | DirMovedEvent,
 ) -> tuple[FileSystemEvent, FileSystemEvent]:
@@ -3746,6 +3909,8 @@ def split_moved_event(
     :param event: Original event.
     :returns: Tuple of deleted and created events.
     """
+    created_event_cls: Type[FileSystemEvent]
+    deleted_event_cls: Type[FileSystemEvent]
     if event.is_directory:
         created_event_cls = DirCreatedEvent
         deleted_event_cls = DirDeletedEvent
@@ -3758,8 +3923,8 @@ def split_moved_event(
 
     move_id = uuid.uuid4()
 
-    deleted_event.move_id = move_id
-    created_event.move_id = move_id
+    deleted_event.move_id = move_id  # type:ignore
+    created_event.move_id = move_id  # type:ignore
 
     return deleted_event, created_event
 

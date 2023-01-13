@@ -265,11 +265,7 @@ def gui(config_name: str) -> None:
 
     from packaging.version import Version
     from packaging.requirements import Requirement
-
-    try:
-        from importlib.metadata import entry_points, requires, version
-    except ImportError:
-        from importlib_metadata import entry_points, requires, version  # type: ignore
+    from importlib_metadata import entry_points, requires, version
 
     # Find all entry points for "maestral_gui" registered by other packages.
     gui_entry_points = entry_points(group="maestral_gui")
@@ -279,13 +275,14 @@ def gui(config_name: str) -> None:
             "No maestral GUI installed. Please run 'pip3 install maestral[gui]'."
         )
 
-    if len(gui_entry_points) > 1:
-        _prompt = "Multiple GUIs found, please choose:"
-        index = select(_prompt, [e.name for e in gui_entry_points])
+    entry_point_names = [e.name for e in gui_entry_points]
+
+    if len(entry_point_names) > 1:
+        index = select("Multiple GUIs found, please choose:", entry_point_names)
     else:
         index = 0
 
-    entry_point = gui_entry_points[index]
+    entry_point = gui_entry_points[entry_point_names[index]]
 
     if entry_point in {"maestral_cocoa", "maestral_qt"}:
         # For 1st party GUIs "maestral_cocoa" or "maestral_qt", check if the installed
@@ -442,12 +439,13 @@ def sharelink_create(
 
 
 @sharelink.command(name="revoke", help="Revoke a shared link.")
-@click.argument("url")
+@click.argument("url", nargs=-1, required=True)
 @inject_proxy(fallback=True, existing_config=True)
 @convert_api_errors
-def sharelink_revoke(m: Maestral, url: str) -> None:
-    m.revoke_shared_link(url)
-    ok("Revoked shared link.")
+def sharelink_revoke(m: Maestral, url: list[str]) -> None:
+    for u in url:
+        m.revoke_shared_link(u)
+        ok(f"Revoked shared link {u}")
 
 
 @sharelink.command(
