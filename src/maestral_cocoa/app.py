@@ -119,7 +119,6 @@ class MaestralGui(SystemTrayApp):
         self.setup_ui_unlinked()
 
         # Check if we are linked. Run setup if required.
-
         try:
             pending_link = self.mdbx.pending_link
         except KeyringAccessError:
@@ -160,7 +159,6 @@ class MaestralGui(SystemTrayApp):
         await self.periodic_refresh_gui()
 
     def get_or_start_maestral_daemon(self) -> MaestralProxy:
-
         res = start_maestral_daemon_process(self.config_name)
 
         if res == Start.Failed:
@@ -180,7 +178,6 @@ class MaestralGui(SystemTrayApp):
         return MaestralProxy(self.config_name)
 
     def setup_ui_unlinked(self) -> None:
-
         self.menu.clear()
 
         # ------------- populate context menu -------------------
@@ -214,7 +211,6 @@ class MaestralGui(SystemTrayApp):
         )
 
     def setup_ui_linked(self) -> None:
-
         self.settings_window = SettingsWindow(mdbx=self.mdbx, app=self)
         self.activity_window = ActivityWindow(mdbx=self.mdbx, app=self)
         self.sync_issues_window = SyncIssuesWindow(mdbx=self.mdbx, app=self)
@@ -298,7 +294,6 @@ class MaestralGui(SystemTrayApp):
 
     def on_start_stop_clicked(self, widget: Any) -> None:
         """Pause / resume syncing on menu item clicked."""
-
         try:
             if self.item_pause.label == self.PAUSE_TEXT:
                 self.mdbx.stop_sync()
@@ -341,7 +336,6 @@ class MaestralGui(SystemTrayApp):
     # ==== periodic refresh of gui =====================================================
 
     async def periodic_refresh_gui(self, sender: Any = None) -> None:
-
         while True:
             try:
                 await self.update_status()
@@ -352,7 +346,6 @@ class MaestralGui(SystemTrayApp):
 
     async def update_status(self, sender: Any = None) -> None:
         """Change icon according to status."""
-
         n_sync_errors = len(self.mdbx.sync_errors)
         status = self.mdbx.status
         is_paused = self.mdbx.paused
@@ -379,7 +372,6 @@ class MaestralGui(SystemTrayApp):
             self.item_status.label = status
 
     async def update_snoozed(self, sender: Any = None) -> None:
-
         minutes = self.mdbx.notification_snooze
 
         if minutes > 0:
@@ -438,7 +430,6 @@ class MaestralGui(SystemTrayApp):
         self.rld = RelinkDialog(self.mdbx, self, reason).raise_()
 
     async def _exec_error_dialog(self, err: Exception) -> None:
-
         title = "An unexpected error occurred"
         message = (
             "You can report this issue together with the traceback below on GitHub. "
@@ -469,7 +460,6 @@ class MaestralGui(SystemTrayApp):
 
     def exit(self, sender: Any = None) -> None:
         """Quits Maestral. Stops the sync daemon only if we started it ourselves."""
-
         # Note: Keep this method synchrounous for compatibility with the parent class.
 
         async def async_exit(sender: Any = None) -> None:
@@ -481,7 +471,6 @@ class MaestralGui(SystemTrayApp):
 
     async def restart(self, sender: Any = None) -> None:
         """Restarts the Maestral GUI and sync daemon."""
-
         # Schedule restart after current process has quit
         pid = os.getpid()  # get ID of current process
         Popen(

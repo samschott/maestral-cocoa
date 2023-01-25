@@ -781,7 +781,6 @@ class SystemTrayApp(TogaApp):
         pass
 
     def has_open_windows(self):
-
         visible_windows = [
             w
             for w in self.native.windows
@@ -807,7 +806,6 @@ class SystemTrayApp(TogaApp):
         level,
         icon,
     ):
-
         return await dialogs.alert_async(
             title,
             message,
@@ -830,7 +828,6 @@ class SystemTrayApp(TogaApp):
         level,
         icon,
     ):
-
         return dialogs.alert(
             title,
             message,
@@ -846,7 +843,6 @@ class SystemTrayApp(TogaApp):
 class WindowDeletage(TogaWindowDeletage):
     @objc_method
     def windowWillClose_(self, notification: objc_id) -> None:
-
         if not self.interface.is_dialog:
             if not self.interface.app._impl.has_open_windows():
                 self.interface.app._impl.hide_dock_icon()
@@ -930,7 +926,6 @@ def apply_round_clipping(image_view_impl: ImageView) -> None:
 
 
 def resize_image_to(image: NSImage, height: int) -> NSImage:
-
     new_size = NSMakeSize(height, height)
     new_image = NSImage.alloc().initWithSize(new_size)
     new_image.lockFocus()
