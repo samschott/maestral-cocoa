@@ -4,7 +4,6 @@
 import sys
 import os.path as osp
 import platform
-from ctypes import py_object
 
 # external imports
 import toga
@@ -296,8 +295,8 @@ class FreestandingIconButton(TogaButton):
 
 class SwitchTarget(NSObject):
 
-    interface = objc_property(py_object, weak=True)
-    impl = objc_property(py_object, weak=True)
+    interface = objc_property(object, weak=True)
+    impl = objc_property(object, weak=True)
 
     @objc_method
     def onPress_(self, obj: objc_id) -> None:
@@ -361,8 +360,8 @@ class Switch(Widget):
 
 class FileChooserTarget(NSObject):
 
-    interface = objc_property(py_object, weak=True)
-    impl = objc_property(py_object, weak=True)
+    interface = objc_property(object, weak=True)
+    impl = objc_property(object, weak=True)
 
     @objc_method
     def onSelect_(self, obj: objc_id) -> None:
@@ -483,8 +482,8 @@ class FileSelectionButton(Widget):
 
 class TogaMenuItem(NSMenuItem):
 
-    interface = objc_property(py_object, weak=True)
-    impl = objc_property(py_object, weak=True)
+    interface = objc_property(object, weak=True)
+    impl = objc_property(object, weak=True)
 
     @objc_method
     def onPress_(self, obj: objc_id) -> None:
@@ -546,8 +545,8 @@ class MenuItemSeparator:
 
 class TogaMenu(NSMenu):
 
-    interface = objc_property(py_object, weak=True)
-    impl = objc_property(py_object, weak=True)
+    interface = objc_property(object, weak=True)
+    impl = objc_property(object, weak=True)
 
     @objc_method
     def menuWillOpen_(self, obj: objc_id) -> None:
@@ -616,8 +615,8 @@ class StatusBarItem:
 
 class SystemTrayAppDelegate(NSObject):
 
-    interface = objc_property(py_object, weak=True)
-    impl = objc_property(py_object, weak=True)
+    interface = objc_property(object, weak=True)
+    impl = objc_property(object, weak=True)
 
     @objc_method
     def applicationWillTerminate_(self, sender: objc_id) -> None:
@@ -845,10 +844,6 @@ class SystemTrayApp(TogaApp):
 
 
 class WindowDeletage(TogaWindowDeletage):
-
-    interface = objc_property(py_object, weak=True)
-    impl = objc_property(py_object, weak=True)
-
     @objc_method
     def windowWillClose_(self, notification: objc_id) -> None:
 
