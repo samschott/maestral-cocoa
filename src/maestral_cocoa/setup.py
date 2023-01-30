@@ -42,7 +42,6 @@ class SetupDialog(SetupDialogGui):
         )
         self.fs_source.included.style.padding_left = 10
         self.selective_sync_page.insert(2, self.fs_source.included)
-        self.dropbox_tree.data = self.fs_source
 
         # connect buttons to callbacks
         self.on_close = self.on_close_handler
@@ -97,7 +96,7 @@ class SetupDialog(SetupDialogGui):
             res = await call_async_maestral(self.config_name, "link", token)
 
             if res == 0:
-                self.fs_source.reload()
+                self.dropbox_tree.data = self.fs_source  # triggers reload
                 self.go_forward()
 
             elif res == 1:
