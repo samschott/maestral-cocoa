@@ -16,6 +16,7 @@ from .private.widgets import (
     Label,
     LinkLabel,
     Switch,
+    RadioButton,
     FileSelectionButton,
     Window,
     apply_round_clipping,
@@ -116,7 +117,7 @@ class SettingsGui(Window):
             style=Pack(direction=ROW),
         )
 
-        # ==== sync settings section ===================================================
+        # ==== folder settings section =================================================
 
         self._label_select_folders = Label(
             "Selective sync:",
@@ -142,7 +143,7 @@ class SettingsGui(Window):
             ),
         )
 
-        dropbox_settings_box = toga.Box(
+        folder_settings_box = toga.Box(
             children=[
                 toga.Box(
                     children=[self._label_select_folders, self.btn_select_folders],
@@ -155,6 +156,103 @@ class SettingsGui(Window):
                     style=Pack(alignment=CENTER),
                 ),
             ],
+            style=Pack(direction=COLUMN),
+        )
+
+        # ==== bandwidth settings section ==============================================
+
+        self._label_download_rate = Label(
+            "Download rate:",
+            style=Pack(text_align=RIGHT, width=SettingsGui.COLUMN_WIDTH_LEFT),
+        )
+
+        self.radio_button_unlimited_down = RadioButton(
+            "Don't limit", group=RadioButton.Group.A
+        )
+        self.radio_button_limited_down = RadioButton(
+            "Limit to:", group=RadioButton.Group.A
+        )
+        self.number_input_limit_down = toga.NumberInput(
+            value=1,
+            min_value=0.005,
+            style=Pack(padding_left=SettingsGui.COLUMN_PADDING, width=50),
+        )
+        self._unit_label_down = toga.Label(
+            "MB/s",
+            style=Pack(padding_left=SettingsGui.COLUMN_PADDING, width=50),
+        )
+
+        self._label_upload_rate = Label(
+            "Upload rate:",
+            style=Pack(text_align=RIGHT, width=SettingsGui.COLUMN_WIDTH_LEFT),
+        )
+
+        self.radio_button_unlimited_up = RadioButton(
+            "Don't limit", group=RadioButton.Group.B
+        )
+        self.radio_button_limited_up = RadioButton(
+            "Limit to:", group=RadioButton.Group.B
+        )
+        self.number_input_limit_up = toga.NumberInput(
+            value=1,
+            min_value=0.005,
+            style=Pack(padding_left=SettingsGui.COLUMN_PADDING, width=50),
+        )
+        self._unit_label_up = toga.Label(
+            "MB/s",
+            style=Pack(padding_left=SettingsGui.COLUMN_PADDING, width=50),
+        )
+
+        children = [
+            toga.Box(
+                children=[
+                    self._label_download_rate,
+                    toga.Box(
+                        children=[
+                            self.radio_button_unlimited_down,
+                            toga.Box(
+                                children=[
+                                    self.radio_button_limited_down,
+                                    self.number_input_limit_down,
+                                    self._unit_label_down,
+                                ],
+                            ),
+                        ],
+                        style=Pack(
+                            alignment=TOP,
+                            direction=COLUMN,
+                            padding_left=SettingsGui.COLUMN_PADDING,
+                        ),
+                    ),
+                ],
+            ),
+            toga.Box(
+                children=[
+                    self._label_upload_rate,
+                    toga.Box(
+                        children=[
+                            self.radio_button_unlimited_up,
+                            toga.Box(
+                                children=[
+                                    self.radio_button_limited_up,
+                                    self.number_input_limit_up,
+                                    self._unit_label_up,
+                                ],
+                            ),
+                        ],
+                        style=Pack(
+                            alignment=TOP,
+                            direction=COLUMN,
+                            padding_left=SettingsGui.COLUMN_PADDING,
+                        ),
+                    ),
+                ],
+                style=Pack(padding_top=SettingsGui.ELEMENT_PADDING),
+            ),
+        ]
+
+        bandwidth_settings_box = toga.Box(
+            children=children,
             style=Pack(direction=COLUMN),
         )
 
@@ -269,7 +367,7 @@ class SettingsGui(Window):
                 )
             )
 
-        maestral_settings_box = toga.Box(
+        system_settings_box = toga.Box(
             children=children,
             style=Pack(direction=COLUMN),
         )
@@ -318,9 +416,11 @@ class SettingsGui(Window):
             children=[
                 account_info_box,
                 toga.Divider(style=Pack(padding=SettingsGui.SECTION_PADDING)),
-                dropbox_settings_box,
+                folder_settings_box,
                 toga.Divider(style=Pack(padding=SettingsGui.SECTION_PADDING)),
-                maestral_settings_box,
+                bandwidth_settings_box,
+                toga.Divider(style=Pack(padding=SettingsGui.SECTION_PADDING)),
+                system_settings_box,
                 toga.Divider(style=Pack(padding=SettingsGui.SECTION_PADDING)),
                 about_box,
             ],
