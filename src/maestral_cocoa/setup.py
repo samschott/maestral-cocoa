@@ -168,7 +168,6 @@ class SetupDialog(SetupDialogGui):
             self.on_close_button_pressed()
 
     async def on_items_selected(self, btn_name: str) -> None:
-
         self.fs_source.stop_loading()
 
         if btn_name == "Select":
