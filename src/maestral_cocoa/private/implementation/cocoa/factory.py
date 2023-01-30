@@ -110,8 +110,12 @@ macos_version, *_ = platform.mac_ver()
 
 
 class Icon:
-    """Reimplements toga.Icon but provides the icon for the file / folder type
-    instead of loading an icon from the file content."""
+    """Reimplements toga.Icon with support for
+
+    1. Platform template images.
+    2. Providing the icon for the file / folder type instead of loading an icon from
+       the file content.
+    """
 
     _to_cocoa_template = {
         None: None,
@@ -121,6 +125,9 @@ class Icon:
         ImageTemplate.InvalidData: NSImageNameInvalidDataFreestandingTemplate,
         ImageTemplate.StopProgress: NSImageNameStopProgressFreestandingTemplate,
     }
+
+    SIZES = None
+    EXTENSIONS = [".icns", ".png", ".pdf"]
 
     def __init__(self, interface, path=None, for_path=None, template=None):
         self.interface = interface
@@ -133,7 +140,6 @@ class Icon:
 
     @property
     def native(self):
-
         if self._native:
             return self._native
 
@@ -191,7 +197,7 @@ class Label(Widget):
 
     def set_font(self, font):
         if font:
-            self.native.font = font.bind(self.interface.factory).native
+            self.native.font = font._impl.native
 
     def set_text(self, value):
         self.native.stringValue = value
@@ -235,7 +241,7 @@ class LinkLabel(Widget):
         font = InterfaceFont(style.font_family, style.font_size)
 
         attributes = NSDictionary.dictionaryWithObjects(
-            [self.interface.url, font.bind(self.interface.factory).native],
+            [self.interface.url, font._impl.native],
             forKeys=[NSLinkAttributeName, NSFontAttributeName],
         )
         self.attr_string = NSAttributedString.alloc().initWithString(
@@ -283,13 +289,12 @@ class FreestandingIconButton(TogaButton):
     def set_text(self, text):
         self.native.title = " {}".format(self.interface.text)
 
-    def set_icon(self, icon_iface):
-        icon = icon_iface.bind(self.interface.factory)
+    def set_icon(self, icon):
         if self.interface.style.height > 0:
             icon_size = self.interface.style.height
         else:
             icon_size = 16
-        self.native.image = resize_image_to(icon.native, icon_size)
+        self.native.image = resize_image_to(icon._impl.native, icon_size)
         self.native.image.template = True
 
 
@@ -315,7 +320,6 @@ class Switch(Widget):
 
     def create(self):
         self.native = NSButton.alloc().init()
-        self.native.bezelStyle = NSBezelStyle.Rounded
         self.native.setButtonType(NSSwitchButton)
         self.native.autoresizingMask = NSViewMaxYMargin | NSViewMaxYMargin
 
@@ -337,7 +341,7 @@ class Switch(Widget):
         self.native.state = self._to_cocoa[value]
 
     def set_value(self, value):
-        self.set_state(int(value))
+        self.native.state = int(value)
 
     def get_value(self):
         return bool(self.native.state)
@@ -347,7 +351,7 @@ class Switch(Widget):
 
     def set_font(self, font):
         if font:
-            self.native.font = font.bind(self.interface.factory).native
+            self.native.font = font._impl.native
 
     def rehint(self):
         content_size = self.native.intrinsicContentSize()
@@ -505,8 +509,7 @@ class MenuItem:
 
     def set_icon(self, icon):
         if icon:
-            icon = icon.bind(self.interface.factory)
-            nsimage = resize_image_to(icon.native, 16)
+            nsimage = resize_image_to(icon._impl.native, 16)
             self.native.image = nsimage
         else:
             self.native.image = None
@@ -601,8 +604,7 @@ class StatusBarItem:
         self.size = NSStatusBar.systemStatusBar.thickness
 
     def set_icon(self, icon):
-        icon = icon.bind(self.interface.factory)
-        nsimage = resize_image_to(icon.native, self.size - 2 * self.MARGIN)
+        nsimage = resize_image_to(icon._impl.native, self.size - 2 * self.MARGIN)
         nsimage.template = True
         self.native.button.image = nsimage
 
@@ -637,8 +639,7 @@ class SystemTrayApp(TogaApp):
     def create(self):
         self.native = NSApplication.sharedApplication
 
-        icon = self.interface.icon.bind(self.interface.factory)
-        self.native.setApplicationIconImage_(icon.native)
+        self.native.setApplicationIconImage_(self.interface.icon._impl.native)
 
         self.resource_path = str(NSBundle.mainBundle.resourcePath)
 

@@ -19,7 +19,7 @@ requires = [
     "maestral==1.6.6.dev0",
     "markdown2==2.4.6",
     "rubicon-objc==0.4.2",
-    "toga==0.3.0.dev39",
+    "toga==0.3.0",
 ]
 
 [tool.briefcase.app.maestral-cocoa.macOS]
