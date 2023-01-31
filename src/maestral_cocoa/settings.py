@@ -26,6 +26,7 @@ from .private.constants import ON, OFF
 from .private.widgets import FileSelectionButton, Switch, apply_round_clipping
 from .settings_gui import SettingsGui
 from .selective_sync import SelectiveSyncDialog
+from .bandwidth import BandwidthDialog
 from .resources import FACEHOLDER_PATH
 from .autostart import AutoStart
 from .constants import FROZEN
@@ -60,14 +61,8 @@ class SettingsWindow(SettingsGui):
 
         self.btn_unlink.on_press = self.on_unlink_pressed
         self.btn_select_folders.on_press = self.on_folder_selection_pressed
+        self.btn_bandwidth.on_press = self.on_bandwidth_pressed
         self.combobox_dbx_location.on_select = self.on_dbx_location_selected
-
-        self.radio_button_unlimited_down.on_change = self.on_limit_downloads_toggled
-        self.radio_button_limited_down.on_change = self.on_limit_downloads_toggled
-        self.radio_button_unlimited_up.on_change = self.on_limit_uploads_toggled
-        self.radio_button_limited_up.on_change = self.on_limit_uploads_toggled
-        self.number_input_limit_down.on_change = self.on_download_limit_number_changed
-        self.number_input_limit_up.on_change = self.on_upload_limit_number_changed
 
         self.combobox_update_interval.on_select = self.on_update_interval_selected
         self.checkbox_autostart.on_change = self.on_autostart_clicked
@@ -120,6 +115,9 @@ class SettingsWindow(SettingsGui):
     def on_folder_selection_pressed(self, widget: Any) -> None:
         SelectiveSyncDialog(mdbx=self.mdbx, app=self.app).show_as_sheet(self)
 
+    def on_bandwidth_pressed(self, widget: Any) -> None:
+        BandwidthDialog(mdbx=self.mdbx, app=self.app).show_as_sheet(self)
+
     async def on_unlink_pressed(self, widget: Any) -> None:
         should_unlink = await self.confirm_dialog(
             title="Unlink your Dropbox account?",
@@ -137,42 +135,6 @@ class SettingsWindow(SettingsGui):
                 message="Maestral will now quit.",
             )
             await self.app.exit_and_stop_daemon()
-
-    async def on_limit_downloads_toggled(self, widget: toga.Selection) -> None:
-        if widget is self.radio_button_unlimited_down:
-            unlimited = widget.value is True
-        elif widget is self.radio_button_limited_down:
-            unlimited = widget.value is False
-        else:
-            raise RuntimeError(f"Unexpected widget {widget}")
-
-        if unlimited:
-            self.mdbx.bandwidth_limit_down = 0.0
-            self.number_input_limit_down.enabled = False
-        else:
-            self.mdbx.bandwidth_limit_down = float(self.number_input_limit_down.value)
-            self.number_input_limit_down.enabled = True
-
-    async def on_limit_uploads_toggled(self, widget: toga.Selection) -> None:
-        if widget is self.radio_button_unlimited_up:
-            unlimited = widget.value is True
-        elif widget is self.radio_button_limited_up:
-            unlimited = widget.value is False
-        else:
-            raise RuntimeError(f"Unexpected widget {widget}")
-
-        if unlimited:
-            self.mdbx.bandwidth_limit_up = 0.0
-            self.number_input_limit_up.enabled = False
-        else:
-            self.mdbx.bandwidth_limit_up = float(self.number_input_limit_up.value)
-            self.number_input_limit_up.enabled = True
-
-    async def on_download_limit_number_changed(self, widget: toga.NumberInput) -> None:
-        self.mdbx.bandwidth_limit_down = float(widget.value)
-
-    async def on_upload_limit_number_changed(self, widget: toga.NumberInput) -> None:
-        self.mdbx.bandwidth_limit_up = float(widget.value)
 
     async def on_update_interval_selected(self, widget: toga.Selection) -> None:
         interval = self._update_interval_mapping[str(widget.value)]
@@ -263,23 +225,6 @@ class SettingsWindow(SettingsGui):
 
         # populate sync section
         self.combobox_dbx_location.current_selection = self.mdbx.dropbox_path
-
-        # populate bandwidth section
-        if self.mdbx.bandwidth_limit_down == 0:
-            self.radio_button_unlimited_down.value = True
-            self.number_input_limit_down.enabled = False
-        else:
-            self.radio_button_limited_down.value = True
-            self.number_input_limit_down.value = self.mdbx.bandwidth_limit_down
-            self.number_input_limit_down.enabled = True
-
-        if self.mdbx.bandwidth_limit_up == 0:
-            self.radio_button_unlimited_up.value = True
-            self.number_input_limit_up.enabled = False
-        else:
-            self.radio_button_limited_up.value = True
-            self.number_input_limit_up.value = self.mdbx.bandwidth_limit_up
-            self.number_input_limit_up.enabled = True
 
         # populate app section
         self.checkbox_autostart.state = ON if self.autostart.enabled else OFF
