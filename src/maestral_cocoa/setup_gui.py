@@ -24,7 +24,6 @@ Pack.validated_property("font_size", choices=FONT_SIZE_CHOICES, initial=13)
 
 
 class SetupDialogGui(Window):
-
     WINDOW_WIDTH = 550
     WINDOW_HEIGHT = 400
 

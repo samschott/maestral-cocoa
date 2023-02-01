@@ -107,7 +107,6 @@ class Node:
         queue.put(self)
 
         while not queue.empty():
-
             node = queue.get()
 
             for child in node._children:
@@ -427,7 +426,6 @@ class SelectiveSyncDialog(SelectiveSyncGui):
 
     async def on_dialog_pressed(self, btn_name: str) -> None:
         if btn_name == "Update":
-
             try:
                 self.update_items()
             except BusyError as err:

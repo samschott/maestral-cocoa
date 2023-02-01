@@ -28,7 +28,6 @@ WINDOW_SIZE = (700, 600)
 
 
 class SyncEventRow:
-
     _reveal: FreestandingIconButton | None
 
     def __init__(self, sync_event: SyncEvent) -> None:
@@ -143,13 +142,11 @@ class ActivityWindow(Window):
             )
 
     async def periodic_refresh_gui(self, sender: Any = None) -> None:
-
         while self._refresh:
             await self.refresh_gui()
             await asyncio.sleep(self._refresh_interval)
 
     async def refresh_gui(self) -> None:
-
         needs_refresh = False
 
         for event in self.mdbx.get_history():

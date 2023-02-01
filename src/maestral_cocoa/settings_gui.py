@@ -28,7 +28,6 @@ year = time.localtime().tm_year
 
 
 class SettingsGui(Window):
-
     COLUMN_WIDTH_LEFT = 210
     COLUMN_WIDTH_RIGHT = 350
     BUTTON_WIDTH = 180

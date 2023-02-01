@@ -64,7 +64,6 @@ def generate_async_maestral(config_name: str, func_name: str, *args) -> AsyncGen
                 asyncio.run_coroutine_threadsafe(queue.put(_END), loop).result()
 
     async def yield_results():
-
         while True:
             next_item = await queue.get()
             if next_item is _END:
@@ -83,7 +82,6 @@ def generate_async_maestral(config_name: str, func_name: str, *args) -> AsyncGen
 
 
 def request_authorization_from_user_and_run(command: str) -> None:
-
     source = f'do shell script "{command}" with administrator privileges'
 
     script = NSAppleScript.alloc().initWithSource(source)

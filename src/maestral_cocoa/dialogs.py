@@ -175,7 +175,6 @@ class ProgressDialog(Dialog):
         callback: Callable | None = None,
         app: toga.App | None = None,
     ) -> None:
-
         self.progress_bar = toga.ProgressBar(
             max=0,
             style=Pack(
@@ -226,7 +225,6 @@ class DetailedDialog(Dialog):
         details="",
         app=None,
     ):
-
         label = Label(
             details_title,
             style=Pack(
@@ -282,7 +280,6 @@ class UpdateDialog(Dialog):
         icon: toga.Icon | None = None,
         app: toga.App | None = None,
     ) -> None:
-
         link_button = FollowLinkButton(
             text="GitHub Releases",
             url=f"{__url__}/download",
@@ -363,7 +360,6 @@ class RelinkDialog(Dialog):
     CONTENT_WIDTH = 325
 
     def __init__(self, mdbx: MaestralProxy, app: toga.App, reason: int) -> None:
-
         self.mdbx = mdbx
         self.reason = reason
 
@@ -418,7 +414,6 @@ class RelinkDialog(Dialog):
         self.dialog_buttons[self.LINK_BTN].enabled = False
 
     async def on_dialog_press(self, btn_name: str) -> None:
-
         self.dialog_buttons.enabled = False
         self.token_field.enabled = False
         self.spinner.start()
@@ -432,7 +427,6 @@ class RelinkDialog(Dialog):
             await self.do_relink()
 
     async def do_relink(self) -> None:
-
         token = self.token_field.value
         res = await call_async_maestral(self.mdbx.config_name, "link", token)
 

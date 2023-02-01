@@ -206,7 +206,6 @@ class Label(Widget):
         self.native.cell.lineBreakMode = Label._toga_to_cocoa_linebreakmode[value]
 
     def rehint(self):
-
         if self.interface.style.width:
             self.native.preferredMaxLayoutWidth = self.interface.style.width
 
@@ -299,7 +298,6 @@ class FreestandingIconButton(TogaButton):
 
 
 class SwitchTarget(NSObject):
-
     interface = objc_property(object, weak=True)
     impl = objc_property(object, weak=True)
 
@@ -363,14 +361,12 @@ class Switch(Widget):
 
 
 class FileChooserTarget(NSObject):
-
     interface = objc_property(object, weak=True)
     impl = objc_property(object, weak=True)
 
     @objc_method
     def onSelect_(self, obj: objc_id) -> None:
         if self.impl.native.indexOfSelectedItem == 2:
-
             self.impl.native.selectItemAtIndex(0)
 
             panel = NSOpenPanel.alloc().init()
@@ -387,7 +383,6 @@ class FileChooserTarget(NSObject):
             panel.prompt = "Select"
 
             def completion_handler(r: int) -> None:
-
                 if r == NSFileHandlingPanelOKButton:
                     self.impl.set_current_selection(str(panel.URL.path))
 
@@ -419,7 +414,6 @@ class FileSelectionButton(Widget):
         return self._current_selection
 
     def _display_path(self, path):
-
         file_manager = NSFileManager.defaultManager
 
         display_components = file_manager.componentsToDisplayForPath(path)
@@ -432,7 +426,6 @@ class FileSelectionButton(Widget):
         return path_display
 
     def set_current_selection(self, path):
-
         if not osp.exists(path) and not self.interface.select_files:
             # use generic folder icon
             image = NSWorkspace.sharedWorkspace.iconForFile("/usr")
@@ -485,7 +478,6 @@ class FileSelectionButton(Widget):
 
 
 class TogaMenuItem(NSMenuItem):
-
     interface = objc_property(object, weak=True)
     impl = objc_property(object, weak=True)
 
@@ -547,7 +539,6 @@ class MenuItemSeparator:
 
 
 class TogaMenu(NSMenu):
-
     interface = objc_property(object, weak=True)
     impl = objc_property(object, weak=True)
 
@@ -616,7 +607,6 @@ class StatusBarItem:
 
 
 class SystemTrayAppDelegate(NSObject):
-
     interface = objc_property(object, weak=True)
     impl = objc_property(object, weak=True)
 
@@ -633,7 +623,6 @@ class SystemTrayAppDelegate(NSObject):
 
 
 class SystemTrayApp(TogaApp):
-
     _MAIN_WINDOW_CLASS = None
 
     def create(self):

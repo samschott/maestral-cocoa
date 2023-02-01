@@ -35,7 +35,6 @@ if TYPE_CHECKING:
 
 
 class SettingsWindow(SettingsGui):
-
     _update_interval_mapping = {
         "Daily": 60 * 60 * 24,
         "Weekly": 60 * 60 * 24 * 7,

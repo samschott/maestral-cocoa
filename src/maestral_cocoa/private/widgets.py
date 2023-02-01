@@ -81,7 +81,6 @@ class DialogButtons(toga.Box):
 
     @on_press.setter
     def on_press(self, handler):
-
         if not handler:
             new_handler = None
         elif asyncio.iscoroutinefunction(handler):
@@ -226,7 +225,6 @@ class FollowLinkButton(FreestandingIconButton):
 
 
 class FileSelectionButton(toga.Widget):
-
     MIN_WIDTH = 100
 
     def __init__(
@@ -501,7 +499,6 @@ class MenuItem:
 
     @action.setter
     def action(self, action):
-
         if self._checkable:
 
             def new_action(*args):
@@ -780,7 +777,6 @@ class SystemTrayApp(toga.App):
         level="info",
         icon=None,
     ):
-
         icon = icon or self.icon
 
         return self._impl.alert(
@@ -805,7 +801,6 @@ class SystemTrayApp(toga.App):
         level="info",
         icon=None,
     ):
-
         icon = icon or self.icon
 
         return await self._impl.alert_async(
