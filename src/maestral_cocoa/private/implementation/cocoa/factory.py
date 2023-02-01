@@ -476,7 +476,6 @@ class FileSelectionButton(Widget):
 
 
 class RadioButtonTarget(NSObject):
-
     interface = objc_property(object, weak=True)
     impl = objc_property(object, weak=True)
 

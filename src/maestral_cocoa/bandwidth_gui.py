@@ -10,7 +10,6 @@ from .private.widgets import Label, RadioButton, Window, DialogButtons
 
 
 class BandwidthGui(Window):
-
     COLUMN_WIDTH_LEFT = 100
     COLUMN_WIDTH_RIGHT = 250
 
