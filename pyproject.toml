@@ -16,7 +16,7 @@ requires = [
     "chardet==5.1.0",
     "click==8.1.3",
     "importlib_metadata;python_version<'3.8'",
-    "maestral==1.6.6.dev0",
+    "maestral==1.6.6.dev1",
     "markdown2==2.4.6",
     "rubicon-objc==0.4.2",
     "toga==0.3.0",
