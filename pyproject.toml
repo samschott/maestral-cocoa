@@ -18,19 +18,19 @@ requires = [
     "importlib_metadata;python_version<'3.8'",
     "maestral==1.6.6.dev1",
     "markdown2==2.4.6",
-    "rubicon-objc==0.4.2",
+    "rubicon-objc==0.4.5",
     "toga==0.3.0",
 ]
 
 [tool.briefcase.app.maestral-cocoa.macOS]
 requires = [
-    "toga-cocoa==0.3.0.dev39",
+    "toga-cocoa==0.3.0",
 ]
 build = "72"
 
 [tool.briefcase.app.maestral-cocoa.linux]
 requires = [
-    "toga-gtk==0.3.0.dev39",
+    "toga-gtk==0.3.0",
 ]
 system_requires = [
     "libgirepository1.0-dev",
