@@ -31,9 +31,9 @@ class BandwidthGui(Window):
             "Limit to:", group=RadioButton.Group.A
         )
         self.number_input_limit_down = toga.NumberInput(
-            value=1,
+            value=1.0,
             min_value=0.005,
-            style=Pack(padding_left=BandwidthGui.COLUMN_PADDING, width=50),
+            style=Pack(padding_left=BandwidthGui.COLUMN_PADDING, width=70),
         )
         self._unit_label_down = toga.Label(
             "MB/s",
@@ -52,9 +52,9 @@ class BandwidthGui(Window):
             "Limit to:", group=RadioButton.Group.B
         )
         self.number_input_limit_up = toga.NumberInput(
-            value=1,
+            value=1.0,
             min_value=0.005,
-            style=Pack(padding_left=BandwidthGui.COLUMN_PADDING, width=50),
+            style=Pack(padding_left=BandwidthGui.COLUMN_PADDING, width=70),
         )
         self._unit_label_up = toga.Label(
             "MB/s",
