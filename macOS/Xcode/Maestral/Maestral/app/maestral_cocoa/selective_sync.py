@@ -69,7 +69,6 @@ class Node:
     # ---- Methods to track user selection ---------------------------------------------
 
     def _init_selected(self) -> None:
-
         excluded_items = getattr(self._mdbx, "excluded_items", [])
 
         # Get included state from current list.
@@ -103,13 +102,11 @@ class Node:
         return own_selection_modified or child_selection_modified
 
     def get_nodes_with_state(self, state: int) -> list[Node]:
-
         result = []
         queue: Queue[Node] = Queue()
         queue.put(self)
 
         while not queue.empty():
-
             node = queue.get()
 
             for child in node._children:
@@ -162,15 +159,12 @@ class Node:
         return self._children
 
     async def _load_children_async(self) -> None:
-
         try:
-
             did_clear_children = False
 
             async for res in generate_async_maestral(
                 self._mdbx.config_name, "list_folder_iterator", self.path_lower
             ):
-
                 # remove placeholder nodes
                 if not did_clear_children:
                     self._children = []
@@ -431,9 +425,7 @@ class SelectiveSyncDialog(SelectiveSyncGui):
         self.mdbx.excluded_items = list(excluded_paths)
 
     async def on_dialog_pressed(self, btn_name: str) -> None:
-
         if btn_name == "Update":
-
             try:
                 self.update_items()
             except BusyError as err:

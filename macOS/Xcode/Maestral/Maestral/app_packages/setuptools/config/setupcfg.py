@@ -12,10 +12,11 @@ from collections import defaultdict
 from functools import partial
 from functools import wraps
 from typing import (TYPE_CHECKING, Callable, Any, Dict, Generic, Iterable, List,
-                    Optional, Tuple, TypeVar, Union)
+                    Optional, Set, Tuple, TypeVar, Union)
 
 from distutils.errors import DistutilsOptionError, DistutilsFileError
 from setuptools.extern.packaging.requirements import Requirement, InvalidRequirement
+from setuptools.extern.packaging.markers import default_environment as marker_env
 from setuptools.extern.packaging.version import Version, InvalidVersion
 from setuptools.extern.packaging.specifiers import SpecifierSet
 from setuptools._deprecation_warning import SetuptoolsDeprecationWarning
@@ -172,6 +173,9 @@ def parse_configuration(
             distribution.src_root,
         )
         meta.parse()
+        distribution._referenced_files.update(
+            options._referenced_files, meta._referenced_files
+        )
 
     return meta, options
 
@@ -196,17 +200,21 @@ def _warn_accidental_env_marker_misconfig(label: str, orig_value: str, parsed: l
     if "\n" in orig_value or len(parsed) != 2:
         return
 
-    with contextlib.suppress(InvalidRequirement):
-        original_requirements_str = ";".join(parsed)
-        req = Requirement(original_requirements_str)
-        if req.marker is not None:
-            msg = (
-                f"One of the parsed requirements in `{label}` "
-                f"looks like a valid environment marker: '{parsed[1]}'\n"
-                "Make sure that the config is correct and check "
-                "https://setuptools.pypa.io/en/latest/userguide/declarative_config.html#opt-2"  # noqa: E501
-            )
-            warnings.warn(msg, UserWarning)
+    markers = marker_env().keys()
+    msg = (
+        f"One of the parsed requirements in `{label}` "
+        f"looks like a valid environment marker: '{parsed[1]}'\n"
+        "Make sure that the config is correct and check "
+        "https://setuptools.pypa.io/en/latest/userguide/declarative_config.html#opt-2"  # noqa: E501
+    )
+
+    try:
+        req = Requirement(parsed[1])
+        if req.name in markers:
+            warnings.warn(msg)
+    except InvalidRequirement as ex:
+        if any(parsed[1].startswith(marker) for marker in markers):
+            raise InvalidRequirement(msg) from ex
 
 
 class ConfigHandler(Generic[Target]):
@@ -247,6 +255,10 @@ class ConfigHandler(Generic[Target]):
         self.sections = sections
         self.set_options: List[str] = []
         self.ensure_discovered = ensure_discovered
+        self._referenced_files: Set[str] = set()
+        """After parsing configurations, this property will enumerate
+        all files referenced by the "file:" directive. Private API for setuptools only.
+        """
 
     @property
     def parsers(self):
@@ -365,8 +377,7 @@ class ConfigHandler(Generic[Target]):
 
         return parser
 
-    @classmethod
-    def _parse_file(cls, value, root_dir: _Path):
+    def _parse_file(self, value, root_dir: _Path):
         """Represents value as a string, allowing including text
         from nearest files using `file:` directive.
 
@@ -388,7 +399,8 @@ class ConfigHandler(Generic[Target]):
             return value
 
         spec = value[len(include_directive) :]
-        filepaths = (path.strip() for path in spec.split(','))
+        filepaths = [path.strip() for path in spec.split(',')]
+        self._referenced_files.update(filepaths)
         return expand.read_files(filepaths, root_dir)
 
     def _parse_attr(self, value, package_dir, root_dir: _Path):

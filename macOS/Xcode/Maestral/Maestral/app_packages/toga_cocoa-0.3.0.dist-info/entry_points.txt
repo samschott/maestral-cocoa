@@ -1,0 +1,2 @@
+[toga.backends]
+macOS = toga_cocoa

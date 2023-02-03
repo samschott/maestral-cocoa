@@ -1,22 +1,21 @@
+"""Utilities to convert Cocoa constants to Toga ones."""
+
 from toga import Key
 from toga_cocoa.libs import (
     NSEventModifierFlagCapsLock,
     NSEventModifierFlagCommand,
     NSEventModifierFlagControl,
     NSEventModifierFlagOption,
-    NSEventModifierFlagShift
+    NSEventModifierFlagShift,
 )
 
-
-######################################################################
-# Utilities to convert Cocoa constants to Toga ones
-######################################################################
 
 def modified_key(key, shift=None):
     def mod_fn(modifierFlags):
         if modifierFlags & NSEventModifierFlagShift:
             return shift
         return key
+
     return mod_fn
 
 
@@ -93,7 +92,6 @@ def toga_key(event):
         89: Key.NUMPAD_7,
         91: Key.NUMPAD_8,
         92: Key.NUMPAD_9,
-
         # : Key.F4,
         96: Key.F5,
         97: Key.F7,
@@ -128,19 +126,14 @@ def toga_key(event):
     if event.modifierFlags & NSEventModifierFlagControl:
         modifiers.add(Key.MOD_3)
 
-    return {
-        'key': key,
-        'modifiers': modifiers
-    }
+    return {"key": key, "modifiers": modifiers}
 
 
 COCOA_KEY_CODES = {
-    Key.ESCAPE: "%c" % 0x001b,
+    Key.ESCAPE: "%c" % 0x001B,
     Key.TAB: "%c" % 0x0009,
-
     Key.BACKSPACE: "%c" % 0x0008,
-    Key.ENTER: "%c" % 0x000d,
-
+    Key.ENTER: "%c" % 0x000D,
     Key.F1: "",  # TODO
     Key.F2: "",  # TODO
     Key.F3: "",  # TODO
@@ -160,20 +153,16 @@ COCOA_KEY_CODES = {
     Key.F17: "",  # TODO
     Key.F18: "",  # TODO
     Key.F19: "",  # TODO
-
     Key.EJECT: "",  # TODO
-
     Key.HOME: "%c" % 0x2196,
     Key.END: "%c" % 0x2198,
-    Key.DELETE: "%c" % 0x007f,
-    Key.PAGE_UP: "%c" % 0x21de,
-    Key.PAGE_DOWN: "%c" % 0x21df,
-
-    Key.UP: "%c" % 0x001e,
-    Key.DOWN: "%c" % 0x001f,
-    Key.LEFT: "%c" % 0x001c,
-    Key.RIGHT: "%c" % 0x001d,
-
+    Key.DELETE: "%c" % 0x007F,
+    Key.PAGE_UP: "%c" % 0x21DE,
+    Key.PAGE_DOWN: "%c" % 0x21DF,
+    Key.UP: "%c" % 0x001E,
+    Key.DOWN: "%c" % 0x001F,
+    Key.LEFT: "%c" % 0x001C,
+    Key.RIGHT: "%c" % 0x001D,
     Key.NUMPAD_0: "0",
     Key.NUMPAD_1: "1",
     Key.NUMPAD_2: "2",
@@ -184,7 +173,6 @@ COCOA_KEY_CODES = {
     Key.NUMPAD_7: "7",
     Key.NUMPAD_8: "8",
     Key.NUMPAD_9: "9",
-
     Key.NUMPAD_CLEAR: "",  # TODO
     Key.NUMPAD_DECIMAL_POINT: "",  # TODO
     Key.NUMPAD_DIVIDE: "",  # TODO
@@ -198,7 +186,6 @@ COCOA_KEY_CODES = {
 COCOA_MODIFIERS = {
     Key.SHIFT: NSEventModifierFlagShift,
     Key.CAPSLOCK: NSEventModifierFlagCapsLock,
-
     Key.MOD_1: NSEventModifierFlagCommand,
     Key.MOD_2: NSEventModifierFlagOption,
     Key.MOD_3: NSEventModifierFlagControl,
@@ -206,7 +193,7 @@ COCOA_MODIFIERS = {
 
 
 def cocoa_key(shortcut):
-    """Convert a Toga shortcut definition into Cocoa key equivalents"""
+    """Convert a Toga shortcut definition into Cocoa key equivalents."""
     modifiers = 0
     # Convert the shortcut into string form.
     try:
@@ -223,7 +210,7 @@ def cocoa_key(shortcut):
     # add them to the modifier mask.
     for mod, mask in COCOA_MODIFIERS.items():
         if mod.value in key:
-            key = key.replace(mod.value, '')
+            key = key.replace(mod.value, "")
             modifiers |= mask
 
     return (key, modifiers)

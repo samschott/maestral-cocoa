@@ -133,7 +133,6 @@ class SyncIssuesWindow(Window):
         self.refresh_gui()
 
     async def periodic_refresh_gui(self, sender: Any = None) -> None:
-
         while self._refresh:
             self.refresh_gui()
             await asyncio.sleep(self._refresh_interval)
@@ -142,7 +141,6 @@ class SyncIssuesWindow(Window):
         return self._placeholder in self.sync_errors_box.children
 
     def refresh_gui(self) -> None:
-
         new_errors = self.mdbx.sync_errors
 
         # remove placeholder if the error count > 0

@@ -21,7 +21,7 @@
 	<key>CFBundleShortVersionString</key>
 	<string>1.6.6.dev1</string>
 	<key>CFBundleVersion</key>
-	<string>72</string>
+	<string>73</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>10.15</string>
 	<key>LSUIElement</key>

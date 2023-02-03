@@ -65,7 +65,6 @@ class AutoUpdaterSparkle(AutoUpdaterBackend):
         from ctypes import c_int, c_bool, CDLL
 
         class SparkleDelegate(NSObject):
-
             supportsGentleScheduledUpdateReminders = objc_property(c_bool)
 
             @objc_method
@@ -78,7 +77,6 @@ class AutoUpdaterSparkle(AutoUpdaterBackend):
             def updater_didFinishUpdateCycleForUpdateCheck_error_(
                 self, updater: objc_id, check: c_int, error: objc_id
             ) -> None:
-
                 if not error:
                     self.mdbx.set_state("app", "update_notification_last", time.time())
 
@@ -178,7 +176,6 @@ class AutoUpdaterFallback(AutoUpdaterBackend):
             )
 
     def _show_update_dialog(self, latest_release: str, release_notes: str) -> None:
-
         self.update_dialog = UpdateDialog(
             version=latest_release,
             release_notes=release_notes,
@@ -187,7 +184,6 @@ class AutoUpdaterFallback(AutoUpdaterBackend):
         self.update_dialog.raise_()
 
     async def check_for_updates_in_background(self) -> None:
-
         last_update_check = self.mdbx.get_state("app", "update_notification_last")
         interval = self.mdbx.get_conf("app", "update_notification_interval")
 
@@ -209,7 +205,6 @@ class AutoUpdaterFallback(AutoUpdaterBackend):
 
 
 class AutoUpdater:
-
     _backend: AutoUpdaterBackend
 
     def __init__(self, mdbx: MaestralProxy, app: SystemTrayApp) -> None:

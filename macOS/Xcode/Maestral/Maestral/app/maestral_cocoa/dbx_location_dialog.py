@@ -25,7 +25,6 @@ Pack.validated_property("font_size", choices=FONT_SIZE_CHOICES, initial=13)
 
 
 class DbxLocationDialog(Dialog):
-
     WINDOW_WIDTH = 600
     CONTENT_WIDTH = (
         WINDOW_WIDTH
@@ -41,7 +40,6 @@ class DbxLocationDialog(Dialog):
     REJECTED = 1
 
     def __init__(self, mdbx: MaestralProxy, app: toga.App) -> None:
-
         self.mdbx = mdbx
         self.config_name = self.mdbx.config_name
 
@@ -102,11 +100,9 @@ class DbxLocationDialog(Dialog):
         self._on_failure = wrapped_handler(self, value)
 
     async def on_dialog_pressed(self, btn_name: str) -> None:
-
         self.dialog_buttons.enabled = False
 
         if btn_name == "Quit":
-
             if self.on_failure:
                 self.on_failure(self)
 
@@ -127,7 +123,6 @@ class DbxLocationDialog(Dialog):
             dropbox_path = self.combobox_dbx_location.current_selection
 
             if osp.exists(dropbox_path):
-
                 if is_empty(dropbox_path):
                     delete(dropbox_path, raise_error=True)
                 else:

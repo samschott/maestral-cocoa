@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
+import os
 import asyncio
+import enum
+import os
 
 # external imports
 import click
@@ -14,8 +17,7 @@ from .platform import get_platform_factory
 from .constants import TRUNCATE_TAIL, ImageTemplate
 
 
-private_factory = get_platform_factory()
-
+os.environ["TOGA_BACKEND"] = "maestral_cocoa.private.implementation.cocoa"
 
 # ==== layout widgets ==================================================================
 
@@ -23,9 +25,9 @@ private_factory = get_platform_factory()
 class Spacer(toga.Box):
     """A widget to take up space and push others to the side."""
 
-    def __init__(self, direction=ROW, factory=None):
+    def __init__(self, direction=ROW):
         style = Pack(flex=1, direction=direction, background_color=TRANSPARENT)
-        super().__init__(style=style, factory=factory)
+        super().__init__(style=style)
 
 
 # ==== buttons =========================================================================
@@ -52,10 +54,9 @@ class DialogButtons(toga.Box):
         on_press=None,
         id=None,
         style=None,
-        factory=None,
     ):
         self._buttons = []
-        super().__init__(id=id, style=style, factory=factory)
+        super().__init__(id=id, style=style)
 
         # always display buttons in a row, to the right
         self.style.update(direction=ROW)
@@ -82,7 +83,6 @@ class DialogButtons(toga.Box):
 
     @on_press.setter
     def on_press(self, handler):
-
         if not handler:
             new_handler = None
         elif asyncio.iscoroutinefunction(handler):
@@ -120,18 +120,6 @@ class Switch(toga.Switch):
     """Reimplements toga.Switch to allow *programmatic* setting of
     an intermediate state."""
 
-    def __init__(
-        self,
-        text,
-        id=None,
-        style=None,
-        on_change=None,
-        is_on=False,
-        enabled=True,
-        factory=private_factory,
-    ):
-        super().__init__(text, id, style, on_change, is_on, enabled, factory)
-
     @property
     def state(self):
         """Button state: 0 = off, 1 = mixed, 2 = on."""
@@ -141,6 +129,33 @@ class Switch(toga.Switch):
     def state(self, value):
         """Setter: Button state: 0 = off, 1 = mixed, 2 = on."""
         self._impl.set_state(value)
+
+
+class RadioButton(Switch):
+    class Group(enum.Enum):
+        A = "A"
+        B = "B"
+
+    def __init__(
+        self,
+        text,
+        group=Group.A,
+        id=None,
+        style=None,
+        on_change=None,
+        value=False,
+        enabled=True,
+    ):
+        super().__init__(text, id=id, style=style)
+
+        self._impl = self.factory.RadioButton(interface=self)
+        self.text = text
+        self._on_change = None
+        self.value = value
+        self.on_change = on_change
+
+        self.enabled = enabled
+        self._impl.set_group(group)
 
 
 class FreestandingIconButton(toga.Widget):
@@ -154,9 +169,8 @@ class FreestandingIconButton(toga.Widget):
         style=None,
         on_press=None,
         enabled=True,
-        factory=private_factory,
     ):
-        super().__init__(id=id, enabled=enabled, style=style, factory=factory)
+        super().__init__(id=id, enabled=enabled, style=style)
 
         # Create a platform specific implementation of a Button
         self._impl = self.factory.FreestandingIconButton(interface=self)
@@ -227,14 +241,11 @@ class FollowLinkButton(FreestandingIconButton):
         id=None,
         style=None,
         enabled=True,
-        factory=private_factory,
     ):
         icon = Icon(template=ImageTemplate.FollowLink)
         self.url = url
         self.locate = locate
-        super().__init__(
-            text, icon=icon, id=id, enabled=enabled, style=style, factory=factory
-        )
+        super().__init__(text, icon=icon, id=id, enabled=enabled, style=style)
 
         def handler(widget):
             click.launch(widget.url, locate=widget.locate)
@@ -243,7 +254,6 @@ class FollowLinkButton(FreestandingIconButton):
 
 
 class FileSelectionButton(toga.Widget):
-
     MIN_WIDTH = 100
 
     def __init__(
@@ -258,9 +268,8 @@ class FileSelectionButton(toga.Widget):
         id=None,
         enabled=True,
         style=None,
-        factory=private_factory,
     ):
-        super().__init__(id, enabled, style, factory)
+        super().__init__(id=id, enabled=enabled, style=style)
 
         self._select_files = select_files
         self._select_folders = select_folders
@@ -352,10 +361,9 @@ class Label(toga.Label):
         linebreak_mode=TRUNCATE_TAIL,
         id=None,
         style=None,
-        factory=private_factory,
     ):
         self._linebreak_mode = linebreak_mode
-        super().__init__(text, id=id, style=style, factory=factory)
+        super().__init__(text, id=id, style=style)
         self.linebreak_mode = linebreak_mode
 
     @property
@@ -371,8 +379,8 @@ class Label(toga.Label):
 class LinkLabel(Widget):
     """A label with a hyperlink."""
 
-    def __init__(self, text, url, id=None, style=None, factory=private_factory):
-        super().__init__(id=id, style=style, factory=factory)
+    def __init__(self, text, url, id=None, style=None):
+        super().__init__(id=id, style=style)
 
         self._text = text
         self._url = url
@@ -411,21 +419,18 @@ class Icon(toga.Icon):
     :param path: File to path.
     """
 
-    def __init__(self, path=None, for_path=None, template=None, system=False):
-        super().__init__(path, system)
+    def __init__(self, path=None, for_path=None, template=None):
+        self.factory = get_platform_factory()
+        self.path = path
         self.for_path = for_path
         self.template = template
 
-    def bind(self, factory):
-        if self._impl is None:
-            self._impl = private_factory.Icon(
-                interface=self,
-                path=self.path,
-                for_path=self.for_path,
-                template=self.template,
-            )
-
-        return self._impl
+        self._impl = self.factory.Icon(
+            interface=self,
+            path=self.path,
+            for_path=self.for_path,
+            template=self.template,
+        )
 
 
 # ==== menus and menu items ============================================================
@@ -441,8 +446,6 @@ class MenuItem:
         action: (optional) a function to invoke when the item is clicked.
         submenu: A Menu to use as a submenu. It will become visible when this item is
             clicked.
-        factory: A python module that is capable to return a implementation of this
-            class with the same name. (optional & normally not needed).
     """
 
     def __init__(
@@ -453,9 +456,8 @@ class MenuItem:
         action=None,
         shortcut=None,
         submenu=None,
-        factory=private_factory,
     ):
-        self.factory = factory
+        self.factory = get_platform_factory()
         self._impl = self.factory.MenuItem(interface=self)
 
         self._checkable = checkable
@@ -526,7 +528,6 @@ class MenuItem:
 
     @action.setter
     def action(self, action):
-
         if self._checkable:
 
             def new_action(*args):
@@ -557,8 +558,8 @@ class MenuItem:
 class MenuItemSeparator:
     """A horizontal separator between menu items."""
 
-    def __init__(self, factory=private_factory):
-        self.factory = factory
+    def __init__(self):
+        self.factory = get_platform_factory()
         self._impl = self.factory.MenuItemSeparator(self)
 
 
@@ -570,10 +571,8 @@ class Menu:
         items: A list of MenuItem.
     """
 
-    def __init__(
-        self, items=None, on_open=None, on_close=None, factory=private_factory
-    ):
-        self.factory = factory
+    def __init__(self, items=None, on_open=None, on_close=None):
+        self.factory = get_platform_factory()
         self._items = []
         self.on_open = on_open
         self.on_close = on_close
@@ -644,8 +643,8 @@ class Menu:
 class StatusBarItem:
     """A status bar item which can have an icon and a menu."""
 
-    def __init__(self, icon, menu=None, factory=private_factory):
-        self.factory = factory
+    def __init__(self, icon, menu=None):
+        self.factory = get_platform_factory()
         self._impl = self.factory.StatusBarItem(self)
 
         self.icon = icon
@@ -683,7 +682,7 @@ class Window(toga.Window):
         self,
         id=None,
         title=None,
-        position=None,
+        position=(100, 100),
         size=(640, 480),
         toolbar=None,
         resizeable=True,
@@ -692,21 +691,18 @@ class Window(toga.Window):
         release_on_close=True,
         is_dialog=False,
         app=None,
-        factory=private_factory,
         on_close=lambda x: True,  # See https://github.com/beeware/toga/issues/1482
     ):
-        initial_position = position or (100, 100)
         super().__init__(
-            id,
-            title,
-            initial_position,
-            size,
-            toolbar,
-            resizeable,
-            closeable,
-            minimizable,
-            factory,
-            on_close,
+            id=id,
+            title=title,
+            position=position,
+            size=size,
+            toolbar=toolbar,
+            resizeable=resizeable,
+            closeable=closeable,
+            minimizable=minimizable,
+            on_close=on_close,
         )
         app.windows += self
 
@@ -775,7 +771,6 @@ class SystemTrayApp(toga.App):
         description=None,
         startup=None,
         on_exit=None,
-        factory=private_factory,
     ):
         super().__init__(
             formal_name=formal_name,
@@ -789,7 +784,6 @@ class SystemTrayApp(toga.App):
             description=description,
             startup=startup,
             on_exit=on_exit,
-            factory=factory,
         )
 
     def _create_impl(self):
@@ -812,7 +806,6 @@ class SystemTrayApp(toga.App):
         level="info",
         icon=None,
     ):
-
         icon = icon or self.icon
 
         return self._impl.alert(
@@ -837,7 +830,6 @@ class SystemTrayApp(toga.App):
         level="info",
         icon=None,
     ):
-
         icon = icon or self.icon
 
         return await self._impl.alert_async(
@@ -855,6 +847,7 @@ class SystemTrayApp(toga.App):
 # ==== helpers =========================================================================
 
 
-def apply_round_clipping(image_view: toga.ImageView, factory=private_factory):
+def apply_round_clipping(image_view: toga.ImageView):
     """Clips an image in a given toga.ImageView to a circular mask."""
+    factory = get_platform_factory()
     return factory.apply_round_clipping(image_view._impl)

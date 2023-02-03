@@ -180,7 +180,12 @@ class Maestral:
             self._dn = MaestralDesktopNotifier(self._config_name, self._loop)
 
         # Set up sync infrastructure.
-        self.client = DropboxClient(self.config_name, self.cred_storage)
+        self.client = DropboxClient(
+            self.config_name,
+            self.cred_storage,
+            bandwidth_limit_up=self.bandwidth_limit_up,
+            bandwidth_limit_down=self.bandwidth_limit_down,
+        )
         self.sync = SyncEngine(self.client, self._dn)
         self.manager = SyncManager(self.sync, self._dn)
 
@@ -459,6 +464,28 @@ class Maestral:
             raise RuntimeError("Desktop notifications require an event loop")
         self._dn.notify_level = level
 
+    @property
+    def bandwidth_limit_down(self) -> float:
+        """Maximum download bandwidth to use in bytes per second."""
+        return self._conf.get("app", "bandwidth_limit_down")
+
+    @bandwidth_limit_down.setter
+    def bandwidth_limit_down(self, value: float) -> None:
+        """Setter: log_level."""
+        self.client.bandwidth_limit_down = value
+        self._conf.set("app", "bandwidth_limit_down", value)
+
+    @property
+    def bandwidth_limit_up(self) -> float:
+        """Maximum download bandwidth to use in bytes per second."""
+        return self._conf.get("app", "bandwidth_limit_up")
+
+    @bandwidth_limit_up.setter
+    def bandwidth_limit_up(self, value: float) -> None:
+        """Setter: log_level."""
+        self.client.bandwidth_limit_down = value
+        self._conf.set("app", "bandwidth_limit_up", value)
+
     # ==== State information  ==========================================================
 
     def status_change_longpoll(self, timeout: float | None = 60) -> bool:
@@ -478,38 +505,38 @@ class Maestral:
 
     @property
     def pending_link(self) -> bool:
-        """Indicates if Maestral is linked to a Dropbox account (read only). This will
-        block until the user's keyring is unlocked to load the saved auth token."""
+        """Whether Maestral is linked to a Dropbox account (read only). This will block
+        until the user's keyring is unlocked to load the saved auth token."""
         return not self.client.linked
 
     @property
     def pending_dropbox_folder(self) -> bool:
-        """Indicates if a local Dropbox directory has been configured (read only). This
-        will not check if the configured directory actually exists, starting the sync
-        may still raise a :exc:`maestral.exceptions.NoDropboxDirError`."""
+        """Whether a local Dropbox directory has been configured (read only). This will
+        not check if the configured directory actually exists, starting the sync may
+        still raise a :exc:`maestral.exceptions.NoDropboxDirError`."""
         return not self.sync.dropbox_path
 
     @property
     def pending_first_download(self) -> bool:
-        """Indicates if the initial download has already occurred (read only)."""
+        """Whether the initial download has already started (read only)."""
         return self.sync.local_cursor == 0 or self.sync.remote_cursor == ""
 
     @property
     def paused(self) -> bool:
-        """Indicates if syncing is paused by the user (read only). This is set by
-        calling :meth:`pause`."""
+        """Whether syncing is paused by the user (read only). Use :meth:`start_sync` and
+        :meth:`stop_sync` to start and stop syncing, respectively."""
         return not self.manager.autostart.is_set() and not self.sync.busy()
 
     @property
     def running(self) -> bool:
-        """Indicates if sync threads are running (read only). This will return ``False``
-        before :meth:`start_sync` is called, when shutting down, or because of an
-        unhandled exception in a sync thread."""
+        """Whether sync threads are running (read only). This is similar to
+        :attr:`paused` but also returns False if syncing is paused because we cannot
+        connect to Dropbox servers.."""
         return self.manager.running.is_set() or self.sync.busy()
 
     @property
     def connected(self) -> bool:
-        """Indicates if Dropbox servers can be reached (read only)."""
+        """Whether Dropbox servers can be reached (read only)."""
         if self.pending_link:
             return False
         else:
@@ -698,7 +725,7 @@ class Maestral:
         """
         Attempts to download the user's profile picture from Dropbox. The picture is
         saved in Maestral's cache directory for retrieval when there is no internet
-        connection.
+        connection. Check :attr:`account_profile_pic_path` for cached profile pics.
 
         :returns: Path to saved profile picture or ``None`` if no profile picture was
             downloaded.
@@ -768,15 +795,13 @@ class Maestral:
         """
         self._check_linked()
 
-        with self.client.clone_with_new_session() as client:
-            res = client.list_folder(
-                dbx_path,
-                recursive=recursive,
-                include_deleted=include_deleted,
-                include_mounted_folders=include_mounted_folders,
-                include_non_downloadable_files=include_non_downloadable_files,
-            )
-
+        res = self.client.list_folder(
+            dbx_path,
+            recursive=recursive,
+            include_deleted=include_deleted,
+            include_mounted_folders=include_mounted_folders,
+            include_non_downloadable_files=include_non_downloadable_files,
+        )
         return res.entries
 
     def list_folder_iterator(
@@ -819,21 +844,19 @@ class Maestral:
         """
         self._check_linked()
 
-        with self.client.clone_with_new_session() as client:
+        res_iter = self.client.list_folder_iterator(
+            dbx_path,
+            recursive=recursive,
+            include_deleted=include_deleted,
+            include_mounted_folders=include_mounted_folders,
+            limit=limit,
+            include_non_downloadable_files=include_non_downloadable_files,
+        )
 
-            res_iter = client.list_folder_iterator(
-                dbx_path,
-                recursive=recursive,
-                include_deleted=include_deleted,
-                include_mounted_folders=include_mounted_folders,
-                limit=limit,
-                include_non_downloadable_files=include_non_downloadable_files,
-            )
-
-            for res in res_iter:
-                yield res.entries
-                del res
-                gc.collect()
+        for res in res_iter:
+            yield res.entries
+            del res
+            gc.collect()
 
     def list_revisions(self, dbx_path: str, limit: int = 10) -> list[FileMetadata]:
         """
@@ -851,9 +874,7 @@ class Maestral:
         :raises ConnectionError: if the connection to Dropbox fails.
         """
         self._check_linked()
-
-        with self.client.clone_with_new_session() as client:
-            return client.list_revisions(dbx_path, limit=limit)
+        return self.client.list_revisions(dbx_path, limit=limit)
 
     def get_file_diff(self, old_rev: str, new_rev: str | None = None) -> list[str]:
         """
@@ -1152,7 +1173,6 @@ class Maestral:
         excluded_parent: str | None = None
 
         for folder in excluded_items.copy():
-
             # Include all parents which are required to download dbx_path.
             if is_child(dbx_path_lower, folder):
                 # Remove parent folders from excluded list.

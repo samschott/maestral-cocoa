@@ -1,8 +1,6 @@
-from travertino.constants import TRANSPARENT
-
-from toga_cocoa.constraints import Constraints
-from toga_cocoa.libs import NSColor
+from toga.colors import TRANSPARENT
 from toga_cocoa.colors import native_color
+from toga_cocoa.constraints import Constraints
 
 
 class Widget:
@@ -34,7 +32,7 @@ class Widget:
     def container(self, container):
         if self.container:
             if container:
-                raise RuntimeError('Already have a container')
+                raise RuntimeError("Already have a container")
             else:
                 # existing container should be removed
                 self.constraints.container = None
@@ -83,7 +81,6 @@ class Widget:
 
     def set_background_color(self, color):
         if color is TRANSPARENT:
-            self.native.backgroundColor = NSColor.clearColor
             self.native.drawsBackground = False
         else:
             self.native.backgroundColor = native_color(color)
@@ -91,6 +88,12 @@ class Widget:
 
     def focus(self):
         self.interface.window._impl.native.makeFirstResponder(self.native)
+
+    def get_tab_index(self):
+        self.interface.factory.not_implementated("Widget.get_tab_index()")
+
+    def set_tab_index(self, tab_index):
+        self.interface.factory.not_implementated("Widget.set_tab_index()")
 
     # INTERFACE
 

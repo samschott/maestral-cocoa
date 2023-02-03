@@ -42,7 +42,6 @@ class SetupDialog(SetupDialogGui):
         )
         self.fs_source.included.style.padding_left = 10
         self.selective_sync_page.insert(2, self.fs_source.included)
-        self.dropbox_tree.data = self.fs_source
 
         # connect buttons to callbacks
         self.on_close = self.on_close_handler
@@ -87,7 +86,6 @@ class SetupDialog(SetupDialogGui):
             self.on_close_button_pressed()
 
         elif btn_name == "Link":
-
             token = self.text_field_auth_token.value
 
             self.spinner_link.start()
@@ -97,7 +95,7 @@ class SetupDialog(SetupDialogGui):
             res = await call_async_maestral(self.config_name, "link", token)
 
             if res == 0:
-                self.fs_source.reload()
+                self.dropbox_tree.data = self.fs_source  # triggers reload
                 self.go_forward()
 
             elif res == 1:
@@ -125,18 +123,14 @@ class SetupDialog(SetupDialogGui):
             self.dialog_buttons_link_page.enabled = True
 
     async def on_dbx_location(self, btn_name: str) -> None:
-
         if btn_name == "Select":
-
             dropbox_path = self.combobox_dbx_location.current_selection
 
             # try to create the directory
             # continue to next page if success or alert user if failed
             try:
-
                 # If a file / folder exists, ask for conflict resolution.
                 if osp.exists(dropbox_path):
-
                     if is_empty(dropbox_path):
                         delete(dropbox_path, raise_error=True)
                     else:
@@ -169,11 +163,9 @@ class SetupDialog(SetupDialogGui):
             self.on_close_button_pressed()
 
     async def on_items_selected(self, btn_name: str) -> None:
-
         self.fs_source.stop_loading()
 
         if btn_name == "Select":
-
             excluded_nodes = self.fs_source.get_nodes_with_state(OFF)
             excluded_paths = [node.path_lower for node in excluded_nodes]
             self.mdbx.excluded_items = excluded_paths

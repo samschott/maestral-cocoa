@@ -1,6 +1,6 @@
 import re
-from typing import Optional, Union, List
-from string import ascii_uppercase, ascii_lowercase, digits
+from string import ascii_lowercase, ascii_uppercase, digits
+from typing import List, Optional, Union
 
 
 class BooleanValidator:
@@ -80,10 +80,7 @@ class LengthBetween(BooleanValidator):
 
 class MinLength(LengthBetween):
     def __init__(
-        self,
-        length: int,
-        error_message: Optional[str] = None,
-        allow_empty: bool = True
+        self, length: int, error_message: Optional[str] = None, allow_empty: bool = True
     ):
         if error_message is None:
             error_message = "Input is too short (length should be at least {})".format(
@@ -93,16 +90,13 @@ class MinLength(LengthBetween):
             min_value=length,
             max_value=None,
             error_message=error_message,
-            allow_empty=allow_empty
+            allow_empty=allow_empty,
         )
 
 
 class MaxLength(LengthBetween):
     def __init__(
-        self,
-        length: int,
-        error_message: Optional[str] = None,
-        allow_empty: bool = True
+        self, length: int, error_message: Optional[str] = None, allow_empty: bool = True
     ):
         if error_message is None:
             error_message = "Input is too long (length should be at most {})".format(
@@ -112,7 +106,7 @@ class MaxLength(LengthBetween):
             min_value=None,
             max_value=length,
             error_message=error_message,
-            allow_empty=allow_empty
+            allow_empty=allow_empty,
         )
 
 
@@ -124,7 +118,7 @@ class StartsWith(BooleanValidator):
         allow_empty: bool = True,
     ):
         if error_message is None:
-            error_message = 'Input should start with "{}"'.format(substring)
+            error_message = f'Input should start with "{substring}"'
 
         super().__init__(error_message=error_message, allow_empty=allow_empty)
         self.substring = substring
@@ -141,7 +135,7 @@ class EndsWith(BooleanValidator):
         allow_empty: bool = True,
     ):
         if error_message is None:
-            error_message = 'Input should end with "{}"'.format(substring)
+            error_message = f'Input should end with "{substring}"'
 
         super().__init__(error_message=error_message, allow_empty=allow_empty)
         self.substring = substring
@@ -165,12 +159,13 @@ class Contains(CountValidator):
             expected_non_existence = expected_count = expected_existence = error_message
         else:
             if len(substrings) == 1:
-                substrings_string = '"{}"'.format(substrings[0])
+                substrings_string = f'"{substrings[0]}"'
             else:
-                substrings_string = ", ".join(
-                    '"{}"'.format(substring) for substring in substrings[:-1]
-                ) + ' or "{}"'.format(substrings[-1])
-            expected_existence = "Input should contain {}".format(substrings_string)
+                substrings_string = (
+                    ", ".join(f'"{substring}"' for substring in substrings[:-1])
+                    + f' or "{substrings[-1]}"'
+                )
+            expected_existence = f"Input should contain {substrings_string}"
             expected_non_existence = "Input should not contain {}".format(
                 substrings_string
             )
@@ -178,7 +173,7 @@ class Contains(CountValidator):
                 substrings_string, compare_count
             )
 
-        super(Contains, self).__init__(
+        super().__init__(
             compare_count=compare_count,
             expected_existence=expected_existence,
             expected_non_existence=expected_non_existence,
@@ -198,7 +193,7 @@ class NotContains(Contains):
         error_message: Optional[str] = None,
         allow_empty: bool = True,
     ):
-        super(NotContains, self).__init__(
+        super().__init__(
             substring,
             compare_count=0,
             error_message=error_message,
@@ -214,7 +209,7 @@ class MatchRegex(BooleanValidator):
         allow_empty: bool = True,
     ):
         if error_message is None:
-            error_message = "Input should match regex: {}".format(regex_string)
+            error_message = f"Input should match regex: {regex_string}"
         super().__init__(error_message=error_message, allow_empty=allow_empty)
         self.regex_string = regex_string
 
@@ -328,7 +323,7 @@ class ContainsSpecial(CountValidator):
                 )
             )
 
-        super(ContainsSpecial, self).__init__(
+        super().__init__(
             compare_count=compare_count,
             expected_existence=expected_existence,
             expected_non_existence=expected_non_existence,

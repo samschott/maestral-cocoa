@@ -28,7 +28,6 @@ year = time.localtime().tm_year
 
 
 class SettingsGui(Window):
-
     COLUMN_WIDTH_LEFT = 210
     COLUMN_WIDTH_RIGHT = 350
     BUTTON_WIDTH = 180
@@ -143,16 +142,35 @@ class SettingsGui(Window):
             ),
         )
 
-        dropbox_settings_box = toga.Box(
+        self._label_bandwidth = Label(
+            "Bandwidth limits:",
+            style=Pack(text_align=RIGHT, width=SettingsGui.COLUMN_WIDTH_LEFT),
+        )
+        self.btn_bandwidth = toga.Button(
+            "Change settings...",
+            style=Pack(
+                padding_left=SettingsGui.COLUMN_PADDING, width=SettingsGui.BUTTON_WIDTH
+            ),
+        )
+
+        sync_settings_box = toga.Box(
             children=[
                 toga.Box(
                     children=[self._label_select_folders, self.btn_select_folders],
                     style=Pack(
-                        alignment=CENTER, padding_bottom=SettingsGui.ELEMENT_PADDING
+                        alignment=CENTER,
+                        padding_bottom=SettingsGui.ELEMENT_PADDING,
                     ),
                 ),
                 toga.Box(
                     children=[self._label_dbx_location, self.combobox_dbx_location],
+                    style=Pack(
+                        alignment=CENTER,
+                        padding_bottom=SettingsGui.ELEMENT_PADDING,
+                    ),
+                ),
+                toga.Box(
+                    children=[self._label_bandwidth, self.btn_bandwidth],
                     style=Pack(alignment=CENTER),
                 ),
             ],
@@ -270,7 +288,7 @@ class SettingsGui(Window):
                 )
             )
 
-        maestral_settings_box = toga.Box(
+        system_settings_box = toga.Box(
             children=children,
             style=Pack(direction=COLUMN),
         )
@@ -319,9 +337,9 @@ class SettingsGui(Window):
             children=[
                 account_info_box,
                 toga.Divider(style=Pack(padding=SettingsGui.SECTION_PADDING)),
-                dropbox_settings_box,
+                sync_settings_box,
                 toga.Divider(style=Pack(padding=SettingsGui.SECTION_PADDING)),
-                maestral_settings_box,
+                system_settings_box,
                 toga.Divider(style=Pack(padding=SettingsGui.SECTION_PADDING)),
                 about_box,
             ],

@@ -1,4 +1,3 @@
-
 class Document:
     def __init__(self, filename, document_type, app=None):
         self.filename = filename
@@ -14,4 +13,4 @@ class Document:
         return self._app
 
     def read(self):
-        raise NotImplementedError('Document class must define read()')
+        raise NotImplementedError("Document class must define read()")

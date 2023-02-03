@@ -24,12 +24,12 @@ thread_pool_executor = ThreadPoolExecutor(10)
 
 
 def create_task(awaitable: Awaitable[T]) -> asyncio.Task[T]:
-    loop = asyncio.get_event_loop_policy().get_event_loop()
+    loop = asyncio.get_running_loop()
     return asyncio.ensure_future(awaitable, loop=loop)
 
 
 def call_async(func: Callable, *args) -> Awaitable:
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     return loop.run_in_executor(thread_pool_executor, func, *args)
 
 
@@ -39,12 +39,12 @@ def call_async_maestral(config_name: str, func_name: str, *args) -> Awaitable:
             m_func = m.__getattr__(func_name)
             return m_func(*inner_args)
 
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     return loop.run_in_executor(thread_pool_executor, func, *args)
 
 
 def generate_async_maestral(config_name: str, func_name: str, *args) -> AsyncGenerator:
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     queue: "asyncio.Queue[Any]" = asyncio.Queue(1)
     exception = None
     _END = object()
@@ -64,7 +64,6 @@ def generate_async_maestral(config_name: str, func_name: str, *args) -> AsyncGen
                 asyncio.run_coroutine_threadsafe(queue.put(_END), loop).result()
 
     async def yield_results():
-
         while True:
             next_item = await queue.get()
             if next_item is _END:
@@ -83,7 +82,6 @@ def generate_async_maestral(config_name: str, func_name: str, *args) -> AsyncGen
 
 
 def request_authorization_from_user_and_run(command: str) -> None:
-
     source = f'do shell script "{command}" with administrator privileges'
 
     script = NSAppleScript.alloc().initWithSource(source)

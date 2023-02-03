@@ -24,7 +24,6 @@ from toga_cocoa.dialogs import *  # noqa: F401,F406
 from rubicon.objc import ObjCClass, objc_method
 
 # local imports
-from . import factory
 from .constants import (
     NSStackViewGravityBottom,
     NSUserInterfaceLayoutOrientationVertical,
@@ -73,7 +72,7 @@ def _construct_alert(
         scroll.documentView = trace
 
         title = NSTextField.labelWithString(details_title)
-        title.font = Font(SYSTEM, 12, weight=BOLD).bind(factory).native
+        title.font = Font(SYSTEM, 12, weight=BOLD)._impl.native
 
         stack = NSStackView.alloc().initWithFrame(NSMakeRect(0, 0, 500, 265))
         stack.orientation = NSUserInterfaceLayoutOrientationVertical
@@ -109,7 +108,6 @@ def alert(
     button pressed and, if a checkbox was shown, its checked state as bool
     (checked == True).
     """
-    icon = icon.bind(factory).native if icon else None
     native = _construct_alert(
         title,
         message,
@@ -118,7 +116,7 @@ def alert(
         button_labels,
         checkbox_text,
         level,
-        icon,
+        icon._impl.native if icon else None,
     )
 
     NSApplication.sharedApplication.activateIgnoringOtherApps(True)
@@ -161,7 +159,6 @@ async def alert_async(
     `checkbox_text` is given, an addition checkbox is shown. Returns the index of the
     button pressed and, if a checkbox was shown, its checked state as bool.
     """
-    icon = icon.bind(factory).native if icon else None
     native = _construct_alert(
         title,
         message,
@@ -170,7 +167,7 @@ async def alert_async(
         button_labels,
         checkbox_text,
         level,
-        icon,
+        icon._impl.native if icon else None,
     )
 
     NSApplication.sharedApplication.activateIgnoringOtherApps(True)

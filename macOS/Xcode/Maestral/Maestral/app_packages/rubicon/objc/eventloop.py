@@ -1,9 +1,13 @@
-"""PEP 3156 event loop based on CoreFoundation"""
+"""PEP 3156 event loop based on CoreFoundation."""
 
-import sys
+import contextvars
 import threading
 from asyncio import (
-    DefaultEventLoopPolicy, SafeChildWatcher, coroutines, events, tasks,
+    DefaultEventLoopPolicy,
+    SafeChildWatcher,
+    coroutines,
+    events,
+    tasks,
     unix_events,
 )
 from ctypes import CFUNCTYPE, POINTER, Structure, c_double, c_int, c_ulong, c_void_p
@@ -13,16 +17,16 @@ from .runtime import load_library, objc_id
 from .types import CFIndex
 
 __all__ = [
-    'EventLoopPolicy',
-    'CocoaLifecycle',
-    'iOSLifecycle',
+    "EventLoopPolicy",
+    "CocoaLifecycle",
+    "iOSLifecycle",
 ]
 
 ###########################################################################
 # CoreFoundation types and constants needed for async handlers
 ###########################################################################
 
-libcf = load_library('CoreFoundation')
+libcf = load_library("CoreFoundation")
 
 CFAllocatorRef = objc_id
 kCFAllocatorDefault = None
@@ -30,6 +34,7 @@ kCFAllocatorDefault = None
 CFDataRef = objc_id
 CFOptionFlags = c_ulong
 CFStringRef = objc_id
+CFTypeRef = objc_id
 
 CFRunLoopRef = objc_id
 CFRunLoopMode = CFStringRef
@@ -40,7 +45,9 @@ CFRunLoopTimerCallBack = CFUNCTYPE(None, CFRunLoopTimerRef, c_void_p)
 
 CFSocketRef = objc_id
 CFSocketCallbackType = c_int
-CFSocketCallback = CFUNCTYPE(None, CFSocketRef, CFSocketCallbackType, CFDataRef, c_void_p, c_void_p)
+CFSocketCallback = CFUNCTYPE(
+    None, CFSocketRef, CFSocketCallbackType, CFDataRef, c_void_p, c_void_p
+)
 CFSocketNativeHandle = c_int
 
 CFTimeInterval = c_double
@@ -49,15 +56,18 @@ CFAbsoluteTime = CFTimeInterval
 
 class CFRunLoopTimerContext(Structure):
     _fields_ = [
-        ('copyDescription', CFUNCTYPE(CFStringRef, c_void_p)),  # CFStringRef (*copyDescription)(const void *info)
-        ('info', c_void_p),
-        ('release', CFUNCTYPE(None, c_void_p)),  # void (*release)(const void *info)
-        ('retain', CFUNCTYPE(None, c_void_p)),  # const void *(*retain)(const void *info)
-        ('version', CFIndex),
+        # CFStringRef (*copyDescription)(const void *info)
+        ("copyDescription", CFUNCTYPE(CFStringRef, c_void_p)),
+        ("info", c_void_p),
+        # void (*release)(const void *info)
+        ("release", CFUNCTYPE(None, c_void_p)),
+        # const void *(*retain)(const void *info)
+        ("retain", CFUNCTYPE(None, c_void_p)),
+        ("version", CFIndex),
     ]
 
 
-kCFRunLoopCommonModes = objc_const(libcf, 'kCFRunLoopCommonModes')
+kCFRunLoopCommonModes = objc_const(libcf, "kCFRunLoopCommonModes")
 
 kCFSocketNoCallBack = 0
 kCFSocketReadCallBack = 1
@@ -74,18 +84,28 @@ kCFSocketAutomaticallyReenableWriteCallBack = 8
 # CoreFoundation methods for async handlers
 ###########################################################################
 
+
 class CFSocketContext(Structure):
     _fields_ = [
-        ('copyDescription', CFUNCTYPE(CFStringRef, c_void_p)),  # CFStringRef (*copyDescription)(const void *info)
-        ('info', c_void_p),
-        ('release', CFUNCTYPE(None, c_void_p)),  # void (*release)(const void *info)
-        ('retain', CFUNCTYPE(None, c_void_p)),  # const void *(*retain)(const void *info)
-        ('version', CFIndex),
+        # CFStringRef (*copyDescription)(const void *info)
+        ("copyDescription", CFUNCTYPE(CFStringRef, c_void_p)),
+        ("info", c_void_p),
+        # void (*release)(const void *info)
+        ("release", CFUNCTYPE(None, c_void_p)),
+        # const void *(*retain)(const void *info)
+        ("retain", CFUNCTYPE(None, c_void_p)),
+        ("version", CFIndex),
     ]
 
 
 libcf.CFAbsoluteTimeGetCurrent.restype = CFAbsoluteTime
 libcf.CFAbsoluteTimeGetCurrent.argtypes = []
+
+libcf.CFRelease.restype = CFTypeRef
+libcf.CFRelease.argtypes = [CFTypeRef]
+
+libcf.CFRetain.restype = CFTypeRef
+libcf.CFRetain.argtypes = [CFTypeRef]
 
 libcf.CFRunLoopAddSource.restype = None
 libcf.CFRunLoopAddSource.argtypes = [CFRunLoopRef, CFRunLoopSourceRef, CFRunLoopMode]
@@ -95,6 +115,9 @@ libcf.CFRunLoopAddTimer.argtypes = [CFRunLoopRef, CFRunLoopTimerRef, CFRunLoopMo
 
 libcf.CFRunLoopGetMain.restype = CFRunLoopRef
 libcf.CFRunLoopGetMain.argtypes = []
+
+libcf.CFRunLoopGetCurrent.restype = CFRunLoopRef
+libcf.CFRunLoopGetCurrent.argtypes = []
 
 libcf.CFRunLoopRemoveSource.restype = None
 libcf.CFRunLoopRemoveSource.argtypes = [CFRunLoopRef, CFRunLoopSourceRef, CFRunLoopMode]
@@ -128,7 +151,7 @@ libcf.CFSocketCreateWithNative.argtypes = [
     CFSocketNativeHandle,
     CFOptionFlags,
     CFSocketCallback,
-    POINTER(CFSocketContext)
+    POINTER(CFSocketContext),
 ]
 
 libcf.CFSocketDisableCallBacks.restype = None
@@ -148,6 +171,7 @@ libcf.CFSocketSetSocketFlags.argtypes = [CFSocketRef, CFOptionFlags]
 # CoreFoundation types needed for async handlers
 ###########################################################################
 
+
 class CFTimerHandle(events.TimerHandle):
     def _cf_timer_callback(self, callback, args):
         # Create a CF-compatible callback for a timer event
@@ -163,7 +187,7 @@ class CFTimerHandle(events.TimerHandle):
             libcf.CFAbsoluteTimeGetCurrent() + timeout,
             self._cf_timer_callback(callback, args),
             None,
-            loop
+            loop,
         )
 
         self._timeout = timeout
@@ -182,19 +206,24 @@ class CFTimerHandle(events.TimerHandle):
             None,  # context
         )
 
-        libcf.CFRunLoopAddTimer(self._loop._cfrunloop, self._timer, kCFRunLoopCommonModes)
+        libcf.CFRunLoopAddTimer(
+            self._loop._cfrunloop, self._timer, kCFRunLoopCommonModes
+        )
 
     def cancel(self):
-        """Cancel the Timer handle"""
+        """Cancel the Timer handle."""
         super().cancel()
-        libcf.CFRunLoopRemoveTimer(self._loop._cfrunloop, self._timer, kCFRunLoopCommonModes)
+        libcf.CFRunLoopRemoveTimer(
+            self._loop._cfrunloop, self._timer, kCFRunLoopCommonModes
+        )
         self._loop._timers.discard(self)
 
 
 class CFSocketHandle(events.Handle):
     # Create a CF-compatible callback for a source event
-    def _cf_socket_callback(self, cfSocket, callbackType,
-                            ignoredAddress, ignoredData, context):
+    def _cf_socket_callback(
+        self, cfSocket, callbackType, ignoredAddress, ignoredData, context
+    ):
         if self._fd not in self._loop._sockets:
             # Spurious notifications seem to be generated sometimes if you
             # CFSocketDisableCallBacks in the middle of an event.  I don't know
@@ -202,11 +231,12 @@ class CFSocketHandle(events.Handle):
             libcf.CFRunLoopRemoveSource(
                 self._loop._cfrunloop, self._src, kCFRunLoopCommonModes
             )
+            self._src = None
             return
 
-        if callbackType == kCFSocketReadCallBack:
+        if callbackType == kCFSocketReadCallBack and self._reader:
             callback, args = self._reader
-        elif callbackType == kCFSocketWriteCallBack:
+        elif callbackType == kCFSocketWriteCallBack and self._writer:
             callback, args = self._writer
         else:
             callback = None
@@ -215,11 +245,9 @@ class CFSocketHandle(events.Handle):
             callback(*args)
 
     def __init__(self, *, loop, fd):
-        """
-        Register a file descriptor with the CFRunLoop, or modify its state
+        """Register a file descriptor with the CFRunLoop, or modify its state
         so that it's listening for both notifications (read and write) rather
-        than just one; used to implement add_reader and add_writer.
-        """
+        than just one; used to implement add_reader and add_writer."""
         super().__init__(CFSocketCallback(self._cf_socket_callback), None, loop)
 
         # Retain a reference to the Handle
@@ -229,28 +257,30 @@ class CFSocketHandle(events.Handle):
 
         self._fd = fd
         self._cf_socket = libcf.CFSocketCreateWithNative(
-            kCFAllocatorDefault, self._fd,
-            kCFSocketReadCallBack | kCFSocketWriteCallBack
-            | kCFSocketConnectCallBack,
+            kCFAllocatorDefault,
+            self._fd,
+            kCFSocketReadCallBack | kCFSocketWriteCallBack | kCFSocketConnectCallBack,
             self._callback,
-            None
+            None,
         )
         libcf.CFSocketSetSocketFlags(
             self._cf_socket,
             kCFSocketAutomaticallyReenableReadCallBack
             | kCFSocketAutomaticallyReenableWriteCallBack
-
             # # This extra flag is to ensure that CF doesn't (destructively,
             # # because destructively is the only way to do it) retrieve
             # # SO_ERROR
             # 1 << 6
         )
-        self._src = libcf.CFSocketCreateRunLoopSource(kCFAllocatorDefault, self._cf_socket, 0)
-        libcf.CFRunLoopAddSource(self._loop._cfrunloop, self._src, kCFRunLoopCommonModes)
+        self._src = libcf.CFSocketCreateRunLoopSource(
+            kCFAllocatorDefault, self._cf_socket, 0
+        )
+        libcf.CFRunLoopAddSource(
+            self._loop._cfrunloop, self._src, kCFRunLoopCommonModes
+        )
         libcf.CFSocketDisableCallBacks(
             self._cf_socket,
-            kCFSocketReadCallBack | kCFSocketWriteCallBack
-            | kCFSocketConnectCallBack
+            kCFSocketReadCallBack | kCFSocketWriteCallBack | kCFSocketConnectCallBack,
         )
 
     def enable_read(self, callback, args):
@@ -278,40 +308,35 @@ class CFSocketHandle(events.Handle):
     def cancel(self):
         """(Potentially) cancel the socket handle.
 
-        A socket handle can have both reader and writer components; a call to
-        cancel a socket handle will only be successfull if *both* the reader and
-        writer component have been disabled. If either is still active, cancel()
-        will be a no-op.
+        A socket handle can have both reader and writer components; a
+        call to cancel a socket handle will only be successfull if
+        *both* the reader and writer component have been disabled. If
+        either is still active, cancel() will be a no-op.
         """
-        if self._reader is None and self._writer is None:
+        if self._reader is None and self._writer is None and self._src:
             super().cancel()
             del self._loop._sockets[self._fd]
 
-            libcf.CFRunLoopRemoveSource(self._loop._cfrunloop, self._src, kCFRunLoopCommonModes)
+            libcf.CFRunLoopRemoveSource(
+                self._loop._cfrunloop, self._src, kCFRunLoopCommonModes
+            )
             libcf.CFSocketInvalidate(self._cf_socket)
 
 
 def context_callback(context, callback):
-    # Python 3.7 introduced the idea of context variables.
-    # asyncio.call_{at,later,soon} need to run any callbacks
-    # *inside* the context provided.
-    if sys.version_info >= (3, 7):
-        import contextvars
-        if context is None:
-            context = contextvars.copy_context()
+    if context is None:
+        context = contextvars.copy_context()
 
-        def _callback(*args):
-            context.run(callback, *args)
+    def _callback(*args):
+        context.run(callback, *args)
 
-        return _callback
-    else:
-        return callback
+    return _callback
 
 
 class CFEventLoop(unix_events.SelectorEventLoop):
     def __init__(self, lifecycle=None):
         self._lifecycle = lifecycle
-        self._cfrunloop = libcf.CFRunLoopGetMain()
+        self._cfrunloop = libcf.CFRetain(libcf.CFRunLoopGetCurrent())
         self._running = False
 
         self._timers = set()
@@ -319,6 +344,10 @@ class CFEventLoop(unix_events.SelectorEventLoop):
         self._sockets = {}
 
         super().__init__()
+
+    def __del__(self):
+        libcf.CFRelease(self._cfrunloop)
+        super().__del__()
 
     def _add_reader(self, fd, callback, *args):
         try:
@@ -332,8 +361,8 @@ class CFEventLoop(unix_events.SelectorEventLoop):
     def add_reader(self, fd, callback, *args):
         """Add a reader callback.
 
-        Method is a direct call through to _add_reader to
-        reflect an internal implementation detail added in Python3.5.
+        Method is a direct call through to _add_reader to reflect an
+        internal implementation detail added in Python3.5.
         """
         self._add_reader(fd, callback, *args)
 
@@ -347,13 +376,12 @@ class CFEventLoop(unix_events.SelectorEventLoop):
     def remove_reader(self, fd):
         """Remove a reader callback.
 
-        Method is a direct call through to _remove_reader to
-        reflect an internal implementation detail added in Python3.5.
+        Method is a direct call through to _remove_reader to reflect an
+        internal implementation detail added in Python3.5.
         """
         self._remove_reader(fd)
 
     def _add_writer(self, fd, callback, *args):
-
         try:
             handle = self._sockets[fd]
         except KeyError:
@@ -365,8 +393,8 @@ class CFEventLoop(unix_events.SelectorEventLoop):
     def add_writer(self, fd, callback, *args):
         """Add a writer callback.
 
-        Method is a direct call through to _add_writer to
-        reflect an internal implementation detail added in Python3.5.
+        Method is a direct call through to _add_writer to reflect an
+        internal implementation detail added in Python3.5.
         """
         self._add_writer(fd, callback, *args)
 
@@ -380,8 +408,8 @@ class CFEventLoop(unix_events.SelectorEventLoop):
     def remove_writer(self, fd):
         """Remove a writer callback.
 
-        Method is a direct call through to _remove_writer to
-        reflect an internal implementation detail added in Python3.5.
+        Method is a direct call through to _remove_writer to reflect an
+        internal implementation detail added in Python3.5.
         """
         self._remove_writer(fd)
 
@@ -390,18 +418,25 @@ class CFEventLoop(unix_events.SelectorEventLoop):
     ######################################################################
     def _check_not_coroutine(self, callback, name):
         """Check whether the given callback is a coroutine or not."""
-        if (coroutines.iscoroutine(callback) or coroutines.iscoroutinefunction(callback)):
-            raise TypeError("coroutines cannot be used with {}()".format(name))
+        if coroutines.iscoroutine(callback) or coroutines.iscoroutinefunction(callback):
+            raise TypeError(f"coroutines cannot be used with {name}()")
 
     def is_running(self):
         """Returns True if the event loop is running."""
         return self._running
 
     def run(self):
-        """Internal implementation of run using the CoreFoundation event loop."""
+        """Internal implementation of run using the CoreFoundation event
+        loop."""
         recursive = self.is_running()
-        if not recursive and hasattr(events, "_get_running_loop") and events._get_running_loop():
-            raise RuntimeError('Cannot run the event loop while another loop is running')
+        if (
+            not recursive
+            and hasattr(events, "_get_running_loop")
+            and events._get_running_loop()
+        ):
+            raise RuntimeError(
+                "Cannot run the event loop while another loop is running"
+            )
 
         if not recursive:
             self._running = True
@@ -427,6 +462,7 @@ class CFEventLoop(unix_events.SelectorEventLoop):
 
         Return the Future's result, or raise its exception.
         """
+
         def stop(f):
             self.stop()
 
@@ -438,19 +474,22 @@ class CFEventLoop(unix_events.SelectorEventLoop):
             future.remove_done_callback(stop)
 
         if not future.done():
-            raise RuntimeError('Event loop stopped before Future completed.')
+            raise RuntimeError("Event loop stopped before Future completed.")
 
         return future.result()
 
     def run_forever(self, lifecycle=None):
         """Run until stop() is called."""
         if not self._lifecycle:
-            self._set_lifecycle(lifecycle if lifecycle else CFLifecycle(self._cfrunloop))
+            self._set_lifecycle(
+                lifecycle if lifecycle else CFLifecycle(self._cfrunloop)
+            )
 
         if self.is_running():
             raise RuntimeError(
                 "Recursively calling run_forever is forbidden. "
-                "To recursively run the event loop, call run().")
+                "To recursively run the event loop, call run()."
+            )
 
         try:
             self.run()
@@ -469,18 +508,26 @@ class CFEventLoop(unix_events.SelectorEventLoop):
         :meth:`run_forever()`, but without any of the shutdown/cleanup logic.
         """
         if not self._lifecycle:
-            self._set_lifecycle(lifecycle if lifecycle else CFLifecycle(self._cfrunloop))
+            self._set_lifecycle(
+                lifecycle if lifecycle else CFLifecycle(self._cfrunloop)
+            )
 
         if self.is_running():
             raise RuntimeError(
                 "Recursively calling run_forever is forbidden. "
-                "To recursively run the event loop, call run().")
+                "To recursively run the event loop, call run()."
+            )
 
         self._running = True
         if hasattr(events, "_set_running_loop"):
             events._set_running_loop(self)
 
-        self._lifecycle.start()
+        # Start the lifecycle, but invoke it as a deferred event on the event
+        # loop. iOSLifeCycle.start() invokes libcf.CFRunLoopRun(); this ensures
+        # that a full CFRunLoop is running, not just one that responds to
+        # iOS events. See #228 for the sort of behavior that occurs on threads
+        # if the CFRunLoop isn't started.
+        self.call_soon(self._lifecycle.start)
 
     def call_soon(self, callback, *args, context=None):
         """Arrange for a callback to be called as soon as possible.
@@ -492,13 +539,13 @@ class CFEventLoop(unix_events.SelectorEventLoop):
         Any positional arguments after the callback will be passed to
         the callback when it is called.
         """
-        self._check_not_coroutine(callback, 'call_soon')
+        self._check_not_coroutine(callback, "call_soon")
 
         return CFTimerHandle(
             loop=self,
             timeout=0,
             callback=context_callback(context, callback),
-            args=args
+            args=args,
         )
 
     call_soon_threadsafe = call_soon
@@ -519,13 +566,13 @@ class CFEventLoop(unix_events.SelectorEventLoop):
         Any positional arguments after the callback will be passed to
         the callback when it is called.
         """
-        self._check_not_coroutine(callback, 'call_later')
+        self._check_not_coroutine(callback, "call_later")
 
         return CFTimerHandle(
             loop=self,
             timeout=delay,
             callback=context_callback(context, callback),
-            args=args
+            args=args,
         )
 
     def call_at(self, when, callback, *args, context=None):
@@ -533,13 +580,13 @@ class CFEventLoop(unix_events.SelectorEventLoop):
 
         Absolute time corresponds to the event loop's time() method.
         """
-        self._check_not_coroutine(callback, 'call_at')
+        self._check_not_coroutine(callback, "call_at")
 
         return CFTimerHandle(
             loop=self,
             timeout=when - self.time(),
             callback=context_callback(context, callback),
-            args=args
+            args=args,
         )
 
     def time(self):
@@ -554,9 +601,10 @@ class CFEventLoop(unix_events.SelectorEventLoop):
     def stop(self):
         """Stop running the event loop.
 
-        Every callback already scheduled will still run.  This simply informs
-        run_forever to stop looping after a complete iteration.
+        Every callback already scheduled will still run.  This simply
+        informs run_forever to stop looping after a complete iteration.
         """
+        super().stop()
         self._lifecycle.stop()
 
     def close(self):
@@ -578,12 +626,13 @@ class CFEventLoop(unix_events.SelectorEventLoop):
         super().close()
 
     def _set_lifecycle(self, lifecycle):
-        """Set the application lifecycle that is controlling this loop.
-        """
+        """Set the application lifecycle that is controlling this loop."""
         if self._lifecycle is not None:
             raise ValueError("Lifecycle is already set")
         if self.is_running():
-            raise RuntimeError("You can't set a lifecycle on a loop that's already running.")
+            raise RuntimeError(
+                "You can't set a lifecycle on a loop that's already running."
+            )
         self._lifecycle = lifecycle
         self._policy._lifecycle = lifecycle
 
@@ -605,11 +654,11 @@ class CFEventLoop(unix_events.SelectorEventLoop):
 
 
 class EventLoopPolicy(events.AbstractEventLoopPolicy):
-    """Rubicon event loop policy
+    """Rubicon event loop policy.
 
     In this policy, each thread has its own event loop. However, we only
-    automatically create an event loop by default for the main thread; other
-    threads by default have no event loop.
+    automatically create an event loop by default for the main thread;
+    other threads by default have no event loop.
     """
 
     def __init__(self):
@@ -624,7 +673,10 @@ class EventLoopPolicy(events.AbstractEventLoopPolicy):
 
     def new_event_loop(self):
         """Create a new event loop and return it."""
-        if not self._default_loop and threading.current_thread() == threading.main_thread():
+        if (
+            not self._default_loop
+            and threading.current_thread() == threading.main_thread()
+        ):
             loop = self.get_default_loop()
         else:
             loop = CFEventLoop(self._lifecycle)
@@ -653,7 +705,8 @@ class EventLoopPolicy(events.AbstractEventLoopPolicy):
     def get_child_watcher(self):
         """Get the watcher for child processes.
 
-        If not yet set, a :class:`~asyncio.SafeChildWatcher` object is automatically created.
+        If not yet set, a :class:`~asyncio.SafeChildWatcher` object is
+        automatically created.
         """
         if self._watcher is None:
             self._init_watcher()
@@ -669,7 +722,8 @@ class EventLoopPolicy(events.AbstractEventLoopPolicy):
 
 
 class CFLifecycle:
-    """A lifecycle manager for raw CoreFoundation apps"""
+    """A lifecycle manager for raw CoreFoundation apps."""
+
     def __init__(self, cfrunloop):
         self._cfrunloop = cfrunloop
 
@@ -682,6 +736,7 @@ class CFLifecycle:
 
 class CocoaLifecycle:
     """A lifecycle manager for Cocoa (``NSApplication``) apps."""
+
     def __init__(self, application):
         self._application = application
 
@@ -696,7 +751,7 @@ class iOSLifecycle:
     """A lifecycle manager for iOS (``UIApplication``) apps."""
 
     def start(self):
-        pass
+        libcf.CFRunLoopRun()
 
     def stop(self):
-        pass
+        libcf.CFRunLoopStop(libcf.CFRunLoopGetMain())

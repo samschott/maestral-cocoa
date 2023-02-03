@@ -4,7 +4,6 @@
 import sys
 import os.path as osp
 import platform
-from ctypes import py_object
 
 # external imports
 import toga
@@ -51,6 +50,7 @@ from toga_cocoa.libs import (
     NSURL,
     NSButton,
     NSSwitchButton,
+    NSRadioButton,
     NSBundle,
 )
 from toga_cocoa.colors import native_color
@@ -111,8 +111,12 @@ macos_version, *_ = platform.mac_ver()
 
 
 class Icon:
-    """Reimplements toga.Icon but provides the icon for the file / folder type
-    instead of loading an icon from the file content."""
+    """Reimplements toga.Icon with support for
+
+    1. Platform template images.
+    2. Providing the icon for the file / folder type instead of loading an icon from
+       the file content.
+    """
 
     _to_cocoa_template = {
         None: None,
@@ -122,6 +126,9 @@ class Icon:
         ImageTemplate.InvalidData: NSImageNameInvalidDataFreestandingTemplate,
         ImageTemplate.StopProgress: NSImageNameStopProgressFreestandingTemplate,
     }
+
+    SIZES = None
+    EXTENSIONS = [".icns", ".png", ".pdf"]
 
     def __init__(self, interface, path=None, for_path=None, template=None):
         self.interface = interface
@@ -134,7 +141,6 @@ class Icon:
 
     @property
     def native(self):
-
         if self._native:
             return self._native
 
@@ -192,7 +198,7 @@ class Label(Widget):
 
     def set_font(self, font):
         if font:
-            self.native.font = font.bind(self.interface.factory).native
+            self.native.font = font._impl.native
 
     def set_text(self, value):
         self.native.stringValue = value
@@ -201,7 +207,6 @@ class Label(Widget):
         self.native.cell.lineBreakMode = Label._toga_to_cocoa_linebreakmode[value]
 
     def rehint(self):
-
         if self.interface.style.width:
             self.native.preferredMaxLayoutWidth = self.interface.style.width
 
@@ -236,7 +241,7 @@ class LinkLabel(Widget):
         font = InterfaceFont(style.font_family, style.font_size)
 
         attributes = NSDictionary.dictionaryWithObjects(
-            [self.interface.url, font.bind(self.interface.factory).native],
+            [self.interface.url, font._impl.native],
             forKeys=[NSLinkAttributeName, NSFontAttributeName],
         )
         self.attr_string = NSAttributedString.alloc().initWithString(
@@ -284,20 +289,18 @@ class FreestandingIconButton(TogaButton):
     def set_text(self, text):
         self.native.title = " {}".format(self.interface.text)
 
-    def set_icon(self, icon_iface):
-        icon = icon_iface.bind(self.interface.factory)
+    def set_icon(self, icon):
         if self.interface.style.height > 0:
             icon_size = self.interface.style.height
         else:
             icon_size = 16
-        self.native.image = resize_image_to(icon.native, icon_size)
+        self.native.image = resize_image_to(icon._impl.native, icon_size)
         self.native.image.template = True
 
 
 class SwitchTarget(NSObject):
-
-    interface = objc_property(py_object, weak=True)
-    impl = objc_property(py_object, weak=True)
+    interface = objc_property(object, weak=True)
+    impl = objc_property(object, weak=True)
 
     @objc_method
     def onPress_(self, obj: objc_id) -> None:
@@ -316,7 +319,6 @@ class Switch(Widget):
 
     def create(self):
         self.native = NSButton.alloc().init()
-        self.native.bezelStyle = NSBezelStyle.Rounded
         self.native.setButtonType(NSSwitchButton)
         self.native.autoresizingMask = NSViewMaxYMargin | NSViewMaxYMargin
 
@@ -338,7 +340,7 @@ class Switch(Widget):
         self.native.state = self._to_cocoa[value]
 
     def set_value(self, value):
-        self.set_state(int(value))
+        self.native.state = int(value)
 
     def get_value(self):
         return bool(self.native.state)
@@ -348,7 +350,7 @@ class Switch(Widget):
 
     def set_font(self, font):
         if font:
-            self.native.font = font.bind(self.interface.factory).native
+            self.native.font = font._impl.native
 
     def rehint(self):
         content_size = self.native.intrinsicContentSize()
@@ -360,14 +362,12 @@ class Switch(Widget):
 
 
 class FileChooserTarget(NSObject):
-
-    interface = objc_property(py_object, weak=True)
-    impl = objc_property(py_object, weak=True)
+    interface = objc_property(object, weak=True)
+    impl = objc_property(object, weak=True)
 
     @objc_method
     def onSelect_(self, obj: objc_id) -> None:
         if self.impl.native.indexOfSelectedItem == 2:
-
             self.impl.native.selectItemAtIndex(0)
 
             panel = NSOpenPanel.alloc().init()
@@ -384,7 +384,6 @@ class FileChooserTarget(NSObject):
             panel.prompt = "Select"
 
             def completion_handler(r: int) -> None:
-
                 if r == NSFileHandlingPanelOKButton:
                     self.impl.set_current_selection(str(panel.URL.path))
 
@@ -416,7 +415,6 @@ class FileSelectionButton(Widget):
         return self._current_selection
 
     def _display_path(self, path):
-
         file_manager = NSFileManager.defaultManager
 
         display_components = file_manager.componentsToDisplayForPath(path)
@@ -429,7 +427,6 @@ class FileSelectionButton(Widget):
         return path_display
 
     def set_current_selection(self, path):
-
         if not osp.exists(path) and not self.interface.select_files:
             # use generic folder icon
             image = NSWorkspace.sharedWorkspace.iconForFile("/usr")
@@ -478,13 +475,49 @@ class FileSelectionButton(Widget):
         )
 
 
+class RadioButtonTarget(NSObject):
+    interface = objc_property(object, weak=True)
+    impl = objc_property(object, weak=True)
+
+    @objc_method
+    def onPressA_(self, obj: objc_id) -> None:
+        if self.interface.on_change:
+            self.interface.on_change(self.interface)
+
+    @objc_method
+    def onPressB_(self, obj: objc_id) -> None:
+        if self.interface.on_change:
+            self.interface.on_change(self.interface)
+
+
+class RadioButton(Switch):
+    """Similar to toga_cocoa.Switch but allows *programmatic* setting of
+    an intermediate state."""
+
+    def create(self):
+        self.native = NSButton.alloc().init()
+        self.native.setButtonType(NSRadioButton)
+        self.native.autoresizingMask = NSViewMaxYMargin | NSViewMaxYMargin
+
+        self.target = RadioButtonTarget.alloc().init()
+        self.target.interface = self.interface
+        self.target.impl = self
+
+        self.native.target = self.target
+
+        # Add the layout constraints
+        self.add_constraints()
+
+    def set_group(self, group):
+        self.native.action = SEL(f"onPress{group.name}:")
+
+
 # ==== menus and status bar ============================================================
 
 
 class TogaMenuItem(NSMenuItem):
-
-    interface = objc_property(py_object, weak=True)
-    impl = objc_property(py_object, weak=True)
+    interface = objc_property(object, weak=True)
+    impl = objc_property(object, weak=True)
 
     @objc_method
     def onPress_(self, obj: objc_id) -> None:
@@ -506,8 +539,7 @@ class MenuItem:
 
     def set_icon(self, icon):
         if icon:
-            icon = icon.bind(self.interface.factory)
-            nsimage = resize_image_to(icon.native, 16)
+            nsimage = resize_image_to(icon._impl.native, 16)
             self.native.image = nsimage
         else:
             self.native.image = None
@@ -545,9 +577,8 @@ class MenuItemSeparator:
 
 
 class TogaMenu(NSMenu):
-
-    interface = objc_property(py_object, weak=True)
-    impl = objc_property(py_object, weak=True)
+    interface = objc_property(object, weak=True)
+    impl = objc_property(object, weak=True)
 
     @objc_method
     def menuWillOpen_(self, obj: objc_id) -> None:
@@ -602,8 +633,7 @@ class StatusBarItem:
         self.size = NSStatusBar.systemStatusBar.thickness
 
     def set_icon(self, icon):
-        icon = icon.bind(self.interface.factory)
-        nsimage = resize_image_to(icon.native, self.size - 2 * self.MARGIN)
+        nsimage = resize_image_to(icon._impl.native, self.size - 2 * self.MARGIN)
         nsimage.template = True
         self.native.button.image = nsimage
 
@@ -615,9 +645,8 @@ class StatusBarItem:
 
 
 class SystemTrayAppDelegate(NSObject):
-
-    interface = objc_property(py_object, weak=True)
-    impl = objc_property(py_object, weak=True)
+    interface = objc_property(object, weak=True)
+    impl = objc_property(object, weak=True)
 
     @objc_method
     def applicationWillTerminate_(self, sender: objc_id) -> None:
@@ -632,14 +661,12 @@ class SystemTrayAppDelegate(NSObject):
 
 
 class SystemTrayApp(TogaApp):
-
     _MAIN_WINDOW_CLASS = None
 
     def create(self):
         self.native = NSApplication.sharedApplication
 
-        icon = self.interface.icon.bind(self.interface.factory)
-        self.native.setApplicationIconImage_(icon.native)
+        self.native.setApplicationIconImage_(self.interface.icon._impl.native)
 
         self.resource_path = str(NSBundle.mainBundle.resourcePath)
 
@@ -782,7 +809,6 @@ class SystemTrayApp(TogaApp):
         pass
 
     def has_open_windows(self):
-
         visible_windows = [
             w
             for w in self.native.windows
@@ -808,7 +834,6 @@ class SystemTrayApp(TogaApp):
         level,
         icon,
     ):
-
         return await dialogs.alert_async(
             title,
             message,
@@ -831,7 +856,6 @@ class SystemTrayApp(TogaApp):
         level,
         icon,
     ):
-
         return dialogs.alert(
             title,
             message,
@@ -845,13 +869,8 @@ class SystemTrayApp(TogaApp):
 
 
 class WindowDeletage(TogaWindowDeletage):
-
-    interface = objc_property(py_object, weak=True)
-    impl = objc_property(py_object, weak=True)
-
     @objc_method
     def windowWillClose_(self, notification: objc_id) -> None:
-
         if not self.interface.is_dialog:
             if not self.interface.app._impl.has_open_windows():
                 self.interface.app._impl.hide_dock_icon()
@@ -935,7 +954,6 @@ def apply_round_clipping(image_view_impl: ImageView) -> None:
 
 
 def resize_image_to(image: NSImage, height: int) -> NSImage:
-
     new_size = NSMakeSize(height, height)
     new_image = NSImage.alloc().initWithSize(new_size)
     new_image.lockFocus()

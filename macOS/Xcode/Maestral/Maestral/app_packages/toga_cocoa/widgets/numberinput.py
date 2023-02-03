@@ -3,6 +3,7 @@ from decimal import Decimal, InvalidOperation
 
 from travertino.size import at_least
 
+from toga_cocoa.colors import native_color
 from toga_cocoa.libs import (
     SEL,
     NSLayoutAttributeBottom,
@@ -38,7 +39,7 @@ class TogaStepper(NSStepper):
     @objc_method
     def controlTextDidChange_(self, notification) -> None:
         try:
-            value = str(self._impl.input.stringValue)
+            value = str(self.impl.input.stringValue)
             # Try to convert to a decimal. If the value isn't a number,
             # this will raise InvalidOperation
             Decimal(value)
@@ -70,7 +71,7 @@ class NumberInput(Widget):
         self.stepper.translatesAutoresizingMaskIntoConstraints = False
 
         self.stepper.target = self.stepper
-        self.stepper.action = SEL('onChange:')
+        self.stepper.action = SEL("onChange:")
 
         self.stepper.controller = self.input
         self.input.delegate = self.stepper
@@ -83,61 +84,82 @@ class NumberInput(Widget):
         # Stepper is always top right corner.
         self.native.addConstraint(
             NSLayoutConstraint.constraintWithItem_attribute_relatedBy_toItem_attribute_multiplier_constant_(
-                self.native, NSLayoutAttributeTop,
+                self.native,
+                NSLayoutAttributeTop,
                 NSLayoutRelationEqual,
-                self.stepper, NSLayoutAttributeTop,
-                1.0, 0
+                self.stepper,
+                NSLayoutAttributeTop,
+                1.0,
+                0,
             )
         )
         self.native.addConstraint(
             NSLayoutConstraint.constraintWithItem_attribute_relatedBy_toItem_attribute_multiplier_constant_(
-                self.native, NSLayoutAttributeRight,
+                self.native,
+                NSLayoutAttributeRight,
                 NSLayoutRelationEqual,
-                self.stepper, NSLayoutAttributeRight,
-                1.0, 0
+                self.stepper,
+                NSLayoutAttributeRight,
+                1.0,
+                0,
             )
         )
 
         # Stepper height matches container box height
         self.native.addConstraint(
             NSLayoutConstraint.constraintWithItem_attribute_relatedBy_toItem_attribute_multiplier_constant_(
-                self.native, NSLayoutAttributeBottom,
+                self.native,
+                NSLayoutAttributeBottom,
                 NSLayoutRelationEqual,
-                self.stepper, NSLayoutAttributeBottom,
-                1.0, 0
+                self.stepper,
+                NSLayoutAttributeBottom,
+                1.0,
+                0,
             )
         )
 
         # Input is always left, centred vertically on the stepper
         self.native.addConstraint(
             NSLayoutConstraint.constraintWithItem_attribute_relatedBy_toItem_attribute_multiplier_constant_(
-                self.stepper, NSLayoutAttributeCenterY,
+                self.stepper,
+                NSLayoutAttributeCenterY,
                 NSLayoutRelationEqual,
-                self.input, NSLayoutAttributeCenterY,
-                1.0, 0
+                self.input,
+                NSLayoutAttributeCenterY,
+                1.0,
+                0,
             )
         )
         self.native.addConstraint(
             NSLayoutConstraint.constraintWithItem_attribute_relatedBy_toItem_attribute_multiplier_constant_(
-                self.native, NSLayoutAttributeLeft,
+                self.native,
+                NSLayoutAttributeLeft,
                 NSLayoutRelationEqual,
-                self.input, NSLayoutAttributeLeft,
-                1.0, 0
+                self.input,
+                NSLayoutAttributeLeft,
+                1.0,
+                0,
             )
         )
 
         # Stepper and input meet in the middle with a small gap
         self.native.addConstraint(
             NSLayoutConstraint.constraintWithItem_attribute_relatedBy_toItem_attribute_multiplier_constant_(
-                self.stepper, NSLayoutAttributeLeft,
+                self.stepper,
+                NSLayoutAttributeLeft,
                 NSLayoutRelationEqual,
-                self.input, NSLayoutAttributeRight,
-                1.0, 2
+                self.input,
+                NSLayoutAttributeRight,
+                1.0,
+                2,
             )
         )
 
         # Add the layout constraints for the main box
         self.add_constraints()
+
+    def set_color(self, color):
+        self.input.textColor = native_color(color)
 
     def set_readonly(self, value):
         # Even if it's not editable, it's still selectable.
@@ -167,12 +189,12 @@ class NumberInput(Widget):
 
     def set_font(self, font):
         if font:
-            self.input.font = font.bind(self.interface.factory).native
+            self.input.font = font._impl.native
 
     def set_value(self, value):
         if self.interface.value is None:
             self.stepper.floatValue = 0
-            self.input.stringValue = ''
+            self.input.stringValue = ""
         else:
             self.stepper.floatValue = float(self.interface.value)
             # We use the *literal* input value here, not the value
@@ -183,6 +205,10 @@ class NumberInput(Widget):
             # should only execute if we know the raw value can be
             # converted to a Decimal.
             self.input.stringValue = value
+
+    def set_enabled(self, value):
+        self.input.enabled = value
+        self.stepper.enabled = value
 
     def rehint(self):
         # Height of a text input is known and fixed.

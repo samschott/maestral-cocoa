@@ -30,12 +30,14 @@ DEFAULTS_CONFIG: _DefaultsType = {
         "notification_level": 15,  # desktop notification level, default: FILECHANGE
         "log_level": 20,  # log level for journal and file, default: INFO
         "update_notification_interval": 60 * 60 * 24 * 7,  # default: weekly
+        "bandwidth_limit_up": 0.0,  # upload limit in bytes / sec (0 = unlimited)
+        "bandwidth_limit_down": 0.0,  # download limit in bytes / sec (0 = unlimited)
     },
     "sync": {
         "path": "",  # dropbox folder location
         "excluded_items": [],  # files and folders excluded from sync
         "reindex_interval": 60 * 60 * 24 * 14,  # default: every fortnight
-        "max_cpu_percent": 20.0,  # max usage target per cpu core, default: 20%
+        "max_cpu_percent": 20.0,  # max CPU usage target (100% = all cores busy)
         "keep_history": 60 * 60 * 24 * 7,  # default: one week
         "upload": True,  # if download sync is enabled
         "download": True,  # if upload sync is enabled
@@ -101,11 +103,9 @@ def _get_conf(
     defaults: _DefaultsType,
     registry: dict[str, UserConfig],
 ) -> UserConfig:
-
     try:
         conf = registry[config_name]
     except KeyError:
-
         try:
             conf = UserConfig(
                 config_path,

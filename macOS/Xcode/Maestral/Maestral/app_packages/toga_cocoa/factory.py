@@ -1,12 +1,13 @@
+from . import dialogs
 from .app import App, DocumentApp, MainWindow
 from .command import Command
 from .documents import Document
+
 # Resources
 from .fonts import Font
 from .icons import Icon
 from .images import Image
 from .paths import paths
-from . import dialogs
 
 # Widgets
 from .widgets.activityindicator import ActivityIndicator
@@ -35,45 +36,44 @@ from .window import Window
 
 
 def not_implemented(feature):
-    print('[Cocoa] Not implemented: {}'.format(feature))
+    print(f"[Cocoa] Not implemented: {feature}")  # pragma: nocover
 
 
 __all__ = [
-    'not_implemented',
-
-    'App', 'DocumentApp', 'MainWindow',
-    'Command',
-    'Document',
-
+    "not_implemented",
+    "App",
+    "DocumentApp",
+    "MainWindow",
+    "Command",
+    "Document",
     # Resources
-    'Font',
-    'Icon',
-    'Image',
-    'paths',
-    'dialogs',
-
+    "Font",
+    "Icon",
+    "Image",
+    "paths",
+    "dialogs",
     # Widgets
-    'ActivityIndicator',
-    'Box',
-    'Button',
-    'Canvas',
-    'DetailedList',
-    'Divider',
-    'ImageView',
-    'Label',
-    'MultilineTextInput',
-    'NumberInput',
-    'OptionContainer',
-    'PasswordInput',
-    'ProgressBar',
-    'ScrollContainer',
-    'Selection',
-    'Slider',
-    'SplitContainer',
-    'Switch',
-    'Table',
-    'TextInput',
-    'Tree',
-    'WebView',
-    'Window',
+    "ActivityIndicator",
+    "Box",
+    "Button",
+    "Canvas",
+    "DetailedList",
+    "Divider",
+    "ImageView",
+    "Label",
+    "MultilineTextInput",
+    "NumberInput",
+    "OptionContainer",
+    "PasswordInput",
+    "ProgressBar",
+    "ScrollContainer",
+    "Selection",
+    "Slider",
+    "SplitContainer",
+    "Switch",
+    "Table",
+    "TextInput",
+    "Tree",
+    "WebView",
+    "Window",
 ]
