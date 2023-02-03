@@ -26,6 +26,7 @@ from .private.constants import ON, OFF
 from .private.widgets import FileSelectionButton, Switch, apply_round_clipping
 from .settings_gui import SettingsGui
 from .selective_sync import SelectiveSyncDialog
+from .bandwidth import BandwidthDialog
 from .resources import FACEHOLDER_PATH
 from .autostart import AutoStart
 from .constants import FROZEN
@@ -60,7 +61,9 @@ class SettingsWindow(SettingsGui):
 
         self.btn_unlink.on_press = self.on_unlink_pressed
         self.btn_select_folders.on_press = self.on_folder_selection_pressed
+        self.btn_bandwidth.on_press = self.on_bandwidth_pressed
         self.combobox_dbx_location.on_select = self.on_dbx_location_selected
+
         self.combobox_update_interval.on_select = self.on_update_interval_selected
         self.checkbox_autostart.on_change = self.on_autostart_clicked
         self.checkbox_notifications.on_change = self.on_notifications_clicked
@@ -111,6 +114,9 @@ class SettingsWindow(SettingsGui):
 
     def on_folder_selection_pressed(self, widget: Any) -> None:
         SelectiveSyncDialog(mdbx=self.mdbx, app=self.app).show_as_sheet(self)
+
+    def on_bandwidth_pressed(self, widget: Any) -> None:
+        BandwidthDialog(mdbx=self.mdbx, app=self.app).show_as_sheet(self)
 
     async def on_unlink_pressed(self, widget: Any) -> None:
         should_unlink = await self.confirm_dialog(

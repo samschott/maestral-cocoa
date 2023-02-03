@@ -50,6 +50,7 @@ from toga_cocoa.libs import (
     NSURL,
     NSButton,
     NSSwitchButton,
+    NSRadioButton,
     NSBundle,
 )
 from toga_cocoa.colors import native_color
@@ -472,6 +473,43 @@ class FileSelectionButton(Widget):
         self.interface.intrinsic.width = at_least(
             max(self.interface.MIN_WIDTH, content_size.width)
         )
+
+
+class RadioButtonTarget(NSObject):
+    interface = objc_property(object, weak=True)
+    impl = objc_property(object, weak=True)
+
+    @objc_method
+    def onPressA_(self, obj: objc_id) -> None:
+        if self.interface.on_change:
+            self.interface.on_change(self.interface)
+
+    @objc_method
+    def onPressB_(self, obj: objc_id) -> None:
+        if self.interface.on_change:
+            self.interface.on_change(self.interface)
+
+
+class RadioButton(Switch):
+    """Similar to toga_cocoa.Switch but allows *programmatic* setting of
+    an intermediate state."""
+
+    def create(self):
+        self.native = NSButton.alloc().init()
+        self.native.setButtonType(NSRadioButton)
+        self.native.autoresizingMask = NSViewMaxYMargin | NSViewMaxYMargin
+
+        self.target = RadioButtonTarget.alloc().init()
+        self.target.interface = self.interface
+        self.target.impl = self
+
+        self.native.target = self.target
+
+        # Add the layout constraints
+        self.add_constraints()
+
+    def set_group(self, group):
+        self.native.action = SEL(f"onPress{group.name}:")
 
 
 # ==== menus and status bar ============================================================

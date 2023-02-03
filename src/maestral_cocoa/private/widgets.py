@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import os
 import asyncio
+import enum
+import os
 
 # external imports
 import click
@@ -127,6 +129,33 @@ class Switch(toga.Switch):
     def state(self, value):
         """Setter: Button state: 0 = off, 1 = mixed, 2 = on."""
         self._impl.set_state(value)
+
+
+class RadioButton(Switch):
+    class Group(enum.Enum):
+        A = "A"
+        B = "B"
+
+    def __init__(
+        self,
+        text,
+        group=Group.A,
+        id=None,
+        style=None,
+        on_change=None,
+        value=False,
+        enabled=True,
+    ):
+        super().__init__(text, id=id, style=style)
+
+        self._impl = self.factory.RadioButton(interface=self)
+        self.text = text
+        self._on_change = None
+        self.value = value
+        self.on_change = on_change
+
+        self.enabled = enabled
+        self._impl.set_group(group)
 
 
 class FreestandingIconButton(toga.Widget):
