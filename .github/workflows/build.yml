@@ -53,7 +53,7 @@ jobs:
         id: build
         run: |
           # Update app code and dependencies.
-          briefcase update macOS Xcode --update-dependencies --no-input
+          briefcase update macOS Xcode --update-requirements --no-input
 
           # Build app.
           briefcase build macOS Xcode --no-input
