@@ -11,6 +11,8 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
     - name: Install dependencies
       run: |
         pip install build twine
