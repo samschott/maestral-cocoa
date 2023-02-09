@@ -40,7 +40,7 @@ from dropbox.dropbox_client import (
 
 # local imports
 from . import __version__
-from .keyring import CredentialStorage, TokenType
+from .keyring import CredentialStorage
 from .logging import scoped_logger
 from .core import (
     AccountType,
@@ -205,10 +205,11 @@ class DropboxClient:
 
     SDK_VERSION: str = "2.0"
 
-    MAX_TRANSFER_RETRIES = 3
+    MAX_TRANSFER_RETRIES = 10
     MAX_LIST_FOLDER_RETRIES = 3
 
     UPLOAD_REQUEST_CHUNK_SIZE = 4194304
+    DATA_TRANSFER_MIN_SLEEP_TIME = 0.0001  # 100 nanoseconds
 
     _dbx: _DropboxSDK | None
 
@@ -243,15 +244,8 @@ class DropboxClient:
         self.bandwidth_limit_up = bandwidth_limit_up
         self.bandwidth_limit_down = bandwidth_limit_down
 
-        # The Dropbox SDK currently only support streamed downloads but not uploads.
-        # This means that we have to supply binary data in chunks and pause in between.
-        # However, for efficiency and API call limits, the chunk size should not be too
-        # small. Choose 4 Mb as a compromise. This means that uploads throttled to
-        # < 4 Mb/sec will appear choppy instead of smooth.
-        # The alternative approach of limiting at the `socket.send` step is too
-        # cumbersome given the abstraction layers of urllib3, requests, and Dropbox SDK.
-        self.download_chunk_size = 2048  # 2 Kb
-        self.upload_chunk_size = 2048  # 4 Mb
+        self.download_chunk_size = 4096  # 4 kB
+        self.upload_chunk_size = 4096  # 4 kB
 
         self._num_downloads = 0
         self._num_uploads = 0
@@ -285,7 +279,7 @@ class DropboxClient:
                 target_tock = tick + self.download_chunk_size / speed_per_download
 
                 wait_time = target_tock - tock
-                if wait_time > 0.00005:  # don't sleep for < 50 ns
+                if wait_time > self.DATA_TRANSFER_MIN_SLEEP_TIME:
                     time.sleep(wait_time)
 
     def _throttled_upload_iter(self, data: bytes) -> Iterator[bytes] | bytes:
@@ -302,7 +296,7 @@ class DropboxClient:
                 target_tock = tick + self.upload_chunk_size / speed_per_upload
 
                 wait_time = target_tock - tock
-                if wait_time > 0.00005:  # don't sleep for < 50 ns
+                if wait_time > self.DATA_TRANSFER_MIN_SLEEP_TIME:
                     time.sleep(wait_time)
 
     def _retry_on_error(  # type: ignore
@@ -387,7 +381,7 @@ class DropboxClient:
 
         :raises KeyringAccessError: if keyring access fails.
         """
-        return self._cred_storage.token is not None
+        return self._cred_storage.token is not None or self._dbx is not None
 
     def get_auth_url(self) -> str:
         """
@@ -424,6 +418,9 @@ class DropboxClient:
             short-lived.
         :returns: 0 on success, 1 for an invalid token and 2 for connection errors.
         """
+        if not (code or access_token or refresh_token):
+            raise RuntimeError("No auth code, refresh token or access token provided.")
+
         if code:
             if not self._auth_flow:
                 raise RuntimeError("Please start auth flow with 'get_auth_url' first")
@@ -435,18 +432,9 @@ class DropboxClient:
             except CONNECTION_ERRORS:
                 return 2
 
-            token = res.refresh_token
-            token_type = TokenType.Offline
-        elif refresh_token:
-            token = refresh_token
-            token_type = TokenType.Offline
-        elif access_token:
-            token = access_token
-            token_type = TokenType.Legacy
-        else:
-            raise RuntimeError("No auth code, refresh token ior access token provided.")
+            refresh_token = res.refresh_token
 
-        self._init_sdk(token, token_type)
+        self._init_sdk(refresh_token=refresh_token, access_token=access_token)
 
         try:
             account_info = self.get_account_info()
@@ -454,7 +442,10 @@ class DropboxClient:
         except CONNECTION_ERRORS:
             return 2
 
-        self._cred_storage.save_creds(account_info.account_id, token, token_type)
+        # Only save long-lived refresh token in storage.
+        if refresh_token:
+            self._cred_storage.save_creds(account_info.account_id, refresh_token)
+
         self._auth_flow = None
 
         return 0
@@ -476,29 +467,29 @@ class DropboxClient:
             self._cred_storage.delete_creds()
 
     def _init_sdk(
-        self, token: str | None = None, token_type: TokenType | None = None
+        self,
+        refresh_token: str | None = None,
+        access_token: str | None = None,
     ) -> None:
         """
         Initialise the SDK. If no token is given, get the token from our credential
         storage.
 
-        :param token: Token for the SDK.
-        :param token_type: Token type
+        :param refresh_token: Long-lived refresh-token for the SDK.
+        :param access_token: Short-lived access-token for the SDK.
         :raises RuntimeError: if token is not available from storage and no token is
             passed as an argument.
         """
-        if not (token or self._cred_storage.token):
+        refresh_token = refresh_token or self._cred_storage.token
+        if not (refresh_token or access_token):
             raise NotLinkedError(
                 "No auth token set", "Please link a Dropbox account first."
             )
 
-        token = token or self._cred_storage.token
-        token_type = token_type or self._cred_storage.token_type
-
-        if token_type is TokenType.Offline:
+        if refresh_token:
             # Initialise Dropbox SDK.
             self._dbx_base = _DropboxSDK(
-                oauth2_refresh_token=token,
+                oauth2_refresh_token=refresh_token,
                 app_key=DROPBOX_APP_KEY,
                 session=self._session,
                 user_agent=USER_AGENT,
@@ -507,7 +498,7 @@ class DropboxClient:
         else:
             # Initialise Dropbox SDK.
             self._dbx_base = _DropboxSDK(
-                oauth2_access_token=token,
+                oauth2_access_token=access_token,
                 app_key=DROPBOX_APP_KEY,
                 session=self._session,
                 user_agent=USER_AGENT,

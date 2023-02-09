@@ -1,11 +1,10 @@
 Metadata-Version: 2.1
 Name: maestral
-Version: 1.7.0.dev0
+Version: 1.7.0.dev2
 Summary: Open-source Dropbox client for macOS and Linux.
-Home-page: https://maestral.app
-Author: Sam Schott
-Author-email: sam.schott@outlook.com
+Author-email: Sam Schott <sam.schott@outlook.com>
 License: MIT
+Project-URL: Homepage, https://maestral.app
 Classifier: License :: OSI Approved :: MIT License
 Classifier: Operating System :: Unix
 Classifier: Programming Language :: Python
@@ -38,8 +37,8 @@ Requires-Dist: typing-extensions
 Requires-Dist: watchdog (>=2.0.1)
 Requires-Dist: rubicon-objc (>=0.4.1) ; sys_platform == "darwin"
 Provides-Extra: dev
-Requires-Dist: pre-commit ; extra == 'dev'
 Requires-Dist: bump2version ; extra == 'dev'
+Requires-Dist: maestral[lint,test] ; extra == 'dev'
 Provides-Extra: docs
 Requires-Dist: sphinx ; extra == 'docs'
 Requires-Dist: sphinxext-opengraph ; extra == 'docs'
@@ -52,6 +51,7 @@ Requires-Dist: maestral-qt (>=1.6.5) ; (sys_platform == "linux") and extra == 'g
 Provides-Extra: lint
 Requires-Dist: black ; extra == 'lint'
 Requires-Dist: flake8 ; extra == 'lint'
+Requires-Dist: flake8-pyproject ; extra == 'lint'
 Requires-Dist: mypy ; extra == 'lint'
 Requires-Dist: pyupgrade ; extra == 'lint'
 Requires-Dist: types-pkg-resources ; extra == 'lint'

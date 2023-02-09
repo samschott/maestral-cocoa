@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: zipp
-Version: 3.12.0
+Version: 3.13.0
 Summary: Backport of pathlib-compatible object wrapper for zip files
 Home-page: https://github.com/jaraco/zipp
 Author: Jason R. Coombs
@@ -76,7 +76,9 @@ were contributed to different versions in the standard library:
      - 3.12
    * - 3.5
      - 3.11
-   * - 3.3
+   * - 3.2
+     - 3.10
+   * - 3.3 ??
      - 3.9
    * - 1.0
      - 3.8
