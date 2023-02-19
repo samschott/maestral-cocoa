@@ -13,7 +13,7 @@ from functools import wraps
 from queue import Empty, Queue
 from threading import Event, RLock, Thread
 from tempfile import TemporaryDirectory
-from typing import Iterator, TypeVar, Callable, Generic
+from typing import Iterator, TypeVar, Callable, Generic, Any
 from typing_extensions import ParamSpec, Concatenate
 
 # local imports
@@ -89,14 +89,13 @@ class PersistentQueue(Generic[T]):
     def qsize(self) -> int:
         return self._queue.qsize()
 
-    def empty(self) -> bool:
-        return self._queue.empty()
+    def has_pending(self) -> bool:
+        return not self._queue.empty()
 
     def put(self, item: T) -> None:
         with self._lock:
-            if item not in self._persistent:
-                self._persistent.add(item)
-                self._queue.put(item)
+            self._persistent.add(item)
+            self._queue.put(item)
 
     def get(self, block: bool = True, timeout: int | None = None) -> T:
         return self._queue.get(block, timeout)
@@ -108,6 +107,9 @@ class PersistentQueue(Generic[T]):
         with self._lock:
             self._persistent.discard(item)
             self._queue.task_done()
+
+    def __contains__(self, entry: Any) -> bool:
+        return entry in self._persistent
 
 
 class SyncManager:
@@ -682,15 +684,16 @@ class SyncManager:
                 try:
                     dbx_path_lower = self.download_queue.get(timeout=40)
                 except Empty:
-                    pass
-                else:
-                    if not running.is_set():
-                        return
+                    continue
 
-                    with self.sync.sync_lock:
-                        self.sync.get_remote_item(dbx_path_lower)
-                        self.download_queue.task_done(dbx_path_lower)
-                        self._logger.info(IDLE)
+                if not running.is_set():
+                    self.download_queue.put(dbx_path_lower)
+                    return
+
+                with self.sync.sync_lock:
+                    self.sync.get_remote_item(dbx_path_lower)
+                    self.download_queue.task_done(dbx_path_lower)
+                    self._logger.info(IDLE)
 
         _free_memory()
 
@@ -766,7 +769,7 @@ class SyncManager:
             if self.download_queue.qsize() > 0:
                 self._logger.info("Resuming interrupted syncs...")
 
-            while not self.download_queue.empty():
+            while self.download_queue.has_pending():
                 dbx_path = self.download_queue.get()
                 self.sync.get_remote_item(dbx_path)
                 self.download_queue.task_done(dbx_path)

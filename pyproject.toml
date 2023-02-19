@@ -26,7 +26,7 @@ requires = [
 requires = [
     "toga-cocoa==0.3.0",
 ]
-build = "77"
+build = "78"
 
 [tool.briefcase.app.maestral-cocoa.linux]
 requires = [
