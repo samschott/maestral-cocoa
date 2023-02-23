@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: markdown-it-py
-Version: 2.1.0
+Version: 2.2.0
 Summary: Python port of markdown-it. Markdown parsing, done right!
 Keywords: markdown,lexer,parser,commonmark,markdown-it
 Author-email: Chris Sewell <chrisj_sewell@hotmail.com>
@@ -22,14 +22,14 @@ Requires-Dist: mdurl~=0.1
 Requires-Dist: typing_extensions>=3.7.4;python_version<'3.8'
 Requires-Dist: psutil ; extra == "benchmarking"
 Requires-Dist: pytest ; extra == "benchmarking"
-Requires-Dist: pytest-benchmark~=3.2 ; extra == "benchmarking"
-Requires-Dist: pre-commit==2.6 ; extra == "code_style"
-Requires-Dist: commonmark~=0.9.1 ; extra == "compare"
-Requires-Dist: markdown~=3.3.6 ; extra == "compare"
-Requires-Dist: mistletoe~=0.8.1 ; extra == "compare"
-Requires-Dist: mistune~=2.0.2 ; extra == "compare"
-Requires-Dist: panflute~=2.1.3 ; extra == "compare"
-Requires-Dist: linkify-it-py~=1.0 ; extra == "linkify"
+Requires-Dist: pytest-benchmark ; extra == "benchmarking"
+Requires-Dist: pre-commit~=3.0 ; extra == "code_style"
+Requires-Dist: commonmark~=0.9 ; extra == "compare"
+Requires-Dist: markdown~=3.4 ; extra == "compare"
+Requires-Dist: mistletoe~=1.0 ; extra == "compare"
+Requires-Dist: mistune~=2.0 ; extra == "compare"
+Requires-Dist: panflute~=2.3 ; extra == "compare"
+Requires-Dist: linkify-it-py>=1,<3 ; extra == "linkify"
 Requires-Dist: mdit-py-plugins ; extra == "plugins"
 Requires-Dist: gprof2dot ; extra == "profiling"
 Requires-Dist: attrs ; extra == "rtd"
@@ -111,10 +111,9 @@ from mdit_py_plugins.front_matter import front_matter_plugin
 from mdit_py_plugins.footnote import footnote_plugin
 
 md = (
-    MarkdownIt()
+    MarkdownIt('commonmark' ,{'breaks':True,'html':True})
     .use(front_matter_plugin)
     .use(footnote_plugin)
-    .disable('image')
     .enable('table')
 )
 text = ("""
