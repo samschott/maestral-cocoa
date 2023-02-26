@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: maestral
-Version: 1.7.1.dev0
+Version: 1.7.1
 Summary: Open-source Dropbox client for macOS and Linux.
 Author-email: Sam Schott <sam.schott@outlook.com>
 License: MIT
@@ -46,8 +46,8 @@ Requires-Dist: m2r2 ; extra == 'docs'
 Requires-Dist: sphinx-autoapi ; extra == 'docs'
 Requires-Dist: sphinx-rtd-theme ; extra == 'docs'
 Provides-Extra: gui
-Requires-Dist: maestral-cocoa (>=1.7.0) ; (sys_platform == "darwin") and extra == 'gui'
-Requires-Dist: maestral-qt (>=1.7.0) ; (sys_platform == "linux") and extra == 'gui'
+Requires-Dist: maestral-cocoa (>=1.7.1) ; (sys_platform == "darwin") and extra == 'gui'
+Requires-Dist: maestral-qt (>=1.7.1) ; (sys_platform == "linux") and extra == 'gui'
 Provides-Extra: lint
 Requires-Dist: black ; extra == 'lint'
 Requires-Dist: flake8 ; extra == 'lint'
