@@ -1,11 +1,13 @@
 [tool.briefcase]
 project_name = "Maestral"
-bundle = "com.samschott"
+bundle = "com.samschott.maestral"
 version = "1.7.1"
 url = "https://maestral.app"
 license = "MIT license"
 author = "Sam Schott"
 author_email = "sam.schott@outlook.com"
+template = "https://github.com/samschott/briefcase-macOS-Xcode-template.git"
+template_branch = "maestral"
 
 [tool.briefcase.app.maestral-cocoa]
 formal_name = "Maestral"
@@ -21,6 +23,8 @@ requires = [
     "rubicon-objc==0.4.5",
     "toga==0.3.0",
 ]
+sparkle_feed_url = "https://maestral.app/appcast.xml"
+sparkle_public_key = "RugM2eM14xHixaeHpl5uWSq7+sDZvYi52Xpz4IXpAdA="
 
 [tool.briefcase.app.maestral-cocoa.macOS]
 requires = [
@@ -29,16 +33,7 @@ requires = [
 build = "82"
 
 [tool.briefcase.app.maestral-cocoa.linux]
-requires = [
-    "toga-gtk==0.3.0",
-]
-system_requires = [
-    "libgirepository1.0-dev",
-    "libcairo2-dev",
-    "libpango1.0-dev",
-    "libwebkitgtk-3.0-0",
-    "gir1.2-webkit-3.0",
-]
+supported = false
 
 [tool.black]
 line-length = 88
