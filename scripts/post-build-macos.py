@@ -25,7 +25,7 @@ write_entries(cmd, "entry_points", DIST_INFO_TARGET_PATH / "entry_points.txt")
 
 print("# ==== copy over cli executable =========================================")
 
-shutil.copy("macOS/maestral-cli", BUNDLE_PATH / "Contents" / "MacOS")
+shutil.copy("scripts/maestral-cli", BUNDLE_PATH / "Contents" / "MacOS")
 
 print("# ==== prune unneeded modules ===========================================")
 
