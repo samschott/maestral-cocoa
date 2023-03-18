@@ -73,17 +73,6 @@ required_paths = (
 )
 required_paths = set(Path(p) for p in required_paths)
 
-# clean_required_paths = []
-#
-# version = f"{sys.version_info.major}.{sys.version_info.minor}"
-# sdt_lib = os.path.join(sys.prefix, sys.platlibdir, f"python{version}")
-# sdt_lib_so = os.path.join(sys.prefix, sys.platlibdir, f"python{version}/lib-dynload")
-#
-# for path in required_paths:
-#     path = path.replace(sdt_lib, str(LIB_PATH.absolute()))
-#     path = path.replace(sdt_lib_so, str(LIB_PATH.absolute() / "lib-dynload"))
-#     clean_required_paths.append(path)
-
 py_module_paths = set(path.resolve() for path in RESOURCE_PATH.glob("**/*.py"))
 binary_module_paths = set(path.resolve() for path in RESOURCE_PATH.glob("**/*.so"))
 all_modules = py_module_paths | binary_module_paths
