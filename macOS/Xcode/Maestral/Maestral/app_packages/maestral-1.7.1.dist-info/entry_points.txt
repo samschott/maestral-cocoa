@@ -1,2 +1,0 @@
-[console_scripts]
-maestral = maestral.cli:main
