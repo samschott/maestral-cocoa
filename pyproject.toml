@@ -30,7 +30,7 @@ sparkle_public_key = "RugM2eM14xHixaeHpl5uWSq7+sDZvYi52Xpz4IXpAdA="
 requires = [
     "toga-cocoa==0.3.0",
 ]
-build = "82"
+build = "83"
 
 [tool.briefcase.app.maestral-cocoa.linux]
 supported = false
