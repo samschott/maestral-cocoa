@@ -63,7 +63,6 @@ class SyncIssueView(toga.Box):
         link_local = FollowLinkButton(
             "Show in Finder",
             url=self.sync_err.local_path,
-            enabled=osp.exists(self.sync_err.local_path),
             locate=True,
             style=Pack(
                 padding_right=PADDING,
@@ -71,6 +70,7 @@ class SyncIssueView(toga.Box):
                 height=12,
             ),
         )
+        link_local.enabled = osp.exists(self.sync_err.local_path)
 
         quoted_dbx_path = urllib.parse.quote(self.sync_err.dbx_path)
         dbx_address = f"https://www.dropbox.com/preview{quoted_dbx_path}"

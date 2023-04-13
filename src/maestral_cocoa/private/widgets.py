@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import os
 import asyncio
 import enum
 import os
@@ -144,7 +143,6 @@ class RadioButton(Switch):
         style=None,
         on_change=None,
         value=False,
-        enabled=True,
     ):
         super().__init__(text, id=id, style=style)
 
@@ -154,7 +152,6 @@ class RadioButton(Switch):
         self.value = value
         self.on_change = on_change
 
-        self.enabled = enabled
         self._impl.set_group(group)
 
 
@@ -168,9 +165,8 @@ class FreestandingIconButton(toga.Widget):
         id=None,
         style=None,
         on_press=None,
-        enabled=True,
     ):
-        super().__init__(id=id, enabled=enabled, style=style)
+        super().__init__(id=id, style=style)
 
         # Create a platform specific implementation of a Button
         self._impl = self.factory.FreestandingIconButton(interface=self)
@@ -178,7 +174,6 @@ class FreestandingIconButton(toga.Widget):
         # Set all the properties
         self.text = text
         self.on_press = on_press
-        self.enabled = enabled
         self.icon = icon
 
     @property
@@ -240,12 +235,11 @@ class FollowLinkButton(FreestandingIconButton):
         locate=False,
         id=None,
         style=None,
-        enabled=True,
     ):
         icon = Icon(template=ImageTemplate.FollowLink)
         self.url = url
         self.locate = locate
-        super().__init__(text, icon=icon, id=id, enabled=enabled, style=style)
+        super().__init__(text, icon=icon, id=id, style=style)
 
         def handler(widget):
             click.launch(widget.url, locate=widget.locate)
@@ -266,10 +260,9 @@ class FileSelectionButton(toga.Widget):
         dialog_message="",
         show_full_path=False,
         id=None,
-        enabled=True,
         style=None,
     ):
-        super().__init__(id=id, enabled=enabled, style=style)
+        super().__init__(id=id, style=style)
 
         self._select_files = select_files
         self._select_folders = select_folders

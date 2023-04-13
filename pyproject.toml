@@ -21,14 +21,14 @@ requires = [
     "maestral==1.7.1",
     "markdown2==2.4.6",
     "rubicon-objc==0.4.5",
-    "toga==0.3.0",
+    "toga==0.3.1",
 ]
 sparkle_feed_url = "https://maestral.app/appcast.xml"
 sparkle_public_key = "RugM2eM14xHixaeHpl5uWSq7+sDZvYi52Xpz4IXpAdA="
 
 [tool.briefcase.app.maestral-cocoa.macOS]
 requires = [
-    "toga-cocoa==0.3.0",
+    "toga-cocoa==0.3.1",
 ]
 build = "84"
 

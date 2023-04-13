@@ -62,8 +62,8 @@ class SyncEventRow:
                 text="",
                 icon=Icon(template=ImageTemplate.Reveal),
                 on_press=self.on_reveal_pressed,
-                enabled=osp.exists(self.sync_event.local_path),
             )
+            self._reveal.enabled = osp.exists(self.sync_event.local_path)
 
         return self._reveal
 

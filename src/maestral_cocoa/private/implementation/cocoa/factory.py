@@ -333,7 +333,10 @@ class Switch(Widget):
         self.add_constraints()
 
     def set_text(self, text):
-        self.native.title = self.interface.text
+        self.native.title = text
+
+    def get_text(self):
+        return str(self.native.title)
 
     def set_state(self, value):
         self.native.allowsMixedState = value == MIXED
