@@ -177,6 +177,15 @@ class FreestandingIconButton(toga.Widget):
         self.icon = icon
 
     @property
+    def on_press(self):
+        """The handler to invoke when the button is pressed."""
+        return self._on_press
+
+    @on_press.setter
+    def on_press(self, handler):
+        self._on_press = wrapped_handler(self, handler)
+
+    @property
     def text(self):
         """
         Returns:
@@ -206,25 +215,6 @@ class FreestandingIconButton(toga.Widget):
         self._icon = value
         self._impl.set_icon(value)
         self._impl.rehint()
-
-    @property
-    def on_press(self):
-        """The handler to invoke when the button is pressed.
-
-        Returns:
-            The function ``callable`` that is called on button press.
-        """
-        return self._on_press
-
-    @on_press.setter
-    def on_press(self, handler):
-        """Set the handler to invoke when the button is pressed.
-
-        Args:
-            handler (:obj:`callable`): The handler to invoke when the button is pressed.
-        """
-        self._on_press = wrapped_handler(self, handler)
-        self._impl.set_on_press(self._on_press)
 
 
 class FollowLinkButton(FreestandingIconButton):
