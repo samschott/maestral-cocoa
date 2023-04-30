@@ -28,7 +28,7 @@ WINDOW_SIZE = (700, 600)
 
 
 class SyncEventRow:
-    _reveal: FreestandingIconButton | None
+    _reveal_button: FreestandingIconButton | None
 
     def __init__(self, sync_event: SyncEvent) -> None:
         self.sync_event = sync_event
@@ -37,13 +37,14 @@ class SyncEventRow:
         dt = datetime.fromtimestamp(self.sync_event.change_time_or_sync_time)
 
         # attributes for table column values
-        self._basename = basename
-        self._icon: Icon | None = None
         self.location = osp.basename(dirname)
         self.type = self.sync_event.change_type.value.capitalize()
         self.time = dt.strftime("%d %b %Y %H:%M")
         self.username = self.sync_event.change_user_name
-        self._reveal = None
+
+        self._basename = basename
+        self._icon: Icon | None = None
+        self._reveal_button = None
 
     @property
     def filename(self) -> tuple[Icon, str]:
@@ -57,15 +58,15 @@ class SyncEventRow:
 
     @property
     def reveal(self) -> FreestandingIconButton:
-        if not self._reveal:
-            self._reveal = FreestandingIconButton(
+        if not self._reveal_button:
+            self._reveal_button = FreestandingIconButton(
                 text="",
                 icon=Icon(template=ImageTemplate.Reveal),
                 on_press=self.on_reveal_pressed,
             )
-            self._reveal.enabled = osp.exists(self.sync_event.local_path)
+            self._reveal_button.enabled = osp.exists(self.sync_event.local_path)
 
-        return self._reveal
+        return self._reveal_button
 
     def on_reveal_pressed(self, widget: Any) -> None:
         click.launch(self.sync_event.local_path, locate=True)
