@@ -19,8 +19,8 @@ requires = [
     "click==8.1.3",
     "importlib_metadata;python_version<'3.8'",
     "maestral==1.7.2.dev2",
-    "markdown2==2.4.6",
-    "rubicon-objc==0.4.5",
+    "markdown2==2.4.8",
+    "rubicon-objc==0.4.6",
     "toga==0.3.1",
 ]
 sparkle_feed_url = "https://maestral.app/appcast.xml"
