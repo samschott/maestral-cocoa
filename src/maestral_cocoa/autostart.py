@@ -36,7 +36,7 @@ class AutoStart:
         if self.implementation == SupportedImplementations.launchd:
             self._impl = AutoStartLaunchd(
                 f"{BUNDLE_ID}.{config_name}",
-                " ".join(start_cmd),
+                start_cmd,
                 EnvironmentVariables=ENV,
                 AssociatedBundleIdentifiers=BUNDLE_ID,
             )
