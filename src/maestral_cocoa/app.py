@@ -2,6 +2,7 @@ from __future__ import annotations
 
 # system imports
 import os
+import sys
 from traceback import format_exception
 from subprocess import Popen
 from datetime import datetime, timedelta
@@ -169,7 +170,9 @@ class MaestralGui(SystemTrayApp):
             )
             self.alert(title, message, level="error")
             stop_maestral_daemon_process(self.config_name)
-            super().exit()
+            # super().exit() fails on toga-cocoa because the event loop has not yet been
+            # started. Call sys.exit() instead.
+            sys.exit(0)
         elif res == Start.AlreadyRunning:
             self._started = False
         elif res == Start.Ok:
