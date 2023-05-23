@@ -448,18 +448,7 @@ class MenuItem:
         self.label = label
         self.icon = icon
         self.shortcut = shortcut
-        self.enabled = self.action is not None
         self.submenu = submenu
-
-    @property
-    def enabled(self):
-        return self._enabled
-
-    @enabled.setter
-    def enabled(self, value):
-        self._enabled = value
-        if self._impl is not None:
-            self._impl.set_enabled(value)
 
     @property
     def icon(self):
@@ -511,6 +500,8 @@ class MenuItem:
 
     @action.setter
     def action(self, action):
+        self._impl.set_enabled(action is not None)
+
         if self._checkable:
 
             def new_action(*args):
