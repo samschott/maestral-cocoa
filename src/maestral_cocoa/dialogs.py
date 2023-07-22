@@ -176,7 +176,7 @@ class ProgressDialog(Dialog):
         app: toga.App | None = None,
     ) -> None:
         self.progress_bar = toga.ProgressBar(
-            max=0,
+            max=None,
             style=Pack(
                 width=self.CONTENT_WIDTH,
                 padding=(0, 0, 10, 0),
