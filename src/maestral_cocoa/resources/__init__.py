@@ -2,7 +2,7 @@ try:
     from importlib.resources import as_file, files  # type: ignore
 
     def resource_path(name: str) -> str:
-        return str(as_file(files("maestral_cocoa.resources") / name).__enter__())
+        return str(files("maestral_cocoa.resources") / name)
 
 except ImportError:
     from importlib.resources import path  # type: ignore
