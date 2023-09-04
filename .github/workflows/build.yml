@@ -13,7 +13,7 @@ jobs:
     name: Build app bundle
     steps:
       - name: Checkout project
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Import signing certificate into keychain
         uses: apple-actions/import-codesign-certs@v2
