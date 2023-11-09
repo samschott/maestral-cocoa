@@ -1,10 +1,12 @@
 try:
+    # Python 3.9 and later
     from importlib.resources import as_file, files  # type: ignore
 
     def resource_path(name: str) -> str:
         return str(files("maestral_cocoa.resources") / name)
 
 except ImportError:
+    # Python 3.8
     from importlib.resources import path  # type: ignore
 
     def resource_path(name: str) -> str:

@@ -3,7 +3,7 @@
 # system imports
 import sys
 
-from importlib_metadata import metadata
+from importlib.metadata import metadata
 
 
 # detect if we have been built with briefcase or frozen with PyInstaller
