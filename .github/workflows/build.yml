@@ -9,7 +9,7 @@ on:
 
 jobs:
   build_macos:
-    runs-on: macos-latest-xlarge
+    runs-on: macos-12
     name: Build app bundle
     steps:
       - name: Checkout project
