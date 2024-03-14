@@ -84,14 +84,14 @@ jobs:
           path: ${{ steps.build.outputs.dmg_path }}
 
       - name: Push back Xcode project updates
-        uses: stefanzweifel/git-auto-commit-action@v4
+        uses: stefanzweifel/git-auto-commit-action@v5
         if: github.event_name == 'push'
         with:
           commit_message: Auto-commit build updates
           branch: main
 
       - name: Push back Xcode project updates
-        uses: stefanzweifel/git-auto-commit-action@v4
+        uses: stefanzweifel/git-auto-commit-action@v5
         if: github.event_name != 'push'
         with:
           commit_message: Auto-commit build updates
