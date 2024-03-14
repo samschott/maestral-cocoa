@@ -33,10 +33,12 @@ class AutoUpdaterBackend(ABC):
     def set_update_check_interval(self, value: int) -> None: ...
 
     @abstractmethod
-    async def check_for_updates(self) -> None: ...
+    async def check_for_updates(self, interface, *args, **kwargs) -> None: ...
 
     @abstractmethod
-    async def check_for_updates_in_background(self) -> None: ...
+    async def check_for_updates_in_background(
+        self, interface, *args, **kwargs
+    ) -> None: ...
 
 
 class AutoUpdaterSparkle(AutoUpdaterBackend):
@@ -114,10 +116,10 @@ class AutoUpdaterSparkle(AutoUpdaterBackend):
     def _start_updater(self) -> None:
         self.spu_controller.updater.startUpdater(None)
 
-    async def check_for_updates(self) -> None:
+    async def check_for_updates(self, interface, *args, **kwargs) -> None:
         self.spu_controller.checkForUpdates(None)
 
-    async def check_for_updates_in_background(self) -> None:
+    async def check_for_updates_in_background(self, interface, *args, **kwargs) -> None:
         self.spu_controller.updater.checkForUpdatesInBackground()
 
 
@@ -143,7 +145,7 @@ class AutoUpdaterFallback(AutoUpdaterBackend):
     def set_update_check_interval(self, value: int) -> None:
         pass
 
-    async def check_for_updates(self) -> None:
+    async def check_for_updates(self, interface, *args, **kwargs) -> None:
         progress = ProgressDialog("Checking for Updates", app=self.app)
         progress.raise_()
 
@@ -179,7 +181,7 @@ class AutoUpdaterFallback(AutoUpdaterBackend):
         )
         self.update_dialog.raise_()
 
-    async def check_for_updates_in_background(self) -> None:
+    async def check_for_updates_in_background(self, interface, *args, **kwargs) -> None:
         last_update_check = self.mdbx.get_state("app", "update_notification_last")
         interval = self.mdbx.get_conf("app", "update_notification_interval")
 
@@ -194,10 +196,10 @@ class AutoUpdaterFallback(AutoUpdaterBackend):
             self.mdbx.set_state("app", "update_notification_last", time.time())
             self._show_update_dialog(res.latest_release, res.release_notes)
 
-    async def _periodic_check_for_updates(self, sender: Any = None) -> None:
+    async def _periodic_check_for_updates(self, interface, *args, **kwargs) -> None:
         while True:
             await asyncio.sleep(30 * 60)
-            await self.check_for_updates_in_background()
+            await self.check_for_updates_in_background(self)
 
 
 class AutoUpdater:
@@ -215,11 +217,11 @@ class AutoUpdater:
     def start_updater(self) -> None:
         self._backend.start_updater()
 
-    async def check_for_updates(self, sender=None) -> None:
-        await self._backend.check_for_updates()
+    async def check_for_updates(self, interface, *args, **kwargs) -> None:
+        await self._backend.check_for_updates(self)
 
-    async def check_for_updates_in_background(self) -> None:
-        await self._backend.check_for_updates_in_background()
+    async def check_for_updates_in_background(self, interface, *args, **kwargs) -> None:
+        await self._backend.check_for_updates_in_background(self)
 
     @property
     def last_update_check(self) -> float:

@@ -2,7 +2,7 @@
 
 # external imports
 import toga
-from toga.style.pack import Pack, FONT_SIZE_CHOICES
+from toga.style.pack import Pack
 from toga.constants import COLUMN, CENTER, TRANSPARENT
 from maestral.utils.appdirs import get_home_dir
 
@@ -17,10 +17,6 @@ from .private.widgets import (
 )
 from .private.constants import WORD_WRAP
 from .private.implementation.cocoa.constants import NSFullSizeContentViewWindowMask
-
-
-# set default font size to 13 pt, as in macOS
-Pack.validated_property("font_size", choices=FONT_SIZE_CHOICES, initial=13)
 
 
 class SetupDialogGui(Window):
@@ -45,7 +41,7 @@ class SetupDialogGui(Window):
         super().__init__(
             title="Maestral Setup",
             size=(self.WINDOW_WIDTH, self.WINDOW_HEIGHT),
-            resizeable=False,
+            resizable=False,
             minimizable=False,
             app=app,
         )
@@ -61,7 +57,7 @@ class SetupDialogGui(Window):
         # ==== welcome page ============================================================
         # noinspection PyTypeChecker
         self.image0 = toga.ImageView(
-            self.app.icon,
+            self.app.icon.path,
             style=Pack(width=128, height=128, alignment=CENTER, padding=(40, 0, 40, 0)),
         )
         self.label0 = Label(
@@ -79,7 +75,7 @@ class SetupDialogGui(Window):
 
         # noinspection PyTypeChecker
         self.image1 = toga.ImageView(
-            self.app.icon, style=Pack(width=64, height=64, padding=(40, 0, 40, 0))
+            self.app.icon.path, style=Pack(width=64, height=64, padding=(40, 0, 40, 0))
         )
         self.label1 = Label(
             text=(
@@ -126,7 +122,7 @@ class SetupDialogGui(Window):
 
         # noinspection PyTypeChecker
         self.image2 = toga.ImageView(
-            self.app.icon, style=Pack(width=64, height=64, padding=(40, 0, 40, 0))
+            self.app.icon.path, style=Pack(width=64, height=64, padding=(40, 0, 40, 0))
         )
         self.dbx_location_label = Label(
             text=(
@@ -204,7 +200,7 @@ class SetupDialogGui(Window):
 
         # noinspection PyTypeChecker
         self.image4 = toga.ImageView(
-            self.app.icon,
+            self.app.icon.path,
             style=Pack(width=128, height=128, alignment=CENTER, padding=(40, 0, 40, 0)),
         )
         self.label4 = Label(

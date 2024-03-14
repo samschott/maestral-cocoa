@@ -28,7 +28,7 @@ sparkle_public_key = "RugM2eM14xHixaeHpl5uWSq7+sDZvYi52Xpz4IXpAdA="
 
 [tool.briefcase.app.maestral-cocoa.macOS]
 requires = [
-    "toga-cocoa==0.3.1",
+    "toga-cocoa==0.4.2",
 ]
 build = "93"
 

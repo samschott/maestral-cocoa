@@ -1,13 +1,17 @@
 # -*- coding: utf-8 -*-
 
 # system imports
-import sys
+import os
 import os.path as osp
 import platform
 
 # external imports
-import toga
+import toga_cocoa.factory
+
+toga_cocoa.factory.__path__ = ""
+
 from travertino.size import at_least
+from travertino.constants import NONE
 from rubicon.objc import (
     NSMakeSize,
     NSZeroPoint,
@@ -20,7 +24,6 @@ from rubicon.objc import (
 )
 from rubicon.objc.runtime import objc_id
 from toga.fonts import Font as InterfaceFont
-from toga.handlers import NativeHandler
 from toga.constants import LEFT
 from toga_cocoa.libs import (
     NSLinkAttributeName,
@@ -34,8 +37,6 @@ from toga_cocoa.libs import (
     NSMenu,
     NSApplication,
     NSObject,
-    NSApplicationActivationPolicyAccessory,
-    NSApplicationActivationPolicyRegular,
     NSImage,
     NSImageInterpolationHigh,
     NSGraphicsContext,
@@ -45,8 +46,9 @@ from toga_cocoa.libs import (
     NSTextField,
     NSPopUpButton,
     NSOpenPanel,
-    NSFileHandlingPanelOKButton,
+    NSModalResponseOK,
     NSCompositingOperationCopy,
+    NSApplicationActivationPolicyRegular,
     NSURL,
     NSButton,
     NSSwitchButton,
@@ -59,9 +61,9 @@ from toga_cocoa.app import App as TogaApp
 from toga_cocoa.widgets.base import Widget
 from toga_cocoa.widgets.button import Button as TogaButton
 from toga_cocoa.window import Window as TogaWindow
-from toga_cocoa.window import WindowDelegate as TogaWindowDeletage
 from toga_cocoa.factory import ImageView
 from toga_cocoa.factory import *  # noqa: F401,F406
+
 
 # local imports
 from . import dialogs
@@ -146,22 +148,22 @@ class Icon:
 
         if self.path:
             self._native = NSImage.alloc().initWithContentsOfFile(self.path)
-            return self._native
 
         elif self.for_path:
             # always return a new pointer since an old one may be invalidated
             # icons are cached by AppKit anyways
             path = str(self.for_path)
             if osp.exists(path):
-                return NSWorkspace.sharedWorkspace.iconForFile(path)
+                self._native = NSWorkspace.sharedWorkspace.iconForFile(path)
             else:
                 _, extension = osp.splitext(path)
-                return NSWorkspace.sharedWorkspace.iconForFileType(extension)
+                self._native = NSWorkspace.sharedWorkspace.iconForFileType(extension)
 
         elif self.template:
             cocoa_template = Icon._to_cocoa_template[self.template]
             self._native = NSImage.imageNamed(cocoa_template)
-            return self._native
+
+        return self._native
 
 
 # ==== labels ==========================================================================
@@ -207,12 +209,12 @@ class Label(Widget):
         self.native.cell.lineBreakMode = Label._toga_to_cocoa_linebreakmode[value]
 
     def rehint(self):
-        if self.interface.style.width:
-            self.native.preferredMaxLayoutWidth = self.interface.style.width
+        if self.interface.style.width != NONE:
+            self.native.preferredMaxLayoutWidth = float(self.interface.style.width)
 
         content_size = self.native.intrinsicContentSize()
 
-        if self.interface.style.width:
+        if self.interface.style.width != NONE:
             self.interface.intrinsic.width = at_least(content_size.width)
             self.interface.intrinsic.height = at_least(content_size.height)
         else:
@@ -290,7 +292,7 @@ class FreestandingIconButton(TogaButton):
         self.native.title = " {}".format(self.interface.text)
 
     def set_icon(self, icon):
-        if self.interface.style.height > 0:
+        if self.interface.style.height != NONE:
             icon_size = self.interface.style.height
         else:
             icon_size = 16
@@ -387,11 +389,11 @@ class FileChooserTarget(NSObject):
             panel.prompt = "Select"
 
             def completion_handler(r: int) -> None:
-                if r == NSFileHandlingPanelOKButton:
+                if r == NSModalResponseOK:
                     self.impl.set_current_selection(str(panel.URL.path))
 
-                    if self.interface.on_select:
-                        self.interface.on_select(self.interface)
+                    if self.interface.on_change:
+                        self.interface.on_change(self.interface)
 
             panel.beginSheetModalForWindow(
                 self.interface.window._impl.native, completionHandler=completion_handler
@@ -450,7 +452,7 @@ class FileSelectionButton(Widget):
         item.image = resize_image_to(image, 16)
         self._current_selection = path
 
-    def set_on_select(self, handler):
+    def set_on_change(self, handler):
         pass
 
     def set_select_files(self, value):
@@ -666,165 +668,11 @@ class SystemTrayAppDelegate(NSObject):
 class SystemTrayApp(TogaApp):
     _MAIN_WINDOW_CLASS = None
 
-    def create(self):
-        self.native = NSApplication.sharedApplication
-
-        self.native.setApplicationIconImage_(self.interface.icon._impl.native)
-
-        self.resource_path = str(NSBundle.mainBundle.resourcePath)
-
-        self.delegate = SystemTrayAppDelegate.alloc().init()
-        self.delegate.impl = self
-        self.delegate.interface = self.interface
-        self.delegate.native = self.native
-        self.native.delegate = self.delegate
-
-        formal_name = self.interface.formal_name
-
-        self.interface.commands.add(
-            # ---- App menu -----------------------------------
-            toga.Command(
-                lambda _: self.interface.about(),
-                "About " + formal_name,
-                group=toga.Group.APP,
-            ),
-            toga.Command(
-                None,
-                "Preferences",
-                shortcut=toga.Key.MOD_1 + ",",
-                group=toga.Group.APP,
-                section=20,
-            ),
-            toga.Command(
-                NativeHandler(SEL("hide:")),
-                "Hide " + formal_name,
-                shortcut=toga.Key.MOD_1 + "h",
-                group=toga.Group.APP,
-                order=0,
-                section=sys.maxsize - 1,
-            ),
-            toga.Command(
-                NativeHandler(SEL("hideOtherApplications:")),
-                "Hide Others",
-                shortcut=toga.Key.MOD_1 + toga.Key.MOD_2 + "h",
-                group=toga.Group.APP,
-                order=1,
-                section=sys.maxsize - 1,
-            ),
-            toga.Command(
-                NativeHandler(SEL("unhideAllApplications:")),
-                "Show All",
-                group=toga.Group.APP,
-                order=2,
-                section=sys.maxsize - 1,
-            ),
-            # Quit should always be the last item, in a section on its own
-            toga.Command(
-                lambda _: self.interface.exit(),
-                "Quit " + formal_name,
-                shortcut=toga.Key.MOD_1 + "q",
-                group=toga.Group.APP,
-                section=sys.maxsize,
-            ),
-            # ---- Edit menu ----------------------------------
-            toga.Command(
-                NativeHandler(SEL("undo:")),
-                "Undo",
-                shortcut=toga.Key.MOD_1 + "z",
-                group=toga.Group.EDIT,
-                order=10,
-            ),
-            toga.Command(
-                NativeHandler(SEL("redo:")),
-                "Redo",
-                shortcut=toga.Key.SHIFT + toga.Key.MOD_1 + "z",
-                group=toga.Group.EDIT,
-                order=20,
-            ),
-            toga.Command(
-                NativeHandler(SEL("cut:")),
-                "Cut",
-                shortcut=toga.Key.MOD_1 + "x",
-                group=toga.Group.EDIT,
-                section=10,
-                order=10,
-            ),
-            toga.Command(
-                NativeHandler(SEL("copy:")),
-                "Copy",
-                shortcut=toga.Key.MOD_1 + "c",
-                group=toga.Group.EDIT,
-                section=10,
-                order=20,
-            ),
-            toga.Command(
-                NativeHandler(SEL("paste:")),
-                "Paste",
-                shortcut=toga.Key.MOD_1 + "v",
-                group=toga.Group.EDIT,
-                section=10,
-                order=30,
-            ),
-            toga.Command(
-                NativeHandler(SEL("pasteAsPlainText:")),
-                "Paste and Match Style",
-                shortcut=toga.Key.MOD_2 + toga.Key.SHIFT + toga.Key.MOD_1 + "v",
-                group=toga.Group.EDIT,
-                section=10,
-                order=40,
-            ),
-            toga.Command(
-                NativeHandler(SEL("delete:")),
-                "Delete",
-                group=toga.Group.EDIT,
-                section=10,
-                order=50,
-            ),
-            toga.Command(
-                NativeHandler(SEL("selectAll:")),
-                "Select All",
-                shortcut=toga.Key.MOD_1 + "a",
-                group=toga.Group.EDIT,
-                section=10,
-                order=60,
-            ),
-            # ---- Help menu ----------------------------------
-            toga.Command(
-                lambda _: self.interface.visit_homepage(),
-                "Visit homepage",
-                enabled=self.interface.home_page is not None,
-                group=toga.Group.HELP,
-            ),
-        )
-        self._create_app_commands()
-
-        # Call user code to populate the main window
-        self.interface.startup()
-
-        # Create the lookup table of menu items,
-        # then force the creation of the menus.
-        self.create_menus()
-
     def select_file(self):
         pass
 
     def open_document(self, path):
         pass
-
-    def has_open_windows(self):
-        visible_windows = [
-            w
-            for w in self.native.windows
-            if w.isVisible and w.objc_class.name != "NSStatusBarWindow"
-        ]
-
-        return len(visible_windows) > 1
-
-    def show_dock_icon(self):
-        self.native.activationPolicy = NSApplicationActivationPolicyRegular
-
-    def hide_dock_icon(self):
-        self.native.activationPolicy = NSApplicationActivationPolicyAccessory
 
     async def alert_async(
         self,
@@ -871,26 +719,7 @@ class SystemTrayApp(TogaApp):
         )
 
 
-class WindowDeletage(TogaWindowDeletage):
-    @objc_method
-    def windowWillClose_(self, notification: objc_id) -> None:
-        if not self.interface.is_dialog:
-            if not self.interface.app._impl.has_open_windows():
-                self.interface.app._impl.hide_dock_icon()
-
-
 class Window(TogaWindow):
-    def __init__(self, interface, title, position, size):
-        super().__init__(interface, title, position, size)
-        self.delegate = WindowDeletage.alloc().init()
-        self.delegate.interface = self.interface
-        self.delegate.impl = self
-        self.native.delegate = self.delegate
-        self.app = NSApplication.sharedApplication
-
-    def is_visible(self):
-        return bool(self.native.isVisible)
-
     def center(self):
         self.native.center()
 
@@ -900,21 +729,11 @@ class Window(TogaWindow):
     def show_as_sheet(self, window):
         window._impl.native.beginSheet(self.native, completionHandler=None)
 
-    def show(self):
-        if not self.interface.is_dialog:
-            self.app.activationPolicy = NSApplicationActivationPolicyRegular
-            self.app.activateIgnoringOtherApps(True)
-
-        super().show()
-
     def close(self):
         if self.native.sheetParent:
             self.native.sheetParent.endSheet(self.native)
         else:
             self.native.close()
-
-    def set_release_on_close(self, value):
-        self.native.releasedWhenClosed = value
 
     def set_dialog(self, value):
         if value:

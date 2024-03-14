@@ -20,10 +20,6 @@ from .dialogs import Dialog
 from .utils import call_async_maestral, is_empty
 
 
-# set default font size to 13 pt, as in macOS
-Pack.validated_property("font_size", choices=FONT_SIZE_CHOICES, initial=13)
-
-
 class DbxLocationDialog(Dialog):
     WINDOW_WIDTH = 600
     CONTENT_WIDTH = (

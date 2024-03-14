@@ -34,15 +34,15 @@ class SyncIssueView(toga.Box):
 
         icon = Icon(for_path=self.sync_err.local_path)
 
-        # noinspection PyTypeChecker
         image_view = toga.ImageView(
-            image=icon,
             style=Pack(
                 width=ICON_SIZE,
                 height=ICON_SIZE,
                 padding=(0, 12, 0, 3),
             ),
         )
+        # TODO: samschott - Find a more elegant solution to set the image to a file icon.
+        image_view._impl.native.image = icon._impl.native
 
         path_label = Label(
             sanitize_string(osp.basename(self.sync_err.dbx_path)),
@@ -54,7 +54,7 @@ class SyncIssueView(toga.Box):
             f"{self.sync_err.title}:\n{self.sync_err.message}",
             linebreak_mode=WORD_WRAP,
             style=Pack(
-                font_size=11,
+                font_size=9,
                 width=WINDOW_SIZE[0] - 4 * PADDING - 15 - ICON_SIZE,
                 padding_bottom=PADDING / 2,
             ),
@@ -66,7 +66,7 @@ class SyncIssueView(toga.Box):
             locate=True,
             style=Pack(
                 padding_right=PADDING,
-                font_size=11,
+                font_size=9,
                 height=12,
             ),
         )
@@ -78,7 +78,7 @@ class SyncIssueView(toga.Box):
         link_dbx = FollowLinkButton(
             "Show Online",
             url=dbx_address,
-            style=Pack(font_size=11, height=12),
+            style=Pack(font_size=9, height=12),
         )
 
         link_box = toga.Box(
@@ -101,7 +101,7 @@ class SyncIssueView(toga.Box):
 
 class SyncIssuesWindow(Window):
     def __init__(self, mdbx: MaestralProxy, app: toga.App) -> None:
-        super().__init__(title="Maestral Sync Issues", release_on_close=False, app=app)
+        super().__init__(title="Maestral Sync Issues", app=app)
         self.on_close = self.on_close_pressed
 
         self.mdbx = mdbx
@@ -132,7 +132,7 @@ class SyncIssuesWindow(Window):
 
         self.refresh_gui()
 
-    async def periodic_refresh_gui(self, sender: Any = None) -> None:
+    async def periodic_refresh_gui(self, interface, *args, **kwargs) -> None:
         while self._refresh:
             self.refresh_gui()
             await asyncio.sleep(self._refresh_interval)

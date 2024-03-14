@@ -128,6 +128,9 @@ class Node:
     def __getitem__(self, index: int) -> Node | PlaceholderNode:
         return self.children[index]
 
+    def __delitem__(self, index: int):
+        raise NotImplementedError("Cannot delete through this view")
+
     def can_have_children(self) -> bool:
         return self._is_folder
 
@@ -336,6 +339,9 @@ class FileSystemSource(Node, Source):
         self.included.text = "Select all"
         self.included.enabled = False
 
+        # TODO: samschott - remove this after https://github.com/beeware/toga/issues/2432 is fixed.
+        self._impl = None
+
     def reload(self):
         self._children = [PlaceholderNode("Loading...", self)]
         self.notify("change_source", source=self)
@@ -346,7 +352,7 @@ class FileSystemSource(Node, Source):
             self.on_fs_selection_changed()
 
     def notify(self, notification: str, **kwargs) -> None:
-        self._notify(notification, **kwargs)
+        Source.notify(self, notification, **kwargs)
 
     def on_loading_failed(self) -> None:
         self.included.enabled = False
@@ -397,7 +403,6 @@ class SelectiveSyncDialog(SelectiveSyncGui):
         """
         Apply changes to local Dropbox folder.
         """
-
         if not self.mdbx.connected:
             self.on_fs_loading_failed()
             return
@@ -406,7 +411,6 @@ class SelectiveSyncDialog(SelectiveSyncGui):
 
         # update the state of nodes which are listed in the tree
         # preserve any exclusions which are not shown in the tree
-
         included_shown = self.fs_source.get_nodes_with_state(ON)
         excluded_shown = self.fs_source.get_nodes_with_state(OFF)
         mixed_shown = self.fs_source.get_nodes_with_state(MIXED)

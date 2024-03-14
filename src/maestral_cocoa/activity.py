@@ -89,27 +89,27 @@ class SyncEventSource(Source):
     def add(self, sync_event: SyncEvent) -> None:
         row = SyncEventRow(sync_event)
         self._rows.append(row)
-        self._notify("insert", index=len(self._rows) - 1, item=row)
+        self.notify("insert", index=len(self._rows) - 1, item=row)
 
     def insert(self, index: int, sync_event: SyncEvent) -> None:
         row = SyncEventRow(sync_event)
         self._rows.insert(index, row)
-        self._notify("insert", index=index, item=row)
+        self.notify("insert", index=index, item=row)
 
     def remove(self, index: int) -> None:
         row = self._rows[index]
-        self._notify("pre_remove", item=row)
+        self.notify("pre_remove", item=row)
         del self._rows[index]
-        self._notify("remove", item=row)
+        self.notify("remove", item=row)
 
     def clear(self) -> None:
         self._rows.clear()
-        self._notify("clear")
+        self.notify("clear")
 
 
 class ActivityWindow(Window):
     def __init__(self, mdbx: MaestralProxy, app: toga.App) -> None:
-        super().__init__(title="Maestral Activity", release_on_close=False, app=app)
+        super().__init__(title="Maestral Activity", app=app)
         self.size = WINDOW_SIZE
 
         self._refresh = False
@@ -124,7 +124,7 @@ class ActivityWindow(Window):
             headings=["File", "Location", "Change", "Time", " "],
             accessors=["filename", "location", "type", "time", "reveal"],
             missing_value="--",
-            on_double_click=self.on_row_clicked,
+            on_activate=self.on_row_clicked,
             style=Pack(flex=1),
         )
         self.table._impl.columns[-1].maxWidth = 25  # TODO: don't use private API
@@ -142,7 +142,7 @@ class ActivityWindow(Window):
                 message="The file or folder no longer exists.",
             )
 
-    async def periodic_refresh_gui(self, sender: Any = None) -> None:
+    async def periodic_refresh_gui(self, interface, *args, **kwargs) -> None:
         while self._refresh:
             await self.refresh_gui()
             await asyncio.sleep(self._refresh_interval)
@@ -158,8 +158,7 @@ class ActivityWindow(Window):
                 needs_refresh = True
 
         if needs_refresh:
-            for row in self.table.data:
-                row.refresh()
+            self.table.refresh()
 
     def on_close_pressed(self, sender: Any = None) -> bool:
         self._refresh = False

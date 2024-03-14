@@ -71,7 +71,7 @@ class MenuItemSnooze(MenuItem):
         self.mdbx = mdbx
         self.snooze_time = snooze_time
 
-    def snooze(self, widget: Any) -> None:
+    def snooze(self, interface, *args, **kwargs) -> None:
         self.mdbx.notification_snooze = self.snooze_time
 
 
@@ -129,7 +129,6 @@ class MaestralGui(SystemTrayApp):
         pending_folder = self.mdbx.pending_dropbox_folder
 
         if pending_link or pending_folder:
-            self.show_dock_icon()
             self.setup_dialog = SetupDialog(mdbx=self.mdbx, app=self)
             self.setup_dialog.raise_()
             self.setup_dialog.on_success = self.on_setup_completed
@@ -140,7 +139,6 @@ class MaestralGui(SystemTrayApp):
                 self.setup_dialog.goto_page(2)
 
         else:
-            self.hide_dock_icon()
             self.add_background_task(self.on_setup_completed)
 
     def set_icon(self, status: str) -> None:
@@ -148,16 +146,16 @@ class MaestralGui(SystemTrayApp):
             self.tray.icon = self.icon_mapping.get(status, self.icon_mapping[SYNCING])
             self._cached_status = status
 
-    async def on_menu_open(self, sender: Any = None) -> None:
-        await self.update_snoozed()
-        await self.update_status()
+    async def on_menu_open(self, interface, *args, **kwargs) -> None:
+        await self.update_snoozed(self)
+        await self.update_status(self)
 
-    async def on_setup_completed(self, sender: Any = None) -> None:
+    async def on_setup_completed(self, interface, *args, **kwargs) -> None:
         self.mdbx.start_sync()
         self.setup_ui_linked()
         self.updater.start_updater()
         self._linked_ui = True
-        await self.periodic_refresh_gui()
+        await self.periodic_refresh_gui(self)
 
     def get_or_start_maestral_daemon(self) -> MaestralProxy:
         res = start_maestral_daemon_process(self.config_name)
@@ -213,18 +211,17 @@ class MaestralGui(SystemTrayApp):
             self.item_quit,
         )
 
-    def setup_ui_linked(self) -> None:
-        self.settings_window = SettingsWindow(mdbx=self.mdbx, app=self)
-        self.activity_window = ActivityWindow(mdbx=self.mdbx, app=self)
-        self.sync_issues_window = SyncIssuesWindow(mdbx=self.mdbx, app=self)
+    def on_open_clicked(self, interface, *args, **kwargs):
+        click.launch(self.mdbx.dropbox_path)
 
+    def setup_ui_linked(self) -> None:
         # ------------- update context menu -------------------
 
         # remove unneeded items
         self.menu.remove(self.item_login)
 
         # update existing menu items
-        self.item_folder.action = lambda s: click.launch(self.mdbx.dropbox_path)
+        self.item_folder.action = self.on_open_clicked
         self.item_status.label = IDLE
 
         # add new menu items
@@ -286,16 +283,16 @@ class MaestralGui(SystemTrayApp):
     # ==== callbacks menu items ========================================================
 
     @staticmethod
-    def on_website_clicked(widget: Any) -> None:
+    def on_website_clicked(interface, *args, **kwargs) -> None:
         """Open the Dropbox website."""
         click.launch("https://www.dropbox.com/")
 
     @staticmethod
-    def on_help_clicked(widget: Any) -> None:
+    def on_help_clicked(interface, *args, **kwargs) -> None:
         """Open the Dropbox help website."""
         click.launch(f"{__url__}/docs")
 
-    def on_start_stop_clicked(self, widget: Any) -> None:
+    def on_start_stop_clicked(self, interface, *args, **kwargs) -> None:
         """Pause / resume syncing on menu item clicked."""
         try:
             if self.item_pause.label == self.PAUSE_TEXT:
@@ -312,16 +309,19 @@ class MaestralGui(SystemTrayApp):
         except NotLinkedError:
             self.add_background_task(self.restart)
 
-    def on_settings_clicked(self, widget: Any) -> None:
+    def on_settings_clicked(self, interface, *args, **kwargs) -> None:
+        self.settings_window = SettingsWindow(mdbx=self.mdbx, app=self)
         self.settings_window.raise_()
 
-    def on_sync_issues_clicked(self, widget: Any) -> None:
+    def on_sync_issues_clicked(self, interface, *args, **kwargs) -> None:
+        self.sync_issues_window = SyncIssuesWindow(mdbx=self.mdbx, app=self)
         self.sync_issues_window.raise_()
 
-    def on_activity_clicked(self, widget: Any) -> None:
+    def on_activity_clicked(self, interface, *args, **kwargs) -> None:
+        self.activity_window = ActivityWindow(mdbx=self.mdbx, app=self)
         self.activity_window.raise_()
 
-    def on_rebuild_clicked(self, widget: Any) -> None:
+    def on_rebuild_clicked(self, interface, *args, **kwargs) -> None:
         choice = self.alert(
             title="Rebuilt Maestral's sync index?",
             message=(
@@ -338,16 +338,16 @@ class MaestralGui(SystemTrayApp):
 
     # ==== periodic refresh of gui =====================================================
 
-    async def periodic_refresh_gui(self, sender: Any = None) -> None:
+    async def periodic_refresh_gui(self, interface, *args, **kwargs) -> None:
         while True:
             try:
-                await self.update_status()
-                await self.update_error()
+                await self.update_status(self)
+                await self.update_error(self)
                 await call_async_maestral(self.config_name, "status_change_longpoll")
             except CommunicationError:
                 super().exit()
 
-    async def update_status(self, sender: Any = None) -> None:
+    async def update_status(self, interface, *args, **kwargs) -> None:
         """Change icon according to status."""
         n_sync_errors = len(self.mdbx.sync_errors)
         status = self.mdbx.status
@@ -374,7 +374,7 @@ class MaestralGui(SystemTrayApp):
 
             self.item_status.label = status
 
-    async def update_snoozed(self, sender: Any = None) -> None:
+    async def update_snoozed(self, interface, *args, **kwargs) -> None:
         minutes = self.mdbx.notification_snooze
 
         if minutes > 0:
@@ -390,7 +390,7 @@ class MaestralGui(SystemTrayApp):
             self.menu_snooze.remove(self.item_resume_notifications)
             self.menu_snooze.remove(self.item_snooze_separator)
 
-    async def update_error(self, sender: Any = None) -> None:
+    async def update_error(self, interface, *args, **kwargs) -> None:
         errs = self.mdbx.fatal_errors
 
         if not errs:
@@ -407,7 +407,7 @@ class MaestralGui(SystemTrayApp):
         err = errs[-1]
 
         if isinstance(err, NoDropboxDirError):
-            await self._exec_dbx_location_dialog()
+            await self._exec_dbx_location_dialog(self)
         elif isinstance(err, TokenRevokedError):
             await self._exec_relink_dialog(RelinkDialog.REVOKED)
         elif isinstance(err, TokenExpiredError):
@@ -423,7 +423,7 @@ class MaestralGui(SystemTrayApp):
             # We don't know this error yet. Show a full stacktrace dialog.
             await self._exec_error_dialog(err)
 
-    async def _exec_dbx_location_dialog(self, sender: Any = None) -> None:
+    async def _exec_dbx_location_dialog(self, interface, *args, **kwargs) -> None:
         self.location_dialog = DbxLocationDialog(mdbx=self.mdbx, app=self)
         self.location_dialog.raise_()
         self.location_dialog.on_success = lambda s: self.mdbx.start_sync()
@@ -456,23 +456,23 @@ class MaestralGui(SystemTrayApp):
 
     # ==== quit functions ==============================================================
 
-    async def exit_and_stop_daemon(self, sender: Any = None) -> None:
+    async def exit_and_stop_daemon(self, interface, *args, **kwargs) -> None:
         """Stops the sync daemon and quits Maestral."""
         await call_async(stop_maestral_daemon_process, self.config_name)
         super().exit()
 
-    def exit(self, sender: Any = None) -> None:
+    def exit(self, interface, *args, **kwargs) -> None:
         """Quits Maestral. Stops the sync daemon only if we started it ourselves."""
         # Note: Keep this method synchrounous for compatibility with the parent class.
 
-        async def async_exit(sender: Any = None) -> None:
+        async def async_exit(interface, *args, **kwargs) -> None:
             if self._started:
                 stop_maestral_daemon_process(self.config_name)
             super(MaestralGui, self).exit()
 
         self.add_background_task(async_exit)
 
-    async def restart(self, sender: Any = None) -> None:
+    async def restart(self, interface, *args, **kwargs) -> None:
         """Restarts the Maestral GUI and sync daemon."""
         # Schedule restart after current process has quit
         pid = os.getpid()  # get ID of current process
@@ -483,7 +483,7 @@ class MaestralGui(SystemTrayApp):
         )
 
         # Quit Maestral.
-        await self.exit_and_stop_daemon()
+        await self.exit_and_stop_daemon(self)
 
 
 def run(config_name: str = "maestral") -> None:

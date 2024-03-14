@@ -245,7 +245,7 @@ class FileSelectionButton(toga.Widget):
         initial="",
         select_files=True,
         select_folders=False,
-        on_select=None,
+        on_change=None,
         dialog_title="",
         dialog_message="",
         show_full_path=False,
@@ -265,7 +265,7 @@ class FileSelectionButton(toga.Widget):
         self.current_selection = str(initial)
         self.select_files = select_files
         self.select_folders = select_folders
-        self.on_select = on_select
+        self.on_change = on_change
         self.dialog_title = dialog_title
         self.dialog_message = dialog_message
 
@@ -323,13 +323,13 @@ class FileSelectionButton(toga.Widget):
         self._impl.set_show_full_path(self._show_full_path)
 
     @property
-    def on_select(self):
-        return self._on_select
+    def on_change(self):
+        return self._on_change
 
-    @on_select.setter
-    def on_select(self, handler):
-        self._on_select = wrapped_handler(self, handler)
-        self._impl.set_on_select(self._on_select)
+    @on_change.setter
+    def on_change(self, handler):
+        self._on_change = wrapped_handler(self, handler)
+        self._impl.set_on_change(self._on_change)
 
 
 # ==== labels ==========================================================================
@@ -658,11 +658,9 @@ class Window(toga.Window):
         title=None,
         position=(100, 100),
         size=(640, 480),
-        toolbar=None,
-        resizeable=True,
-        closeable=True,
+        resizable=True,
+        closable=True,
         minimizable=True,
-        release_on_close=True,
         is_dialog=False,
         app=None,
         on_close=lambda x: True,  # See https://github.com/beeware/toga/issues/1482
@@ -672,15 +670,11 @@ class Window(toga.Window):
             title=title,
             position=position,
             size=size,
-            toolbar=toolbar,
-            resizeable=resizeable,
-            closeable=closeable,
+            resizable=resizable,
+            closable=closable,
             minimizable=minimizable,
             on_close=on_close,
         )
-        app.windows += self
-
-        self.release_on_close = release_on_close
         self.is_dialog = is_dialog
 
         if not position:
@@ -689,8 +683,8 @@ class Window(toga.Window):
     # visibility and positioning
 
     @property
-    def visible(self):
-        return self._impl.is_visible()
+    def visible(self) -> bool:
+        return self._impl.get_visible()
 
     def center(self):
         self._impl.center()
@@ -708,24 +702,13 @@ class Window(toga.Window):
         self._impl.show_as_sheet(window)
 
     @property
-    def is_dialog(self):
+    def is_dialog(self) -> bool:
         return self._is_dialog
 
     @is_dialog.setter
-    def is_dialog(self, yes):
-        self._is_dialog = yes
-        self._impl.set_dialog(yes)
-
-    # memory management
-
-    @property
-    def release_on_close(self):
-        return self._release_on_close
-
-    @release_on_close.setter
-    def release_on_close(self, value):
-        self._release_on_close = value
-        self._impl.set_release_on_close(value)
+    def is_dialog(self, value: bool):
+        self._is_dialog = value
+        self._impl.set_dialog(value)
 
 
 # ==== Application =====================================================================
@@ -760,14 +743,16 @@ class SystemTrayApp(toga.App):
             on_exit=on_exit,
         )
 
+    def startup(self) -> None:
+        # This would show the main window.
+        pass
+
+    def _verify_startup(self) -> None:
+        # This would verify that the main window was shown.
+        pass
+
     def _create_impl(self):
-        return self.factory.SystemTrayApp(interface=self)
-
-    def show_dock_icon(self):
-        self._impl.show_dock_icon()
-
-    def hide_dock_icon(self):
-        self._impl.hide_dock_icon()
+        return get_platform_factory().SystemTrayApp(interface=self)
 
     def alert(
         self,
