@@ -61,7 +61,7 @@ class BandwidthDialog(BandwidthGui):
                 float(self.number_input_limit_up.value) * MB_2_BYTES
             )
 
-    async def on_limit_downloads_toggled(self, widget: toga.Selection) -> None:
+    async def on_limit_downloads_toggled(self, widget, *args, **kwargs) -> None:
         if widget is self.radio_button_unlimited_down:
             self.number_input_limit_down.enabled = False
         elif widget is self.radio_button_limited_down:
@@ -69,7 +69,7 @@ class BandwidthDialog(BandwidthGui):
         else:
             raise RuntimeError(f"Unexpected widget {widget}")
 
-    async def on_limit_uploads_toggled(self, widget: toga.Selection) -> None:
+    async def on_limit_uploads_toggled(self, widget, *args, **kwargs) -> None:
         if widget is self.radio_button_unlimited_up:
             self.number_input_limit_up.enabled = False
         elif widget is self.radio_button_limited_up:

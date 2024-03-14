@@ -62,9 +62,9 @@ class SettingsWindow(SettingsGui):
         self.btn_unlink.on_press = self.on_unlink_pressed
         self.btn_select_folders.on_press = self.on_folder_selection_pressed
         self.btn_bandwidth.on_press = self.on_bandwidth_pressed
-        self.combobox_dbx_location.on_select = self.on_dbx_location_selected
+        self.combobox_dbx_location.on_change = self.on_dbx_location_selected
 
-        self.combobox_update_interval.on_select = self.on_update_interval_selected
+        self.combobox_update_interval.on_change = self.on_update_interval_selected
         self.checkbox_autostart.on_change = self.on_autostart_clicked
         self.checkbox_notifications.on_change = self.on_notifications_clicked
 
@@ -82,7 +82,9 @@ class SettingsWindow(SettingsGui):
 
     # ==== callback implementations ====================================================
 
-    async def on_dbx_location_selected(self, widget: FileSelectionButton) -> None:
+    async def on_dbx_location_selected(
+        self, widget: FileSelectionButton, *args, **kwargs
+    ) -> None:
         new_path = widget.current_selection
 
         if new_path == self.mdbx.dropbox_path:
@@ -112,13 +114,13 @@ class SettingsWindow(SettingsGui):
             )
             self.mdbx.start_sync()
 
-    def on_folder_selection_pressed(self, widget: Any) -> None:
+    def on_folder_selection_pressed(self, widget: Any, *args, **kwargs) -> None:
         SelectiveSyncDialog(mdbx=self.mdbx, app=self.app).show_as_sheet(self)
 
-    def on_bandwidth_pressed(self, widget: Any) -> None:
+    def on_bandwidth_pressed(self, widget: Any, *args, **kwargs) -> None:
         BandwidthDialog(mdbx=self.mdbx, app=self.app).show_as_sheet(self)
 
-    async def on_unlink_pressed(self, widget: Any) -> None:
+    async def on_unlink_pressed(self, widget: Any, *args, **kwargs) -> None:
         should_unlink = await self.confirm_dialog(
             title="Unlink your Dropbox account?",
             message=(
@@ -134,20 +136,22 @@ class SettingsWindow(SettingsGui):
                 title="Successfully unlinked",
                 message="Maestral will now quit.",
             )
-            await self.app.exit_and_stop_daemon()
+            await self.app.exit_and_stop_daemon(self.app)
 
-    async def on_update_interval_selected(self, widget: toga.Selection) -> None:
+    async def on_update_interval_selected(
+        self, widget: toga.Selection, *args, **kwargs
+    ) -> None:
         interval = self._update_interval_mapping[str(widget.value)]
         self.app.updater.update_check_interval = interval
 
-    async def on_autostart_clicked(self, widget: Switch) -> None:
+    async def on_autostart_clicked(self, widget: Switch, *args, **kwargs) -> None:
         self.autostart.enabled = widget.state == ON
 
-    async def on_notifications_clicked(self, widget):
+    async def on_notifications_clicked(self, widget, *args, **kwargs):
         # 30 = SYNCISSUE, 15 = FILECHANGE
         self.mdbx.notification_level = 15 if widget.state == ON else 30
 
-    async def on_cli_pressed(self, widget: Any) -> None:
+    async def on_cli_pressed(self, widget: Any, *args, **kwargs) -> None:
         if self._macos_cli_install_path.is_symlink():
             # Uninstall CLI from /usr/local/bin.
             try:
@@ -241,19 +245,19 @@ class SettingsWindow(SettingsGui):
         if FROZEN:
             self._update_cli_tool_button()
 
-    async def refresh_profile_pic(self, sender: Any = None) -> None:
+    async def refresh_profile_pic(self, interface, *args, **kwargs) -> None:
         path = await call_async_maestral(self.mdbx.config_name, "get_profile_pic")
         self.set_profile_pic(path)
 
-    async def periodic_refresh_gui(self, sender: Any = None) -> None:
+    async def periodic_refresh_gui(self, interface, *args, **kwargs) -> None:
         while self._refresh:
             self.refresh_gui()
             await asyncio.sleep(self._refresh_interval)
 
-    async def periodic_refresh_profile_pic(self, sender: Any = None) -> None:
+    async def periodic_refresh_profile_pic(self, interface, *args, **kwargs) -> None:
         while self._refresh:
             try:
-                await self.refresh_profile_pic()
+                await self.refresh_profile_pic(self)
             except (ConnectionError, MaestralApiError, NotLinkedError):
                 await asyncio.sleep(60 * 10)
             else:

@@ -76,7 +76,7 @@ class SetupDialog(SetupDialogGui):
     # User interaction callbacks
     # ==================================================================================
 
-    async def on_start(self, widget: Any = None) -> None:
+    async def on_start(self, interface, *args, **kwargs) -> None:
         # start auth flow
         self.btn_auth_token.url = self.mdbx.get_auth_url()
         self.go_forward()

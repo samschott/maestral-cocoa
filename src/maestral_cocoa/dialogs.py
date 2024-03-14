@@ -64,8 +64,8 @@ class Dialog(Window):
         app: toga.App | None = None,
     ):
         super().__init__(
-            resizeable=False,
-            closeable=False,
+            resizable=True,
+            closable=False,
             minimizable=False,
             title=" ",
             is_dialog=True,
@@ -77,14 +77,13 @@ class Dialog(Window):
             def callback(sender):
                 self.close()
 
-        self.resizeable = True
         self.size = (self.WINDOW_WIDTH, self.WINDOW_MIN_HEIGHT)
 
         if not icon:
             if self.app:
-                icon = self.app.icon
+                icon = self.app.icon.path
             else:
-                icon = Icon("")
+                icon = ""
 
         self.msg_title = Label(
             text=title,
@@ -419,10 +418,10 @@ class RelinkDialog(Dialog):
         self.spinner.start()
 
         if btn_name == self.CANCEL_BTN:
-            await self.app.exit_and_stop_daemon()
+            await self.app.exit_and_stop_daemon(self.app)
         elif btn_name == self.UNLINK_BTN:
             await call_async_maestral(self.mdbx.config_name, "unlink")
-            await self.app.exit_and_stop_daemon()
+            await self.app.exit_and_stop_daemon(self.app)
         elif btn_name == self.LINK_BTN:
             await self.do_relink()
 

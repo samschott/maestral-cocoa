@@ -38,16 +38,15 @@ class SettingsGui(Window):
     SUBELEMENT_PADDING = 3
     COLUMN_PADDING = 10
 
-    faceholder = toga.Image(FACEHOLDER_PATH)
-
     def __init__(self, **kwargs) -> None:
         super().__init__(
             title="Maestral Settings",
-            resizeable=False,
+            resizable=False,
             minimizable=False,
-            release_on_close=False,
             **kwargs,
         )
+
+        self.faceholder = toga.Image(FACEHOLDER_PATH)
 
         # ==== account info section ====================================================
 
@@ -72,7 +71,7 @@ class SettingsGui(Window):
         self.label_name = Label(
             "Account Name (Company Name)",
             style=Pack(
-                font_size=17,
+                font_size=14,
                 padding_bottom=SettingsGui.ELEMENT_PADDING - 4,
                 width=SettingsGui.COLUMN_WIDTH_RIGHT,
             ),
@@ -82,7 +81,7 @@ class SettingsGui(Window):
             style=Pack(
                 padding_bottom=SettingsGui.SUBELEMENT_PADDING,
                 width=SettingsGui.COLUMN_WIDTH_RIGHT,
-                font_size=12,
+                font_size=9,
             ),
         )
         self.label_usage = Label(
@@ -90,7 +89,7 @@ class SettingsGui(Window):
             style=Pack(
                 padding_bottom=SettingsGui.ELEMENT_PADDING,
                 width=SettingsGui.COLUMN_WIDTH_RIGHT,
-                font_size=12,
+                font_size=9,
             ),
         )
         self.btn_unlink = toga.Button(
