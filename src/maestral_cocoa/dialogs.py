@@ -20,7 +20,6 @@ from .private.widgets import (
     DialogButtons,
     Label,
     FollowLinkButton,
-    Icon,
 )
 from .private.constants import WORD_WRAP
 from .utils import call_async_maestral
@@ -91,7 +90,6 @@ class Dialog(Window):
                 width=self.CONTENT_WIDTH,
                 padding_bottom=self.TITLE_PADDING_BOTTOM,
                 font_weight=BOLD,
-                font_size=13,
                 background_color=TRANSPARENT,
             ),
         )
@@ -110,7 +108,6 @@ class Dialog(Window):
             style=Pack(
                 width=self.CONTENT_WIDTH,
                 padding_bottom=10,
-                font_size=11,
                 flex=1,
                 background_color=TRANSPARENT,
             ),
@@ -229,7 +226,6 @@ class DetailedDialog(Dialog):
             style=Pack(
                 width=self.CONTENT_WIDTH,
                 padding_bottom=10,
-                font_size=12,
                 font_weight=BOLD,
                 background_color=TRANSPARENT,
             ),
@@ -290,7 +286,6 @@ class UpdateDialog(Dialog):
             style=Pack(
                 width=self.CONTENT_WIDTH,
                 padding_bottom=10,
-                font_size=12,
                 font_weight=BOLD,
                 background_color=TRANSPARENT,
             ),
@@ -338,7 +333,6 @@ class UpdateDialog(Dialog):
             app=app,
         )
         self.msg_content.style.padding_bottom = 0
-        self.msg_content.style.font_size = 12
         self.msg_content.style.height = 40
 
 
@@ -387,7 +381,6 @@ class RelinkDialog(Dialog):
             style=Pack(
                 width=self.CONTENT_WIDTH,
                 padding_bottom=20,
-                background_color=TRANSPARENT,
             ),
         )
 
@@ -436,7 +429,7 @@ class RelinkDialog(Dialog):
                 title="Relink successful!",
                 message="Click OK to restart.",
             )
-            await self.app.restart()
+            await self.app.restart(self.app)
         elif res == 1:
             await self.error_dialog(
                 title="Invalid token",

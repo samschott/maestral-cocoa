@@ -6,7 +6,6 @@ import sys
 from traceback import format_exception
 from subprocess import Popen
 from datetime import datetime, timedelta
-from typing import Any
 
 # external imports
 import click
@@ -424,9 +423,13 @@ class MaestralGui(SystemTrayApp):
             await self._exec_error_dialog(err)
 
     async def _exec_dbx_location_dialog(self, interface, *args, **kwargs) -> None:
+
+        def start_sync_callback(a, *aa, **kwa):
+            self.mdbx.start_sync()
+
         self.location_dialog = DbxLocationDialog(mdbx=self.mdbx, app=self)
         self.location_dialog.raise_()
-        self.location_dialog.on_success = lambda s: self.mdbx.start_sync()
+        self.location_dialog.on_success = start_sync_callback
         self.location_dialog.on_failure = self.exit_and_stop_daemon
 
     async def _exec_relink_dialog(self, reason: int) -> None:

@@ -9,7 +9,7 @@ from typing import Callable
 # external imports
 import toga
 from toga.handlers import wrapped_handler
-from toga.style.pack import Pack, FONT_SIZE_CHOICES
+from toga.style.pack import Pack
 from maestral.utils.appdirs import get_home_dir
 from maestral.utils.path import delete
 from maestral.daemon import MaestralProxy
@@ -75,7 +75,6 @@ class DbxLocationDialog(Dialog):
             app=app,
         )
 
-        self.msg_content.style.font_size = 12
         self.msg_content.style.width = 450
         self.msg_content.style.height = 130
 

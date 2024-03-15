@@ -95,7 +95,6 @@ class SetupDialogGui(Window):
             style=Pack(
                 width=self.CONTENT_WIDTH * 0.9,
                 text_align=CENTER,
-                background_color=TRANSPARENT,
             ),
         )
         self.spinner_link = toga.ActivityIndicator(style=Pack(width=32, height=32))
