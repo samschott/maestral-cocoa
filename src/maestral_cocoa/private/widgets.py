@@ -656,7 +656,7 @@ class Window(toga.Window):
         self,
         id=None,
         title=None,
-        position=(100, 100),
+        position=None,
         size=(640, 480),
         resizable=True,
         closable=True,
@@ -668,7 +668,7 @@ class Window(toga.Window):
         super().__init__(
             id=id,
             title=title,
-            position=position,
+            position=position or (100, 100),
             size=size,
             resizable=resizable,
             closable=closable,
@@ -677,7 +677,7 @@ class Window(toga.Window):
         )
         self.is_dialog = is_dialog
 
-        if not position:
+        if position is None:
             self.center()
 
     # visibility and positioning
