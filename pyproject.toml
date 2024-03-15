@@ -20,7 +20,7 @@ requires = [
     "maestral==1.8.1.dev1",
     "markdown2==2.4.8",
     "rubicon-objc==0.4.6",
-    "toga==0.3.1",
+    "toga==0.4.2",
 ]
 sparkle_feed_url = "https://maestral.app/appcast.xml"
 sparkle_public_key = "RugM2eM14xHixaeHpl5uWSq7+sDZvYi52Xpz4IXpAdA="
