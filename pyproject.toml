@@ -7,7 +7,7 @@ license = "MIT license"
 author = "Sam Schott"
 author_email = "sam.schott@outlook.com"
 template = "https://github.com/samschott/briefcase-macOS-Xcode-template.git"
-template_branch = "maestral"
+template_branch = "maestral-v2"
 
 [tool.briefcase.app.maestral-cocoa]
 formal_name = "Maestral"
@@ -26,6 +26,7 @@ sparkle_feed_url = "https://maestral.app/appcast.xml"
 sparkle_public_key = "RugM2eM14xHixaeHpl5uWSq7+sDZvYi52Xpz4IXpAdA="
 
 [tool.briefcase.app.maestral-cocoa.macOS]
+entitlement."com.apple.security.cs.disable-library-validation" = false
 requires = [
     "toga-cocoa==0.4.2",
 ]

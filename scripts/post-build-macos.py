@@ -1,11 +1,8 @@
 import sys
-import os
 import shutil
 import compileall
 import subprocess
 from pathlib import Path
-from importlib.metadata import distribution
-from importlib.util import find_spec
 from setuptools.dist import Distribution
 from setuptools.command.egg_info import write_entries
 
