@@ -30,6 +30,9 @@ entitlement."com.apple.security.cs.disable-library-validation" = false
 requires = [
     "toga-cocoa==0.4.2",
 ]
+cleanup_paths = [
+    "*/unittest",
+]
 build = "93"
 
 [tool.briefcase.app.maestral-cocoa.linux]
