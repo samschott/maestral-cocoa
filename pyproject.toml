@@ -33,7 +33,7 @@ requires = [
 cleanup_paths = [
     "*/unittest",
 ]
-build = "93"
+build = "94"
 
 [tool.briefcase.app.maestral-cocoa.linux]
 supported = false
