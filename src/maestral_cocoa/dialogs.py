@@ -60,7 +60,6 @@ class Dialog(Window):
         accessory_view: toga.Widget = toga.Box(),
         icon: toga.Icon | None = None,
         callback: Callable | None = None,
-        app: toga.App | None = None,
     ):
         super().__init__(
             resizable=True,
@@ -68,7 +67,6 @@ class Dialog(Window):
             minimizable=False,
             title=" ",
             is_dialog=True,
-            app=app,
         )
 
         if not callback:
@@ -169,7 +167,6 @@ class ProgressDialog(Dialog):
         msg_title: str = "Progress",
         icon: toga.Icon = None,
         callback: Callable | None = None,
-        app: toga.App | None = None,
     ) -> None:
         self.progress_bar = toga.ProgressBar(
             max=None,
@@ -187,7 +184,6 @@ class ProgressDialog(Dialog):
             icon=icon,
             callback=callback,
             accessory_view=self.progress_bar,
-            app=app,
         )
 
         # save some space...
@@ -219,7 +215,6 @@ class DetailedDialog(Dialog):
         callback=None,
         details_title="Traceback",
         details="",
-        app=None,
     ):
         label = Label(
             details_title,
@@ -250,7 +245,6 @@ class DetailedDialog(Dialog):
             icon=icon,
             callback=callback,
             accessory_view=accessory_view,
-            app=app,
         )
 
 
@@ -273,7 +267,6 @@ class UpdateDialog(Dialog):
         version: str = "",
         release_notes: str = "",
         icon: toga.Icon | None = None,
-        app: toga.App | None = None,
     ) -> None:
         link_button = FollowLinkButton(
             text="GitHub Releases",
@@ -330,7 +323,6 @@ class UpdateDialog(Dialog):
             button_labels=("Ok",),
             icon=icon,
             accessory_view=accessory_view,
-            app=app,
         )
         self.msg_content.style.padding_bottom = 0
         self.msg_content.style.height = 40
@@ -352,7 +344,7 @@ class RelinkDialog(Dialog):
 
     CONTENT_WIDTH = 325
 
-    def __init__(self, mdbx: MaestralProxy, app: toga.App, reason: int) -> None:
+    def __init__(self, mdbx: MaestralProxy, reason: int) -> None:
         self.mdbx = mdbx
         self.reason = reason
 
@@ -400,7 +392,6 @@ class RelinkDialog(Dialog):
             accessory_view=token_box,
             button_labels=(self.LINK_BTN, self.CANCEL_BTN, self.UNLINK_BTN),
             callback=self.on_dialog_press,
-            app=app,
         )
 
         self.dialog_buttons[self.LINK_BTN].enabled = False

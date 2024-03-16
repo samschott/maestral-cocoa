@@ -21,8 +21,8 @@ from .selective_sync import FileSystemSource
 
 
 class SetupDialog(SetupDialogGui):
-    def __init__(self, mdbx: MaestralProxy, app: toga.App) -> None:
-        super().__init__(app=app)
+    def __init__(self, mdbx: MaestralProxy) -> None:
+        super().__init__()
 
         self.mdbx = mdbx
         self.config_name = self.mdbx.config_name

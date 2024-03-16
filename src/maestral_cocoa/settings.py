@@ -8,7 +8,7 @@ import os
 import os.path as osp
 import asyncio
 from pathlib import Path
-from typing import Any, TYPE_CHECKING
+from typing import Any
 
 # external imports
 import toga
@@ -31,9 +31,6 @@ from .resources import FACEHOLDER_PATH
 from .autostart import AutoStart
 from .constants import FROZEN
 
-if TYPE_CHECKING:
-    from .app import MaestralGui
-
 
 class SettingsWindow(SettingsGui):
     _update_interval_mapping = {
@@ -47,12 +44,11 @@ class SettingsWindow(SettingsGui):
     _cached_pic_stat = os.stat(FACEHOLDER_PATH)
     _cached_dbx_location = None
 
-    def __init__(self, mdbx: MaestralProxy, app: MaestralGui) -> None:
-        super().__init__(app=app)
+    def __init__(self, mdbx: MaestralProxy) -> None:
+        super().__init__()
 
         self._refresh = False
         self._refresh_interval = 2
-        self._refresh_interval_profile_pic = 60 * 45
 
         self.on_close = self.on_close_pressed
 
@@ -246,22 +242,16 @@ class SettingsWindow(SettingsGui):
             self._update_cli_tool_button()
 
     async def refresh_profile_pic(self, interface, *args, **kwargs) -> None:
-        path = await call_async_maestral(self.mdbx.config_name, "get_profile_pic")
-        self.set_profile_pic(path)
+        try:
+            path = await call_async_maestral(self.mdbx.config_name, "get_profile_pic")
+            self.set_profile_pic(path)
+        except (ConnectionError, MaestralApiError, NotLinkedError):
+            pass
 
     async def periodic_refresh_gui(self, interface, *args, **kwargs) -> None:
         while self._refresh:
             self.refresh_gui()
             await asyncio.sleep(self._refresh_interval)
-
-    async def periodic_refresh_profile_pic(self, interface, *args, **kwargs) -> None:
-        while self._refresh:
-            try:
-                await self.refresh_profile_pic(self)
-            except (ConnectionError, MaestralApiError, NotLinkedError):
-                await asyncio.sleep(60 * 10)
-            else:
-                await asyncio.sleep(self._refresh_interval_profile_pic)
 
     def set_account_info_from_cache(self) -> None:
         acc_display_name = self.mdbx.get_state("account", "display_name")
@@ -289,5 +279,4 @@ class SettingsWindow(SettingsGui):
     def show(self) -> None:
         self._refresh = True
         self.app.add_background_task(self.periodic_refresh_gui)
-        self.app.add_background_task(self.periodic_refresh_profile_pic)
         super().show()

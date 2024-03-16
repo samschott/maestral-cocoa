@@ -3,6 +3,7 @@ from __future__ import annotations
 # system imports
 import os
 import sys
+import gc
 from traceback import format_exception
 from subprocess import Popen
 from datetime import datetime, timedelta
@@ -128,14 +129,14 @@ class MaestralGui(SystemTrayApp):
         pending_folder = self.mdbx.pending_dropbox_folder
 
         if pending_link or pending_folder:
-            self.setup_dialog = SetupDialog(mdbx=self.mdbx, app=self)
-            self.setup_dialog.raise_()
-            self.setup_dialog.on_success = self.on_setup_completed
-            self.setup_dialog.on_failure = self.exit_and_stop_daemon
+            setup_dialog = SetupDialog(mdbx=self.mdbx)
+            setup_dialog.raise_()
+            setup_dialog.on_success = self.on_setup_completed
+            setup_dialog.on_failure = self.exit_and_stop_daemon
 
             if not pending_link:
                 # Skip link page programmatically.
-                self.setup_dialog.goto_page(2)
+                setup_dialog.goto_page(2)
 
         else:
             self.add_background_task(self.on_setup_completed)
@@ -309,16 +310,13 @@ class MaestralGui(SystemTrayApp):
             self.add_background_task(self.restart)
 
     def on_settings_clicked(self, interface, *args, **kwargs) -> None:
-        self.settings_window = SettingsWindow(mdbx=self.mdbx, app=self)
-        self.settings_window.raise_()
+        SettingsWindow(mdbx=self.mdbx).raise_()
 
     def on_sync_issues_clicked(self, interface, *args, **kwargs) -> None:
-        self.sync_issues_window = SyncIssuesWindow(mdbx=self.mdbx, app=self)
-        self.sync_issues_window.raise_()
+        sync_issues_window = SyncIssuesWindow(mdbx=self.mdbx).raise_()
 
     def on_activity_clicked(self, interface, *args, **kwargs) -> None:
-        self.activity_window = ActivityWindow(mdbx=self.mdbx, app=self)
-        self.activity_window.raise_()
+        activity_window = ActivityWindow(mdbx=self.mdbx).raise_()
 
     def on_rebuild_clicked(self, interface, *args, **kwargs) -> None:
         choice = self.alert(
@@ -343,6 +341,7 @@ class MaestralGui(SystemTrayApp):
                 await self.update_status(self)
                 await self.update_error(self)
                 await call_async_maestral(self.config_name, "status_change_longpoll")
+                gc.collect()
             except CommunicationError:
                 super().exit()
 
@@ -427,13 +426,13 @@ class MaestralGui(SystemTrayApp):
         def start_sync_callback(a, *aa, **kwa):
             self.mdbx.start_sync()
 
-        self.location_dialog = DbxLocationDialog(mdbx=self.mdbx, app=self)
-        self.location_dialog.raise_()
-        self.location_dialog.on_success = start_sync_callback
-        self.location_dialog.on_failure = self.exit_and_stop_daemon
+        location_dialog = DbxLocationDialog(mdbx=self.mdbx)
+        location_dialog.raise_()
+        location_dialog.on_success = start_sync_callback
+        location_dialog.on_failure = self.exit_and_stop_daemon
 
     async def _exec_relink_dialog(self, reason: int) -> None:
-        self.rld = RelinkDialog(self.mdbx, self, reason).raise_()
+        RelinkDialog(self.mdbx, reason).raise_()
 
     async def _exec_error_dialog(self, err: Exception) -> None:
         title = "An unexpected error occurred"

@@ -108,8 +108,8 @@ class SyncEventSource(Source):
 
 
 class ActivityWindow(Window):
-    def __init__(self, mdbx: MaestralProxy, app: toga.App) -> None:
-        super().__init__(title="Maestral Activity", app=app)
+    def __init__(self, mdbx: MaestralProxy) -> None:
+        super().__init__(title="Maestral Activity")
         self.size = WINDOW_SIZE
 
         self._refresh = False

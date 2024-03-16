@@ -35,7 +35,7 @@ class DbxLocationDialog(Dialog):
     ACCEPTED = 0
     REJECTED = 1
 
-    def __init__(self, mdbx: MaestralProxy, app: toga.App) -> None:
+    def __init__(self, mdbx: MaestralProxy) -> None:
         self.mdbx = mdbx
         self.config_name = self.mdbx.config_name
 
@@ -72,7 +72,6 @@ class DbxLocationDialog(Dialog):
             default="Select",
             accessory_view=self.combobox_dbx_location,
             callback=self.on_dialog_pressed,
-            app=app,
         )
 
         self.msg_content.style.width = 450

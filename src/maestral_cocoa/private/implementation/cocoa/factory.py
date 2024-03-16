@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 # system imports
-import os
 import os.path as osp
 import platform
 
