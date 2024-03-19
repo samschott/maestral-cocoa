@@ -6,7 +6,10 @@ import platform
 
 # external imports
 import toga_cocoa.factory
+import toga_cocoa.app
 
+# monkey patch around toga backend behaviour that is hard to change by subclassing
+toga_cocoa.app.NSApplicationActivationPolicyRegular = 1
 toga_cocoa.factory.__path__ = ""
 
 from travertino.size import at_least
@@ -34,7 +37,6 @@ from toga_cocoa.libs import (
     NSViewMaxYMargin,
     NSMenuItem,
     NSMenu,
-    NSApplication,
     NSObject,
     NSImage,
     NSImageInterpolationHigh,
@@ -47,12 +49,10 @@ from toga_cocoa.libs import (
     NSOpenPanel,
     NSModalResponseOK,
     NSCompositingOperationCopy,
-    NSApplicationActivationPolicyRegular,
     NSURL,
     NSButton,
     NSSwitchButton,
     NSRadioButton,
-    NSBundle,
 )
 from toga_cocoa.colors import native_color
 from toga_cocoa.keys import cocoa_key
@@ -60,7 +60,6 @@ from toga_cocoa.app import App as TogaApp
 from toga_cocoa.widgets.base import Widget
 from toga_cocoa.widgets.button import Button as TogaButton
 from toga_cocoa.window import Window as TogaWindow
-from toga_cocoa.factory import ImageView
 from toga_cocoa.factory import *  # noqa: F401,F406
 
 
@@ -646,22 +645,6 @@ class StatusBarItem:
 
 
 # ==== Application =====================================================================
-
-
-class SystemTrayAppDelegate(NSObject):
-    interface = objc_property(object, weak=True)
-    impl = objc_property(object, weak=True)
-
-    @objc_method
-    def applicationWillTerminate_(self, sender: objc_id) -> None:
-        if self.interface.app.on_exit:
-            self.interface.app.on_exit(self.interface.app)
-
-    @objc_method
-    def selectMenuItem_(self, sender: objc_id) -> None:
-        cmd = self.impl._menu_items[sender]
-        if cmd.action:
-            cmd.action(None)
 
 
 class SystemTrayApp(TogaApp):
