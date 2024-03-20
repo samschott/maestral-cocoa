@@ -53,6 +53,7 @@ from toga_cocoa.libs import (
     NSButton,
     NSSwitchButton,
     NSRadioButton,
+    NSApplication,
 )
 from toga_cocoa.colors import native_color
 from toga_cocoa.keys import cocoa_key
@@ -705,7 +706,8 @@ class Window(TogaWindow):
     def center(self):
         self.native.center()
 
-    def force_to_front(self):
+    def show(self):
+        NSApplication.sharedApplication.activate()
         self.native.makeKeyAndOrderFront(None)
 
     def show_as_sheet(self, window):

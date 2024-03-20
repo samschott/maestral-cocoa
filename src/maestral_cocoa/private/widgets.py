@@ -688,10 +688,6 @@ class Window(toga.Window):
     def center(self):
         self._impl.center()
 
-    def raise_(self):
-        self.show()
-        self._impl.force_to_front()
-
     # sheet support
 
     def show_as_sheet(self, window):

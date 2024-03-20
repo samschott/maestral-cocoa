@@ -130,7 +130,7 @@ class MaestralGui(SystemTrayApp):
 
         if pending_link or pending_folder:
             setup_dialog = SetupDialog(mdbx=self.mdbx)
-            setup_dialog.raise_()
+            setup_dialog.show()
             setup_dialog.on_success = self.on_setup_completed
             setup_dialog.on_failure = self.exit_and_stop_daemon
 
@@ -310,13 +310,13 @@ class MaestralGui(SystemTrayApp):
             self.add_background_task(self.restart)
 
     def on_settings_clicked(self, interface, *args, **kwargs) -> None:
-        SettingsWindow(mdbx=self.mdbx).raise_()
+        SettingsWindow(mdbx=self.mdbx).show()
 
     def on_sync_issues_clicked(self, interface, *args, **kwargs) -> None:
-        sync_issues_window = SyncIssuesWindow(mdbx=self.mdbx).raise_()
+        sync_issues_window = SyncIssuesWindow(mdbx=self.mdbx).show()
 
     def on_activity_clicked(self, interface, *args, **kwargs) -> None:
-        activity_window = ActivityWindow(mdbx=self.mdbx).raise_()
+        activity_window = ActivityWindow(mdbx=self.mdbx).show()
 
     def on_rebuild_clicked(self, interface, *args, **kwargs) -> None:
         choice = self.alert(
@@ -427,12 +427,12 @@ class MaestralGui(SystemTrayApp):
             self.mdbx.start_sync()
 
         location_dialog = DbxLocationDialog(mdbx=self.mdbx)
-        location_dialog.raise_()
+        location_dialog.show()
         location_dialog.on_success = start_sync_callback
         location_dialog.on_failure = self.exit_and_stop_daemon
 
     async def _exec_relink_dialog(self, reason: int) -> None:
-        RelinkDialog(self.mdbx, reason).raise_()
+        RelinkDialog(self.mdbx, reason).show()
 
     async def _exec_error_dialog(self, err: Exception) -> None:
         title = "An unexpected error occurred"
