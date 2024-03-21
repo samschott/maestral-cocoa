@@ -7,6 +7,7 @@ import gc
 from traceback import format_exception
 from subprocess import Popen
 from datetime import datetime, timedelta
+from typing import Iterable, Type, TypeVar
 
 # external imports
 import click
@@ -61,8 +62,9 @@ from .autostart import AutoStart
 from .updater import AutoUpdater
 
 
-def name(cls):
-    return cls.__name__
+MaestralWindow = TypeVar(
+    "MaestralWindow", SettingsWindow, SyncIssuesWindow, ActivityWindow
+)
 
 
 class MenuItemSnooze(MenuItem):
@@ -309,14 +311,21 @@ class MaestralGui(SystemTrayApp):
         except NotLinkedError:
             self.add_background_task(self.restart)
 
+    def _get_or_create_window(self, clazz: Type[MaestralWindow]) -> MaestralWindow:
+        for window in self.windows:
+            if isinstance(window, clazz):
+                return window
+
+        return clazz(mdbx=self.mdbx)
+
     def on_settings_clicked(self, interface, *args, **kwargs) -> None:
-        SettingsWindow(mdbx=self.mdbx).show()
+        self._get_or_create_window(SettingsWindow).show()
 
     def on_sync_issues_clicked(self, interface, *args, **kwargs) -> None:
-        sync_issues_window = SyncIssuesWindow(mdbx=self.mdbx).show()
+        self._get_or_create_window(SyncIssuesWindow).show()
 
     def on_activity_clicked(self, interface, *args, **kwargs) -> None:
-        activity_window = ActivityWindow(mdbx=self.mdbx).show()
+        self._get_or_create_window(ActivityWindow).show()
 
     def on_rebuild_clicked(self, interface, *args, **kwargs) -> None:
         choice = self.alert(
