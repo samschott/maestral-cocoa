@@ -304,7 +304,6 @@ class UpdateDialog(Dialog):
                 width=self.CONTENT_WIDTH,
                 height=html_view_height,
                 padding_bottom=15,
-                font_family="Helvetica Neue",
             ),
         )
         self.web_view.set_content("", html_notes)
