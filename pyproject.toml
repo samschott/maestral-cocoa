@@ -17,7 +17,7 @@ sources = ["src/maestral_cocoa"]
 requires = [
     "chardet==5.2.0",
     "click==8.1.7",
-    "maestral==1.9.1.dev0",
+    "maestral==1.9.1",
     "markdown2==2.4.13",
     "rubicon-objc==0.4.7",
     "toga==0.4.2",
