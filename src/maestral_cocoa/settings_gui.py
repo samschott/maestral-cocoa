@@ -201,7 +201,7 @@ class SettingsGui(Window):
             ),
         )
         self.checkbox_notifications = Switch(
-            "Enable notifications for remote changes",
+            "Notify for remote changes",
             style=Pack(
                 padding_bottom=SettingsGui.SUBELEMENT_PADDING,
                 width=SettingsGui.COLUMN_WIDTH_RIGHT,
@@ -246,6 +246,7 @@ class SettingsGui(Window):
                     color=GRAY,
                     width=SettingsGui.COLUMN_WIDTH_RIGHT,
                     padding_left=SettingsGui.COLUMN_PADDING,
+                    font_size=9,
                 ),
             )
 
