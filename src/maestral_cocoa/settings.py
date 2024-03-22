@@ -111,10 +111,10 @@ class SettingsWindow(SettingsGui):
             self.mdbx.start_sync()
 
     def on_folder_selection_pressed(self, widget: Any, *args, **kwargs) -> None:
-        SelectiveSyncDialog(mdbx=self.mdbx, app=self.app).show_as_sheet(self)
+        SelectiveSyncDialog(mdbx=self.mdbx).show_as_sheet(self)
 
     def on_bandwidth_pressed(self, widget: Any, *args, **kwargs) -> None:
-        BandwidthDialog(mdbx=self.mdbx, app=self.app).show_as_sheet(self)
+        BandwidthDialog(mdbx=self.mdbx).show_as_sheet(self)
 
     async def on_unlink_pressed(self, widget: Any, *args, **kwargs) -> None:
         should_unlink = await self.confirm_dialog(

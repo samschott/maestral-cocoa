@@ -16,8 +16,8 @@ MB_2_BYTES = 10**6
 
 
 class BandwidthDialog(BandwidthGui):
-    def __init__(self, mdbx: MaestralProxy, app: toga.App):
-        super().__init__(app=app, is_dialog=True)
+    def __init__(self, mdbx: MaestralProxy):
+        super().__init__(is_dialog=True)
 
         self.mdbx = mdbx
         self.dialog_buttons.on_press = self.on_dialog_pressed

@@ -7,7 +7,7 @@ import gc
 from traceback import format_exception
 from subprocess import Popen
 from datetime import datetime, timedelta
-from typing import Iterable, Type, TypeVar
+from typing import Type, TypeVar
 
 # external imports
 import click

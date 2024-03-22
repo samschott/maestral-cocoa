@@ -36,14 +36,13 @@ class SetupDialogGui(Window):
     )
     btn_box_style = Pack(width=CONTENT_WIDTH, padding_bottom=20)
 
-    def __init__(self, app: toga.App) -> None:
+    def __init__(self) -> None:
         # noinspection PyTypeChecker
         super().__init__(
             title="Maestral Setup",
             size=(self.WINDOW_WIDTH, self.WINDOW_HEIGHT),
             resizable=False,
             minimizable=False,
-            app=app,
         )
 
         # FIXME: remove private API access

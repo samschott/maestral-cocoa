@@ -231,7 +231,7 @@ class Node:
 
     # ---- GUI callbacks ---------------------------------------------------------------
 
-    def on_selected_toggled(self, widget: Any) -> None:
+    def on_selected_toggled(self, interface, *args, **kwargs) -> None:
         self.propagate_selection_to_children(self.included.state)
         self.propagate_selection_to_parent(self.included.state)
 
@@ -376,8 +376,8 @@ class FileSystemSource(Node, Source):
 
 
 class SelectiveSyncDialog(SelectiveSyncGui):
-    def __init__(self, mdbx: MaestralProxy, app: toga.App):
-        super().__init__(app=app, is_dialog=True)
+    def __init__(self, mdbx: MaestralProxy):
+        super().__init__(is_dialog=True)
 
         self.mdbx = mdbx
 
