@@ -5,7 +5,6 @@ import os
 import time
 import asyncio
 from abc import ABC, abstractmethod
-from typing import Any
 
 # external imports
 from maestral.daemon import MaestralProxy, stop_maestral_daemon_process
@@ -146,8 +145,8 @@ class AutoUpdaterFallback(AutoUpdaterBackend):
         pass
 
     async def check_for_updates(self, interface, *args, **kwargs) -> None:
-        progress = ProgressDialog("Checking for Updates", app=self.app)
-        progress.raise_()
+        progress = ProgressDialog("Checking for Updates")
+        progress.show()
 
         try:
             res = await call_async_maestral(self.config_name, "check_for_updates")
@@ -177,9 +176,8 @@ class AutoUpdaterFallback(AutoUpdaterBackend):
         self.update_dialog = UpdateDialog(
             version=latest_release,
             release_notes=release_notes,
-            app=self.app,
         )
-        self.update_dialog.raise_()
+        self.update_dialog.show()
 
     async def check_for_updates_in_background(self, interface, *args, **kwargs) -> None:
         last_update_check = self.mdbx.get_state("app", "update_notification_last")
