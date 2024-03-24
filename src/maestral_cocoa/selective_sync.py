@@ -10,7 +10,6 @@ from queue import Queue
 from typing import Any, Callable
 
 # external imports
-import toga
 from toga.sources import Source
 from toga.style import Pack
 from toga.constants import TRANSPARENT
