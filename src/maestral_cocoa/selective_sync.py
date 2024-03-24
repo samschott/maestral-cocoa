@@ -162,54 +162,41 @@ class Node:
         return self._children
 
     async def _load_children_async(self) -> None:
+        remote_items = []
         try:
-            did_clear_children = False
-
             async for res in generate_async_maestral(
                 self._mdbx.config_name, "list_folder_iterator", self.path_lower
             ):
-                # remove placeholder nodes
-                if not did_clear_children:
-                    self._children = []
-                    self.notify("change_source", source=self)
-                    did_clear_children = True
-
-                res.sort(key=lambda e: e.name.lower())
-
-                new_nodes = [
-                    Node(
-                        path_display=e.path_display,
-                        path_lower=e.path_lower,
-                        parent=self,
-                        mdbx=self._mdbx,
-                        is_folder=isinstance(e, FolderMetadata),
-                    )
-                    for e in res
-                ]
-
-                n_nodes = len(self._children)
-                self._children.extend(new_nodes)
-
-                for index, child in enumerate(new_nodes):
-                    self.notify(
-                        "insert", parent=self, index=index + n_nodes, item=child
-                    )
-
-                    # give UI time to process updates
-                    if index > 20:
-                        await asyncio.sleep(0.1)
-                    elif index > 50:
-                        await asyncio.sleep(0.2)
-
+                remote_items.extend(res)
                 if self._stop_loading.is_set():
                     return
 
         except (DropboxConnectionError, NotLinkedError):
             self.on_loading_failed()
+            return
         except (NotFoundError, NotAFolderError):
             self._children = []
-        else:
-            self.on_loading_succeeded()
+            return
+
+        remote_items.sort(key=lambda e: e.name.lower())
+        self._children = [
+            Node(
+                path_display=e.path_display,
+                path_lower=e.path_lower,
+                parent=self,
+                mdbx=self._mdbx,
+                is_folder=isinstance(e, FolderMetadata),
+            )
+            for e in remote_items
+        ]
+        for i, child in enumerate(self._children):
+            self.notify("insert", parent=self, index=i, item=child)
+            # give UI time to process updates
+            if i > 20:
+                await asyncio.sleep(0.1)
+            elif i > 50:
+                await asyncio.sleep(0.2)
+        self.on_loading_succeeded()
 
     def on_loading_failed(self) -> None:
         if self.parent:
