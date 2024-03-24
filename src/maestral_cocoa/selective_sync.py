@@ -19,6 +19,7 @@ from maestral.exceptions import (
     NotFoundError,
     BusyError,
     NotLinkedError,
+    DropboxConnectionError,
 )
 from maestral.core import FolderMetadata
 from maestral.daemon import MaestralProxy
@@ -203,7 +204,7 @@ class Node:
                 if self._stop_loading.is_set():
                     return
 
-        except (ConnectionError, NotLinkedError):
+        except (DropboxConnectionError, NotLinkedError):
             self.on_loading_failed()
         except (NotFoundError, NotAFolderError):
             self._children = []
