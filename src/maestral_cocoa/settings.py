@@ -254,6 +254,8 @@ class SettingsWindow(SettingsGui):
             await asyncio.sleep(self._refresh_interval)
 
     def set_account_info_from_cache(self) -> None:
+        self.set_profile_pic(self.mdbx.account_profile_pic_path)
+
         acc_display_name = self.mdbx.get_state("account", "display_name")
         acc_mail = self.mdbx.get_state("account", "email")
         acc_type = self.mdbx.get_state("account", "type")
