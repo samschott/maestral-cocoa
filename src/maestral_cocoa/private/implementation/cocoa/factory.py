@@ -106,7 +106,7 @@ NSModalPanelWindowLevel = 8
 
 
 macos_version, *_ = platform.mac_ver()
-
+macos_major_version = int(macos_version.split(".")[0])
 
 # ==== icons ===========================================================================
 
@@ -707,7 +707,10 @@ class Window(TogaWindow):
         self.native.center()
 
     def show(self):
-        NSApplication.sharedApplication.activate()
+        if macos_major_version >= 14:
+            NSApplication.sharedApplication.activate()
+        else:
+            NSApplication.sharedApplication.activateIgnoringOtherApps(True)
         self.native.makeKeyAndOrderFront(None)
 
     def show_as_sheet(self, window):
