@@ -54,6 +54,7 @@ from toga_cocoa.libs import (
     NSSwitchButton,
     NSRadioButton,
     NSApplication,
+    NSSize,
 )
 from toga_cocoa.colors import native_color
 from toga_cocoa.keys import cocoa_key
@@ -118,6 +119,8 @@ class Icon:
     2. Providing the icon for the file / folder type instead of loading an icon from
        the file content.
     """
+    EXTENSIONS = [".icns", ".png", ".pdf"]
+    SIZES = None
 
     _to_cocoa_template = {
         None: None,
@@ -128,41 +131,36 @@ class Icon:
         ImageTemplate.StopProgress: NSImageNameStopProgressFreestandingTemplate,
     }
 
-    SIZES = None
-    EXTENSIONS = [".icns", ".png", ".pdf"]
-
-    def __init__(self, interface, path=None, for_path=None, template=None):
+    def __init__(self, interface, path, for_path=None, template=None):
         self.interface = interface
         self.interface._impl = self
-        self.path = str(path) if path else None
-        self.for_path = for_path
-        self.template = template
+        self.path = path
 
-        self._native = None
+        if path:
+            self.native = NSImage.alloc().initWithContentsOfFile(str(path))
+            self.native.retain()
 
-    @property
-    def native(self):
-        if self._native:
-            return self._native
-
-        if self.path:
-            self._native = NSImage.alloc().initWithContentsOfFile(self.path)
-
-        elif self.for_path:
-            # always return a new pointer since an old one may be invalidated
-            # icons are cached by AppKit anyways
-            path = str(self.for_path)
+        elif for_path:
+            path = str(for_path)
             if osp.exists(path):
-                self._native = NSWorkspace.sharedWorkspace.iconForFile(path)
+                self.native = NSWorkspace.sharedWorkspace.iconForFile(path)
             else:
                 _, extension = osp.splitext(path)
-                self._native = NSWorkspace.sharedWorkspace.iconForFileType(extension)
+                self.native = NSWorkspace.sharedWorkspace.iconForFileType(extension)
 
-        elif self.template:
-            cocoa_template = Icon._to_cocoa_template[self.template]
-            self._native = NSImage.imageNamed(cocoa_template)
+        elif template:
+            cocoa_template = Icon._to_cocoa_template[template]
+            self.native = NSImage.imageNamed(cocoa_template)
 
-        return self._native
+        self.native.retain()
+
+    def __del__(self):
+        self.native.autorelease()
+
+    def _as_size(self, size):
+        image = self.native.copy()
+        image.setSize(NSSize(size, size))
+        return image
 
 
 # ==== labels ==========================================================================
