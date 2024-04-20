@@ -250,9 +250,7 @@ class MaestralGui(SystemTrayApp):
         )
         self.item_snooze = MenuItem("Snooze Notifications", submenu=self.menu_snooze)
 
-        self.item_sync_issues = MenuItem(
-            "Show Sync Issues...", action=self.on_sync_issues_clicked
-        )
+        self.item_sync_issues = MenuItem("Show Sync Issues...")
         self.item_rebuild = MenuItem("Rebuild Index...", action=self.on_rebuild_clicked)
 
         self.item_settings = MenuItem("Preferences...", action=self.on_settings_clicked)
@@ -268,14 +266,15 @@ class MaestralGui(SystemTrayApp):
         self.menu.insert(2, MenuItemSeparator())
         self.menu.insert(3, self.item_email)
         self.menu.insert(4, self.item_usage)
-        self.menu.insert(7, self.item_pause)
-        self.menu.insert(8, self.item_activity)
-        self.menu.insert(10, self.item_snooze)
-        self.menu.insert(11, self.item_sync_issues)
-        self.menu.insert(12, self.item_rebuild)
-        self.menu.insert(13, MenuItemSeparator())
-        self.menu.insert(14, self.item_settings)
-        self.menu.insert(15, self.item_updates)
+        self.menu.insert(7, self.item_sync_issues)
+        self.menu.insert(8, self.item_pause)
+        self.menu.insert(9, self.item_activity)
+        self.menu.insert(11, self.item_snooze)
+        self.menu.insert(12, self.item_sync_issues)
+        self.menu.insert(13, self.item_rebuild)
+        self.menu.insert(14, MenuItemSeparator())
+        self.menu.insert(15, self.item_settings)
+        self.menu.insert(16, self.item_updates)
 
         self.menu.on_open = self.on_menu_open
 
@@ -357,11 +356,12 @@ class MaestralGui(SystemTrayApp):
     async def update_status(self, interface, *args, **kwargs) -> None:
         """Change icon according to status."""
         n_sync_errors = len(self.mdbx.sync_errors)
+        has_sync_issues = n_sync_errors > 0
         status = self.mdbx.status
         is_paused = self.mdbx.paused
 
         # update icon
-        if n_sync_errors > 0 and status == IDLE:
+        if has_sync_issues and status == IDLE:
             new_icon = SYNC_ERROR
         else:
             new_icon = status
@@ -370,10 +370,12 @@ class MaestralGui(SystemTrayApp):
 
         # update action texts
         if self.menu.visible:
-            if n_sync_errors > 0:
+            if has_sync_issues:
+                self.item_sync_issues.action = self.on_sync_issues_clicked
                 self.item_sync_issues.label = f"Show Sync Issues ({n_sync_errors})..."
             else:
-                self.item_sync_issues.label = "Show Sync Issues..."
+                self.item_sync_issues.action = None
+                self.item_sync_issues.label = f"No Sync Issues"
 
             self.item_pause.label = self.RESUME_TEXT if is_paused else self.PAUSE_TEXT
             self.item_usage.label = self.mdbx.get_state("account", "usage")
