@@ -27,6 +27,7 @@ sparkle_public_key = "RugM2eM14xHixaeHpl5uWSq7+sDZvYi52Xpz4IXpAdA="
 
 [tool.briefcase.app.maestral-cocoa.macOS]
 entitlement."com.apple.security.cs.disable-library-validation" = false
+info."LSUIElement" = true
 requires = [
     "toga-cocoa==0.4.2",
 ]
