@@ -65,7 +65,7 @@ jobs:
           python3 scripts/post-build-macos.py $APP_PATH
 
           # Package as dmg.
-          briefcase package macOS Xcode -i "$DEV_ID" --no-input
+          briefcase package macOS Xcode --identity "$DEV_ID" --no-input
 
           # Prepare output for upload.
           DMG_PATH=$( find . -name "*.dmg" )
@@ -74,7 +74,7 @@ jobs:
           echo "dmg_name=${DMG_NAME}" >> $GITHUB_OUTPUT
           echo "dmg_path=${DMG_PATH}" >> $GITHUB_OUTPUT
         env:
-            DEV_ID: "Developer ID Application: Sam Schott (G34LNR8C4Y)"
+            DEV_ID: "C90016D845C6D782E7C061AB6D5476C9ABB7FB48"
             PIP_NO_BINARY: "watchdog"
 
       - name: Upload build logs
