@@ -52,7 +52,7 @@ subprocess.run(
 print("# ==== prune py files and replace with pyc ==============================")
 
 print("compiling py -> pyc")
-compileall.compile_dir(str(RESOURCE_PATH), optimize=2, ddir="", legacy=True)
+compileall.compile_dir(str(RESOURCE_PATH), optimize=2, ddir="", legacy=True, quiet=1)
 
 print("removing py files")
 for path in RESOURCE_PATH.glob("**/*.py"):
