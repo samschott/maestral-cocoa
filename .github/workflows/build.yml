@@ -59,15 +59,19 @@ jobs:
           briefcase build macOS Xcode --no-input
 
           # Run post-build scripts.
-          # - add CLI executable
+          # - add CLI executable and sign it
           # - keep .pyc files only to save space
           APP_PATH=$( find . -name "*Maestral.app" | head -n 1)
-          python3 scripts/post-build-macos.py $APP_PATH
+          ENTITLEMENTS_PATH=$( find . -name "*maestral-cocoa.entitlements" | head -n 1)
+          python3 scripts/post-build-macos.py $APP_PATH \
+            --identity "$DEV_ID" \
+            --entitlements $ENTITLEMENTS_PATH
 
           # Package as dmg.
           briefcase package macOS Xcode --identity "$DEV_ID" --no-input
 
           # Prepare output for upload.
+          DMG_PATH=$( find . -name "*.dmg" )
           DMG_PATH=$( find . -name "*.dmg" )
           DMG_NAME=$( basename "$DMG_PATH" )
           echo "dmg created: $DMG_PATH"
