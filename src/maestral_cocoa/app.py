@@ -43,14 +43,6 @@ from maestral.exceptions import (
 from . import __version__ as __gui_version__
 from . import __author__, __url__
 from .utils import call_async, call_async_maestral
-from .private.widgets import (
-    MenuItem,
-    MenuItemSeparator,
-    Menu,
-    StatusBarItem,
-    SystemTrayApp,
-    Icon,
-)
 from .setup import SetupDialog
 from .settings import SettingsWindow
 from .syncissues import SyncIssuesWindow
@@ -67,9 +59,11 @@ MaestralWindow = TypeVar(
 )
 
 
-class MenuItemSnooze(MenuItem):
-    def __init__(self, label: str, snooze_time: float, mdbx: MaestralProxy) -> None:
-        super().__init__(label, action=self.snooze)
+class SnoozeCommand(toga.Command):
+    def __init__(
+        self, text: str, snooze_time: float, mdbx: MaestralProxy, **kwargs
+    ) -> None:
+        super().__init__(text=text, action=self.snooze, **kwargs)
         self.mdbx = mdbx
         self.snooze_time = snooze_time
 
@@ -77,22 +71,12 @@ class MenuItemSnooze(MenuItem):
         self.mdbx.notification_snooze = self.snooze_time
 
 
-class MaestralGui(SystemTrayApp):
+class MaestralGui(toga.App):
     """A native GUI for the Maestral daemon."""
 
     PAUSE_TEXT = "Pause Syncing"
     RESUME_TEXT = "Resume Syncing"
     START_TEXT = "Start Syncing"
-
-    icon_mapping = {
-        IDLE: Icon(resource_path("systray-idle.pdf")),
-        CONNECTED: Icon(resource_path("systray-idle.pdf")),
-        SYNCING: Icon(resource_path("systray-syncing.pdf")),
-        PAUSED: Icon(resource_path("systray-paused.pdf")),
-        CONNECTING: Icon(resource_path("systray-disconnected.pdf")),
-        SYNC_ERROR: Icon(resource_path("systray-info.pdf")),
-        ERROR: Icon(resource_path("systray-error.pdf")),
-    }
 
     def __init__(self, config_name: str = "maestral") -> None:
         self.config_name = config_name
@@ -100,14 +84,26 @@ class MaestralGui(SystemTrayApp):
             formal_name=APP_NAME,
             app_id=BUNDLE_ID,
             app_name="maestral_cocoa",
-            icon=Icon(APP_ICON_PATH),
+            icon=APP_ICON_PATH,
             author=__author__,
             version=__gui_version__,
             home_page=__url__,
         )
 
     def startup(self) -> None:
-        self._started = False
+        self.icon_mapping = {
+            IDLE: toga.Icon(resource_path("systray-idle.pdf")),
+            CONNECTED: toga.Icon(resource_path("systray-idle.pdf")),
+            SYNCING: toga.Icon(resource_path("systray-syncing.pdf")),
+            PAUSED: toga.Icon(resource_path("systray-paused.pdf")),
+            CONNECTING: toga.Icon(resource_path("systray-disconnected.pdf")),
+            SYNC_ERROR: toga.Icon(resource_path("systray-info.pdf")),
+            ERROR: toga.Icon(resource_path("systray-error.pdf")),
+        }
+
+        self.main_window = None
+
+        self._daemon_started = False
         self._cached_status = CONNECTING
         self._linked_ui = False
 
@@ -116,10 +112,8 @@ class MaestralGui(SystemTrayApp):
         self.autostart = AutoStart(self.config_name)
         self.updater = AutoUpdater(self.mdbx, self)
 
-        self.menu = Menu()
-        self.tray = StatusBarItem(icon=self.icon_mapping[CONNECTING], menu=self.menu)
-
-        self.setup_ui_unlinked()
+        self.status_icon = toga.MenuStatusIcon(icon=self.icon_mapping[CONNECTING])
+        self.status_icons.add(self.status_icon)
 
         # Check if we are linked. Run setup if required.
         try:
@@ -145,7 +139,9 @@ class MaestralGui(SystemTrayApp):
 
     def set_icon(self, status: str) -> None:
         if status != self._cached_status:
-            self.tray.icon = self.icon_mapping.get(status, self.icon_mapping[SYNCING])
+            self.status_icon.icon = self.icon_mapping.get(
+                status, self.icon_mapping[SYNCING]
+            )
             self._cached_status = status
 
     async def on_menu_open(self, interface, *args, **kwargs) -> None:
@@ -154,9 +150,9 @@ class MaestralGui(SystemTrayApp):
 
     async def on_setup_completed(self, interface, *args, **kwargs) -> None:
         self.mdbx.start_sync()
-        self.setup_ui_linked()
         self.updater.start_updater()
         self._linked_ui = True
+        self.set_up_commands()
         await self.periodic_refresh_gui(self)
 
     def get_or_start_maestral_daemon(self) -> MaestralProxy:
@@ -174,109 +170,161 @@ class MaestralGui(SystemTrayApp):
             # started. Call sys.exit() instead.
             sys.exit(0)
         elif res == Start.AlreadyRunning:
-            self._started = False
+            self._daemon_started = False
         elif res == Start.Ok:
-            self._started = True
+            self._daemon_started = True
 
         return MaestralProxy(self.config_name)
-
-    def setup_ui_unlinked(self) -> None:
-        self.menu.clear()
-
-        # ------------- populate context menu -------------------
-        self.item_folder = MenuItem("Open Dropbox Folder")
-        self.item_website = MenuItem(
-            "Launch Dropbox Website", action=self.on_website_clicked
-        )
-
-        self.item_status = MenuItem("Setting up...")
-
-        self.item_login = MenuItem(
-            "Start on login", checkable=True, action=lambda s: self.autostart.toggle()
-        )
-        self.item_login.checked = self.autostart.enabled
-        self.item_help = MenuItem("Help Center", action=self.on_help_clicked)
-
-        self.item_quit = MenuItem(
-            "Quit Maestral", action=self.exit, shortcut=toga.Key.MOD_1 + "q"
-        )
-
-        self.menu.add(
-            self.item_folder,
-            self.item_website,
-            MenuItemSeparator(),
-            self.item_status,
-            MenuItemSeparator(),
-            self.item_login,
-            self.item_help,
-            MenuItemSeparator(),
-            self.item_quit,
-        )
 
     def on_open_clicked(self, interface, *args, **kwargs):
         click.launch(self.mdbx.dropbox_path)
 
-    def setup_ui_linked(self) -> None:
-        # ------------- update context menu -------------------
+    def set_up_commands(self) -> None:
+        self.item_folder = toga.Command(
+            text="Open Dropbox Folder",
+            group=self.status_icon,
+            action=self.on_open_clicked,
+            section=0,
+            order=0,
+        )
+        self.item_website = toga.Command(
+            text="Launch Dropbox Website",
+            action=self.on_website_clicked,
+            group=self.status_icon,
+            section=0,
+            order=1,
+        )
 
-        # remove unneeded items
-        self.menu.remove(self.item_login)
+        self.item_email = toga.Command(
+            text=self.mdbx.get_state("account", "email"),
+            group=self.status_icon,
+            action=None,
+            section=1,
+            order=0,
+        )
+        self.item_usage = toga.Command(
+            text=self.mdbx.get_state("account", "usage"),
+            group=self.status_icon,
+            action=None,
+            section=1,
+            order=1,
+        )
 
-        # update existing menu items
-        self.item_folder.action = self.on_open_clicked
-        self.item_status.label = IDLE
-
-        # add new menu items
-        self.item_email = MenuItem(self.mdbx.get_state("account", "email"))
-        self.item_usage = MenuItem(self.mdbx.get_state("account", "usage"))
-        self.item_pause = MenuItem(
-            self.RESUME_TEXT if self.mdbx.paused else self.PAUSE_TEXT,
+        self.item_status = toga.Command(
+            text="Setting up...",
+            group=self.status_icon,
+            action=None,
+            section=2,
+            order=0,
+        )
+        self.item_pause = toga.Command(
+            text=self.RESUME_TEXT if self.mdbx.paused else self.PAUSE_TEXT,
             action=self.on_start_stop_clicked,
+            group=self.status_icon,
+            section=2,
+            order=1,
         )
-        self.item_activity = MenuItem(
-            "Show Recent Changes...", action=self.on_activity_clicked
+        self.item_activity = toga.Command(
+            text="Show Recent Changes...",
+            action=self.on_activity_clicked,
+            group=self.status_icon,
+            section=2,
+            order=2,
         )
-
-        self.item_snooze30 = MenuItemSnooze("For the next 30 minutes", 30, self.mdbx)
-        self.item_snooze60 = MenuItemSnooze("For the next hour", 60, self.mdbx)
-        self.item_snooze480 = MenuItemSnooze("For the next 8 hours", 480, self.mdbx)
-        self.item_resume_notifications = MenuItemSnooze(
-            "Turn on notifications", 0, self.mdbx
-        )
-        self.item_snooze_separator = MenuItemSeparator()
-
-        self.menu_snooze = Menu(
-            items=[self.item_snooze30, self.item_snooze60, self.item_snooze480]
-        )
-        self.item_snooze = MenuItem("Snooze Notifications", submenu=self.menu_snooze)
-
-        self.item_sync_issues = MenuItem("Show Sync Issues...")
-        self.item_rebuild = MenuItem("Rebuild Index...", action=self.on_rebuild_clicked)
-
-        self.item_settings = MenuItem("Preferences...", action=self.on_settings_clicked)
-        self.item_updates = MenuItem(
-            "Check for Updates...", action=self.updater.check_for_updates
+        self.item_sync_issues = toga.Command(
+            text="Show Sync Issues...",
+            group=self.status_icon,
+            action=None,
+            section=2,
+            order=3,
         )
 
-        if self._started:
-            self.item_quit.label = "Quit Maestral"
-        else:
-            self.item_quit.label = "Quit Maestral GUI"
+        self.group_snooze = toga.Group(
+            text="Snooze Notifications",
+            parent=self.status_icon,
+            section=3,
+        )
+        self.item_snooze30 = SnoozeCommand(
+            text="For the next 30 minutes",
+            snooze_time=30,
+            mdbx=self.mdbx,
+            group=self.group_snooze,
+            section=0,
+            order=0,
+        )
+        self.item_snooze60 = SnoozeCommand(
+            text="For the next hour",
+            snooze_time=60,
+            mdbx=self.mdbx,
+            group=self.group_snooze,
+            section=0,
+            order=1,
+        )
+        self.item_snooze480 = SnoozeCommand(
+            text="For the next 8 hours",
+            snooze_time=480,
+            mdbx=self.mdbx,
+            group=self.group_snooze,
+            section=0,
+            order=2,
+        )
+        self.item_resume_notifications = SnoozeCommand(
+            text="Turn on notifications",
+            snooze_time=0,
+            mdbx=self.mdbx,
+            group=self.group_snooze,
+            section=0,
+            order=3,
+        )
+        self.item_rebuild = toga.Command(
+            text="Rebuild Index...",
+            action=self.on_rebuild_clicked,
+            group=self.status_icon,
+            section=3,
+            order=1,
+        )
 
-        self.menu.insert(2, MenuItemSeparator())
-        self.menu.insert(3, self.item_email)
-        self.menu.insert(4, self.item_usage)
-        self.menu.insert(7, self.item_sync_issues)
-        self.menu.insert(8, self.item_pause)
-        self.menu.insert(9, self.item_activity)
-        self.menu.insert(11, self.item_snooze)
-        self.menu.insert(12, self.item_sync_issues)
-        self.menu.insert(13, self.item_rebuild)
-        self.menu.insert(14, MenuItemSeparator())
-        self.menu.insert(15, self.item_settings)
-        self.menu.insert(16, self.item_updates)
+        self.item_settings = toga.Command(
+            text="Preferences...",
+            action=self.on_settings_clicked,
+            group=self.status_icon,
+            section=4,
+            order=0,
+        )
+        self.item_updates = toga.Command(
+            text="Check for Updates...",
+            action=self.updater.check_for_updates,
+            group=self.status_icon,
+            section=4,
+            order=1,
+        )
+        self.item_help = toga.Command(
+            text="Help Center",
+            action=self.on_help_clicked,
+            group=self.status_icon,
+            section=4,
+            order=2,
+        )
 
-        self.menu.on_open = self.on_menu_open
+        print(self.item_snooze480 > self.item_rebuild)
+
+        self.status_icons.commands.add(
+            self.item_folder,
+            self.item_website,
+            self.item_email,
+            self.item_usage,
+            self.item_status,
+            self.item_pause,
+            self.item_activity,
+            self.item_sync_issues,
+            self.item_snooze30,
+            self.item_snooze60,
+            self.item_snooze480,
+            self.item_rebuild,
+            self.item_settings,
+            self.item_updates,
+            self.item_help,
+        )
 
         # --------------- switch to idle icon -------------------
         self.set_icon(IDLE)
@@ -296,15 +344,15 @@ class MaestralGui(SystemTrayApp):
     def on_start_stop_clicked(self, interface, *args, **kwargs) -> None:
         """Pause / resume syncing on menu item clicked."""
         try:
-            if self.item_pause.label == self.PAUSE_TEXT:
+            if self.item_pause.text == self.PAUSE_TEXT:
                 self.mdbx.stop_sync()
-                self.item_pause.label = self.RESUME_TEXT
-            elif self.item_pause.label == self.RESUME_TEXT:
+                self.item_pause.text = self.RESUME_TEXT
+            elif self.item_pause.text == self.RESUME_TEXT:
                 self.mdbx.start_sync()
-                self.item_pause.label = self.PAUSE_TEXT
-            elif self.item_pause.label == self.START_TEXT:
+                self.item_pause.text = self.PAUSE_TEXT
+            elif self.item_pause.text == self.START_TEXT:
                 self.mdbx.start_sync()
-                self.item_pause.label = self.PAUSE_TEXT
+                self.item_pause.text = self.PAUSE_TEXT
         except NoDropboxDirError:
             self.add_background_task(self._exec_dbx_location_dialog)
         except NotLinkedError:
@@ -369,19 +417,18 @@ class MaestralGui(SystemTrayApp):
         self.set_icon(new_icon)
 
         # update action texts
-        if self.menu.visible:
-            if has_sync_issues:
-                self.item_sync_issues.action = self.on_sync_issues_clicked
-                self.item_sync_issues.label = f"Show Sync Issues ({n_sync_errors})..."
-            else:
-                self.item_sync_issues.action = None
-                self.item_sync_issues.label = f"No Sync Issues"
+        if has_sync_issues:
+            self.item_sync_issues.action = self.on_sync_issues_clicked
+            self.item_sync_issues.text = f"Show Sync Issues ({n_sync_errors})..."
+        else:
+            self.item_sync_issues.action = None
+            self.item_sync_issues.text = f"No Sync Issues"
 
-            self.item_pause.label = self.RESUME_TEXT if is_paused else self.PAUSE_TEXT
-            self.item_usage.label = self.mdbx.get_state("account", "usage")
-            self.item_email.label = self.mdbx.get_state("account", "email")
+        self.item_pause.text = self.RESUME_TEXT if is_paused else self.PAUSE_TEXT
+        self.item_usage.text = self.mdbx.get_state("account", "usage")
+        self.item_email.text = self.mdbx.get_state("account", "email")
 
-            self.item_status.label = status
+        self.item_status.text = status
 
     async def update_snoozed(self, interface, *args, **kwargs) -> None:
         minutes = self.mdbx.notification_snooze
@@ -389,13 +436,13 @@ class MaestralGui(SystemTrayApp):
         if minutes > 0:
             eta = datetime.now() + timedelta(minutes=minutes)
 
-            self.item_snooze.label = "Notifications snoozed until {}".format(
+            self.item_snooze.text = "Notifications snoozed until {}".format(
                 eta.strftime("%H:%M")
             )
             self.menu_snooze.insert(0, self.item_snooze_separator)
             self.menu_snooze.insert(0, self.item_resume_notifications)
         else:
-            self.item_snooze.label = "Snooze Notifications"
+            self.item_snooze.text = "Snooze Notifications"
             self.menu_snooze.remove(self.item_resume_notifications)
             self.menu_snooze.remove(self.item_snooze_separator)
 
@@ -410,8 +457,8 @@ class MaestralGui(SystemTrayApp):
         self.set_icon(ERROR)
 
         if self._linked_ui:
-            self.item_pause.label = self.RESUME_TEXT
-            self.item_status.label = self.mdbx.status
+            self.item_pause.text = self.RESUME_TEXT
+            self.item_status.text = self.mdbx.status
 
         err = errs[-1]
 
@@ -479,7 +526,7 @@ class MaestralGui(SystemTrayApp):
         # Note: Keep this method synchrounous for compatibility with the parent class.
 
         async def async_exit(interface, *args, **kwargs) -> None:
-            if self._started:
+            if self._daemon_started:
                 stop_maestral_daemon_process(self.config_name)
             super(MaestralGui, self).exit()
 
