@@ -74,7 +74,7 @@ class SettingsWindow(SettingsGui):
 
         self.combobox_dbx_location.dialog_message = path_selection_message
         self.refresh_gui()
-        self.app.add_background_task(self.refresh_profile_pic)
+        asyncio.create_task(self.refresh_profile_pic())
 
     # ==== callback implementations ====================================================
 
@@ -241,14 +241,14 @@ class SettingsWindow(SettingsGui):
         if FROZEN:
             self._update_cli_tool_button()
 
-    async def refresh_profile_pic(self, interface, *args, **kwargs) -> None:
+    async def refresh_profile_pic(self) -> None:
         try:
             path = await call_async_maestral(self.mdbx.config_name, "get_profile_pic")
             self.set_profile_pic(path)
         except (ConnectionError, MaestralApiError, NotLinkedError):
             pass
 
-    async def periodic_refresh_gui(self, interface, *args, **kwargs) -> None:
+    async def periodic_refresh_gui(self) -> None:
         while self._refresh:
             self.refresh_gui()
             await asyncio.sleep(self._refresh_interval)
@@ -280,5 +280,5 @@ class SettingsWindow(SettingsGui):
 
     def show(self) -> None:
         self._refresh = True
-        self.app.add_background_task(self.periodic_refresh_gui)
+        asyncio.create_task(self.periodic_refresh_gui())
         super().show()

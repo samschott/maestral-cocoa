@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 # system imports
+import asyncio
 import os
 import sys
 import gc
@@ -38,7 +39,6 @@ from maestral.exceptions import (
     KeyringAccessError,
     MaestralApiError,
 )
-from mypy.dmypy.client import action
 
 # local imports
 from . import __version__ as __gui_version__
@@ -62,7 +62,7 @@ MaestralWindow = TypeVar(
 
 def _build_snooze_command(snooze_time: float, maestral_proxy:  MaestralProxy, **kwargs) -> toga.Command:
 
-    def snooze(interface, *args, **kwargs) -> None:
+    def snooze(**kwargs) -> None:
         maestral_proxy.notification_snooze = snooze_time
 
     return toga.Command(action=snooze, **kwargs)
@@ -116,7 +116,7 @@ class MaestralGui(toga.App):
         try:
             pending_link = self.mdbx.pending_link
         except KeyringAccessError:
-            self.add_background_task(self.update_error)
+            asyncio.create_task(self.update_error())
             return
 
         pending_folder = self.mdbx.pending_dropbox_folder
@@ -132,7 +132,7 @@ class MaestralGui(toga.App):
                 setup_dialog.goto_page(2)
 
         else:
-            self.add_background_task(self.on_setup_completed)
+            asyncio.create_task(self.on_setup_completed())
 
     def set_icon(self, status: str) -> None:
         if status != self._cached_status:
@@ -141,11 +141,7 @@ class MaestralGui(toga.App):
             )
             self._cached_status = status
 
-    async def on_menu_open(self, interface, *args, **kwargs) -> None:
-        await self.update_snoozed(self)
-        await self.update_status(self)
-
-    async def on_setup_completed(self, interface, *args, **kwargs) -> None:
+    async def on_setup_completed(self) -> None:
         self.mdbx.start_sync()
         self.updater.start_updater()
         self._linked_ui = True
@@ -173,7 +169,7 @@ class MaestralGui(toga.App):
 
         return MaestralProxy(self.config_name)
 
-    def on_open_clicked(self, interface, *args, **kwargs):
+    def on_open_clicked(self, **kwargs):
         click.launch(self.mdbx.dropbox_path)
 
     def set_up_commands(self) -> None:
@@ -327,16 +323,16 @@ class MaestralGui(toga.App):
     # ==== callbacks menu items ========================================================
 
     @staticmethod
-    def on_website_clicked(interface, *args, **kwargs) -> None:
+    def on_website_clicked(**kwargs) -> None:
         """Open the Dropbox website."""
         click.launch("https://www.dropbox.com/")
 
     @staticmethod
-    def on_help_clicked(interface, *args, **kwargs) -> None:
+    def on_help_clicked(**kwargs) -> None:
         """Open the Dropbox help website."""
         click.launch(f"{__url__}/docs")
 
-    def on_start_stop_clicked(self, interface, *args, **kwargs) -> None:
+    def on_start_stop_clicked(self, **kwargs) -> None:
         """Pause / resume syncing on menu item clicked."""
         try:
             if self.item_pause.text == self.PAUSE_TEXT:
@@ -349,9 +345,9 @@ class MaestralGui(toga.App):
                 self.mdbx.start_sync()
                 self.item_pause.text = self.PAUSE_TEXT
         except NoDropboxDirError:
-            self.add_background_task(self._exec_dbx_location_dialog)
+            asyncio.create_task(self._exec_dbx_location_dialog())
         except NotLinkedError:
-            self.add_background_task(self.restart)
+            asyncio.create_task(self.restart())
 
     def _get_or_create_window(self, clazz: Type[MaestralWindow]) -> MaestralWindow:
         for window in self.windows:
@@ -360,16 +356,16 @@ class MaestralGui(toga.App):
 
         return clazz(mdbx=self.mdbx)
 
-    def on_settings_clicked(self, interface, *args, **kwargs) -> None:
+    def on_settings_clicked(self, **kwargs) -> None:
         self._get_or_create_window(SettingsWindow).show()
 
-    def on_sync_issues_clicked(self, interface, *args, **kwargs) -> None:
+    def on_sync_issues_clicked(self, **kwargs) -> None:
         self._get_or_create_window(SyncIssuesWindow).show()
 
-    def on_activity_clicked(self, interface, *args, **kwargs) -> None:
+    def on_activity_clicked(self, **kwargs) -> None:
         self._get_or_create_window(ActivityWindow).show()
 
-    def on_rebuild_clicked(self, interface, *args, **kwargs) -> None:
+    def on_rebuild_clicked(self, **kwargs) -> None:
         choice = self.alert(
             title="Rebuilt Maestral's sync index?",
             message=(
@@ -386,7 +382,7 @@ class MaestralGui(toga.App):
 
     # ==== periodic refresh of gui =====================================================
 
-    async def periodic_refresh_gui(self, interface, *args, **kwargs) -> None:
+    async def periodic_refresh_gui(self, **kwargs) -> None:
         while True:
             try:
                 await self.update_status(self)
@@ -396,7 +392,7 @@ class MaestralGui(toga.App):
             except CommunicationError:
                 super().exit()
 
-    async def update_status(self, interface, *args, **kwargs) -> None:
+    async def update_status(self, **kwargs) -> None:
         """Change icon according to status."""
         n_sync_errors = len(self.mdbx.sync_errors)
         has_sync_issues = n_sync_errors > 0
@@ -425,7 +421,7 @@ class MaestralGui(toga.App):
 
         self.item_status.text = status
 
-    async def update_snoozed(self, interface, *args, **kwargs) -> None:
+    async def update_snoozed(self, **kwargs) -> None:
         minutes = self.mdbx.notification_snooze
 
         if minutes > 0:
@@ -441,7 +437,7 @@ class MaestralGui(toga.App):
             self.menu_snooze.remove(self.item_resume_notifications)
             self.menu_snooze.remove(self.item_snooze_separator)
 
-    async def update_error(self, interface, *args, **kwargs) -> None:
+    async def update_error(self) -> None:
         errs = self.mdbx.fatal_errors
 
         if not errs:
@@ -458,7 +454,7 @@ class MaestralGui(toga.App):
         err = errs[-1]
 
         if isinstance(err, NoDropboxDirError):
-            await self._exec_dbx_location_dialog(self)
+            await self._exec_dbx_location_dialog()
         elif isinstance(err, TokenRevokedError):
             await self._exec_relink_dialog(RelinkDialog.REVOKED)
         elif isinstance(err, TokenExpiredError):
@@ -474,9 +470,9 @@ class MaestralGui(toga.App):
             # We don't know this error yet. Show a full stacktrace dialog.
             await self._exec_error_dialog(err)
 
-    async def _exec_dbx_location_dialog(self, interface, *args, **kwargs) -> None:
+    async def _exec_dbx_location_dialog(self) -> None:
 
-        def start_sync_callback(a, *aa, **kwa):
+        def start_sync_callback(**kwargs):
             self.mdbx.start_sync()
 
         location_dialog = DbxLocationDialog(mdbx=self.mdbx)
@@ -511,23 +507,23 @@ class MaestralGui(toga.App):
 
     # ==== quit functions ==============================================================
 
-    async def exit_and_stop_daemon(self, interface, *args, **kwargs) -> None:
+    async def exit_and_stop_daemon(self, **kwargs) -> None:
         """Stops the sync daemon and quits Maestral."""
         await call_async(stop_maestral_daemon_process, self.config_name)
         super().exit()
 
-    def exit(self, interface, *args, **kwargs) -> None:
+    def exit(self, **kwargs) -> None:
         """Quits Maestral. Stops the sync daemon only if we started it ourselves."""
-        # Note: Keep this method synchrounous for compatibility with the parent class.
+        # Note: Keep this method synchronous for compatibility with the parent class.
 
-        async def async_exit(interface, *args, **kwargs) -> None:
+        async def async_exit() -> None:
             if self._daemon_started:
                 stop_maestral_daemon_process(self.config_name)
             super(MaestralGui, self).exit()
 
-        self.add_background_task(async_exit)
+        asyncio.create_task(async_exit())
 
-    async def restart(self, interface, *args, **kwargs) -> None:
+    async def restart(self) -> None:
         """Restarts the Maestral GUI and sync daemon."""
         # Schedule restart after current process has quit
         pid = os.getpid()  # get ID of current process

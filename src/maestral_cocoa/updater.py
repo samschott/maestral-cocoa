@@ -139,7 +139,7 @@ class AutoUpdaterFallback(AutoUpdaterBackend):
         self.config_name = self.mdbx.config_name
 
     def _start_updater(self) -> None:
-        self.app.add_background_task(self._periodic_check_for_updates)
+        asyncio.create_task(self._periodic_check_for_updates())
 
     def set_update_check_interval(self, value: int) -> None:
         pass
@@ -194,7 +194,7 @@ class AutoUpdaterFallback(AutoUpdaterBackend):
             self.mdbx.set_state("app", "update_notification_last", time.time())
             self._show_update_dialog(res.latest_release, res.release_notes)
 
-    async def _periodic_check_for_updates(self, interface, *args, **kwargs) -> None:
+    async def _periodic_check_for_updates(self) -> None:
         while True:
             await asyncio.sleep(30 * 60)
             await self.check_for_updates_in_background(self)

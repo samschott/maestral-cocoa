@@ -132,7 +132,7 @@ class SyncIssuesWindow(Window):
 
         self.refresh_gui()
 
-    async def periodic_refresh_gui(self, interface, *args, **kwargs) -> None:
+    async def periodic_refresh_gui(self) -> None:
         while self._refresh:
             self.refresh_gui()
             await asyncio.sleep(self._refresh_interval)
@@ -176,5 +176,5 @@ class SyncIssuesWindow(Window):
 
     def show(self) -> None:
         self._refresh = True
-        self.app.add_background_task(self.periodic_refresh_gui)
+        asyncio.create_task(self.periodic_refresh_gui())
         super().show()
