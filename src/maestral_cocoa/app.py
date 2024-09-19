@@ -38,6 +38,7 @@ from maestral.exceptions import (
     KeyringAccessError,
     MaestralApiError,
 )
+from mypy.dmypy.client import action
 
 # local imports
 from . import __version__ as __gui_version__
@@ -59,16 +60,12 @@ MaestralWindow = TypeVar(
 )
 
 
-class SnoozeCommand(toga.Command):
-    def __init__(
-        self, text: str, snooze_time: float, mdbx: MaestralProxy, **kwargs
-    ) -> None:
-        super().__init__(text=text, action=self.snooze, **kwargs)
-        self.mdbx = mdbx
-        self.snooze_time = snooze_time
+def _build_snooze_command(snooze_time: float, maestral_proxy:  MaestralProxy, **kwargs) -> toga.Command:
 
-    def snooze(self, interface, *args, **kwargs) -> None:
-        self.mdbx.notification_snooze = self.snooze_time
+    def snooze(interface, *args, **kwargs) -> None:
+        maestral_proxy.notification_snooze = snooze_time
+
+    return toga.Command(action=snooze, **kwargs)
 
 
 class MaestralGui(toga.App):
@@ -244,34 +241,34 @@ class MaestralGui(toga.App):
             parent=self.status_icon,
             section=3,
         )
-        self.item_snooze30 = SnoozeCommand(
+        self.item_snooze30 = _build_snooze_command(
             text="For the next 30 minutes",
             snooze_time=30,
-            mdbx=self.mdbx,
+            maestral_proxy=self.mdbx,
             group=self.group_snooze,
             section=0,
             order=0,
         )
-        self.item_snooze60 = SnoozeCommand(
+        self.item_snooze60 = _build_snooze_command(
             text="For the next hour",
             snooze_time=60,
-            mdbx=self.mdbx,
+            maestral_proxy=self.mdbx,
             group=self.group_snooze,
             section=0,
             order=1,
         )
-        self.item_snooze480 = SnoozeCommand(
+        self.item_snooze480 = _build_snooze_command(
             text="For the next 8 hours",
             snooze_time=480,
-            mdbx=self.mdbx,
+            maestral_proxy=self.mdbx,
             group=self.group_snooze,
             section=0,
             order=2,
         )
-        self.item_resume_notifications = SnoozeCommand(
+        self.item_resume_notifications = _build_snooze_command(
             text="Turn on notifications",
             snooze_time=0,
-            mdbx=self.mdbx,
+            maestral_proxy=self.mdbx,
             group=self.group_snooze,
             section=0,
             order=3,
@@ -305,8 +302,6 @@ class MaestralGui(toga.App):
             section=4,
             order=2,
         )
-
-        print(self.item_snooze480 > self.item_rebuild)
 
         self.status_icons.commands.add(
             self.item_folder,
