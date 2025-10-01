@@ -74,7 +74,7 @@ class SettingsWindow(SettingsGui):
 
         self.combobox_dbx_location.dialog_message = path_selection_message
         self.refresh_gui()
-        self.app.add_background_task(self.refresh_profile_pic)
+        asyncio.create_task(self.refresh_profile_pic())
 
     # ==== callback implementations ====================================================
 
@@ -117,20 +117,24 @@ class SettingsWindow(SettingsGui):
         BandwidthDialog(mdbx=self.mdbx).show_as_sheet(self)
 
     async def on_unlink_pressed(self, widget: Any, *args, **kwargs) -> None:
-        should_unlink = await self.confirm_dialog(
-            title="Unlink your Dropbox account?",
-            message=(
-                "You will still keep your Dropbox folder on this "
-                "computer but your files will stop syncing."
-            ),
+        should_unlink = await self.dialog(
+            toga.ConfirmDialog(
+                title="Unlink your Dropbox account?",
+                message=(
+                    "You will still keep your Dropbox folder on this "
+                    "computer but your files will stop syncing."
+                ),
+            )
         )
 
         if should_unlink:
             self._refresh = False
             self.mdbx.unlink()
-            await self.info_dialog(
-                title="Successfully unlinked",
-                message="Maestral will now quit.",
+            await self.dialog(
+                toga.InfoDialog(
+                    title="Successfully unlinked",
+                    message="Maestral will now quit.",
+                )
             )
             await self.app.exit_and_stop_daemon(self.app)
 
@@ -160,7 +164,7 @@ class SettingsWindow(SettingsGui):
                         f"/bin/rm -f {self._macos_cli_install_path}"
                     )
             except Exception as e:
-                await self.error_dialog("Could not uninstall CLI", str(e))
+                await self.dialog(toga.ErrorDialog("Could not uninstall CLI", str(e)))
 
         elif not self._macos_cli_install_path.exists():
             # Install CLI to /usr/local/bin.
@@ -177,12 +181,14 @@ class SettingsWindow(SettingsGui):
                         f"/bin/ln -s {maestral_cli} {self._macos_cli_install_path}"
                     )
             except Exception as e:
-                await self.error_dialog("Could not install CLI", str(e))
+                await self.dialog(toga.ErrorDialog("Could not install CLI", str(e)))
 
         else:
-            await self.error_dialog(
-                "Could not install CLI",
-                f"There already is a file at {self._macos_cli_install_path}",
+            await self.dialog(
+                toga.ErrorDialog(
+                    "Could not install CLI",
+                    f"There already is a file at {self._macos_cli_install_path}",
+                )
             )
 
         self._update_cli_tool_button()
@@ -241,14 +247,14 @@ class SettingsWindow(SettingsGui):
         if FROZEN:
             self._update_cli_tool_button()
 
-    async def refresh_profile_pic(self, interface, *args, **kwargs) -> None:
+    async def refresh_profile_pic(self) -> None:
         try:
             path = await call_async_maestral(self.mdbx.config_name, "get_profile_pic")
             self.set_profile_pic(path)
         except (ConnectionError, MaestralApiError, NotLinkedError):
             pass
 
-    async def periodic_refresh_gui(self, interface, *args, **kwargs) -> None:
+    async def periodic_refresh_gui(self) -> None:
         while self._refresh:
             self.refresh_gui()
             await asyncio.sleep(self._refresh_interval)
@@ -280,5 +286,5 @@ class SettingsWindow(SettingsGui):
 
     def show(self) -> None:
         self._refresh = True
-        self.app.add_background_task(self.periodic_refresh_gui)
+        asyncio.create_task(self.periodic_refresh_gui())
         super().show()

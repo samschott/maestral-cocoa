@@ -4,7 +4,6 @@ from __future__ import annotations
 
 
 # external imports
-import toga
 from maestral.daemon import MaestralProxy
 
 # local imports

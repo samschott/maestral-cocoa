@@ -38,7 +38,7 @@ class SyncIssueView(toga.Box):
             style=Pack(
                 width=ICON_SIZE,
                 height=ICON_SIZE,
-                padding=(0, 12, 0, 3),
+                margin=(0, 12, 0, 3),
             ),
         )
         # TODO: samschott - Find a more elegant solution to set the image to a file icon.
@@ -47,7 +47,7 @@ class SyncIssueView(toga.Box):
         path_label = Label(
             sanitize_string(osp.basename(self.sync_err.dbx_path)),
             style=Pack(
-                padding_bottom=PADDING / 2,
+                margin_bottom=int(PADDING / 2),
             ),
         )
         error_label = Label(
@@ -56,7 +56,7 @@ class SyncIssueView(toga.Box):
             style=Pack(
                 font_size=9,
                 width=WINDOW_SIZE[0] - 4 * PADDING - 15 - ICON_SIZE,
-                padding_bottom=PADDING / 2,
+                margin_bottom=int(PADDING / 2),
             ),
         )
 
@@ -65,7 +65,7 @@ class SyncIssueView(toga.Box):
             url=self.sync_err.local_path,
             locate=True,
             style=Pack(
-                padding_right=PADDING,
+                margin_right=PADDING,
                 font_size=9,
                 height=12,
             ),
@@ -94,7 +94,7 @@ class SyncIssueView(toga.Box):
             style=Pack(direction=ROW),
         )
 
-        hline = toga.Divider(style=Pack(padding=(PADDING, 0, PADDING, 0)))
+        hline = toga.Divider(style=Pack(margin=(PADDING, 0, PADDING, 0)))
 
         self.add(content_box, hline)
 
@@ -111,7 +111,7 @@ class SyncIssuesWindow(Window):
         self._sync_issue_widgets: dict[str, SyncIssueView] = dict()
 
         self._placeholder = Label(
-            "No sync issues 😊", style=Pack(padding_bottom=PADDING)
+            "No sync issues 😊", style=Pack(margin_bottom=PADDING)
         )
 
         self.size = WINDOW_SIZE
@@ -119,7 +119,7 @@ class SyncIssuesWindow(Window):
         self.sync_errors_box = toga.Box(
             style=Pack(
                 direction=COLUMN,
-                padding=2 * PADDING,
+                margin=2 * PADDING,
             ),
         )
         self.scroll_container = toga.ScrollContainer(
@@ -132,7 +132,7 @@ class SyncIssuesWindow(Window):
 
         self.refresh_gui()
 
-    async def periodic_refresh_gui(self, interface, *args, **kwargs) -> None:
+    async def periodic_refresh_gui(self) -> None:
         while self._refresh:
             self.refresh_gui()
             await asyncio.sleep(self._refresh_interval)
@@ -176,5 +176,5 @@ class SyncIssuesWindow(Window):
 
     def show(self) -> None:
         self._refresh = True
-        self.app.add_background_task(self.periodic_refresh_gui)
+        asyncio.create_task(self.periodic_refresh_gui())
         super().show()

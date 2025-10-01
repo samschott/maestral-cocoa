@@ -394,7 +394,7 @@ class SelectiveSyncDialog(SelectiveSyncGui):
 
         self.tree.data = self.fs_source
 
-        self.fs_source.included.style = Pack(padding=(20, 20, 0, 24), flex=1)
+        self.fs_source.included.style = Pack(margin=(20, 20, 0, 24), flex=1)
         self.outer_box.insert(-1, self.fs_source.included)
 
     # ==== callbacks ===================================================================

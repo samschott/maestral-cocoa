@@ -86,7 +86,7 @@ class Dialog(Window):
             text=title,
             style=Pack(
                 width=self.CONTENT_WIDTH,
-                padding_bottom=self.TITLE_PADDING_BOTTOM,
+                margin_bottom=self.TITLE_PADDING_BOTTOM,
                 font_weight=BOLD,
                 background_color=TRANSPARENT,
             ),
@@ -96,7 +96,7 @@ class Dialog(Window):
             style=Pack(
                 width=self.ICON_SIZE[0],
                 height=self.ICON_SIZE[1],
-                padding_right=self.ICON_PADDING_RIGHT,
+                margin_right=self.ICON_PADDING_RIGHT,
                 background_color=TRANSPARENT,
             ),
         )
@@ -105,7 +105,7 @@ class Dialog(Window):
             linebreak_mode=WORD_WRAP,
             style=Pack(
                 width=self.CONTENT_WIDTH,
-                padding_bottom=10,
+                margin_bottom=10,
                 flex=1,
                 background_color=TRANSPARENT,
             ),
@@ -119,8 +119,8 @@ class Dialog(Window):
             on_press=callback,
             style=Pack(
                 width=self.CONTENT_WIDTH,
-                padding=0,
-                alignment=CENTER,
+                margin=0,
+                align_items=CENTER,
                 background_color=TRANSPARENT,
             ),
         )
@@ -145,7 +145,7 @@ class Dialog(Window):
             children=[self.image, self.content_box],
             style=Pack(
                 direction=ROW,
-                padding=(
+                margin=(
                     self.PADDING_TOP,
                     self.PADDING_RIGHT,
                     self.PADDING_BOTTOM,
@@ -172,7 +172,7 @@ class ProgressDialog(Dialog):
             max=None,
             style=Pack(
                 width=self.CONTENT_WIDTH,
-                padding=(0, 0, 10, 0),
+                margin=(0, 0, 10, 0),
                 background_color=TRANSPARENT,
             ),
         )
@@ -220,7 +220,7 @@ class DetailedDialog(Dialog):
             details_title,
             style=Pack(
                 width=self.CONTENT_WIDTH,
-                padding_bottom=10,
+                margin_bottom=10,
                 font_weight=BOLD,
                 background_color=TRANSPARENT,
             ),
@@ -229,7 +229,7 @@ class DetailedDialog(Dialog):
         html_view_height = self.WINDOW_MIN_HEIGHT - Dialog.WINDOW_MIN_HEIGHT - 15
         self.web_view = toga.WebView(
             style=Pack(
-                width=self.CONTENT_WIDTH, height=html_view_height, padding_bottom=15
+                width=self.CONTENT_WIDTH, height=html_view_height, margin_bottom=15
             ),
         )
         self.web_view.set_content("", details)
@@ -271,14 +271,14 @@ class UpdateDialog(Dialog):
         link_button = FollowLinkButton(
             text="GitHub Releases",
             url=f"{__url__}/download",
-            style=Pack(padding_bottom=10),
+            style=Pack(margin_bottom=10),
         )
 
         label = Label(
             "Release Notes",
             style=Pack(
                 width=self.CONTENT_WIDTH,
-                padding_bottom=10,
+                margin_bottom=10,
                 font_weight=BOLD,
                 background_color=TRANSPARENT,
             ),
@@ -303,7 +303,7 @@ class UpdateDialog(Dialog):
             style=Pack(
                 width=self.CONTENT_WIDTH,
                 height=html_view_height,
-                padding_bottom=15,
+                margin_bottom=15,
             ),
         )
         self.web_view.set_content("", html_notes)
@@ -323,7 +323,7 @@ class UpdateDialog(Dialog):
             icon=icon,
             accessory_view=accessory_view,
         )
-        self.msg_content.style.padding_bottom = 0
+        self.msg_content.style.margin_bottom = 0
         self.msg_content.style.height = 40
 
 
@@ -364,14 +364,14 @@ class RelinkDialog(Dialog):
         ).format(reason_str)
 
         self.website_button = FollowLinkButton(
-            text="Retrieve Token", url=url, style=Pack(padding_bottom=10)
+            text="Retrieve Token", url=url, style=Pack(margin_bottom=10)
         )
         self.token_field = toga.TextInput(
             placeholder="Authorization token",
             on_change=self.token_field_validator,
             style=Pack(
                 width=self.CONTENT_WIDTH,
-                padding_bottom=20,
+                margin_bottom=20,
             ),
         )
 

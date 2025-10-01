@@ -10,7 +10,7 @@ import toga_cocoa.app
 
 # monkey patch around toga backend behaviour that is hard to change by subclassing
 toga_cocoa.app.NSApplicationActivationPolicyRegular = 1
-toga_cocoa.factory.__path__ = ""
+toga_cocoa.factory.__path__ = [""]
 
 from travertino.size import at_least
 from travertino.constants import NONE
@@ -140,7 +140,6 @@ class Icon:
 
         if path:
             self.native = NSImage.alloc().initWithContentsOfFile(str(path))
-            self.native.retain()
 
         elif for_path:
             path = str(for_path)
@@ -153,11 +152,6 @@ class Icon:
         elif template:
             cocoa_template = Icon._to_cocoa_template[template]
             self.native = NSImage.imageNamed(cocoa_template)
-
-        self.native.retain()
-
-    def __del__(self):
-        self.native.autorelease()
 
     def _as_size(self, size):
         image = self.native.copy()
@@ -173,43 +167,18 @@ class Image:
 
     def __init__(self, interface, path=None, data=None, raw=None):
         self.interface = interface
-        self._needs_release = False
 
-        try:
-            # We *should* be able to do a direct NSImage.alloc.init...(), but if the
-            # image file is invalid, the init fails, returns NULL, and releases the
-            # Objective-C object. Since we've created an ObjC instance, when the object
-            # passes out of scope, Rubicon tries to free it, which segfaults.
-            # To avoid this, we retain result of the alloc() (overriding the default
-            # Rubicon behavior of alloc), then release that reference once we're done.
-            # If the image was created successfully, we temporarily have a reference
-            # count that is 1 higher than it needs to be; if it fails, we don't end up
-            # with a stray release.
-            image = NSImage.alloc().retain()
-            if path:
-                self.native = image.initWithContentsOfFile(str(path))
-                if self.native is None:
-                    raise ValueError(f"Unable to load image from {path}")
-                else:
-                    self._needs_release = True
-            elif data:
-                nsdata = NSData.dataWithBytes(data, length=len(data))
-                self.native = image.initWithData(nsdata)
-                if self.native is None:
-                    raise ValueError("Unable to load image from data")
-                else:
-                    self._needs_release = True
-            else:
-                self.native = raw
-        finally:
-            # Calling `release` here disabled Rubicon's "release on delete" automation.
-            # We therefore add an explicit `release` call in __del__ if the NSImage was
-            # initialized successfully.
-            image.release()
-
-    def __del__(self):
-        if self._needs_release:
-            self.native.release()
+        if path:
+            self.native = NSImage.alloc().initWithContentsOfFile(str(path))
+            if self.native is None:
+                raise ValueError(f"Unable to load image from {path}")
+        elif data:
+            nsdata = NSData.dataWithBytes(data, length=len(data))
+            self.native = NSImage.alloc().initWithData(nsdata)
+            if self.native is None:
+                raise ValueError("Unable to load image from data")
+        else:
+            self.native = raw
 
     def get_width(self):
         return self.native.size.width
@@ -289,7 +258,12 @@ class LinkLabel(Widget):
 
     def _update(self):
         style = self.interface.style
-        font = InterfaceFont(style.font_family, style.font_size)
+
+        if isinstance(style.font_family, str):
+            font_family = style.font_family
+        else:
+            font_family = style.font_family[0]
+        font = InterfaceFont(font_family, style.font_size)
 
         attributes = NSDictionary.dictionaryWithObjects(
             [self.interface.url, font._impl.native],
@@ -627,7 +601,6 @@ class MenuItemSeparator:
     def __init__(self, interface):
         self.interface = interface
         self.native = NSMenuItem.separatorItem()
-        self.native.retain()
 
 
 class TogaMenu(NSMenu):
@@ -706,50 +679,6 @@ class SystemTrayApp(TogaApp):
 
     def open_document(self, path):
         pass
-
-    async def alert_async(
-        self,
-        title,
-        message,
-        details,
-        details_title,
-        button_labels,
-        checkbox_text,
-        level,
-        icon,
-    ):
-        return await dialogs.alert_async(
-            title,
-            message,
-            details,
-            details_title,
-            button_labels,
-            checkbox_text,
-            level,
-            icon,
-        )
-
-    def alert(
-        self,
-        title,
-        message,
-        details,
-        details_title,
-        button_labels,
-        checkbox_text,
-        level,
-        icon,
-    ):
-        return dialogs.alert(
-            title,
-            message,
-            details,
-            details_title,
-            button_labels,
-            checkbox_text,
-            level,
-            icon,
-        )
 
 
 class Window(TogaWindow):
@@ -833,3 +762,47 @@ def resize_image_to(image: NSImage, height: int) -> NSImage:
     ctx.restoreGraphicsState()
 
     return new_image
+
+
+async def alert_async(
+    title,
+    message,
+    details,
+    details_title,
+    button_labels,
+    checkbox_text,
+    level,
+    icon,
+):
+    return await dialogs.alert_async(
+        title,
+        message,
+        details,
+        details_title,
+        button_labels,
+        checkbox_text,
+        level,
+        icon,
+    )
+
+
+def alert(
+    title,
+    message,
+    details,
+    details_title,
+    button_labels,
+    checkbox_text,
+    level,
+    icon,
+):
+    return dialogs.alert(
+        title,
+        message,
+        details,
+        details_title,
+        button_labels,
+        checkbox_text,
+        level,
+        icon,
+    )

@@ -40,7 +40,7 @@ class SetupDialog(SetupDialogGui):
             on_fs_loading_succeeded=self.on_selective_sync_loading_succeeded,
             on_fs_loading_failed=self.on_selective_sync_loading_failed,
         )
-        self.fs_source.included.style.padding_left = 10
+        self.fs_source.included.style.margin_left = 10
         self.selective_sync_page.insert(2, self.fs_source.included)
 
         # connect buttons to callbacks
@@ -99,21 +99,25 @@ class SetupDialog(SetupDialogGui):
                 self.go_forward()
 
             elif res == 1:
-                await self.error_dialog(
-                    title="Authentication failed.",
-                    message=(
-                        "Please make sure that you entered the "
-                        "correct authentication token."
-                    ),
+                await self.dialog(
+                    toga.ErrorDialog(
+                        title="Authentication failed.",
+                        message=(
+                            "Please make sure that you entered the "
+                            "correct authentication token."
+                        ),
+                    )
                 )
 
             elif res == 2:
-                await self.error_dialog(
-                    title="Connection failed.",
-                    message=(
-                        "Please make sure that you are connected "
-                        "to the internet and try again."
-                    ),
+                await self.dialog(
+                    toga.ErrorDialog(
+                        title="Connection failed.",
+                        message=(
+                            "Please make sure that you are connected "
+                            "to the internet and try again."
+                        ),
+                    )
                 )
 
             # reset contents of link page
@@ -134,13 +138,15 @@ class SetupDialog(SetupDialogGui):
                     if is_empty(dropbox_path):
                         delete(dropbox_path, raise_error=True)
                     else:
-                        should_merge = await self.question_dialog(
-                            title="Folder is not empty",
-                            message=(
-                                f'The folder "{osp.basename(dropbox_path)}" is not '
-                                "empty. Would you like merge its content with "
-                                "your Dropbox?"
-                            ),
+                        should_merge = await self.dialog(
+                            toga.QuestionDialog(
+                                title="Folder is not empty",
+                                message=(
+                                    f'The folder "{osp.basename(dropbox_path)}" is not '
+                                    "empty. Would you like merge its content with "
+                                    "your Dropbox?"
+                                ),
+                            )
                         )
 
                         if not should_merge:
@@ -148,12 +154,14 @@ class SetupDialog(SetupDialogGui):
 
                 self.mdbx.create_dropbox_directory(dropbox_path)
             except OSError:
-                await self.error_dialog(
-                    title="Could not set folder",
-                    message=(
-                        "Please make sure that you have permissions "
-                        "to write to the selected location."
-                    ),
+                await self.dialog(
+                    toga.ErrorDialog(
+                        title="Could not set folder",
+                        message=(
+                            "Please make sure that you have permissions "
+                            "to write to the selected location."
+                        ),
+                    )
                 )
             else:
                 self.go_forward()

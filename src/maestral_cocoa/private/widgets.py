@@ -2,6 +2,7 @@
 import asyncio
 import enum
 import os
+from typing import Any
 
 # external imports
 import click
@@ -9,7 +10,7 @@ import toga
 from toga.handlers import wrapped_handler
 from toga.widgets.base import Widget
 from toga.style.pack import Pack
-from toga.constants import ROW, RIGHT, TRANSPARENT
+from toga.constants import ROW, END, TRANSPARENT
 
 # local imports
 from .platform import get_platform_factory
@@ -62,7 +63,7 @@ class DialogButtons(toga.Box):
         self.add(Spacer())
 
         for label in labels[::-1]:
-            style = Pack(padding_left=10, alignment=RIGHT, background_color=TRANSPARENT)
+            style = Pack(margin_left=10, align_items=END, background_color=TRANSPARENT)
             btn = toga.Button(text=label, style=style)
 
             if label == default:
@@ -144,15 +145,18 @@ class RadioButton(Switch):
         on_change=None,
         value=False,
     ):
+        self._on_change = None
+
         super().__init__(text, id=id, style=style)
 
-        self._impl = self.factory.RadioButton(interface=self)
         self.text = text
-        self._on_change = None
         self.value = value
         self.on_change = on_change
 
         self._impl.set_group(group)
+
+    def _create(self) -> Any:
+        return self.factory.RadioButton(interface=self)
 
 
 class FreestandingIconButton(toga.Widget):
@@ -168,13 +172,13 @@ class FreestandingIconButton(toga.Widget):
     ):
         super().__init__(id=id, style=style)
 
-        # Create a platform specific implementation of a Button
-        self._impl = self.factory.FreestandingIconButton(interface=self)
-
         # Set all the properties
         self.text = text
         self.on_press = on_press
         self.icon = icon
+
+    def _create(self) -> Any:
+        return self.factory.FreestandingIconButton(interface=self)
 
     @property
     def on_press(self):
@@ -252,13 +256,10 @@ class FileSelectionButton(toga.Widget):
         id=None,
         style=None,
     ):
-        super().__init__(id=id, style=style)
-
         self._select_files = select_files
         self._select_folders = select_folders
 
-        # Create a platform specific implementation
-        self._impl = self.factory.FileSelectionButton(interface=self)
+        super().__init__(id=id, style=style)
 
         # Set all the properties
         self.show_full_path = show_full_path
@@ -268,6 +269,9 @@ class FileSelectionButton(toga.Widget):
         self.on_change = on_change
         self.dialog_title = dialog_title
         self.dialog_message = dialog_message
+
+    def _create(self):
+        return self.factory.FileSelectionButton(interface=self)
 
     @property
     def select_files(self):
@@ -363,14 +367,16 @@ class LinkLabel(Widget):
     """A label with a hyperlink."""
 
     def __init__(self, text, url, id=None, style=None):
-        super().__init__(id=id, style=style)
-
         self._text = text
         self._url = url
 
-        self._impl = self.factory.LinkLabel(interface=self)
+        super().__init__(id=id, style=style)
+
         self.text = text
         self.url = url
+
+    def _create(self) -> Any:
+        return self.factory.LinkLabel(interface=self)
 
     @property
     def text(self):
@@ -712,7 +718,6 @@ class SystemTrayApp(toga.App):
         formal_name=None,
         app_id=None,
         app_name=None,
-        id=None,
         icon=None,
         author=None,
         version=None,
@@ -725,7 +730,6 @@ class SystemTrayApp(toga.App):
             formal_name=formal_name,
             app_id=app_id,
             app_name=app_name,
-            id=id,
             icon=icon,
             author=author,
             version=version,
@@ -735,64 +739,18 @@ class SystemTrayApp(toga.App):
             on_exit=on_exit,
         )
 
+    def _create_initial_windows(self) -> None:
+        pass
+
+    def _open_initial_document(self, filename: str) -> bool:
+        return False
+
     def startup(self) -> None:
         # This would show the main window.
         pass
 
-    def _verify_startup(self) -> None:
-        # This would verify that the main window was shown.
-        pass
-
     def _create_impl(self):
         return get_platform_factory().SystemTrayApp(interface=self)
-
-    def alert(
-        self,
-        title,
-        message,
-        details=None,
-        details_title="Traceback",
-        button_labels=("Ok",),
-        checkbox_text=None,
-        level="info",
-        icon=None,
-    ):
-        icon = icon or self.icon
-
-        return self._impl.alert(
-            title,
-            message,
-            details,
-            details_title,
-            button_labels,
-            checkbox_text,
-            level,
-            icon,
-        )
-
-    async def alert_async(
-        self,
-        title,
-        message,
-        details=None,
-        details_title="Traceback",
-        button_labels=("Ok",),
-        checkbox_text=None,
-        level="info",
-        icon=None,
-    ):
-        icon = icon or self.icon
-
-        return await self._impl.alert_async(
-            title,
-            message,
-            details,
-            details_title,
-            button_labels,
-            checkbox_text,
-            level,
-            icon,
-        )
 
 
 # ==== helpers =========================================================================

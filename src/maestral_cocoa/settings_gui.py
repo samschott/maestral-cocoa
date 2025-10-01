@@ -6,7 +6,7 @@ import time
 # external imports
 import toga
 from toga.style.pack import Pack
-from toga.constants import ROW, COLUMN, TOP, RIGHT, CENTER, GRAY, TRANSPARENT
+from toga.constants import ROW, COLUMN, START, RIGHT, CENTER, GRAY, TRANSPARENT
 from maestral import __version__ as __daemon_version__
 from maestral.utils.appdirs import get_home_dir
 
@@ -72,14 +72,14 @@ class SettingsGui(Window):
             "Account Name (Company Name)",
             style=Pack(
                 font_size=14,
-                padding_bottom=SettingsGui.ELEMENT_PADDING - 4,
+                margin_bottom=SettingsGui.ELEMENT_PADDING - 4,
                 width=SettingsGui.COLUMN_WIDTH_RIGHT,
             ),
         )
         self.label_email = Label(
             "email@address.com, Business",
             style=Pack(
-                padding_bottom=SettingsGui.SUBELEMENT_PADDING,
+                margin_bottom=SettingsGui.SUBELEMENT_PADDING,
                 width=SettingsGui.COLUMN_WIDTH_RIGHT,
                 font_size=9,
             ),
@@ -87,7 +87,7 @@ class SettingsGui(Window):
         self.label_usage = Label(
             "10.5 % from 1,005 TB used",
             style=Pack(
-                padding_bottom=SettingsGui.ELEMENT_PADDING,
+                margin_bottom=SettingsGui.ELEMENT_PADDING,
                 width=SettingsGui.COLUMN_WIDTH_RIGHT,
                 font_size=9,
             ),
@@ -108,7 +108,7 @@ class SettingsGui(Window):
                         self.btn_unlink,
                     ],
                     style=Pack(
-                        direction=COLUMN, padding_left=SettingsGui.COLUMN_PADDING
+                        direction=COLUMN, margin_left=SettingsGui.COLUMN_PADDING
                     ),
                 ),
             ],
@@ -124,7 +124,7 @@ class SettingsGui(Window):
         self.btn_select_folders = toga.Button(
             "Select files and folders...",
             style=Pack(
-                padding_left=SettingsGui.COLUMN_PADDING, width=SettingsGui.BUTTON_WIDTH
+                margin_left=SettingsGui.COLUMN_PADDING, width=SettingsGui.BUTTON_WIDTH
             ),
         )
 
@@ -137,7 +137,7 @@ class SettingsGui(Window):
             select_files=False,
             select_folders=True,
             style=Pack(
-                padding_left=SettingsGui.COLUMN_PADDING, width=SettingsGui.BUTTON_WIDTH
+                margin_left=SettingsGui.COLUMN_PADDING, width=SettingsGui.BUTTON_WIDTH
             ),
         )
 
@@ -148,7 +148,7 @@ class SettingsGui(Window):
         self.btn_bandwidth = toga.Button(
             "Change settings...",
             style=Pack(
-                padding_left=SettingsGui.COLUMN_PADDING, width=SettingsGui.BUTTON_WIDTH
+                margin_left=SettingsGui.COLUMN_PADDING, width=SettingsGui.BUTTON_WIDTH
             ),
         )
 
@@ -157,20 +157,20 @@ class SettingsGui(Window):
                 toga.Box(
                     children=[self._label_select_folders, self.btn_select_folders],
                     style=Pack(
-                        alignment=CENTER,
-                        padding_bottom=SettingsGui.ELEMENT_PADDING,
+                        align_items=CENTER,
+                        margin_bottom=SettingsGui.ELEMENT_PADDING,
                     ),
                 ),
                 toga.Box(
                     children=[self._label_dbx_location, self.combobox_dbx_location],
                     style=Pack(
-                        alignment=CENTER,
-                        padding_bottom=SettingsGui.ELEMENT_PADDING,
+                        align_items=CENTER,
+                        margin_bottom=SettingsGui.ELEMENT_PADDING,
                     ),
                 ),
                 toga.Box(
                     children=[self._label_bandwidth, self.btn_bandwidth],
-                    style=Pack(alignment=CENTER),
+                    style=Pack(align_items=CENTER),
                 ),
             ],
             style=Pack(direction=COLUMN),
@@ -185,7 +185,7 @@ class SettingsGui(Window):
         self.combobox_update_interval = toga.Selection(
             items=["Daily", "Weekly", "Monthly", "Never"],
             style=Pack(
-                padding_left=SettingsGui.COLUMN_PADDING, width=SettingsGui.BUTTON_WIDTH
+                margin_left=SettingsGui.COLUMN_PADDING, width=SettingsGui.BUTTON_WIDTH
             ),
         )
 
@@ -196,14 +196,14 @@ class SettingsGui(Window):
         self.checkbox_autostart = Switch(
             "Start Maestral on login",
             style=Pack(
-                padding_bottom=SettingsGui.SUBELEMENT_PADDING,
+                margin_bottom=SettingsGui.SUBELEMENT_PADDING,
                 width=SettingsGui.COLUMN_WIDTH_RIGHT,
             ),
         )
         self.checkbox_notifications = Switch(
             "Notify for remote changes",
             style=Pack(
-                padding_bottom=SettingsGui.SUBELEMENT_PADDING,
+                margin_bottom=SettingsGui.SUBELEMENT_PADDING,
                 width=SettingsGui.COLUMN_WIDTH_RIGHT,
             ),
         )
@@ -212,7 +212,7 @@ class SettingsGui(Window):
             toga.Box(
                 children=[self._label_update_interval, self.combobox_update_interval],
                 style=Pack(
-                    alignment=CENTER, padding_bottom=SettingsGui.ELEMENT_PADDING
+                    align_items=CENTER, margin_bottom=SettingsGui.ELEMENT_PADDING
                 ),
             ),
             toga.Box(
@@ -224,12 +224,13 @@ class SettingsGui(Window):
                             self.checkbox_notifications,
                         ],
                         style=Pack(
-                            alignment=TOP,
+                            align_items=START,
                             direction=COLUMN,
-                            padding_left=SettingsGui.COLUMN_PADDING,
+                            margin_left=SettingsGui.COLUMN_PADDING,
                         ),
                     ),
                 ],
+                style=Pack(direction=ROW),
             ),
         ]
 
@@ -245,7 +246,7 @@ class SettingsGui(Window):
                 style=Pack(
                     color=GRAY,
                     width=SettingsGui.COLUMN_WIDTH_RIGHT,
-                    padding_left=SettingsGui.COLUMN_PADDING,
+                    margin_left=SettingsGui.COLUMN_PADDING,
                     font_size=9,
                 ),
             )
@@ -253,9 +254,9 @@ class SettingsGui(Window):
             self.btn_cli_tool = toga.Button(
                 "Install",
                 style=Pack(
-                    width=SettingsGui.BUTTON_WIDTH / 2,
-                    padding_bottom=SettingsGui.SUBELEMENT_PADDING,
-                    padding_left=SettingsGui.COLUMN_PADDING,
+                    width=SettingsGui.BUTTON_WIDTH // 2,
+                    margin_bottom=SettingsGui.SUBELEMENT_PADDING,
+                    margin_left=SettingsGui.COLUMN_PADDING,
                 ),
             )
 
@@ -266,7 +267,7 @@ class SettingsGui(Window):
                         self.btn_cli_tool,
                     ],
                     style=Pack(
-                        alignment=CENTER, padding_top=SettingsGui.ELEMENT_PADDING
+                        align_items=CENTER, margin_top=SettingsGui.ELEMENT_PADDING
                     ),
                 )
             )
@@ -282,7 +283,7 @@ class SettingsGui(Window):
                         self.label_cli_tool_info,
                     ],
                     style=Pack(
-                        alignment=CENTER, padding_top=SettingsGui.SUBELEMENT_PADDING
+                        align_items=CENTER, margin_top=SettingsGui.SUBELEMENT_PADDING
                     ),
                 )
             )
@@ -305,7 +306,7 @@ class SettingsGui(Window):
                         Label(
                             f"GUI v{__version__}, daemon v{__daemon_version__}",
                             style=Pack(
-                                padding_bottom=SettingsGui.SUBELEMENT_PADDING,
+                                margin_bottom=SettingsGui.SUBELEMENT_PADDING,
                                 width=SettingsGui.COLUMN_WIDTH_RIGHT,
                             ),
                         ),
@@ -313,7 +314,7 @@ class SettingsGui(Window):
                             text=__url__,
                             url=__url__,
                             style=Pack(
-                                padding_bottom=SettingsGui.SUBELEMENT_PADDING,
+                                margin_bottom=SettingsGui.SUBELEMENT_PADDING,
                                 width=SettingsGui.COLUMN_WIDTH_RIGHT,
                             ),
                         ),
@@ -325,7 +326,7 @@ class SettingsGui(Window):
                         ),
                     ],
                     style=Pack(
-                        direction=COLUMN, padding_left=SettingsGui.COLUMN_PADDING
+                        direction=COLUMN, margin_left=SettingsGui.COLUMN_PADDING
                     ),
                 ),
             ],
@@ -335,16 +336,16 @@ class SettingsGui(Window):
         main_box = toga.Box(
             children=[
                 account_info_box,
-                toga.Divider(style=Pack(padding=SettingsGui.SECTION_PADDING)),
+                toga.Divider(style=Pack(margin=SettingsGui.SECTION_PADDING)),
                 sync_settings_box,
-                toga.Divider(style=Pack(padding=SettingsGui.SECTION_PADDING)),
+                toga.Divider(style=Pack(margin=SettingsGui.SECTION_PADDING)),
                 system_settings_box,
-                toga.Divider(style=Pack(padding=SettingsGui.SECTION_PADDING)),
+                toga.Divider(style=Pack(margin=SettingsGui.SECTION_PADDING)),
                 about_box,
             ],
             style=Pack(
                 direction=COLUMN,
-                padding=30,
+                margin=30,
                 width=SettingsGui.COLUMN_WIDTH_LEFT + SettingsGui.COLUMN_WIDTH_RIGHT,
             ),
         )

@@ -3,7 +3,7 @@
 # external imports
 import toga
 from toga.style.pack import Pack
-from toga.constants import COLUMN, TOP, RIGHT, LEFT
+from toga.constants import COLUMN, START, RIGHT
 
 # local imports
 from .private.widgets import Label, RadioButton, Window, DialogButtons
@@ -33,11 +33,11 @@ class BandwidthGui(Window):
         self.number_input_limit_down = toga.NumberInput(
             value=1.0,
             min=0.005,
-            style=Pack(padding_left=BandwidthGui.COLUMN_PADDING, width=70),
+            style=Pack(margin_left=BandwidthGui.COLUMN_PADDING, width=70),
         )
         self._unit_label_down = toga.Label(
             "MB/s",
-            style=Pack(padding_left=BandwidthGui.COLUMN_PADDING, width=50),
+            style=Pack(margin_left=BandwidthGui.COLUMN_PADDING, width=50),
         )
 
         self._label_upload_rate = Label(
@@ -54,16 +54,16 @@ class BandwidthGui(Window):
         self.number_input_limit_up = toga.NumberInput(
             value=1.0,
             min=0.005,
-            style=Pack(padding_left=BandwidthGui.COLUMN_PADDING, width=70),
+            style=Pack(margin_left=BandwidthGui.COLUMN_PADDING, width=70),
         )
         self._unit_label_up = toga.Label(
             "MB/s",
-            style=Pack(padding_left=BandwidthGui.COLUMN_PADDING, width=50),
+            style=Pack(margin_left=BandwidthGui.COLUMN_PADDING, width=50),
         )
 
         self.dialog_buttons = DialogButtons(
             labels=["Update", "Cancel"],
-            style=Pack(padding=(20, 20, 20, 20), flex=1),
+            style=Pack(margin=(20, 20, 20, 20), flex=1),
         )
 
         children = [
@@ -82,9 +82,9 @@ class BandwidthGui(Window):
                             ),
                         ],
                         style=Pack(
-                            alignment=TOP,
+                            align_items=START,
                             direction=COLUMN,
-                            padding_left=BandwidthGui.COLUMN_PADDING,
+                            margin_left=BandwidthGui.COLUMN_PADDING,
                         ),
                     ),
                 ],
@@ -104,13 +104,13 @@ class BandwidthGui(Window):
                             ),
                         ],
                         style=Pack(
-                            alignment=TOP,
+                            align_items=START,
                             direction=COLUMN,
-                            padding_left=BandwidthGui.COLUMN_PADDING,
+                            margin_left=BandwidthGui.COLUMN_PADDING,
                         ),
                     ),
                 ],
-                style=Pack(padding_top=BandwidthGui.ELEMENT_PADDING),
+                style=Pack(margin_top=BandwidthGui.ELEMENT_PADDING),
             ),
             self.dialog_buttons,
         ]
@@ -119,10 +119,10 @@ class BandwidthGui(Window):
             children=children,
             style=Pack(
                 direction=COLUMN,
-                padding=30,
+                margin=30,
                 width=BandwidthGui.COLUMN_WIDTH_LEFT + BandwidthGui.COLUMN_WIDTH_RIGHT,
                 flex=1,
-                alignment=LEFT,
+                align_items=START,
             ),
         )
 
