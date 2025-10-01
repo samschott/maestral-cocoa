@@ -142,7 +142,7 @@ class ActivityWindow(Window):
                 message="The file or folder no longer exists.",
             )
 
-    async def periodic_refresh_gui(self, interface, *args, **kwargs) -> None:
+    async def periodic_refresh_gui(self) -> None:
         while self._refresh:
             await self.refresh_gui()
             await asyncio.sleep(self._refresh_interval)
@@ -173,5 +173,5 @@ class ActivityWindow(Window):
             self._initial_load = True
 
         self._refresh = True
-        self.app.add_background_task(self.periodic_refresh_gui)
+        asyncio.create_task(self.periodic_refresh_gui())
         super().show()

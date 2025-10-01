@@ -3,7 +3,7 @@
 # external imports
 import toga
 from toga.style import Pack
-from toga.constants import RIGHT, COLUMN
+from toga.constants import END, COLUMN
 
 # local imports
 from .private.widgets import Window, DialogButtons
@@ -22,7 +22,7 @@ class SelectiveSyncGui(Window):
 
         self.dialog_buttons = DialogButtons(
             labels=["Update", "Cancel"],
-            style=Pack(padding=(0, 20, 20, 20)),
+            style=Pack(margin=(0, 20, 20, 20)),
         )
         self.dialog_buttons["Update"].enabled = False
 
@@ -31,12 +31,12 @@ class SelectiveSyncGui(Window):
             children=[
                 toga.Label(
                     "Please select which files and folders to sync.",
-                    style=Pack(padding=20),
+                    style=Pack(margin=20),
                 ),
                 self.tree,
                 self.dialog_buttons,
             ],
-            style=Pack(direction=COLUMN, flex=1, alignment=RIGHT),
+            style=Pack(direction=COLUMN, flex=1, align_items=END),
         )
 
         # Add the content on the main window

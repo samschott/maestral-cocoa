@@ -2,8 +2,9 @@
 
 # external imports
 import toga
+from click import style
 from toga.style.pack import Pack
-from toga.constants import COLUMN, CENTER, TRANSPARENT
+from toga.constants import COLUMN, CENTER
 from maestral.utils.appdirs import get_home_dir
 
 # local imports
@@ -30,11 +31,12 @@ class SetupDialogGui(Window):
         width=WINDOW_WIDTH,
         height=WINDOW_HEIGHT,
         direction=COLUMN,
-        alignment=CENTER,
+        align_items=CENTER,
+        justify_content=CENTER,
         flex=1,
-        padding_top=20,  # space for title bar
+        margin_top=20,  # space for title bar
     )
-    btn_box_style = Pack(width=CONTENT_WIDTH, padding_bottom=20)
+    btn_box_style = Pack(width=CONTENT_WIDTH, margin_bottom=20)
 
     def __init__(self) -> None:
         # noinspection PyTypeChecker
@@ -57,11 +59,13 @@ class SetupDialogGui(Window):
         # noinspection PyTypeChecker
         self.image0 = toga.ImageView(
             self.app.icon.path,
-            style=Pack(width=128, height=128, alignment=CENTER, padding=(40, 0, 40, 0)),
+            style=Pack(
+                width=128, height=128, align_items=CENTER, margin=(40, 0, 40, 0)
+            ),
         )
         self.label0 = Label(
             text="Welcome to Maestral, an open source Dropbox client.",
-            style=Pack(width=self.WINDOW_WIDTH, padding_bottom=40, text_align=CENTER),
+            style=Pack(width=325, margin_bottom=40, text_align=CENTER),
         )
         self.btn_start = toga.Button("Link Dropbox Account", style=Pack(width=180))
 
@@ -74,7 +78,7 @@ class SetupDialogGui(Window):
 
         # noinspection PyTypeChecker
         self.image1 = toga.ImageView(
-            self.app.icon.path, style=Pack(width=64, height=64, padding=(40, 0, 40, 0))
+            self.app.icon.path, style=Pack(width=64, height=64, margin=(40, 0, 40, 0))
         )
         self.label1 = Label(
             text=(
@@ -83,16 +87,16 @@ class SetupDialogGui(Window):
             ),
             linebreak_mode=WORD_WRAP,
             style=Pack(
-                width=self.CONTENT_WIDTH * 0.9, text_align=CENTER, padding_bottom=10
+                width=int(self.CONTENT_WIDTH * 0.9), text_align=CENTER, margin_bottom=10
             ),
         )
         self.btn_auth_token = FollowLinkButton(
-            "Retrieve Token", style=Pack(width=125, padding_bottom=35)
+            "Retrieve Token", style=Pack(width=125, margin_bottom=35)
         )
         self.text_field_auth_token = toga.TextInput(
             placeholder="Authorization Token",
             style=Pack(
-                width=self.CONTENT_WIDTH * 0.9,
+                width=int(self.CONTENT_WIDTH * 0.9),
                 text_align=CENTER,
             ),
         )
@@ -120,7 +124,7 @@ class SetupDialogGui(Window):
 
         # noinspection PyTypeChecker
         self.image2 = toga.ImageView(
-            self.app.icon.path, style=Pack(width=64, height=64, padding=(40, 0, 40, 0))
+            self.app.icon.path, style=Pack(width=64, height=64, margin=(40, 0, 40, 0))
         )
         self.dbx_location_label = Label(
             text=(
@@ -135,7 +139,7 @@ class SetupDialogGui(Window):
             style=Pack(
                 width=self.CONTENT_WIDTH,
                 height=90,
-                padding_bottom=20,
+                margin_bottom=20,
                 text_align=CENTER,
             ),
         )
@@ -144,7 +148,7 @@ class SetupDialogGui(Window):
             select_files=False,
             select_folders=True,
             show_full_path=True,
-            style=Pack(width=self.CONTENT_WIDTH * 0.9, padding_bottom=20),
+            style=Pack(width=int(self.CONTENT_WIDTH * 0.9), margin_bottom=20),
         )
 
         self.dialog_buttons_location_page = DialogButtons(
@@ -170,13 +174,13 @@ class SetupDialogGui(Window):
                 "download may take some time, depending on the size of your Dropbox."
             ),
             linebreak_mode=WORD_WRAP,
-            style=Pack(width=self.CONTENT_WIDTH, padding=(20, 0, 20, 0)),
+            style=Pack(width=self.CONTENT_WIDTH, margin=(20, 0, 20, 0)),
         )
         self.dropbox_tree = toga.Tree(
             headings=["Name", "Included"],
             accessors=["name", "included"],
             data=[],
-            style=Pack(width=self.CONTENT_WIDTH, padding_bottom=20, flex=1),
+            style=Pack(width=self.CONTENT_WIDTH, margin_bottom=20, flex=1),
             multiple_select=True,
         )
 
@@ -199,7 +203,9 @@ class SetupDialogGui(Window):
         # noinspection PyTypeChecker
         self.image4 = toga.ImageView(
             self.app.icon.path,
-            style=Pack(width=128, height=128, alignment=CENTER, padding=(40, 0, 40, 0)),
+            style=Pack(
+                width=128, height=128, align_items=CENTER, margin=(40, 0, 40, 0)
+            ),
         )
         self.label4 = Label(
             text=(
@@ -208,7 +214,7 @@ class SetupDialogGui(Window):
                 "commence syncing."
             ),
             linebreak_mode=WORD_WRAP,
-            style=Pack(width=self.CONTENT_WIDTH, text_align=CENTER, padding_bottom=50),
+            style=Pack(width=self.CONTENT_WIDTH, text_align=CENTER, margin_bottom=50),
         )
         self.close_button = toga.Button(
             "Close", style=Pack(width=100), on_press=lambda s: self.close()

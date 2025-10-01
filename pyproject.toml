@@ -19,8 +19,8 @@ requires = [
     "click==8.1.7",
     "maestral==1.9.4",
     "markdown2==2.4.13",
-    "rubicon-objc==0.4.7",
-    "toga==0.4.2",
+    "rubicon-objc==0.5.2",
+    "toga==0.5.2",
 ]
 sparkle_feed_url = "https://maestral.app/appcast.xml"
 sparkle_public_key = "RugM2eM14xHixaeHpl5uWSq7+sDZvYi52Xpz4IXpAdA="
@@ -29,7 +29,7 @@ sparkle_public_key = "RugM2eM14xHixaeHpl5uWSq7+sDZvYi52Xpz4IXpAdA="
 entitlement."com.apple.security.cs.disable-library-validation" = false
 info."LSUIElement" = true
 requires = [
-    "toga-cocoa==0.4.2",
+    "toga-cocoa==0.5.2",
 ]
 cleanup_paths = [
     "*/unittest",
@@ -41,7 +41,7 @@ supported = false
 
 [tool.black]
 line-length = 88
-target-version = ["py37", "py38", "py39", "py310", "py311"]
+target-version = ["py38", "py39", "py310", "py311", "py312", "py313"]
 extend-exclude = "macOS/(.*?)"
 
 [build-system]

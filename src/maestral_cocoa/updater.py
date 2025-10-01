@@ -14,6 +14,7 @@ from maestral.exceptions import UpdateCheckError
 from .utils import call_async_maestral
 from .dialogs import UpdateDialog, ProgressDialog
 from .private.widgets import SystemTrayApp
+from .private.dialogs import alert_async
 
 
 class AutoUpdaterBackend(ABC):
@@ -32,12 +33,10 @@ class AutoUpdaterBackend(ABC):
     def set_update_check_interval(self, value: int) -> None: ...
 
     @abstractmethod
-    async def check_for_updates(self, interface, *args, **kwargs) -> None: ...
+    async def check_for_updates(self) -> None: ...
 
     @abstractmethod
-    async def check_for_updates_in_background(
-        self, interface, *args, **kwargs
-    ) -> None: ...
+    async def check_for_updates_in_background(self) -> None: ...
 
 
 class AutoUpdaterSparkle(AutoUpdaterBackend):
@@ -115,10 +114,10 @@ class AutoUpdaterSparkle(AutoUpdaterBackend):
     def _start_updater(self) -> None:
         self.spu_controller.updater.startUpdater(None)
 
-    async def check_for_updates(self, interface, *args, **kwargs) -> None:
+    async def check_for_updates(self) -> None:
         self.spu_controller.checkForUpdates(None)
 
-    async def check_for_updates_in_background(self, interface, *args, **kwargs) -> None:
+    async def check_for_updates_in_background(self) -> None:
         self.spu_controller.updater.checkForUpdatesInBackground()
 
 
@@ -139,12 +138,12 @@ class AutoUpdaterFallback(AutoUpdaterBackend):
         self.config_name = self.mdbx.config_name
 
     def _start_updater(self) -> None:
-        self.app.add_background_task(self._periodic_check_for_updates)
+        asyncio.create_task(self._periodic_check_for_updates())
 
     def set_update_check_interval(self, value: int) -> None:
         pass
 
-    async def check_for_updates(self, interface, *args, **kwargs) -> None:
+    async def check_for_updates(self) -> None:
         progress = ProgressDialog("Checking for Updates")
         progress.show()
 
@@ -155,8 +154,8 @@ class AutoUpdaterFallback(AutoUpdaterBackend):
                 return  # aborted by user
 
             progress.close()
-            return await self.app.alert_async(
-                title=e.title, message=e.message, level="error"
+            return await alert_async(
+                title=e.title, message=e.message, level="error", icon=self.app.icon
             )
 
         if not progress.visible:
@@ -167,9 +166,10 @@ class AutoUpdaterFallback(AutoUpdaterBackend):
         if res.update_available:
             self._show_update_dialog(res.latest_release, res.release_notes)
         elif not res.update_available:
-            await self.app.alert_async(
+            await alert_async(
                 title="You’re up-to-date!",
                 message=f"Maestral v{res.latest_release} is the newest version available.",
+                icon=self.app.icon,
             )
 
     def _show_update_dialog(self, latest_release: str, release_notes: str) -> None:
@@ -179,7 +179,7 @@ class AutoUpdaterFallback(AutoUpdaterBackend):
         )
         self.update_dialog.show()
 
-    async def check_for_updates_in_background(self, interface, *args, **kwargs) -> None:
+    async def check_for_updates_in_background(self) -> None:
         last_update_check = self.mdbx.get_state("app", "update_notification_last")
         interval = self.mdbx.get_conf("app", "update_notification_interval")
 
@@ -194,10 +194,10 @@ class AutoUpdaterFallback(AutoUpdaterBackend):
             self.mdbx.set_state("app", "update_notification_last", time.time())
             self._show_update_dialog(res.latest_release, res.release_notes)
 
-    async def _periodic_check_for_updates(self, interface, *args, **kwargs) -> None:
+    async def _periodic_check_for_updates(self) -> None:
         while True:
             await asyncio.sleep(30 * 60)
-            await self.check_for_updates_in_background(self)
+            await self.check_for_updates_in_background()
 
 
 class AutoUpdater:
@@ -216,10 +216,10 @@ class AutoUpdater:
         self._backend.start_updater()
 
     async def check_for_updates(self, interface, *args, **kwargs) -> None:
-        await self._backend.check_for_updates(self)
+        await self._backend.check_for_updates()
 
-    async def check_for_updates_in_background(self, interface, *args, **kwargs) -> None:
-        await self._backend.check_for_updates_in_background(self)
+    async def check_for_updates_in_background(self) -> None:
+        await self._backend.check_for_updates_in_background()
 
     @property
     def last_update_check(self) -> float:

@@ -7,7 +7,6 @@ import os.path as osp
 from typing import Callable
 
 # external imports
-import toga
 from toga.handlers import wrapped_handler
 from toga.style.pack import Pack
 from maestral.utils.appdirs import get_home_dir
@@ -61,7 +60,7 @@ class DbxLocationDialog(Dialog):
             select_files=False,
             select_folders=True,
             show_full_path=True,
-            style=Pack(width=self.CONTENT_WIDTH, padding=(10, 0, 30, 0)),
+            style=Pack(width=self.CONTENT_WIDTH, margin=(10, 0, 30, 0)),
         )
 
         # noinspection PyTypeChecker

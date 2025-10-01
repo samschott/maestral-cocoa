@@ -1,23 +1,15 @@
 # -*- coding: utf-8 -*-
 
 # system imports
-import asyncio
 from concurrent.futures import Future
 
 # external imports
 from toga.fonts import Font, SYSTEM, BOLD
 from toga_cocoa.libs import (
-    NSAlert,
-    NSMakeRect,
-    NSScrollView,
-    NSBezelBorder,
-    NSTextView,
     NSTextField,
     NSLayoutAttributeLeading,
-    NSAlertFirstButtonReturn,
     NSApplication,
     NSOnState,
-    NSAlertStyle,
     NSObject,
 )
 from toga_cocoa.dialogs import *  # noqa: F401,F406
