@@ -217,7 +217,7 @@ class MaestralGui(SystemTrayApp):
             self.item_quit,
         )
 
-    def on_open_clicked(self):
+    def on_open_clicked(self, inerface=None, *args, **kwargs):
         click.launch(self.mdbx.dropbox_path)
 
     def setup_ui_linked(self) -> None:
