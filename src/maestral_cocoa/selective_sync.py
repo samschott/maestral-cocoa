@@ -10,6 +10,7 @@ from queue import Queue
 from typing import Any, Callable
 
 # external imports
+import toga
 from toga.sources import Source
 from toga.style import Pack
 from toga.constants import TRANSPARENT
@@ -433,7 +434,7 @@ class SelectiveSyncDialog(SelectiveSyncGui):
             try:
                 self.update_items()
             except BusyError as err:
-                await self.error_dialog(err.title, err.message)
+                await self.dialog(toga.ErrorDialog(err.title, err.message))
             else:
                 self.close()
 
