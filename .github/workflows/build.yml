@@ -78,7 +78,7 @@ jobs:
           echo "dmg_name=${DMG_NAME}" >> $GITHUB_OUTPUT
           echo "dmg_path=${DMG_PATH}" >> $GITHUB_OUTPUT
         env:
-            DEV_ID: "C90016D845C6D782E7C061AB6D5476C9ABB7FB48"
+            DEV_ID: "F8F3D9B4DB265E8D0A5E61152110289451556D41"
             PIP_NO_BINARY: "watchdog"
 
       - name: Upload build logs
