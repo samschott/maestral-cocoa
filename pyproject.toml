@@ -16,9 +16,9 @@ icon = "icon/maestral"
 sources = ["src/maestral_cocoa"]
 requires = [
     "chardet==5.2.0",
-    "click==8.1.7",
+    "click==8.3.0",
     "maestral==1.9.5.dev0",
-    "markdown2==2.4.13",
+    "markdown2==2.5.4",
     "rubicon-objc==0.5.2",
     "toga==0.5.2",
 ]
