@@ -1,7 +1,7 @@
 [tool.briefcase]
 project_name = "Maestral"
 bundle = "com.samschott.maestral"
-version = "1.9.6"
+version = "1.9.7.dev0"
 url = "https://maestral.app"
 license.file = "LICENSE.txt"
 author = "Sam Schott"
