@@ -83,13 +83,13 @@ jobs:
 
       - name: Upload build logs
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: build-logs
           path: /Users/runner/work/maestral-cocoa/maestral-cocoa/logs
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ steps.build.outputs.dmg_name }}
           path: ${{ steps.build.outputs.dmg_path }}
